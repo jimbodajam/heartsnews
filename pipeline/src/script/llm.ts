@@ -1,5 +1,5 @@
 import { truncate } from '../text.ts';
-import { dayPhrase, partOfDay, timePhrase } from '../time.ts';
+import { dayPhrase, daysUntil, partOfDay, timePhrase } from '../time.ts';
 import { findAired, predictionRecord } from '../memory.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
@@ -149,15 +149,24 @@ const DRAFT_SCHEMA = {
   required: ['welcome', 'headlines', 'matchHandoff', 'transferIntro', 'transfers', 'features', 'fans', 'debate', 'opinions', 'outro'],
 };
 
+/** "earlier today", "yesterday", "3 days ago": so presenters don't say "last week" about an hour ago. */
+function whenSaid(at: string, now: Date): string {
+  const days = daysUntil(now, new Date(at));
+  if (days === 0) return 'earlier today';
+  if (days === 1) return 'yesterday';
+  return `${days} days ago`;
+}
+
 /** What each presenter has said and predicted before, for the prompt. */
 function memoryNotes(f: Facts): string {
   return f.channel.presenters
     .map((p) => {
       const pm = f.memory.presenters[p.id];
       if (!pm) return '';
-      const views = pm.opinions.slice(-6).map((o) => `"${o.topic}": ${o.view} (${o.at.slice(0, 10)})`);
+      const views = pm.opinions.slice(-6).map((o) => `"${o.topic}": ${o.view} (${whenSaid(o.at, f.now)})`);
       const calls = pm.predictions.slice(-4).map((x) =>
-        `${x.home} ${x.homeGoals}-${x.awayGoals} ${x.away}${x.outcome ? ` → ${x.outcome.toUpperCase()} (finished ${x.actual})` : ' (not played yet)'}`,
+        `${x.home} ${x.homeGoals}-${x.awayGoals} ${x.away}, called ${whenSaid(x.madeAt, f.now)}` +
+        (x.outcome ? ` → ${x.outcome.toUpperCase()} (finished ${x.actual})` : ' (not played yet)'),
       );
       const record = predictionRecord(pm);
       const parts = [
