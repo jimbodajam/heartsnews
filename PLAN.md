@@ -107,7 +107,9 @@ plus the top 5 of the table. Template mode can't tell a Hearts transfer from ano
 8. **Later, live matchday:** while Hearts are playing, a fast-poll job writes `live.json`. The player breaks into a "Match Centre LIVE"
    segment with goal alerts. GitHub's cron is too coarse and unreliable for this, so it will probably need a free Cloudflare Worker.
 9. **Later, SPFL expansion:** add club configs, a club picker, and "around the grounds" segments.
-10. **Later, presenter brains:** each presenter gets a personality profile and a memory, both fed into the
+10. **Presenter brains (done, 21 Oct):** personas live in `channel.json`, and memory in `memory.json`, published with
+    the site and read back by the next hourly build. "The Debate" (Fraser against Ally) ends with score predictions,
+    which are settled against results. Original notes: each presenter gets a personality profile and a memory, both fed into the
     LLM prompt when their lines are written. For example: a veteran pundit who hates VAR and harks back to old
     Tynecastle days, and a young analyst obsessed with tactics, xG and fantasy football. Memory is a small JSON
     store per presenter (past predictions, running jokes, opinions on players), updated after each bulletin, so

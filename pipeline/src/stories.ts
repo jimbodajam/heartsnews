@@ -51,11 +51,11 @@ export function speakable(title: string): string {
 
 const ACRONYMS = new Set(['UEFA', 'FIFA', 'SPFL', 'SWPL', 'HMFC', 'SFA', 'VAR', 'BBC', 'STV']);
 
-function tokens(title: string): Set<string> {
+export function tokens(title: string): Set<string> {
   return new Set(normaliseTitle(title).split(' ').filter((w) => w.length > 2 && !STOP.has(w)));
 }
 
-function sameStory(a: Set<string>, b: Set<string>): boolean {
+export function sameStory(a: Set<string>, b: Set<string>): boolean {
   let shared = 0;
   for (const t of a) if (b.has(t)) shared++;
   return shared >= 3 && shared / Math.min(a.size, b.size) >= 0.5;

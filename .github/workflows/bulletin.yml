@@ -1,11 +1,12 @@
 # Builds a fresh bulletin (collect → script → voices) and publishes the player to GitHub Pages.
-# Runs every 3 hours, on every push to main, and on demand from the Actions tab.
+# Runs every hour, on every push to main, and on demand from the Actions tab. Each build starts from the
+# previous one's memory.json (read back from the live site), so the channel moves on to new stories.
 
 name: Bulletin
 
 on:
   schedule:
-    - cron: '17 */3 * * *'
+    - cron: '17 * * * *'
   push:
     branches: [main]
   workflow_dispatch:

@@ -12,9 +12,11 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, FEATURE_CANDIDATES, type Channel } from './script/facts.ts';
+import { buildFacts, FEATURE_CANDIDATES, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
+import { remember } from './script/remember.ts';
 import { fetchArticleText } from './collectors/article.ts';
+import { freshness, loadMemory, settlePredictions, trimMemory } from './memory.ts';
 import { addBodies, buildStories } from './stories.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
@@ -22,6 +24,8 @@ import { renderVoices } from './voice.ts';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'pipeline/out');
 const BULLETIN = resolve(ROOT, 'site/public/bulletins/latest.json');
+// Deployed with the site; the next build reads it back from channel.siteUrl.
+const MEMORY = resolve(ROOT, 'site/public/memory.json');
 
 const flags = new Set(process.argv.slice(2));
 const readJson = async <T>(path: string) => JSON.parse(await readFile(path, 'utf8')) as T;
@@ -54,8 +58,15 @@ async function main() {
   console.log(`\nTop stories:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
 
+  // Memory: move on from stories already on air, and settle any predictions whose result is now in.
+  const { memory, from } = await loadMemory(channel.siteUrl && new URL('memory.json', channel.siteUrl).href, MEMORY);
+  console.log(`\nMemory from ${from}: ${memory.aired.length} aired stories`);
+  settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
+  for (const s of stories) s.score = Math.round(s.score * freshness(memory, s) * 1000) / 1000;
+  stories.sort((a, b) => b.score - a.score);
+
   await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
-  const facts = buildFacts(club, channel, stories, items, match, now);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);
   let writer = 'templates';
@@ -70,11 +81,15 @@ async function main() {
       console.warn(`AI writer failed, using templates instead: ${(err as Error).message}`);
     }
   } else {
-    console.log('\nWriting script with templates (no GEMINI_API_KEY set).');
+    console.log(`\nWriting script with templates (${flags.has('--templates') ? '--templates' : 'no GEMINI_API_KEY set'}).`);
   }
 
   const bulletin = assemble(facts, draft, writer);
   await writeFile(BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
+
+  remember(facts, draft);
+  trimMemory(memory, now);
+  await writeFile(MEMORY, `${JSON.stringify(memory, null, 2)}\n`);
   console.log(`\nBulletin written (${writer}):`);
   for (const seg of bulletin.segments) {
     console.log(`  [${seg.title}]`);

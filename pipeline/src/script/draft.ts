@@ -19,7 +19,17 @@ export interface Draft {
   /** In-depth packages: the lead anchor steers, the expert (analyst, reporter or co-anchor) adds detail. */
   features: Feature[];
   fans: { text: string; score: number; topics: string[] };
+  /** Two pundits arguing a talking point in character, ending with score predictions. AI only. */
+  debate?: Debate;
+  /** New opinions voiced in this bulletin, so presenters stay consistent next time. AI only. */
+  opinions?: { speaker: string; topic: string; view: string }[];
   outro: string;
+}
+
+export interface Debate {
+  topic: string;
+  lines: { speaker: string; text: string }[];
+  predictions: { speaker: string; homeGoals: number; awayGoals: number }[];
 }
 
 export interface Feature {

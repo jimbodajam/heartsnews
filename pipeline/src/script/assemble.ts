@@ -1,8 +1,9 @@
 import type { Bulletin, Graphic, IconId, Line, Segment } from '../../../shared/bulletin.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
-import type { Draft, Feature } from './draft.ts';
-import { expertFor, teamName, type Facts } from './facts.ts';
+import { predictionRecord } from '../memory.ts';
+import type { Debate, Draft, Feature } from './draft.ts';
+import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
@@ -132,8 +133,11 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   // In-depth packages go between the regular segments, like a rolling news hour:
   // headlines → story → Match Centre → story → Transfer Centre → story → Fan Zone.
   const [f1, f2, f3] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
+  const debate = draft.debate ? debateSegment(f, draft.debate) : undefined;
   const byId = (id: string) => segments.find((s) => s.id === id);
-  const ordered = [byId('headlines'), f1, byId('match'), f2, byId('transfers'), f3, byId('fans')].filter((s): s is Segment => Boolean(s));
+  const ordered = [byId('headlines'), f1, byId('match'), debate, f2, byId('transfers'), f3, byId('fans')].filter(
+    (s): s is Segment => Boolean(s),
+  );
 
   // Whoever is on air just before the Match Centre hands over to it.
   const matchAt = ordered.findIndex((s) => s.id === 'match');
@@ -152,6 +156,38 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     presenters: channel.presenters,
     ticker,
     segments: ordered,
+  };
+}
+
+/** The two pundits at the desk; their score predictions (and track records) go full screen at the end. */
+function debateSegment(f: Facts, d: Debate): Segment {
+  const pundits = f.channel.cast.debate ?? [f.channel.cast.anchors[1], f.channel.cast.transfers];
+  const lines: Line[] = d.lines.map((l, i) => ({
+    speaker: l.speaker,
+    text: l.text,
+    graphic: i === 0 ? { type: 'headline', title: d.topic, icon: 'mic' } : undefined,
+  }));
+  const next = f.nextFixtures[0];
+  if (next && d.predictions.length) {
+    const graphic: Graphic = {
+      type: 'predictions',
+      fixture: `${teamName(f.club, next.home)} v ${teamName(f.club, next.away)}`,
+      picks: d.predictions.map((p) => {
+        const record = f.memory.presenters[p.speaker] && predictionRecord(f.memory.presenters[p.speaker]);
+        return { name: firstName(presenter(f, p.speaker)), pick: `${p.homeGoals}-${p.awayGoals}`, record };
+      }),
+    };
+    // The closing calls are where they say their scores.
+    for (const l of lines.slice(-2)) l.graphic = graphic;
+  }
+  return {
+    id: 'debate',
+    kind: 'debate',
+    title: d.topic,
+    strap: d.topic,
+    scene: 'desk',
+    presenters: pundits,
+    lines,
   };
 }
 

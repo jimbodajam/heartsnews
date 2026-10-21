@@ -1,26 +1,32 @@
 {
   "name": "HEARTS NEWS 24",
   "spokenName": "Hearts News 24",
+  "siteUrl": "https://jimbodajam.github.io/heartsnews/",
   "cast": {
     "anchors": ["isla", "fraser"],
     "transfers": "ally",
-    "analyst": "kirsty"
+    "analyst": "kirsty",
+    "debate": ["fraser", "ally"]
   },
   "presenters": [
     {
       "id": "isla", "name": "Isla Brodie", "role": "Presenter", "voice": "female", "tts": { "voice": "bf_emma" },
+      "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
       "look": { "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
     },
     {
       "id": "fraser", "name": "Fraser Lennox", "role": "Presenter", "voice": "male", "tts": { "voice": "bm_george" },
-      "look": { "skin": "#f0c4a0", "hair": "#3a2a1e", "hairStyle": "quiff", "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
+      "persona": "Co-anchor and resident old-timer, 61. Came through the Hearts youth ranks in the 1980s but never made the first team, and has watched from the Wheatfield Stand ever since. Old school: hates VAR with a passion, distrusts xG and 'laptop football', rates grit, wingers who beat their man, and centre-halves who head it. Nostalgic about the Jim Jefferies era and the 1998 Scottish Cup. Gruff but warm, prone to 'in my day'. Reads the news straight; his opinions come out in discussion.",
+      "look": { "skin": "#f0c4a0", "hair": "#b9b4ad", "hairStyle": "bald", "glasses": true, "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
     },
     {
       "id": "ally", "name": "Ally Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
-      "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "short", "beard": true, "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
+      "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
+      "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "quiff", "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
     },
     {
       "id": "kirsty", "name": "Kirsty Moffat", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
+      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
       "look": { "skin": "#8d5a3b", "hair": "#1a1416", "hairStyle": "ponytail", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
     }
   ]

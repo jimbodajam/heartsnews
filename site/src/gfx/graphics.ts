@@ -165,6 +165,23 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'predictions': {
+      const top = panel(g, x, y, w, h, 'PREDICTIONS');
+      drawTextCentred(g, fit(gr.fixture, w - 12), cx, top + 1, C.light);
+      const colW = w / Math.max(1, gr.picks.length);
+      const ns = big ? 2 : 1;
+      const ps = big ? 4 : 3;
+      gr.picks.forEach((p, i) => {
+        const pcx = x + colW * i + colW / 2;
+        const ny = top + 12;
+        const py = ny + 5 * ns + 5;
+        drawTextCentred(g, fit(p.name, colW - 8, ns), pcx, ny, C.gold, ns);
+        drawTextCentred(g, p.pick, pcx, py, C.white, ps);
+        if (p.record) drawTextCentred(g, fit(p.record, colW - 8), pcx, py + 5 * ps + 4, C.grey);
+      });
+      break;
+    }
+
     case 'quote': {
       // The speaker goes in the title bar: the bottom of the panel is often under the subtitles.
       const top = panel(g, x, y, w, h, `IN QUOTES: ${gr.author}`);

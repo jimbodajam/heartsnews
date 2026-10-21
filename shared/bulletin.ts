@@ -1,7 +1,7 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
 export type SceneId = 'desk' | 'transfer' | 'touchscreen';
-export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match';
+export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate';
 export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat';
 export type HairStyle = 'short' | 'quiff' | 'bald' | 'long' | 'bob' | 'ponytail';
 
@@ -24,6 +24,8 @@ export interface Presenter {
   voice: 'male' | 'female';
   /** Kokoro voice used to pre-render this presenter's lines, e.g. "bf_emma". */
   tts?: { voice: string; speed?: number };
+  /** Character notes the script writer plays to. */
+  persona?: string;
   look: PresenterLook;
 }
 
@@ -49,7 +51,8 @@ export type Graphic =
   | { type: 'table'; title: string; rows: TableRow[]; highlight: string }
   | { type: 'fixtures'; title: string; fixtures: FixtureRow[] }
   | { type: 'result'; home: string; away: string; homeScore: number; awayScore: number; competition: string; scorers?: string[] }
-  | { type: 'quote'; text: string; author: string };
+  | { type: 'quote'; text: string; author: string }
+  | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] };
 
 export interface Line {
   speaker: string; // Presenter id

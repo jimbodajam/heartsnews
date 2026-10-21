@@ -1,6 +1,7 @@
 import type { Presenter } from '../../../shared/bulletin.ts';
 import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
+import { emptyMemory, findAired, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData } from '../types.ts';
 
@@ -12,7 +13,9 @@ const MIN_BODY = 400;
 export interface Channel {
   name: string;
   spokenName: string;
-  cast: { anchors: [string, string]; transfers: string; analyst: string };
+  /** Where the live site is published; memory.json is read back from here. */
+  siteUrl?: string;
+  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string] };
   presenters: Presenter[];
 }
 
@@ -21,6 +24,7 @@ export interface Facts {
   club: ClubConfig;
   channel: Channel;
   now: Date;
+  memory: Memory;
   /** Top stories overall, for the headlines (templates use the first four). */
   pool: Story[];
   /** The biggest stories, with article text, for in-depth packages. */
@@ -33,15 +37,30 @@ export interface Facts {
   window: { open: boolean; days: number };
 }
 
-export function buildFacts(club: ClubConfig, channel: Channel, stories: Story[], items: Item[], match: MatchData | undefined, now: Date): Facts {
+/** A story already covered in depth only gets another package if there's been new coverage since. */
+function needsDepth(memory: Memory, s: Story): boolean {
+  const a = findAired(memory, s.title);
+  return !a || a.inDepth === 0 || s.latest > a.lastAired;
+}
+
+export function buildFacts(
+  club: ClubConfig,
+  channel: Channel,
+  stories: Story[],
+  items: Item[],
+  match: MatchData | undefined,
+  now: Date,
+  memory: Memory = emptyMemory(),
+): Facts {
   return {
     club,
     channel,
     now,
+    memory,
     pool: stories.slice(0, 10),
     features: stories
       .slice(0, FEATURE_CANDIDATES)
-      .filter((s) => (s.body?.length ?? 0) >= MIN_BODY)
+      .filter((s) => (s.body?.length ?? 0) >= MIN_BODY && needsDepth(memory, s))
       .slice(0, FEATURE_COUNT),
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
     fans: fanThreads(items).slice(0, 5),
