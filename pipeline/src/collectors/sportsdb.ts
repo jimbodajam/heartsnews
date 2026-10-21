@@ -48,16 +48,31 @@ export function seasonFor(d: Date): string {
   return d.getUTCMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 }
 
+/** Merge event lists, keep the club's games only, drop duplicates, order by date. */
+function ourGames(club: ClubConfig, lists: (SdbEvent[] | null | undefined)[], newestFirst: boolean): Fixture[] {
+  const seen = new Set<string>();
+  return lists
+    .flatMap((l) => l ?? [])
+    .filter((e) => e.strHomeTeam === club.name || e.strAwayTeam === club.name)
+    .map(toFixture)
+    .filter((f) => !seen.has(f.date + f.home) && seen.add(f.date + f.home))
+    .sort((a, b) => (newestFirst ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
+}
+
 export async function collectMatchData(club: ClubConfig, now = new Date()): Promise<MatchData> {
   const { teamId, leagueId } = club.sportsdb;
-  const [next, last, table] = await Promise.all([
+  // The free key returns only one event per call, so the team's own feed (which covers cup and European games)
+  // is combined with the league-wide feeds, which are often more up to date for league matches.
+  const [next, nextLeague, last, lastLeague, table] = await Promise.all([
     fetchJson<{ events: SdbEvent[] | null }>(`${BASE}/eventsnext.php?id=${teamId}`),
+    fetchJson<{ events: SdbEvent[] | null }>(`${BASE}/eventsnextleague.php?id=${leagueId}`),
     fetchJson<{ results: SdbEvent[] | null }>(`${BASE}/eventslast.php?id=${teamId}`),
+    fetchJson<{ events: SdbEvent[] | null }>(`${BASE}/eventspastleague.php?id=${leagueId}`),
     fetchJson<{ table: SdbStanding[] | null }>(`${BASE}/lookuptable.php?l=${leagueId}&s=${seasonFor(now)}`),
   ]);
   return {
-    next: (next.events ?? []).map(toFixture),
-    last: (last.results ?? []).map(toFixture),
+    next: ourGames(club, [next.events, nextLeague.events], false),
+    last: ourGames(club, [last.results, lastLeague.events], true),
     table: (table.table ?? []).map(
       (r): Standing => ({
         pos: Number(r.intRank),

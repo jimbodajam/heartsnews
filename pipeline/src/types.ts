@@ -4,9 +4,14 @@ export interface SourceConfig {
   id: string;
   name: string;
   kind: SourceKind;
-  /** rss: url is a feed. youtube: url is a channel id. reddit: url is a subreddit name. */
-  type: 'rss' | 'youtube' | 'reddit';
+  /**
+   * rss: url is a feed. youtube: url is a channel id. reddit: url is a subreddit name.
+   * ips-forum: url is an Invision Community forum board (e.g. the Kickback's Terrace).
+   */
+  type: 'rss' | 'youtube' | 'reddit' | 'ips-forum';
   url: string;
+  /** ips-forum: how many of the busiest threads to read. */
+  limit?: number;
   /** Keep only items that mention one of the club's keywords (for general feeds). */
   filter?: boolean;
   maxAgeDays?: number;

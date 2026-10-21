@@ -86,9 +86,12 @@ Mitigation: v1 uses only feeds and titles, and transcripts are a later experimen
 
 ## Milestones
 
-**Status (21 Oct 2026):** 1–3 and 5 are done. The current `latest.json` is a hand-written demo built from real headlines.
-Known gaps: Reddit blocks the collector (429s and empty feeds), the Kickback forum address is unknown, and
-TheSportsDB's free key returns only the next fixture, the last result and the top 5 of the table.
+**Status (21 Oct 2026):** 1–5 are done. `npm run bulletin` builds a real bulletin end to end, scripted by Gemini's free tier.
+If Flash is busy (frequent 503s), it retries and then falls back to Flash-Lite; if all else fails, templates take over.
+The writer sits behind `ScriptModel`, so moving to Claude (about 1–2p per bulletin with Haiku) is a small change. Sources added:
+Hearts Standard (YouTube) and the Kickback's Terrace board (hot threads plus their latest posts).
+Known gaps: Reddit blocks the collector (429s and empty feeds), and TheSportsDB's free key returns one event per call
+plus the top 5 of the table. Template mode can't tell a Hearts transfer from another club's, so the AI writer filters those.
 
 1. **Scaffold:** git repo, pnpm workspace (`pipeline/`, `site/`, `clubs/`), TS config, GitHub repo.
 2. **Collectors:** RSS, YouTube and podcast feeds, one forum scraper, fixtures/table. Run locally, dump `items.json`, and check the quality by eye.

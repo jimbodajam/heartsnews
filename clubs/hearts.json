@@ -21,13 +21,15 @@
       "url": "https://news.google.com/rss/search?q=%22Heart+of+Midlothian%22+OR+%22Hearts+FC%22+when:3d&hl=en-GB&gl=GB&ceid=GB:en" },
     { "id": "hearts-tv", "name": "Hearts TV (YouTube)", "kind": "video", "type": "youtube",
       "url": "UCUMDz4A44VglneE3z1cBpAA" },
+    { "id": "hearts-standard", "name": "Hearts Standard (YouTube)", "kind": "video", "type": "youtube",
+      "url": "UC1e4TEbHmHCf5W7DqMjQS6Q" },
     { "id": "hearts-digest", "name": "The Hearts Digest (podcast)", "kind": "podcast", "type": "rss", "maxAgeDays": 30,
       "url": "https://feeds.acast.com/public/shows/66ba267a3889f01ccfc8e858" },
     { "id": "reddit-heartsfc", "name": "r/HeartsFC", "kind": "forum", "type": "reddit",
       "url": "HeartsFC" },
     { "id": "reddit-spfl", "name": "r/ScottishFootball", "kind": "forum", "type": "reddit", "filter": true,
       "url": "ScottishFootball" },
-    { "id": "kickback", "name": "Jambos Kickback", "kind": "forum", "type": "rss", "enabled": false,
-      "url": "", "note": "Forum address still to confirm. r/hearts is the card game, not the club." }
+    { "id": "kickback", "name": "Jambos Kickback", "kind": "forum", "type": "ips-forum", "maxAgeDays": 2, "limit": 5,
+      "url": "https://www.hmfckickback.co.uk/index.php?/forum/1-the-terrace/" }
   ]
 }

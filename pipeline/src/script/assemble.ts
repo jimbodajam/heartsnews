@@ -1,0 +1,147 @@
+import type { Bulletin, Graphic, IconId, Line, Segment } from '../../../shared/bulletin.ts';
+import type { Story, StoryCategory } from '../stories.ts';
+import { truncate } from '../text.ts';
+import type { Draft } from './draft.ts';
+import { teamName, type Facts } from './facts.ts';
+
+const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
+
+function headlineGraphic(s: Story): Graphic {
+  return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON[s.category] };
+}
+
+/** Lay a draft out as segments: who says each line, on which set, with which graphic. */
+export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin {
+  const { club, channel, now } = f;
+  const [a, b] = channel.cast.anchors;
+  const analyst = channel.cast.analyst;
+  const reporter = channel.cast.transfers;
+  const name = (n: string) => teamName(club, n);
+  const story = (id: string) => f.pool.find((s) => s.id === id) ?? f.transfers.find((s) => s.id === id);
+  const next = f.nextFixtures[0];
+  const nextLabel = next
+    ? `${name(next.home)} v ${name(next.away)} - ${new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'Europe/London' }).format(new Date(next.date))}`
+    : undefined;
+
+  const hasMatch = Boolean(draft.result || draft.table || draft.next);
+  const segments: Segment[] = [];
+
+  // Headlines at the desk: the two anchors take turns.
+  const headlineLines: Line[] = [{ speaker: a, text: draft.welcome }];
+  draft.headlines.forEach((h, i) => {
+    const s = story(h.storyId);
+    headlineLines.push({ speaker: i % 2 === 0 ? b : a, text: h.text, graphic: s ? headlineGraphic(s) : undefined });
+  });
+  if (hasMatch) headlineLines.push({ speaker: a, text: draft.matchHandoff });
+  const lead = story(draft.headlines[0]?.storyId ?? '');
+  segments.push({
+    id: 'headlines',
+    kind: 'headlines',
+    title: 'The Headlines',
+    strap: lead ? truncate(lead.title, 70) : `${club.shortName} latest`,
+    scene: 'desk',
+    presenters: [a, b],
+    lines: headlineLines,
+  });
+
+  // Match Centre on the touchscreen.
+  if (hasMatch) {
+    const lines: Line[] = [];
+    const r = f.lastResult;
+    if (draft.result && r) {
+      lines.push({
+        speaker: analyst,
+        text: draft.result,
+        graphic: { type: 'result', home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition },
+      });
+    }
+    if (draft.table && f.table.length) {
+      lines.push({
+        speaker: analyst,
+        text: draft.table,
+        graphic: {
+          type: 'table',
+          title: 'League Table',
+          highlight: club.shortName,
+          rows: f.table.slice(0, 8).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts })),
+        },
+      });
+    }
+    if (draft.next && f.nextFixtures.length) {
+      lines.push({
+        speaker: analyst,
+        text: draft.next,
+        graphic: {
+          type: 'fixtures',
+          title: f.nextFixtures.length > 1 ? 'Coming Up' : 'Next Match',
+          fixtures: f.nextFixtures.map((x) => ({ date: x.date, home: name(x.home), away: name(x.away), competition: x.competition })),
+        },
+      });
+    }
+    segments.push({
+      id: 'match',
+      kind: 'match',
+      title: 'Match Centre',
+      strap: nextLabel ?? `${club.shortName} results and table`,
+      scene: 'touchscreen',
+      presenters: [analyst],
+      lines,
+    });
+  }
+
+  // Transfer Centre.
+  const windowText = f.window.open ? `Transfer window closes in ${f.window.days} days` : `Transfer window opens in ${f.window.days} days`;
+  const transferLines: Line[] = [
+    { speaker: reporter, text: draft.transferIntro, graphic: { type: 'headline', title: windowText, icon: 'contract' } },
+  ];
+  for (const t of draft.transfers) {
+    const s = story(t.storyId);
+    transferLines.push({
+      speaker: reporter,
+      text: t.text,
+      graphic: t.card ? { type: 'transfer', ...t.card } : s ? headlineGraphic(s) : undefined,
+    });
+  }
+  segments.push({
+    id: 'transfers',
+    kind: 'transfers',
+    title: 'Transfer Centre',
+    strap: windowText,
+    scene: 'transfer',
+    presenters: [reporter],
+    lines: transferLines,
+  });
+
+  // Fan Zone back at the desk, then the sign-off.
+  segments.push({
+    id: 'fans',
+    kind: 'fans',
+    title: 'Fan Zone',
+    strap: 'What the supporters are saying',
+    scene: 'desk',
+    presenters: [a, b],
+    lines: [
+      {
+        speaker: b,
+        text: draft.fans.text,
+        graphic: f.fans.length ? { type: 'sentiment', score: draft.fans.score, topics: draft.fans.topics } : undefined,
+      },
+      { speaker: a, text: draft.outro },
+    ],
+  });
+
+  const ticker = [
+    ...f.pool.slice(0, 8).map((s) => `${s.title} - ${s.sources[0]}`),
+    ...(nextLabel ? [`Next: ${nextLabel}`] : []),
+  ];
+
+  return {
+    version: 1,
+    generatedAt: now.toISOString(),
+    generatedBy,
+    channel: { name: channel.name, club: club.name, colours: club.colours },
+    presenters: channel.presenters,
+    ticker,
+    segments,
+  };
+}

@@ -6,9 +6,9 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
 import type { Bulletin } from '../../shared/bulletin.ts';
 import { shortHash } from './text.ts';
@@ -22,8 +22,8 @@ type Voice = Parameters<KokoroTTS['generate']>[1] extends { voice?: infer V } | 
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0;
 
-async function main() {
-  const bulletinPath = resolve(ROOT, process.argv[2] ?? 'site/public/bulletins/latest.json');
+/** Render any missing clips for a bulletin file and write the clip paths back into it. */
+export async function renderVoices(bulletinPath: string): Promise<void> {
   const bulletin = JSON.parse(await readFile(bulletinPath, 'utf8')) as Bulletin;
   const outDir = resolve(dirname(bulletinPath), AUDIO_DIR);
   await mkdir(outDir, { recursive: true });
@@ -70,10 +70,18 @@ async function main() {
   }
 
   await writeFile(bulletinPath, `${JSON.stringify(bulletin, null, 2)}\n`);
-  console.log(`\n${rendered} clips rendered, ${reused} reused → ${outDir}`);
+
+  // Drop clips from earlier bulletins so the folder (and the deployed site) only holds what's playing.
+  const keep = new Set(bulletin.segments.flatMap((s) => s.lines.map((l) => l.audio?.split('/').pop())));
+  const stale = (await readdir(outDir)).filter((f) => !keep.has(f));
+  await Promise.all(stale.map((f) => rm(resolve(outDir, f))));
+  if (stale.length) console.log(`${stale.length} old clips removed`);
+  console.log(`${rendered} clips rendered, ${reused} reused → ${outDir}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  renderVoices(resolve(ROOT, process.argv[2] ?? 'site/public/bulletins/latest.json')).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

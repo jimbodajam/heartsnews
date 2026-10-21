@@ -1,4 +1,5 @@
 node_modules/
+.env
 dist/
 pipeline/out/
 site/public/voice-samples/

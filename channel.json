@@ -1,0 +1,27 @@
+{
+  "name": "HEARTS NEWS 24",
+  "spokenName": "Hearts News 24",
+  "cast": {
+    "anchors": ["isla", "fraser"],
+    "transfers": "ally",
+    "analyst": "kirsty"
+  },
+  "presenters": [
+    {
+      "id": "isla", "name": "Isla Brodie", "role": "Presenter", "voice": "female", "tts": { "voice": "bf_emma" },
+      "look": { "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
+    },
+    {
+      "id": "fraser", "name": "Fraser Lennox", "role": "Presenter", "voice": "male", "tts": { "voice": "bm_george" },
+      "look": { "skin": "#f0c4a0", "hair": "#3a2a1e", "hairStyle": "quiff", "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
+    },
+    {
+      "id": "ally", "name": "Ally Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
+      "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "short", "beard": true, "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
+    },
+    {
+      "id": "kirsty", "name": "Kirsty Moffat", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
+      "look": { "skin": "#8d5a3b", "hair": "#1a1416", "hairStyle": "ponytail", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
+    }
+  ]
+}

@@ -9,6 +9,7 @@
   "scripts": {
     "collect": "npm -w pipeline run collect",
     "voice": "npm -w pipeline run voice --",
+    "bulletin": "npm -w pipeline run bulletin --",
     "dev": "npm -w site run dev",
     "build": "npm -w site run build",
     "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"

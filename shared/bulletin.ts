@@ -72,6 +72,8 @@ export interface Segment {
 export interface Bulletin {
   version: 1;
   generatedAt: string;
+  /** Which script writer produced it, e.g. "templates" or "Gemini (gemini-flash-latest)". */
+  generatedBy?: string;
   demo?: boolean;
   channel: {
     name: string;

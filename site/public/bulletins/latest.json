@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-21T19:00:00Z",
-  "demo": true,
+  "generatedAt": "2026-10-21T18:47:02.965Z",
+  "generatedBy": "Gemini (gemini-flash-latest)",
   "channel": {
     "name": "HEARTS NEWS 24",
     "club": "Heart of Midlothian",
@@ -82,19 +82,22 @@
     }
   ],
   "ticker": [
-    "Demo bulletin: real headlines, hand-written script",
-    "Trabzonspor v Hearts - Conference League, Thursday",
-    "Vrancken names Mo Salah as Trabzonspor's main threat - Daily Record",
-    "Trabzonspor coach urges caution on Hearts - Evening News",
-    "Tributes paid to former Hearts scout and kitman John Harvey - Daily Record",
-    "Hearts sit third in the Premiership on 16 points"
+    "Hearts leave two players in Edinburgh as management explain reason for injury issues ahead of Trabzonspor tie - Edinburgh Evening News",
+    "Wouter Vrancken bullish on Mo Salah as Hearts boss names real Trabzonspor threat - Daily Record",
+    "Rangers brutal financial reality of Euro flop becomes clear as Celtic and Hearts UEFA nest eggs rocket - Daily Record",
+    "The Trabzonspor reaction to Hearts hammering by Celtic as boss relates to Parkhead pain - Daily Record",
+    "Trabzonspor coach urges caution on Hearts after Celtic result and compares them to Besiktas - Edinburgh Evening News",
+    "Trabzonspor vs Hearts referee has controversial Wouter Vrancken history including red cards and accusations - Edinburgh Evening News",
+    "Who will win Trabzonspor vs Hearts? Our writers make their predictions as Mo Salah lies in wait in Conference League corker - Daily Record",
+    "When is Onuachu's expected return date? Reis provides update on Trabzonspor striker pre-Hearts - AllNigeriaSoccer",
+    "Next: Trabzonspor v Hearts - Thursday"
   ],
   "segments": [
     {
       "id": "headlines",
       "kind": "headlines",
       "title": "The Headlines",
-      "strap": "Hearts in Turkey for Trabzonspor clash",
+      "strap": "Hearts leave two players in Edinburgh as management explain reason…",
       "scene": "desk",
       "presenters": [
         "isla",
@@ -103,46 +106,57 @@
       "lines": [
         {
           "speaker": "isla",
-          "text": "Good evening, and welcome to Hearts News 24. Here are tonight's headlines.",
-          "audio": "audio/e930467e682b.mp3"
+          "text": "Good evening. Welcome to Hearts News 24 with the latest headlines from Tynecastle and beyond.",
+          "audio": "audio/566f5d222bcc.mp3"
         },
         {
           "speaker": "fraser",
-          "text": "Hearts are in Turkey ahead of tomorrow's Conference League tie with Trabzonspor, with two players left behind in Edinburgh through injury.",
+          "text": "Hearts have left two players behind in Edinburgh due to injury issues ahead of their European trip, as reported by the Edinburgh Evening News.",
           "graphic": {
             "type": "headline",
-            "title": "Hearts leave two players in Edinburgh ahead of Trabzonspor tie",
+            "title": "Hearts leave two players in Edinburgh as management explain reason for injury issues ahead of Trabzonspor tie",
             "source": "Edinburgh Evening News",
             "icon": "medical"
           },
-          "audio": "audio/26a84c98f2f9.mp3"
+          "audio": "audio/5d1bde279a18.mp3"
         },
         {
           "speaker": "isla",
-          "text": "After the heavy defeat at Celtic, manager Wouter Vrancken has put the result down to individual errors rather than his tactical approach.",
+          "text": "Manager Wouter Vrancken has struck a bullish tone regarding Mo Salah while highlighting the real threats posed by Trabzonspor.",
           "graphic": {
             "type": "headline",
-            "title": "Hearts humiliated - but would Vrancken do anything differently?",
-            "source": "BBC Sport",
-            "icon": "whistle"
+            "title": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real Trabzonspor threat",
+            "source": "Daily Record",
+            "icon": "mic"
           },
-          "audio": "audio/5bd29e1b6549.mp3"
+          "audio": "audio/297114a0522b.mp3"
         },
         {
           "speaker": "fraser",
-          "text": "And tributes have been paid to former Hearts scout and kitman John Harvey, who has passed away.",
+          "text": "Trabzonspor head coach Thomas Reis has urged caution ahead of the tie, comparing Hearts to Besiktas despite the weekend league defeat.",
           "graphic": {
             "type": "headline",
-            "title": "Tributes paid to former scout and kitman John Harvey",
-            "source": "Daily Record",
-            "icon": "chat"
+            "title": "Trabzonspor coach urges caution on Hearts after Celtic result and compares them to Besiktas",
+            "source": "Edinburgh Evening News",
+            "icon": "ball"
           },
-          "audio": "audio/470595aca9ed.mp3"
+          "audio": "audio/38494895a540.mp3"
         },
         {
           "speaker": "isla",
-          "text": "Let's get the latest from Kirsty in the Match Centre.",
-          "audio": "audio/2e254070c9d4.mp3"
+          "text": "The referee appointed for the European encounter has previously had controversial history with Hearts boss Wouter Vrancken.",
+          "graphic": {
+            "type": "headline",
+            "title": "Trabzonspor vs Hearts referee has controversial Wouter Vrancken history including red cards and accusations",
+            "source": "Edinburgh Evening News",
+            "icon": "ball"
+          },
+          "audio": "audio/abd52c32ea78.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let us head over to Kirsty Moffat in the Match Centre for a closer look at the numbers.",
+          "audio": "audio/dcb5de822a3c.mp3"
         }
       ]
     },
@@ -158,23 +172,23 @@
       "lines": [
         {
           "speaker": "kirsty",
-          "text": "Thanks Isla. A weekend to forget. Celtic won seven one, and the manager says it came down to individual mistakes.",
+          "text": "In their last outing, Hearts were beaten seven-one away against Celtic in the Scottish Premier League.",
           "graphic": {
             "type": "result",
             "home": "Celtic",
             "away": "Hearts",
             "homeScore": 7,
             "awayScore": 1,
-            "competition": "Scottish Premiership"
+            "competition": "Scottish Premier League"
           },
-          "audio": "audio/ad92d8a8bf8d.mp3"
+          "audio": "audio/ec77cd215a16.mp3"
         },
         {
           "speaker": "kirsty",
-          "text": "Despite that, Hearts are still third in the table on sixteen points, four behind Rangers and eight behind Celtic.",
+          "text": "Hearts sit third in the Scottish Premier League on sixteen points, four points behind Rangers and two points above Dundee.",
           "graphic": {
             "type": "table",
-            "title": "Scottish Premiership",
+            "title": "League Table",
             "highlight": "Hearts",
             "rows": [
               {
@@ -214,24 +228,24 @@
               }
             ]
           },
-          "audio": "audio/8acf1a23b614.mp3"
+          "audio": "audio/b68360b105ab.mp3"
         },
         {
           "speaker": "kirsty",
-          "text": "Next up is Trabzonspor away in the Conference League tomorrow evening, at Papara Park.",
+          "text": "Up next, it is Trabzonspor against Hearts, UEFA Conference League, tomorrow at 5:45pm.",
           "graphic": {
             "type": "fixtures",
             "title": "Next Match",
             "fixtures": [
               {
-                "date": "2026-10-22T16:45:00Z",
+                "date": "2026-10-22T16:45:00.000Z",
                 "home": "Trabzonspor",
                 "away": "Hearts",
                 "competition": "UEFA Conference League"
               }
             ]
           },
-          "audio": "audio/8a9ba9f11f7b.mp3"
+          "audio": "audio/4aee3d3b52f3.mp3"
         }
       ]
     },
@@ -239,7 +253,7 @@
       "id": "transfers",
       "kind": "transfers",
       "title": "Transfer Centre",
-      "strap": "January window opens in 72 days",
+      "strap": "Transfer window opens in 72 days",
       "scene": "transfer",
       "presenters": [
         "ally"
@@ -247,26 +261,13 @@
       "lines": [
         {
           "speaker": "ally",
-          "text": "The window is shut until January, but the Transfer Centre never sleeps.",
+          "text": "Welcome to the Transfer Centre. The transfer window is currently closed, and it reopens in seventy-two days.",
           "graphic": {
             "type": "headline",
-            "title": "January transfer window opens in 72 days",
+            "title": "Transfer window opens in 72 days",
             "icon": "contract"
           },
-          "audio": "audio/1ff9a7b3c40f.mp3"
-        },
-        {
-          "speaker": "ally",
-          "text": "This is a demo card. Once the pipeline is running, real rumours and confirmed deals will appear on this board.",
-          "graphic": {
-            "type": "transfer",
-            "player": "Example Player",
-            "from": "Free agent",
-            "to": "Hearts",
-            "status": "rumour",
-            "fee": "Undisclosed"
-          },
-          "audio": "audio/717cde288c72.mp3"
+          "audio": "audio/1e551948542b.mp3"
         }
       ]
     },
@@ -274,7 +275,7 @@
       "id": "fans",
       "kind": "fans",
       "title": "Fan Zone",
-      "strap": "Supporters react to Celtic defeat",
+      "strap": "What the supporters are saying",
       "scene": "desk",
       "presenters": [
         "isla",
@@ -283,23 +284,23 @@
       "lines": [
         {
           "speaker": "fraser",
-          "text": "Online, the mood among supporters is uneasy after Celtic Park, with plenty of debate about the manager's approach.",
+          "text": "Supporters on Jambos Kickback continue to debate Wouter Vrancken's tactical system following the heavy defeat at Parkhead. Frustration remains evident around ongoing player injuries, though fans have praised Hearts Women for their comprehensive weekend victory.",
           "graphic": {
             "type": "sentiment",
-            "score": -0.5,
+            "score": -0.2,
             "topics": [
-              "Celtic Park defeat",
-              "Vrancken's tactics",
-              "Trabzonspor trip",
-              "Injury news"
+              "Wouter Vrancken tactics",
+              "First team injury concerns",
+              "Hearts Women victory",
+              "League Cup ticket sales"
             ]
           },
-          "audio": "audio/d47b5daa2c3c.mp3"
+          "audio": "audio/ae850ffb6826.mp3"
         },
         {
           "speaker": "isla",
-          "text": "That's all for now. Stay with us. Rolling news continues, right here on Hearts News 24.",
-          "audio": "audio/9bc718e9fd59.mp3"
+          "text": "That is all for this bulletin. Stay with us on Hearts News 24 as our coverage continues throughout the evening.",
+          "audio": "audio/fae71a3d55b1.mp3"
         }
       ]
     }

@@ -5,6 +5,7 @@
   "scripts": {
     "collect": "tsx src/collect.ts",
     "voice": "tsx src/voice.ts",
+    "bulletin": "tsx src/build.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
