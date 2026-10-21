@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
 import type { Bulletin } from '../../shared/bulletin.ts';
+import { loadPronunciations, pronouncer } from './pronounce.ts';
 import { shortHash } from './text.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -22,12 +23,30 @@ type Voice = Parameters<KokoroTTS['generate']>[1] extends { voice?: infer V } | 
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0;
 
+export const CLIP_EXT = hasFfmpeg ? 'mp3' : 'wav';
+
+export async function loadKokoro(): Promise<KokoroTTS> {
+  console.log(`Loading Kokoro (${DTYPE})…`);
+  return KokoroTTS.from_pretrained(MODEL, { dtype: DTYPE, device: 'cpu' });
+}
+
+/** Speak `text` with a Kokoro voice into `file` (.mp3 when ffmpeg is available, else .wav). */
+export async function renderClip(tts: KokoroTTS, text: string, voice: string, speed: number, file: string): Promise<void> {
+  const audio = await tts.generate(text, { voice: voice as Voice, speed });
+  if (!hasFfmpeg) return audio.save(file);
+  const wav = file.replace(/\.mp3$/, '.wav');
+  await audio.save(wav);
+  const res = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav, '-b:a', '96k', file]);
+  await rm(wav);
+  if (res.status !== 0) throw new Error(`ffmpeg failed: ${res.stderr}`);
+}
+
 /** Render any missing clips for a bulletin file and write the clip paths back into it. */
 export async function renderVoices(bulletinPath: string): Promise<void> {
   const bulletin = JSON.parse(await readFile(bulletinPath, 'utf8')) as Bulletin;
   const outDir = resolve(dirname(bulletinPath), AUDIO_DIR);
   await mkdir(outDir, { recursive: true });
-  const ext = hasFfmpeg ? 'mp3' : 'wav';
+  const say = pronouncer(loadPronunciations());
 
   let tts: KokoroTTS | undefined;
   let rendered = 0;
@@ -41,7 +60,9 @@ export async function renderVoices(bulletinPath: string): Promise<void> {
         continue;
       }
       const speed = p.tts.speed ?? 1;
-      const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${line.text}`)}.${ext}`;
+      // The spoken text (with respellings) goes into the hash, so editing pronunciations re-renders affected lines.
+      const spoken = say(line.text);
+      const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${spoken}`)}.${CLIP_EXT}`;
       const file = resolve(outDir, name);
       line.audio = `${AUDIO_DIR}/${name}`;
       if (existsSync(file)) {
@@ -49,21 +70,9 @@ export async function renderVoices(bulletinPath: string): Promise<void> {
         continue;
       }
 
-      if (!tts) {
-        console.log(`Loading Kokoro (${DTYPE})…`);
-        tts = await KokoroTTS.from_pretrained(MODEL, { dtype: DTYPE, device: 'cpu' });
-      }
+      tts ??= await loadKokoro();
       const started = Date.now();
-      const audio = await tts.generate(line.text, { voice: p.tts.voice as Voice, speed });
-      if (hasFfmpeg) {
-        const wav = file.replace(/\.mp3$/, '.wav');
-        await audio.save(wav);
-        const res = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav, '-b:a', '96k', file]);
-        await rm(wav);
-        if (res.status !== 0) throw new Error(`ffmpeg failed: ${res.stderr}`);
-      } else {
-        await audio.save(file);
-      }
+      await renderClip(tts, spoken, p.tts.voice, speed, file);
       rendered++;
       console.log(`  ${p.name.padEnd(16)} ${p.tts.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${line.text.slice(0, 50)}…`);
     }

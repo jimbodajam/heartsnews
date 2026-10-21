@@ -19,6 +19,8 @@ A rolling 24-hour pixel-art sports news channel for Heart of Midlothian. See [PL
 npm install
 npm run bulletin    # collect → stories → script → latest.json → voices (the whole thing)
                     #   flags: --cached (reuse last collect), --templates (no AI), --no-voice
+npm run snapshot    # collect the Kickback from home and publish it for the online build
+npm run pronounce   # hear every pronunciations.json entry before/after: /voice-samples/pronunciations/
 npm run collect     # scrape all sources for Hearts
 npm run voice       # render each bulletin line with its presenter's Kokoro voice (first run downloads ~330MB model)
 npm run dev         # player at http://localhost:5173

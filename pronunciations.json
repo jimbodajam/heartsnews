@@ -1,0 +1,26 @@
+{
+  "_about": "How the voices should say tricky words. Keys are matched as whole words, ignoring accents (Cláudio = Claudio). Values are plain respellings that the voice engine reads phonetically. Subtitles still show the real spelling. Check with `npm run pronounce`, then edit and re-run. Names the voice already gets right are deliberately left out.",
+  "words": {
+    "Celtic": "Seltic",
+    "UEFA": "You A faa",
+    "Tynecastle": "Tyne cassel",
+    "Gorgie": "Gorghee",
+    "Nordsjaelland": "Nor shellan",
+    "Nordsjælland": "Nor shellan",
+    "Trabzonspor": "Trab zon spor",
+    "Reis": "Rice",
+
+    "Cederique": "Sedrick",
+    "Tulleners": "Tullen ers",
+
+    "Kyziridis": "Kee za reedis",
+    "Claudio": "Clowdeeoh",
+    "Ageu": "A jew",
+    "Kabangu": "Ka bang goo",
+    "Kabore": "Kaboray",
+    "Laurent": "Loron",
+    "Tomas": "Thomas",
+    "Jordi": "Yordi",
+    "Altena": "All ten a"
+  }
+}
