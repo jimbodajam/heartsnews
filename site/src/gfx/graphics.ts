@@ -166,13 +166,13 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
     }
 
     case 'quote': {
-      const top = panel(g, x, y, w, h, 'IN QUOTES');
+      // The speaker goes in the title bar: the bottom of the panel is often under the subtitles.
+      const top = panel(g, x, y, w, h, `IN QUOTES: ${gr.author}`);
       drawText(g, '"', x + 6, top, C.gold, 3);
       const s = big ? 2 : 1;
       const lines = wrap(gr.text, w - 30, s);
-      const maxLines = Math.floor((y + h - 12 - top) / (LINE_H * s));
+      const maxLines = Math.floor((y + h - 4 - top) / (LINE_H * s));
       lines.slice(0, maxLines).forEach((l, i) => drawText(g, l, x + 22, top + 2 + i * LINE_H * s, C.white, s));
-      drawTextRight(g, `- ${gr.author}`, x + w - 6, y + h - 9, C.gold);
       break;
     }
   }
