@@ -20,7 +20,7 @@ const FULLSCREEN: Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result
 
 const LABEL: Record<SegmentKind, string> = {
   headlines: 'HEADLINES',
-  story: 'NEWS',
+  story: 'IN FOCUS',
   transfers: 'TRANSFER CENTRE',
   fans: 'FAN ZONE',
   match: 'MATCH CENTRE',

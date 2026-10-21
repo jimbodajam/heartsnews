@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-10-21T18:47:02.965Z",
-  "generatedBy": "Gemini (gemini-flash-latest)",
+  "generatedAt": "2026-10-21T19:19:43.783Z",
+  "generatedBy": "Gemini (gemini-flash-lite-latest)",
   "channel": {
     "name": "HEARTS NEWS 24",
     "club": "Heart of Midlothian",
@@ -97,7 +97,7 @@
       "id": "headlines",
       "kind": "headlines",
       "title": "The Headlines",
-      "strap": "Hearts leave two players in Edinburgh as management explain reason…",
+      "strap": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real…",
       "scene": "desk",
       "presenters": [
         "isla",
@@ -106,57 +106,81 @@
       "lines": [
         {
           "speaker": "isla",
-          "text": "Good evening. Welcome to Hearts News 24 with the latest headlines from Tynecastle and beyond.",
-          "audio": "audio/566f5d222bcc.mp3"
+          "text": "Good evening and welcome to Hearts News 24. We are live in the studio with all the latest build-up ahead of our European clash in Turkey."
         },
         {
           "speaker": "fraser",
-          "text": "Hearts have left two players behind in Edinburgh due to injury issues ahead of their European trip, as reported by the Edinburgh Evening News.",
-          "graphic": {
-            "type": "headline",
-            "title": "Hearts leave two players in Edinburgh as management explain reason for injury issues ahead of Trabzonspor tie",
-            "source": "Edinburgh Evening News",
-            "icon": "medical"
-          },
-          "audio": "audio/5d1bde279a18.mp3"
-        },
-        {
-          "speaker": "isla",
-          "text": "Manager Wouter Vrancken has struck a bullish tone regarding Mo Salah while highlighting the real threats posed by Trabzonspor.",
+          "text": "Hearts manager Wouter Vrancken insists it will take a complete team effort to handle Mo Salah and Trabzonspor in the Conference League.",
           "graphic": {
             "type": "headline",
             "title": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real Trabzonspor threat",
             "source": "Daily Record",
             "icon": "mic"
-          },
-          "audio": "audio/297114a0522b.mp3"
+          }
+        },
+        {
+          "speaker": "isla",
+          "text": "The Jambos have left two players in Edinburgh as they deal with injury concerns ahead of tomorrow night's fixture.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts leave two players in Edinburgh as management explain reason for injury issues ahead of Trabzonspor tie",
+            "source": "Edinburgh Evening News",
+            "icon": "medical"
+          }
         },
         {
           "speaker": "fraser",
-          "text": "Trabzonspor head coach Thomas Reis has urged caution ahead of the tie, comparing Hearts to Besiktas despite the weekend league defeat.",
+          "text": "Financial figures show that Hearts and Celtic are set to net significant boosts to their bank balances from their European campaigns.",
           "graphic": {
             "type": "headline",
-            "title": "Trabzonspor coach urges caution on Hearts after Celtic result and compares them to Besiktas",
-            "source": "Edinburgh Evening News",
-            "icon": "ball"
-          },
-          "audio": "audio/38494895a540.mp3"
+            "title": "Rangers brutal financial reality of Euro flop becomes clear as Celtic and Hearts UEFA nest eggs rocket",
+            "source": "Daily Record",
+            "icon": "mic"
+          }
+        }
+      ]
+    },
+    {
+      "id": "story-sa6858a",
+      "kind": "story",
+      "title": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real Trabzonspor threat",
+      "strap": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Fraser Lennox joins us to discuss Wouter Vrancken's pre-match comments in Turkey. Fraser, how is the manager viewing the challenge against Trabzonspor?",
+          "graphic": {
+            "type": "headline",
+            "title": "Wouter Vrancken bullish on Mo Salah as Hearts boss names real Trabzonspor threat",
+            "source": "Daily Record",
+            "icon": "mic"
+          }
+        },
+        {
+          "speaker": "fraser",
+          "text": "Writing in the Daily Record, Scott Burns reports that Vrancken has highlighted Liverpool legend Mo Salah as a major threat. However, the manager stresses that the entire Turkish side possesses world class quality and requires a disciplined team performance.",
+          "graphic": {
+            "type": "quote",
+            "text": "For sure, it has to be a team effort. You cannot only focus on Salah because he is not the only one with quality",
+            "author": "Wouter Vrancken"
+          }
         },
         {
           "speaker": "isla",
-          "text": "The referee appointed for the European encounter has previously had controversial history with Hearts boss Wouter Vrancken.",
-          "graphic": {
-            "type": "headline",
-            "title": "Trabzonspor vs Hearts referee has controversial Wouter Vrancken history including red cards and accusations",
-            "source": "Edinburgh Evening News",
-            "icon": "ball"
-          },
-          "audio": "audio/abd52c32ea78.mp3"
+          "text": "And how is the squad responding following that heavy defeat to Celtic at the weekend?"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Vrancken admitted the defensive display at Parkhead was nowhere near good enough. The squad has arrived in Trabzon in a bullish mood, determined to learn from those mistakes while staying true to their tactical principles."
         },
         {
           "speaker": "isla",
-          "text": "Let us head over to Kirsty Moffat in the Match Centre for a closer look at the numbers.",
-          "audio": "audio/dcb5de822a3c.mp3"
+          "text": "Let us head over to the Match Centre where Kirsty Moffat has all the key numbers and fixtures."
         }
       ]
     },
@@ -172,7 +196,7 @@
       "lines": [
         {
           "speaker": "kirsty",
-          "text": "In their last outing, Hearts were beaten seven-one away against Celtic in the Scottish Premier League.",
+          "text": "Celtic seven-one Hearts",
           "graphic": {
             "type": "result",
             "home": "Celtic",
@@ -180,12 +204,11 @@
             "homeScore": 7,
             "awayScore": 1,
             "competition": "Scottish Premier League"
-          },
-          "audio": "audio/ec77cd215a16.mp3"
+          }
         },
         {
           "speaker": "kirsty",
-          "text": "Hearts sit third in the Scottish Premier League on sixteen points, four points behind Rangers and two points above Dundee.",
+          "text": "Third in the Scottish Premiership with sixteen points after nine games, four points behind Rangers in second",
           "graphic": {
             "type": "table",
             "title": "League Table",
@@ -227,12 +250,11 @@
                 "pts": 12
               }
             ]
-          },
-          "audio": "audio/b68360b105ab.mp3"
+          }
         },
         {
           "speaker": "kirsty",
-          "text": "Up next, it is Trabzonspor against Hearts, UEFA Conference League, tomorrow at 5:45pm.",
+          "text": "Trabzonspor against Hearts, UEFA Conference League, tomorrow at 5:45pm",
           "graphic": {
             "type": "fixtures",
             "title": "Next Match",
@@ -244,8 +266,42 @@
                 "competition": "UEFA Conference League"
               }
             ]
-          },
-          "audio": "audio/4aee3d3b52f3.mp3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "story-sa3af83",
+      "kind": "story",
+      "title": "Rangers brutal financial reality of Euro flop becomes clear as Celtic and Hearts UEFA nest eggs rocket",
+      "strap": "Rangers brutal financial reality of Euro flop becomes clear as Celtic…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Fraser, we are also looking at the financial impact of European football across the Scottish Premiership.",
+          "graphic": {
+            "type": "headline",
+            "title": "Rangers brutal financial reality of Euro flop becomes clear as Celtic and Hearts UEFA nest eggs rocket",
+            "source": "Daily Record",
+            "icon": "mic"
+          }
+        },
+        {
+          "speaker": "fraser",
+          "text": "That is right. According to figures calculated by Football Meets Data and reported by the Daily Record, Celtic and Hearts are enjoying bumper European nest eggs. Hearts are set to bank a total of five million two hundred and ninety thousand pounds from their Conference League campaign."
+        },
+        {
+          "speaker": "isla",
+          "text": "How does that compare to our domestic rivals?"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Rangers are facing a stark financial reality after missing out on league phase football this term. They will earn less from UEFA this season than both Hibs and Motherwell following their early playoff exits."
         }
       ]
     },
@@ -261,13 +317,52 @@
       "lines": [
         {
           "speaker": "ally",
-          "text": "Welcome to the Transfer Centre. The transfer window is currently closed, and it reopens in seventy-two days.",
+          "text": "Welcome to the Transfer Centre. The transfer window is currently closed and reopens in seventy-two days.",
           "graphic": {
             "type": "headline",
             "title": "Transfer window opens in 72 days",
             "icon": "contract"
-          },
-          "audio": "audio/1e551948542b.mp3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "story-s9bb92e",
+      "kind": "story",
+      "title": "The Trabzonspor reaction to Hearts hammering by Celtic as boss relates to Parkhead pain",
+      "strap": "The Trabzonspor reaction to Hearts hammering by Celtic as boss…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Kirsty Moffat is taking a closer look at the opposition camp. Kirsty, what are they saying about us in Turkey?",
+          "graphic": {
+            "type": "headline",
+            "title": "The Trabzonspor reaction to Hearts hammering by Celtic as boss relates to Parkhead pain",
+            "source": "Daily Record",
+            "icon": "ball"
+          }
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Writing in the Daily Record, Scott Burns notes that Trabzonspor boss Thomas Reis is expecting a strong reaction from Hearts following our defeat against Celtic. Reis believes that heavy loss makes the Jambos dangerous opponents at Papara Park.",
+          "graphic": {
+            "type": "quote",
+            "text": "First of all, it could be a danger if we think they had a big defeat",
+            "author": "Thomas Reis"
+          }
+        },
+        {
+          "speaker": "isla",
+          "text": "What has Reis said about his own team's approach to the match?"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Reis has enjoyed a four-match winning start since taking charge. While acknowledging the attention surrounding Mo Salah, the German coach insists success is built on collective team spirit and expects a tough tactical battle against our high press."
         }
       ]
     },
@@ -284,23 +379,21 @@
       "lines": [
         {
           "speaker": "fraser",
-          "text": "Supporters on Jambos Kickback continue to debate Wouter Vrancken's tactical system following the heavy defeat at Parkhead. Frustration remains evident around ongoing player injuries, though fans have praised Hearts Women for their comprehensive weekend victory.",
+          "text": "Supporters are feeling a mix of anxiety following the recent domestic result and cautious optimism ahead of the trip to Turkey. Discussions are also busy regarding ticket demand for the upcoming League Cup semi-final.",
           "graphic": {
             "type": "sentiment",
             "score": -0.2,
             "topics": [
-              "Wouter Vrancken tactics",
-              "First team injury concerns",
-              "Hearts Women victory",
-              "League Cup ticket sales"
+              "Trabzonspor tactical approach",
+              "Defensive improvements needed",
+              "European prize money",
+              "Semi-final ticket sales"
             ]
-          },
-          "audio": "audio/ae850ffb6826.mp3"
+          }
         },
         {
           "speaker": "isla",
-          "text": "That is all for this bulletin. Stay with us on Hearts News 24 as our coverage continues throughout the evening.",
-          "audio": "audio/fae71a3d55b1.mp3"
+          "text": "That is all for this edition. Our rolling coverage here on Hearts News 24 continues right through the night."
         }
       ]
     }

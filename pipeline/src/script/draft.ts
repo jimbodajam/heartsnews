@@ -16,8 +16,17 @@ export interface Draft {
     text: string;
     card?: { player: string; from: string; to: string; status: 'rumour' | 'talks' | 'medical' | 'done' };
   }[];
+  /** In-depth packages: the lead anchor steers, the expert (analyst, reporter or co-anchor) adds detail. */
+  features: Feature[];
   fans: { text: string; score: number; topics: string[] };
   outro: string;
+}
+
+export interface Feature {
+  storyId: string;
+  lines: { role: 'lead' | 'expert'; text: string }[];
+  /** A direct quote, copied word for word from the article. */
+  quote?: { text: string; by: string };
 }
 
 const POSITIVE = /\b(brilliant|great|class|delighted|buzzing|superb|quality|love|excellent|happy|positive|belief|proud|magic|unreal|fantastic|confident|promising|outstanding|deserved)\b/gi;
@@ -98,6 +107,20 @@ export function templateDraft(f: Facts): Draft {
     next,
     transferIntro: f.transfers.length ? `${windowLine} Here's what's being talked about.` : `${windowLine} It's quiet on the transfer front at the moment.`,
     transfers: f.transfers.map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
+    // Without AI there's no safe way to rewrite an article, so packages use the outlet's own feed summary.
+    features: f.features
+      .map((s): Feature | undefined => {
+        const standfirst = s.items.map((i) => i.summary).find((t) => t.length > 40);
+        if (!standfirst) return undefined;
+        return {
+          storyId: s.id,
+          lines: [
+            { role: 'lead', text: `Let's take a closer look at one of today's main stories. ${sentence(s.title)}` },
+            { role: 'expert', text: `${sentence(truncate(standfirst, 300))} ${attribution(s.sources)}` },
+          ],
+        };
+      })
+      .filter((x): x is Feature => Boolean(x)),
     fans: {
       text: threads.length
         ? `Over on ${forum}, the busiest threads are ${spokenList(threads)}, and the mood is ${moodWord(mood)}.`

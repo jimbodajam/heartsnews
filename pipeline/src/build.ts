@@ -12,9 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, type Channel } from './script/facts.ts';
+import { buildFacts, FEATURE_CANDIDATES, type Channel } from './script/facts.ts';
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
-import { buildStories } from './stories.ts';
+import { fetchArticleText } from './collectors/article.ts';
+import { addBodies, buildStories } from './stories.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -39,7 +40,8 @@ async function main() {
     console.log(`Using cached collection: ${items.length} items`);
   } else {
     console.log(`Collecting for ${club.name}…`);
-    const collection = await collectAll(club, now);
+    // In CI the workflow unpacks the `snapshots` branch here (see .github/workflows/bulletin.yml).
+    const collection = await collectAll(club, now, resolve(ROOT, 'snapshots'));
     printReport(collection.report);
     ({ items, match } = collection);
     await mkdir(OUT, { recursive: true });
@@ -52,7 +54,9 @@ async function main() {
   console.log(`\nTop stories:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
 
+  await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
   const facts = buildFacts(club, channel, stories, items, match, now);
+  console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);
   let writer = 'templates';
 

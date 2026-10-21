@@ -1,8 +1,8 @@
 import type { Bulletin, Graphic, IconId, Line, Segment } from '../../../shared/bulletin.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
-import type { Draft } from './draft.ts';
-import { teamName, type Facts } from './facts.ts';
+import type { Draft, Feature } from './draft.ts';
+import { expertFor, teamName, type Facts } from './facts.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
@@ -32,8 +32,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     const s = story(h.storyId);
     headlineLines.push({ speaker: i % 2 === 0 ? b : a, text: h.text, graphic: s ? headlineGraphic(s) : undefined });
   });
-  if (hasMatch) headlineLines.push({ speaker: a, text: draft.matchHandoff });
-  const lead = story(draft.headlines[0]?.storyId ?? '');
+  const lead =story(draft.headlines[0]?.storyId ?? '');
   segments.push({
     id: 'headlines',
     kind: 'headlines',
@@ -130,6 +129,16 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     ],
   });
 
+  // In-depth packages go between the regular segments, like a rolling news hour:
+  // headlines → story → Match Centre → story → Transfer Centre → story → Fan Zone.
+  const [f1, f2, f3] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
+  const byId = (id: string) => segments.find((s) => s.id === id);
+  const ordered = [byId('headlines'), f1, byId('match'), f2, byId('transfers'), f3, byId('fans')].filter((s): s is Segment => Boolean(s));
+
+  // Whoever is on air just before the Match Centre hands over to it.
+  const matchAt = ordered.findIndex((s) => s.id === 'match');
+  if (matchAt > 0) ordered[matchAt - 1].lines.push({ speaker: a, text: draft.matchHandoff });
+
   const ticker = [
     ...f.pool.slice(0, 8).map((s) => `${s.title} - ${s.sources[0]}`),
     ...(nextLabel ? [`Next: ${nextLabel}`] : []),
@@ -142,6 +151,32 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     channel: { name: channel.name, club: club.name, colours: club.colours },
     presenters: channel.presenters,
     ticker,
-    segments,
+    segments: ordered,
+  };
+}
+
+/** A story covered in depth at the desk: lead anchor plus the right expert, with the quote shown full screen. */
+function featureSegment(f: Facts, feat: Feature): Segment | undefined {
+  const s = f.features.find((x) => x.id === feat.storyId);
+  if (!s) return undefined;
+  const lead = f.channel.cast.anchors[0];
+  const expert = expertFor(f, s);
+  const lines: Line[] = feat.lines.map((l, i) => ({
+    speaker: l.role === 'lead' ? lead : expert,
+    text: l.text,
+    graphic: i === 0 ? headlineGraphic(s) : undefined,
+  }));
+  if (feat.quote) {
+    const target = lines.find((l, i) => i > 0 && l.speaker === expert) ?? lines[1];
+    if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by };
+  }
+  return {
+    id: `story-${s.id}`,
+    kind: 'story',
+    title: s.title,
+    strap: truncate(s.title, 70),
+    scene: 'desk',
+    presenters: [lead, expert],
+    lines,
   };
 }

@@ -46,6 +46,12 @@ jobs:
       - name: Install ffmpeg
         run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -yq ffmpeg)
 
+      # Forum data collected at home by `npm run snapshot`, for sources that block GitHub's servers.
+      - name: Fetch home snapshots
+        run: |
+          mkdir -p snapshots
+          if git fetch --depth=1 origin snapshots; then git archive FETCH_HEAD | tar -x -C snapshots; ls -l snapshots; else echo "No snapshots branch yet"; fi
+
       - name: Build bulletin
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

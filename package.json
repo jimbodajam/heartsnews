@@ -10,6 +10,7 @@
     "collect": "npm -w pipeline run collect",
     "voice": "npm -w pipeline run voice --",
     "bulletin": "npm -w pipeline run bulletin --",
+    "snapshot": "npm -w pipeline run snapshot",
     "dev": "npm -w site run dev",
     "build": "npm -w site run build",
     "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"

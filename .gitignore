@@ -2,6 +2,7 @@ node_modules/
 .env
 dist/
 pipeline/out/
+snapshots/
 site/public/voice-samples/
 site/public/bulletins/audio/
 *.log

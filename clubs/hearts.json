@@ -29,7 +29,7 @@
       "url": "HeartsFC" },
     { "id": "reddit-spfl", "name": "r/ScottishFootball", "kind": "forum", "type": "reddit", "filter": true,
       "url": "ScottishFootball" },
-    { "id": "kickback", "name": "Jambos Kickback", "kind": "forum", "type": "ips-forum", "maxAgeDays": 2, "limit": 5,
+    { "id": "kickback", "name": "Jambos Kickback", "kind": "forum", "type": "ips-forum", "maxAgeDays": 2, "limit": 5, "snapshot": true,
       "url": "https://www.hmfckickback.co.uk/index.php?/forum/1-the-terrace/" }
   ]
 }

@@ -12,6 +12,11 @@ export interface SourceConfig {
   url: string;
   /** ips-forum: how many of the busiest threads to read. */
   limit?: number;
+  /**
+   * Blocks GitHub's servers, so it's also collected at home with `npm run snapshot`. When the live
+   * fetch fails, the build uses the latest snapshot from the repo's `snapshots` branch instead.
+   */
+  snapshot?: boolean;
   /** Keep only items that mention one of the club's keywords (for general feeds). */
   filter?: boolean;
   maxAgeDays?: number;

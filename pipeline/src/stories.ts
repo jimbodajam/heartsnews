@@ -16,6 +16,8 @@ export interface Story {
   latest: string;
   score: number;
   items: Item[];
+  /** Full article text, fetched only for stories covered in depth. */
+  body?: string;
 }
 
 const STOP = new Set(
@@ -111,6 +113,30 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
       };
     })
     .sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Fetch article text for the stories that get an in-depth package. Tries each outlet's page in turn
+ * (aggregator links are redirects, so they're skipped) and falls back to the longest feed summary.
+ */
+export async function addBodies(stories: Story[], fetchArticle: (url: string) => Promise<string>): Promise<void> {
+  await Promise.all(
+    stories.map(async (s) => {
+      for (const it of s.items.filter((i) => i.kind === 'press' || i.kind === 'official')) {
+        try {
+          const text = await fetchArticle(it.url);
+          if (text.length > 300) {
+            s.body = text;
+            return;
+          }
+        } catch {
+          // Some outlets refuse article pages; try the next one.
+        }
+      }
+      const longest = s.items.map((i) => i.summary).sort((a, b) => b.length - a.length)[0];
+      if (longest) s.body = longest;
+    }),
+  );
 }
 
 /** The busiest fan threads, most replies first. */
