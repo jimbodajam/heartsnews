@@ -1,9 +1,10 @@
 import type { Bulletin, Graphic, IconId, Line, Segment } from '../../../shared/bulletin.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
+import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
-import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
+import { expertFor, firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
@@ -47,15 +48,38 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   // Match Centre on the touchscreen.
   if (hasMatch) {
     const lines: Line[] = [];
-    const r = f.lastResult;
-    if (draft.result && r) {
+    // During a game the card shows the live score; otherwise the last result.
+    const live = f.phase.kind === 'live' ? f.phase.fixture : undefined;
+    const liveScore = live && live.homeScore !== undefined && live.awayScore !== undefined;
+    const r = live ?? f.lastResult;
+    if (draft.result && live && !liveScore) {
+      // Kicked off but no score in the feed yet: say so rather than show a made-up 0-0.
       lines.push({
         speaker: analyst,
         text: draft.result,
-        graphic: { type: 'result', home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition },
+        graphic: { type: 'headline', title: `${name(live.home)} v ${name(live.away)}: in progress`, source: live.competition, icon: 'whistle' },
+      });
+    } else if (draft.result && r) {
+      lines.push({
+        speaker: analyst,
+        text: draft.result,
+        graphic: {
+          type: 'result',
+          home: name(r.home),
+          away: name(r.away),
+          homeScore: r.homeScore ?? 0,
+          awayScore: r.awayScore ?? 0,
+          competition: r.competition,
+          status: live ? `LIVE ${live.period && /\d|HT/.test(live.period) ? live.period : ''}`.trim() : 'FULL TIME',
+          homeScorers: scorerLabels(r, 'home'),
+          awayScorers: scorerLabels(r, 'away'),
+        },
       });
     }
     if (draft.table && f.table.length) {
+      // The screen fits six rows: show the ones around us rather than always the top six.
+      const at = Math.max(0, f.table.findIndex((t) => isUs(club, t.team)));
+      const start = Math.min(Math.max(0, at - 2), Math.max(0, f.table.length - 6));
       lines.push({
         speaker: analyst,
         text: draft.table,
@@ -63,7 +87,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
           type: 'table',
           title: 'League Table',
           highlight: club.shortName,
-          rows: f.table.slice(0, 8).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts })),
+          rows: f.table.slice(start, start + 6).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts })),
         },
       });
     }
@@ -82,7 +106,11 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
       id: 'match',
       kind: 'match',
       title: 'Match Centre',
-      strap: nextLabel ?? `${club.shortName} results and table`,
+      strap: live
+        ? liveScore
+          ? `LIVE: ${name(live.home)} ${live.homeScore}-${live.awayScore} ${name(live.away)}`
+          : `LIVE: ${name(live.home)} v ${name(live.away)}`
+        : (nextLabel ?? `${club.shortName} results and table`),
       scene: 'touchscreen',
       presenters: [analyst],
       lines,

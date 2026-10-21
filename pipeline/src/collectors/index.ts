@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { normaliseTitle } from '../text.ts';
 import type { ClubConfig, Item, MatchData, SourceConfig, SourceKind } from '../types.ts';
+import { collectBbcMatchData } from './bbc.ts';
 import { collectIpsForum } from './ips-forum.ts';
 import { collectSource } from './sources.ts';
 import { collectMatchData } from './sportsdb.ts';
@@ -93,12 +94,20 @@ export async function collectAll(club: ClubConfig, now = new Date(), snapshotDir
     }
   });
 
+  // Fixtures, results and table: BBC Sport first (fuller and faster to update), TheSportsDB if that fails.
   let match: MatchData | undefined;
+  const summary = (m: MatchData) => `${m.next.length} next, ${m.last.length} results, ${m.table.length} table rows`;
   try {
-    match = await collectMatchData(club, now);
-    report.push({ name: 'TheSportsDB', ok: true, detail: `${match.next.length} next, ${match.last.length} last, ${match.table.length} table rows` });
+    match = await collectBbcMatchData(club, now);
+    report.push({ name: 'BBC Sport (fixtures/table)', ok: true, detail: summary(match) });
   } catch (err) {
-    report.push({ name: 'TheSportsDB', ok: false, detail: (err as Error).message });
+    report.push({ name: 'BBC Sport (fixtures/table)', ok: false, detail: (err as Error).message });
+    try {
+      match = await collectMatchData(club, now);
+      report.push({ name: 'TheSportsDB (fallback)', ok: true, detail: summary(match) });
+    } catch (err2) {
+      report.push({ name: 'TheSportsDB (fallback)', ok: false, detail: (err2 as Error).message });
+    }
   }
 
   return { items: dedupe(items).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)), match, report };

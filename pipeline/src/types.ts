@@ -32,6 +32,8 @@ export interface ClubConfig {
   colours: { primary: string; secondary: string; accent: string };
   keywords: string[];
   sportsdb: { teamId: string; leagueId: string };
+  /** BBC Sport slugs: the team page (bbc.co.uk/sport/football/teams/<team>) and the league table's tournament. */
+  bbc?: { team: string; league: string };
   sources: SourceConfig[];
 }
 
@@ -59,6 +61,11 @@ export interface Fixture {
   venue?: string;
   homeScore?: number;
   awayScore?: number;
+  /** Where the match is up to. Missing means unknown (TheSportsDB). */
+  status?: 'pre' | 'live' | 'done' | 'postponed';
+  /** Live progress as the BBC shows it, e.g. "63'" or "HT". */
+  period?: string;
+  scorers?: { side: 'home' | 'away'; player: string; minute: string }[];
 }
 
 export interface Standing {

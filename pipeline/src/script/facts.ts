@@ -1,6 +1,7 @@
 import type { Presenter } from '../../../shared/bulletin.ts';
 import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
+import { detectPhase, type Phase } from '../matchday.ts';
 import { emptyMemory, findAired, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData } from '../types.ts';
@@ -32,7 +33,10 @@ export interface Facts {
   transfers: Story[];
   fans: Item[];
   lastResult?: Fixture;
+  /** Recent results, newest first, for form. */
+  results: Fixture[];
   nextFixtures: Fixture[];
+  phase: Phase;
   table: MatchData['table'];
   window: { open: boolean; days: number };
 }
@@ -65,7 +69,9 @@ export function buildFacts(
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
     fans: fanThreads(items).slice(0, 5),
     lastResult: match?.last.find((f) => f.homeScore !== undefined && f.awayScore !== undefined),
-    nextFixtures: (match?.next ?? []).filter((f) => new Date(f.date) > now).slice(0, 3),
+    results: (match?.last ?? []).filter((f) => f.homeScore !== undefined).slice(0, 5),
+    nextFixtures: (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3),
+    phase: detectPhase(match, now),
     table: match?.table ?? [],
     window: transferWindow(now),
   };
@@ -74,6 +80,11 @@ export function buildFacts(
 /** Data feeds use the full club name; on air it's the short one. */
 export function teamName(club: ClubConfig, name: string): string {
   return name === club.name ? club.shortName : name;
+}
+
+/** BBC uses the short name, TheSportsDB the full one. */
+export function isUs(club: ClubConfig, name: string): boolean {
+  return name === club.name || name === club.shortName;
 }
 
 export function presenter(facts: Facts, id: string): Presenter {

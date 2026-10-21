@@ -6,6 +6,7 @@
   "colours": { "primary": "#6d1a2a", "secondary": "#f2efe6", "accent": "#e0b13a" },
   "keywords": ["hearts", "heart of midlothian", "tynecastle", "jambos", "jambo"],
   "sportsdb": { "teamId": "133643", "leagueId": "4330" },
+  "bbc": { "team": "heart-of-midlothian", "league": "scottish-premiership" },
   "sources": [
     { "id": "bbc", "name": "BBC Sport", "kind": "press", "type": "rss",
       "url": "https://feeds.bbci.co.uk/sport/football/teams/heart-of-midlothian/rss.xml" },

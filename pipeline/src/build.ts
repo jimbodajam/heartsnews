@@ -32,7 +32,8 @@ const readJson = async <T>(path: string) => JSON.parse(await readFile(path, 'utf
 
 async function main() {
   if (existsSync(resolve(ROOT, '.env'))) process.loadEnvFile(resolve(ROOT, '.env'));
-  const now = new Date();
+  // HEARTSNEWS_NOW pretends it's another time, for testing matchday modes (e.g. 2026-10-22T17:30Z).
+  const now = process.env.HEARTSNEWS_NOW ? new Date(process.env.HEARTSNEWS_NOW) : new Date();
   const club = await readJson<ClubConfig>(resolve(ROOT, 'clubs/hearts.json'));
   const channel = await readJson<Channel>(resolve(ROOT, 'channel.json'));
 
@@ -67,6 +68,7 @@ async function main() {
 
   await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
   const facts = buildFacts(club, channel, stories, items, match, now, memory);
+  console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);
   let writer = 'templates';

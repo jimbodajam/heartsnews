@@ -50,7 +50,18 @@ export type Graphic =
   | { type: 'sentiment'; score: number; topics: string[] } // score: -1 (raging) .. 1 (buzzing)
   | { type: 'table'; title: string; rows: TableRow[]; highlight: string }
   | { type: 'fixtures'; title: string; fixtures: FixtureRow[] }
-  | { type: 'result'; home: string; away: string; homeScore: number; awayScore: number; competition: string; scorers?: string[] }
+  | {
+      type: 'result';
+      home: string;
+      away: string;
+      homeScore: number;
+      awayScore: number;
+      competition: string;
+      /** e.g. "FULL TIME", "LIVE 63'", "HALF TIME". Defaults to full time. */
+      status?: string;
+      homeScorers?: string[];
+      awayScorers?: string[];
+    }
   | { type: 'quote'; text: string; author: string }
   | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] };
 

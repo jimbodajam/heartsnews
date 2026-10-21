@@ -6,6 +6,9 @@ import { clamp01, frame, rect, type Ctx } from './screen';
 
 const easeOut = (v: number) => 1 - (1 - v) ** 3;
 
+/** Two lines of subtitles start around here; keep must-read text above it. */
+const CAPTION_SAFE_BOTTOM = 106;
+
 /** Navy panel with a gold border and optional title bar. Returns the y where content starts. */
 function panel(g: Ctx, x: number, y: number, w: number, h: number, title?: string): number {
   rect(g, x, y, w, h, C.navyDark);
@@ -151,17 +154,30 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
     }
 
     case 'result': {
+      const status = gr.status ?? 'FULL TIME';
+      const live = /live/i.test(status);
       const top = panel(g, x, y, w, h, gr.competition);
+      // Status sits in the title bar, right-aligned; a live score blinks red.
+      if (!live || Math.floor(now / 500) % 2) drawTextRight(g, status, x + w - 5, y + 3, live ? C.red : C.gold);
+      const hasScorers = Boolean(gr.homeScorers?.length || gr.awayScorers?.length);
       const ns = big ? 2 : 1;
-      const ss = big ? 4 : 3;
+      const ss = big && !hasScorers ? 4 : 3;
       drawTextCentred(g, fit(gr.home, w / 2 - 10, ns), x + w / 4, top + 4, C.white, ns);
       drawTextCentred(g, fit(gr.away, w / 2 - 10, ns), x + (3 * w) / 4, top + 4, C.white, ns);
       const sy = top + 4 + 5 * ns + 6;
       drawTextCentred(g, String(gr.homeScore), x + w / 4, sy, C.gold, ss);
       drawTextCentred(g, '-', cx, sy, C.gold, ss);
       drawTextCentred(g, String(gr.awayScore), x + (3 * w) / 4, sy, C.gold, ss);
-      drawTextCentred(g, 'FULL TIME', cx, sy + 5 * ss + 4, C.grey);
-      (gr.scorers ?? []).forEach((s, i) => drawTextCentred(g, fit(s, w - 12), cx, sy + 5 * ss + 13 + i * 7, C.light));
+      // Scorers under each team, as many as fit above the subtitles, then "+N MORE".
+      const sTop = sy + 5 * ss + 6;
+      const room = Math.max(0, Math.floor((Math.min(y + h - 3, CAPTION_SAFE_BOTTOM) - sTop) / 7));
+      ([['home', gr.homeScorers], ['away', gr.awayScorers]] as const).forEach(([side, list]) => {
+        const scorers = list ?? [];
+        const colX = side === 'home' ? x + w / 4 : x + (3 * w) / 4;
+        const shown = scorers.length > room ? scorers.slice(0, Math.max(0, room - 1)) : scorers;
+        shown.forEach((s, i) => drawTextCentred(g, fit(s, w / 2 - 8), colX, sTop + i * 7, C.light));
+        if (shown.length < scorers.length) drawTextCentred(g, `+${scorers.length - shown.length} MORE`, colX, sTop + shown.length * 7, C.grey);
+      });
       break;
     }
 

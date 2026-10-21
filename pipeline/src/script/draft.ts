@@ -1,6 +1,7 @@
 import { dayPhrase, partOfDay, spokenList, spokenOrdinal, timePhrase } from '../time.ts';
 import { truncate } from '../text.ts';
-import { firstName, presenter, teamName, type Facts } from './facts.ts';
+import { scorerLabels } from '../matchday.ts';
+import { firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
 /** The words of a bulletin, before it is laid out into segments, speakers and graphics. */
 export interface Draft {
@@ -73,13 +74,24 @@ export function templateDraft(f: Facts): Draft {
   const name = (n: string) => teamName(club, n);
 
   let result: string | undefined;
-  if (f.lastResult) {
+  const phase = f.phase;
+  if (phase.kind === 'live') {
+    const l = phase.fixture;
+    result =
+      l.homeScore !== undefined
+        ? `Thanks ${firstName(anchorA)}. ${club.shortName} are in action right now. At the time of writing it's ${name(l.home)} ${l.homeScore}, ${name(l.away)} ${l.awayScore}.`
+        : `Thanks ${firstName(anchorA)}. ${club.shortName} are in action right now against ${name(l.home === club.shortName ? l.away : l.home)}.`;
+  } else if (f.lastResult) {
     const r = f.lastResult;
-    result = `Thanks ${firstName(anchorA)}. The last result: ${name(r.home)} ${r.homeScore}, ${name(r.away)} ${r.awayScore}, in the ${r.competition}.`;
+    const ours = scorerLabels(r, isUs(club, r.home) ? 'home' : 'away').map((s) => s.replace(/\s+\S+$/, ''));
+    result =
+      `Thanks ${firstName(anchorA)}. ${phase.kind === 'reaction' ? 'Full time' : 'The last result'}: ` +
+      `${name(r.home)} ${r.homeScore}, ${name(r.away)} ${r.awayScore}, in the ${r.competition}.` +
+      (ours.length ? ` Scoring for ${club.shortName}: ${spokenList([...new Set(ours)])}.` : '');
   }
 
   let table: string | undefined;
-  const us = f.table.find((r) => r.team === club.name);
+  const us = f.table.find((r) => isUs(club, r.team));
   if (us) {
     const leader = f.table[0];
     const second = f.table[1];
@@ -108,8 +120,17 @@ export function templateDraft(f: Facts): Draft {
   const mood = lexiconMood(f.fans.map((t) => t.summary));
   const forum = f.fans[0]?.sourceName ?? 'the fan forums';
 
+  const opener =
+    phase.kind === 'live'
+      ? ` ${club.shortName} are in action right now.`
+      : phase.kind === 'preview'
+        ? ` It's a big day: ${name(phase.fixture.home)} against ${name(phase.fixture.away)}, ${dayPhrase(new Date(phase.fixture.date), now)} at ${timePhrase(new Date(phase.fixture.date))}.`
+        : phase.kind === 'reaction'
+          ? ` Full time: ${name(phase.result.home)} ${phase.result.homeScore}, ${name(phase.result.away)} ${phase.result.awayScore}.`
+          : '';
+
   return {
-    welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}. Here are the latest headlines.`,
+    welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
     headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,
     result,

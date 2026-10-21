@@ -1,5 +1,6 @@
 import { truncate } from '../text.ts';
-import { dayPhrase, daysUntil, partOfDay, timePhrase } from '../time.ts';
+import { dayPhrase, daysUntil, partOfDay, timePhrase, ukHour } from '../time.ts';
+import type { Fixture } from '../types.ts';
 import { findAired, predictionRecord } from '../memory.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
@@ -149,6 +150,59 @@ const DRAFT_SCHEMA = {
   required: ['welcome', 'headlines', 'matchHandoff', 'transferIntro', 'transfers', 'features', 'fans', 'debate', 'opinions', 'outro'],
 };
 
+/** A late-night bulletin shouldn't sound like breakfast TV. */
+function toneForHour(now: Date): string {
+  const h = ukHour(now);
+  if (h >= 23 || h < 6) return 'Tone: late-night bulletin, calmer and a little shorter on banter.';
+  if (h < 10) return 'Tone: breakfast bulletin, bright and brisk, setting up the day ahead.';
+  return 'Tone: normal daytime energy.';
+}
+
+/** What kind of bulletin this is around the match calendar, and how that changes each part of the script. */
+function phaseBrief(f: Facts): string {
+  const { club, now } = f;
+  const name = (n: string) => teamName(club, n);
+  const p = f.phase;
+  const when = (iso: string) => `${dayPhrase(new Date(iso), now)} at ${timePhrase(new Date(iso))}`;
+  switch (p.kind) {
+    case 'preview': {
+      const x = p.fixture;
+      return `BULLETIN TYPE: MATCH BUILD-UP. ${name(x.home)} against ${name(x.away)} (${x.competition}) kicks off ${when(x.date)}.
+Make the whole bulletin build towards it: the welcome flags the game, headlines favour team news and previews,
+the Match Centre covers both sides' form (from the results and table) and the kick-off time, the debate is a
+prediction showdown for this game, and the fan zone captures the pre-match mood.`;
+    }
+    case 'live': {
+      const x = p.fixture;
+      const score = x.homeScore !== undefined ? `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)}${x.period ? ` (${x.period})` : ''}` : 'score not yet available';
+      const goals = x.scorers?.length ? ` Goals so far: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join('; ')}.` : '';
+      const asOf = new Intl.DateTimeFormat('en-GB', { timeStyle: 'short', timeZone: 'Europe/London' }).format(now);
+      return `BULLETIN TYPE: MATCH IN PROGRESS. ${name(x.home)} against ${name(x.away)} (${x.competition}) is being played right now.
+At ${asOf} UK time it is ${score}.${goals}
+This bulletin is replayed for up to an hour, so always say "at the time of writing" or "as of ${asOf}" with the score;
+never claim a final result. The welcome says the match is under way. The Match Centre "result" line is the live score
+with that caveat; skip "table". Keep in-depth packages and fan zone brief. Do not write a debate: return debate with
+an empty lines list and empty predictions.`;
+    }
+    case 'reaction': {
+      const x = p.result;
+      return `BULLETIN TYPE: FULL-TIME REACTION. ${scoreLineShort(f, x)}.
+Lead with it: the welcome gives the result, the first headline is the match, and the Match Centre "result" line covers
+the score and our scorers before the table. In the debate, first settle last time's predictions for this game (see the
+prediction records, which now say RIGHT, WRONG or EXACT: let the winner gloat), then argue the main talking point of
+the match, then predict the next fixture. The fan zone is the supporters' reaction.`;
+    }
+    default:
+      return 'BULLETIN TYPE: REGULAR NEWS (no match in the next 30 hours).';
+  }
+}
+
+function scoreLineShort(f: Facts, x: Fixture): string {
+  const name = (n: string) => teamName(f.club, n);
+  const goals = x.scorers?.length ? `; goals: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join(', ')}` : '';
+  return `Full time: ${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition})${goals}`;
+}
+
 /** "earlier today", "yesterday", "3 days ago": so presenters don't say "last week" about an hour ago. */
 function whenSaid(at: string, now: Date): string {
   const days = daysUntil(now, new Date(at));
@@ -202,8 +256,11 @@ function buildPrompt(f: Facts): string {
   const cast = channel.presenters.map((p) => `- ${p.name} (id "${p.id}"), ${p.role}: ${p.persona ?? ''}`).join('\n');
   const memories = memoryNotes(f);
   const next = f.nextFixtures[0];
-  const r = f.lastResult;
-  const table = f.table.map((t) => `${t.pos}. ${name(t.team)} P${t.played} GD${t.gd} ${t.pts}pts`).join('; ');
+  const scoreLine = (x: Fixture) =>
+    `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition}, ${whenSaid(x.date, now).replace('earlier ', '')})` +
+    (x.scorers?.length ? `, goals: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join('; ')}` : '');
+  const results = f.results.map(scoreLine).join('\n');
+  const table = f.table.map((t) => `${t.pos}. ${name(t.team)} P${t.played} GD${t.gd} ${t.pts}pts${t.form ? ` form ${t.form}` : ''}`).join('; ');
   // Kick-offs go in as ready-to-say UK phrases so the model never has to convert from UTC.
   const fixtures = f.nextFixtures
     .map((x) => `${name(x.home)} against ${name(x.away)}, ${x.competition}, ${dayPhrase(new Date(x.date), now)} at ${timePhrase(new Date(x.date))}`)
@@ -217,6 +274,9 @@ function buildPrompt(f: Facts): string {
 
   return `You are the scriptwriter for "${channel.spokenName}", a 24-hour TV sports news channel about ${club.name} (${club.shortName}).
 Write the spoken script for the next bulletin. It is ${uk} (UK time), so it is ${partOfDay(now)}.
+${toneForHour(now)}
+
+${phaseBrief(f)}
 
 Presenters (stay in character; these are fictional TV personalities):
 ${cast}
@@ -242,7 +302,8 @@ DATA
 Stories (id | category | on air before? | outlets | published UTC | title | summary):
 ${stories || '(none)'}
 
-Last result: ${r ? `${name(r.home)} ${r.homeScore}-${r.awayScore} ${name(r.away)} (${r.competition}, ${r.date})` : '(none)'}
+Recent results, newest first (form is oldest to newest, last letter = most recent game):
+${results || '(none)'}
 League table: ${table || '(none)'}
 Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}
 Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}
