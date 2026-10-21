@@ -4,9 +4,9 @@
   "siteUrl": "https://jimbodajam.github.io/heartsnews/",
   "cast": {
     "anchors": ["isla", "fraser"],
-    "transfers": "ally",
+    "transfers": "ross",
     "analyst": "kirsty",
-    "debate": ["fraser", "ally"]
+    "debate": ["fraser", "ross"]
   },
   "presenters": [
     {
@@ -20,12 +20,12 @@
       "look": { "skin": "#f0c4a0", "hair": "#b9b4ad", "hairStyle": "bald", "glasses": true, "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
     },
     {
-      "id": "ally", "name": "Ally Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
+      "id": "ross", "formerIds": ["ally"], "name": "Ross Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
       "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
       "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "quiff", "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
     },
     {
-      "id": "kirsty", "name": "Kirsty Moffat", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
+      "id": "kirsty", "name": "Kirsty Reid", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
       "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
       "look": { "skin": "#8d5a3b", "hair": "#1a1416", "hairStyle": "ponytail", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
     }

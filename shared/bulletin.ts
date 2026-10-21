@@ -26,6 +26,8 @@ export interface Presenter {
   tts?: { voice: string; speed?: number };
   /** Character notes the script writer plays to. */
   persona?: string;
+  /** Old ids after a rename, so their memory (opinions, predictions) carries over. */
+  formerIds?: string[];
   look: PresenterLook;
 }
 

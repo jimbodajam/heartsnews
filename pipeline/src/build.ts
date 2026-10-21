@@ -62,6 +62,13 @@ async function main() {
   // Memory: move on from stories already on air, and settle any predictions whose result is now in.
   const { memory, from } = await loadMemory(channel.siteUrl && new URL('memory.json', channel.siteUrl).href, MEMORY);
   console.log(`\nMemory from ${from}: ${memory.aired.length} aired stories`);
+  // A renamed presenter keeps their memory under the new id.
+  for (const p of channel.presenters) {
+    for (const old of p.formerIds ?? []) {
+      if (memory.presenters[old] && !memory.presenters[p.id]) memory.presenters[p.id] = memory.presenters[old];
+      delete memory.presenters[old];
+    }
+  }
   settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
   for (const s of stories) s.score = Math.round(s.score * freshness(memory, s) * 1000) / 1000;
   stories.sort((a, b) => b.score - a.score);
