@@ -116,6 +116,19 @@ plus the top 5 of the table. Template mode can't tell a Hearts transfer from ano
     they can say things like "I told you last week he'd start". This sits on top of milestone 4's script
     generation, and it's where the deliberately neutral tone picks up some character.
 
+## Ideas backlog (saved 21 Oct 2026)
+
+Bulletins currently run 3–6 minutes depending on news, so these also give a steadier length:
+
+- **On This Day in Hearts history:** a short daily segment using London Hearts (londonhearts.com), which is great for
+  stats and past results on this date. Fraser is the natural presenter (nostalgia).
+- **Next opponent focus:** their recent results and form (BBC Sport has their team pages too), likely line-up,
+  key players, and head-to-head. Fits the build-up mode and Kirsty's Match Centre.
+- **Hearts tactics and line-up in the build-up:** expected XI and formation, how we're likely to set up, from
+  previews and press conferences. Ally gets to talk shape and pressing; could show a pixel pitch graphic with the XI.
+- **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
+  Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
+
 ## Open questions
 
 - Which forums, fan podcasts and YouTube channels exactly? Names or URLs are needed.
