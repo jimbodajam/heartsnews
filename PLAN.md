@@ -67,9 +67,11 @@ Mitigation: v1 uses only feeds and titles, and transcripts are a later experimen
 
 ### Voice
 
-- **Piper TTS** runs offline inside the Action, so it costs nothing. Candidate voices: `en_GB-alba-medium` (Scottish), `en_GB-northern_english_male`,
-  `en_GB-alan`. Each presenter gets a fixed voice.
-- The browser's `speechSynthesis` is the fallback for local development and for lines not yet voiced.
+- **Kokoro** (82M open model) runs on the CPU through `kokoro-js` in Node, so there's no Python and no cost.
+  `npm run voice` renders each line to `bulletins/audio/<hash>.mp3`, and lines that haven't changed are reused.
+  Each presenter sets a Kokoro voice in `presenter.tts.voice` (Isla `bf_emma`, Fraser `bm_george`, Ally `bm_lewis`,
+  Kirsty `bf_isabella`). Piper and edge-tts were compared on 21 Oct, and Kokoro was chosen.
+- The browser's `speechSynthesis` is the fallback when a clip is missing (e.g. a fresh clone before `npm run voice`).
 
 ### Front end (the "TV")
 
@@ -84,7 +86,7 @@ Mitigation: v1 uses only feeds and titles, and transcripts are a later experimen
 
 ## Milestones
 
-**Status (21 Oct 2026):** 1–3 are done. The current `latest.json` is a hand-written demo built from real headlines.
+**Status (21 Oct 2026):** 1–3 and 5 are done. The current `latest.json` is a hand-written demo built from real headlines.
 Known gaps: Reddit blocks the collector (429s and empty feeds), the Kickback forum address is unknown, and
 TheSportsDB's free key returns only the next fixture, the last result and the top 5 of the table.
 
@@ -93,12 +95,18 @@ TheSportsDB's free key returns only the next fixture, the last result and the to
 3. **Player with a hand-written bulletin:** pixel studio, presenters, ticker, captions, browser TTS. Built against a fake
    `bulletin.json` so the art work isn't blocked by the pipeline. Can run in parallel with 2.
 4. **Script generation:** cluster, rank and classify, then templates + LLM produce a real `bulletin.json`. **This milestone delivers the "one real bulletin" goal.**
-5. **Piper voices + lip sync.**
+5. **Kokoro voices + lip sync:** each presenter has their own voice, and the mouth follows the clip's loudness.
 6. **Automation:** GitHub Actions cron (e.g. every 3 hours) builds and deploys to Pages.
 7. **Polish:** segment graphics, idents, chiptune stings, presenter rotation by time of day.
 8. **Later, live matchday:** while Hearts are playing, a fast-poll job writes `live.json`. The player breaks into a "Match Centre LIVE"
    segment with goal alerts. GitHub's cron is too coarse and unreliable for this, so it will probably need a free Cloudflare Worker.
 9. **Later, SPFL expansion:** add club configs, a club picker, and "around the grounds" segments.
+10. **Later, presenter brains:** each presenter gets a personality profile and a memory, both fed into the
+    LLM prompt when their lines are written. For example: a veteran pundit who hates VAR and harks back to old
+    Tynecastle days, and a young analyst obsessed with tactics, xG and fantasy football. Memory is a small JSON
+    store per presenter (past predictions, running jokes, opinions on players), updated after each bulletin, so
+    they can say things like "I told you last week he'd start". This sits on top of milestone 4's script
+    generation, and it's where the deliberately neutral tone picks up some character.
 
 ## Open questions
 

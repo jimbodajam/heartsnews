@@ -20,7 +20,10 @@ export interface Presenter {
   id: string;
   name: string;
   role: string;
+  /** Used to pick a browser voice when a line has no pre-rendered audio. */
   voice: 'male' | 'female';
+  /** Kokoro voice used to pre-render this presenter's lines, e.g. "bf_emma". */
+  tts?: { voice: string; speed?: number };
   look: PresenterLook;
 }
 
@@ -52,7 +55,8 @@ export interface Line {
   speaker: string; // Presenter id
   text: string;
   graphic?: Graphic;
-  audio?: string; // pre-rendered voice clip (milestone 5)
+  /** Pre-rendered voice clip, relative to the bulletin file. Written by `npm run voice`. */
+  audio?: string;
 }
 
 export interface Segment {

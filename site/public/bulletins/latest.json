@@ -5,24 +5,80 @@
   "channel": {
     "name": "HEARTS NEWS 24",
     "club": "Heart of Midlothian",
-    "colours": { "primary": "#6d1a2a", "secondary": "#f2efe6", "accent": "#e0b13a" }
+    "colours": {
+      "primary": "#6d1a2a",
+      "secondary": "#f2efe6",
+      "accent": "#e0b13a"
+    }
   },
   "presenters": [
     {
-      "id": "isla", "name": "Isla Brodie", "role": "Presenter", "voice": "female",
-      "look": { "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
+      "id": "isla",
+      "name": "Isla Brodie",
+      "role": "Presenter",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_emma"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
     },
     {
-      "id": "fraser", "name": "Fraser Lennox", "role": "Presenter", "voice": "male",
-      "look": { "skin": "#f0c4a0", "hair": "#3a2a1e", "hairStyle": "quiff", "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
+      "id": "fraser",
+      "name": "Fraser Lennox",
+      "role": "Presenter",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_george"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a1e",
+        "hairStyle": "quiff",
+        "suit": "#26262e",
+        "shirt": "#f2efe6",
+        "tie": "#6d1a2a"
+      }
     },
     {
-      "id": "ally", "name": "Ally Dunbar", "role": "Transfer Centre", "voice": "male",
-      "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "short", "beard": true, "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
+      "id": "ally",
+      "name": "Ally Dunbar",
+      "role": "Transfer Centre",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_lewis"
+      },
+      "look": {
+        "skin": "#c98e6a",
+        "hair": "#1a1416",
+        "hairStyle": "short",
+        "beard": true,
+        "suit": "#3a3d4a",
+        "shirt": "#c9d6ea",
+        "tie": "#e0b13a"
+      }
     },
     {
-      "id": "kirsty", "name": "Kirsty Moffat", "role": "Match Analyst", "voice": "female",
-      "look": { "skin": "#8d5a3b", "hair": "#1a1416", "hairStyle": "ponytail", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
+      "id": "kirsty",
+      "name": "Kirsty Moffat",
+      "role": "Match Analyst",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_isabella"
+      },
+      "look": {
+        "skin": "#8d5a3b",
+        "hair": "#1a1416",
+        "hairStyle": "ponytail",
+        "glasses": true,
+        "suit": "#6d1a2a",
+        "shirt": "#f2efe6"
+      }
     }
   ],
   "ticker": [
@@ -40,25 +96,54 @@
       "title": "The Headlines",
       "strap": "Hearts in Turkey for Trabzonspor clash",
       "scene": "desk",
-      "presenters": ["isla", "fraser"],
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
       "lines": [
-        { "speaker": "isla", "text": "Good evening, and welcome to Hearts News 24. Here are tonight's headlines." },
+        {
+          "speaker": "isla",
+          "text": "Good evening, and welcome to Hearts News 24. Here are tonight's headlines.",
+          "audio": "audio/e930467e682b.mp3"
+        },
         {
           "speaker": "fraser",
           "text": "Hearts are in Turkey ahead of tomorrow's Conference League tie with Trabzonspor, with two players left behind in Edinburgh through injury.",
-          "graphic": { "type": "headline", "title": "Hearts leave two players in Edinburgh ahead of Trabzonspor tie", "source": "Edinburgh Evening News", "icon": "medical" }
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts leave two players in Edinburgh ahead of Trabzonspor tie",
+            "source": "Edinburgh Evening News",
+            "icon": "medical"
+          },
+          "audio": "audio/26a84c98f2f9.mp3"
         },
         {
           "speaker": "isla",
           "text": "After the heavy defeat at Celtic, manager Wouter Vrancken has put the result down to individual errors rather than his tactical approach.",
-          "graphic": { "type": "headline", "title": "Hearts humiliated - but would Vrancken do anything differently?", "source": "BBC Sport", "icon": "whistle" }
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts humiliated - but would Vrancken do anything differently?",
+            "source": "BBC Sport",
+            "icon": "whistle"
+          },
+          "audio": "audio/5bd29e1b6549.mp3"
         },
         {
           "speaker": "fraser",
           "text": "And tributes have been paid to former Hearts scout and kitman John Harvey, who has passed away.",
-          "graphic": { "type": "headline", "title": "Tributes paid to former scout and kitman John Harvey", "source": "Daily Record", "icon": "chat" }
+          "graphic": {
+            "type": "headline",
+            "title": "Tributes paid to former scout and kitman John Harvey",
+            "source": "Daily Record",
+            "icon": "chat"
+          },
+          "audio": "audio/470595aca9ed.mp3"
         },
-        { "speaker": "isla", "text": "Let's get the latest from Kirsty in the Match Centre." }
+        {
+          "speaker": "isla",
+          "text": "Let's get the latest from Kirsty in the Match Centre.",
+          "audio": "audio/2e254070c9d4.mp3"
+        }
       ]
     },
     {
@@ -67,34 +152,86 @@
       "title": "Match Centre",
       "strap": "Trabzonspor v Hearts - Thursday",
       "scene": "touchscreen",
-      "presenters": ["kirsty"],
+      "presenters": [
+        "kirsty"
+      ],
       "lines": [
         {
           "speaker": "kirsty",
           "text": "Thanks Isla. A weekend to forget. Celtic won seven one, and the manager says it came down to individual mistakes.",
-          "graphic": { "type": "result", "home": "Celtic", "away": "Hearts", "homeScore": 7, "awayScore": 1, "competition": "Scottish Premiership" }
+          "graphic": {
+            "type": "result",
+            "home": "Celtic",
+            "away": "Hearts",
+            "homeScore": 7,
+            "awayScore": 1,
+            "competition": "Scottish Premiership"
+          },
+          "audio": "audio/ad92d8a8bf8d.mp3"
         },
         {
           "speaker": "kirsty",
           "text": "Despite that, Hearts are still third in the table on sixteen points, four behind Rangers and eight behind Celtic.",
           "graphic": {
-            "type": "table", "title": "Scottish Premiership", "highlight": "Hearts",
+            "type": "table",
+            "title": "Scottish Premiership",
+            "highlight": "Hearts",
             "rows": [
-              { "pos": 1, "team": "Celtic", "played": 9, "gd": 18, "pts": 24 },
-              { "pos": 2, "team": "Rangers", "played": 9, "gd": 6, "pts": 20 },
-              { "pos": 3, "team": "Hearts", "played": 9, "gd": 5, "pts": 16 },
-              { "pos": 4, "team": "Dundee", "played": 9, "gd": 3, "pts": 14 },
-              { "pos": 5, "team": "St Johnstone", "played": 9, "gd": 0, "pts": 12 }
+              {
+                "pos": 1,
+                "team": "Celtic",
+                "played": 9,
+                "gd": 18,
+                "pts": 24
+              },
+              {
+                "pos": 2,
+                "team": "Rangers",
+                "played": 9,
+                "gd": 6,
+                "pts": 20
+              },
+              {
+                "pos": 3,
+                "team": "Hearts",
+                "played": 9,
+                "gd": 5,
+                "pts": 16
+              },
+              {
+                "pos": 4,
+                "team": "Dundee",
+                "played": 9,
+                "gd": 3,
+                "pts": 14
+              },
+              {
+                "pos": 5,
+                "team": "St Johnstone",
+                "played": 9,
+                "gd": 0,
+                "pts": 12
+              }
             ]
-          }
+          },
+          "audio": "audio/8acf1a23b614.mp3"
         },
         {
           "speaker": "kirsty",
           "text": "Next up is Trabzonspor away in the Conference League tomorrow evening, at Papara Park.",
           "graphic": {
-            "type": "fixtures", "title": "Next Match",
-            "fixtures": [{ "date": "2026-10-22T16:45:00Z", "home": "Trabzonspor", "away": "Hearts", "competition": "UEFA Conference League" }]
-          }
+            "type": "fixtures",
+            "title": "Next Match",
+            "fixtures": [
+              {
+                "date": "2026-10-22T16:45:00Z",
+                "home": "Trabzonspor",
+                "away": "Hearts",
+                "competition": "UEFA Conference League"
+              }
+            ]
+          },
+          "audio": "audio/8a9ba9f11f7b.mp3"
         }
       ]
     },
@@ -104,17 +241,32 @@
       "title": "Transfer Centre",
       "strap": "January window opens in 72 days",
       "scene": "transfer",
-      "presenters": ["ally"],
+      "presenters": [
+        "ally"
+      ],
       "lines": [
         {
           "speaker": "ally",
           "text": "The window is shut until January, but the Transfer Centre never sleeps.",
-          "graphic": { "type": "headline", "title": "January transfer window opens in 72 days", "icon": "contract" }
+          "graphic": {
+            "type": "headline",
+            "title": "January transfer window opens in 72 days",
+            "icon": "contract"
+          },
+          "audio": "audio/1ff9a7b3c40f.mp3"
         },
         {
           "speaker": "ally",
           "text": "This is a demo card. Once the pipeline is running, real rumours and confirmed deals will appear on this board.",
-          "graphic": { "type": "transfer", "player": "Example Player", "from": "Free agent", "to": "Hearts", "status": "rumour", "fee": "Undisclosed" }
+          "graphic": {
+            "type": "transfer",
+            "player": "Example Player",
+            "from": "Free agent",
+            "to": "Hearts",
+            "status": "rumour",
+            "fee": "Undisclosed"
+          },
+          "audio": "audio/717cde288c72.mp3"
         }
       ]
     },
@@ -124,14 +276,31 @@
       "title": "Fan Zone",
       "strap": "Supporters react to Celtic defeat",
       "scene": "desk",
-      "presenters": ["isla", "fraser"],
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
       "lines": [
         {
           "speaker": "fraser",
           "text": "Online, the mood among supporters is uneasy after Celtic Park, with plenty of debate about the manager's approach.",
-          "graphic": { "type": "sentiment", "score": -0.5, "topics": ["Celtic Park defeat", "Vrancken's tactics", "Trabzonspor trip", "Injury news"] }
+          "graphic": {
+            "type": "sentiment",
+            "score": -0.5,
+            "topics": [
+              "Celtic Park defeat",
+              "Vrancken's tactics",
+              "Trabzonspor trip",
+              "Injury news"
+            ]
+          },
+          "audio": "audio/d47b5daa2c3c.mp3"
         },
-        { "speaker": "isla", "text": "That's all for now. Stay with us. Rolling news continues, right here on Hearts News 24." }
+        {
+          "speaker": "isla",
+          "text": "That's all for now. Stay with us. Rolling news continues, right here on Hearts News 24.",
+          "audio": "audio/9bc718e9fd59.mp3"
+        }
       ]
     }
   ]

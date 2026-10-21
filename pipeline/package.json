@@ -4,10 +4,12 @@
   "type": "module",
   "scripts": {
     "collect": "tsx src/collect.ts",
+    "voice": "tsx src/voice.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "fast-xml-parser": "^5.11.2"
+    "fast-xml-parser": "^5.11.2",
+    "kokoro-js": "^1.2.1"
   },
   "devDependencies": {
     "tsx": "^4.23.15"

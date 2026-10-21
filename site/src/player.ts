@@ -49,6 +49,8 @@ export class Player {
     private g: Ctx,
     private voices: Voices,
     private bulletin: Bulletin,
+    /** Where the bulletin was loaded from; clip paths are relative to it. */
+    private bulletinUrl: URL,
     private reload: () => Promise<Bulletin | undefined>,
   ) {
     requestAnimationFrame(this.frame);
@@ -84,6 +86,20 @@ export class Player {
     });
   }
 
+  private clipUrl(line: Line): string | undefined {
+    return line.audio ? new URL(line.audio, this.bulletinUrl).href : undefined;
+  }
+
+  /** Fetch every clip in the bulletin up front so lines start without a gap. */
+  private preloadClips(): void {
+    for (const seg of this.bulletin.segments) {
+      for (const line of seg.lines) {
+        const url = this.clipUrl(line);
+        if (url) this.voices.preload(url).catch(() => undefined);
+      }
+    }
+  }
+
   private sting(kind: 'ident' | 'segment'): void {
     if (!this.voices.muted) playSting(kind);
   }
@@ -91,7 +107,8 @@ export class Player {
   /** `startAt` (a segment id) skips the ident and earlier segments on the first loop only. */
   private async loop(startAt?: string): Promise<void> {
     for (;;) {
-      const first = Math.max(0, this.bulletin.segments.findIndex((s) => s.id === startAt));
+      this.preloadClips();
+      const first =Math.max(0, this.bulletin.segments.findIndex((s) => s.id === startAt));
       if (!first) {
         this.setMode('ident');
         this.sting('ident');
@@ -131,7 +148,7 @@ export class Player {
       this.strap = undefined;
     }
 
-    const speaking = this.voices.speak(line.text, p);
+    const speaking = this.voices.speak(line.text, p, this.clipUrl(line));
     this.speaking = speaking;
     await speaking.done;
     this.speaking = undefined;

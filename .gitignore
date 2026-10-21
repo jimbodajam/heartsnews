@@ -1,5 +1,7 @@
 node_modules/
 dist/
 pipeline/out/
+site/public/voice-samples/
+site/public/bulletins/audio/
 *.log
 .DS_Store

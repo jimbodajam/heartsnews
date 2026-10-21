@@ -31,7 +31,9 @@ async function boot(): Promise<void> {
 
   const voices = new Voices();
   // Between loops, pick up a newer bulletin if one has been published; keep the old one if that fails.
-  const player = new Player(g, voices, bulletin, () => fetchBulletin().catch(() => undefined));
+  const player = new Player(g, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
+    fetchBulletin().catch(() => undefined),
+  );
 
   // Browsers only allow sound after a user gesture, hence the "click to tune in" splash.
   const start = async () => {
@@ -46,7 +48,6 @@ async function boot(): Promise<void> {
     switch (e.key.toLowerCase()) {
       case 'm':
         voices.muted = !voices.muted;
-        if (voices.muted) speechSynthesis?.cancel();
         break;
       case 'c':
         player.captions = !player.captions;

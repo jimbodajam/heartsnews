@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "collect": "npm -w pipeline run collect",
+    "voice": "npm -w pipeline run voice --",
     "dev": "npm -w site run dev",
     "build": "npm -w site run build",
     "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"

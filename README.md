@@ -16,6 +16,7 @@ A rolling 24-hour pixel-art sports news channel for Heart of Midlothian. See [PL
 ```bash
 npm install
 npm run collect     # scrape all sources for Hearts
+npm run voice       # render each bulletin line with its presenter's Kokoro voice (first run downloads ~330MB model)
 npm run dev         # player at http://localhost:5173
 npm run build       # static site → site/dist
 npm run typecheck
