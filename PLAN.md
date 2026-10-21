@@ -126,6 +126,18 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   key players, and head-to-head. Fits the build-up mode and Kirsty's Match Centre.
 - **Hearts tactics and line-up in the build-up:** expected XI and formation, how we're likely to set up, from
   previews and press conferences. Ally gets to talk shape and pressing; could show a pixel pitch graphic with the XI.
+- **Youth focus:** a youth reporter (new presenter) covering Hearts U21s, the B team and the academy: results,
+  standouts and first-team call-ups. The club site has B-team fixtures, results and table pages.
+- **Loan Watch:** a special segment after Saturday games on how Hearts players out on loan got on (appearances,
+  goals, ratings). Needs a list of loanees in config and their clubs' BBC pages.
+- **Adverts:** short parody ad breaks every few segments (made-up products, pixel-art spots, jingles). Keep them
+  fictional, with no real brands. Bonus: the ad break covers the gap while the next segment is prepared.
+- **Sky-style side graphics:** a panel that stays on screen beside the presenters (table, fixtures, latest score,
+  "coming up" list) instead of graphics only appearing full screen or over the shoulder.
+- **Matchday "over to the stadium":** a reporter outside the ground (new scene: stadium backdrop, floodlights) with
+  the latest known score and timestamp. Stretch goal: in-game events (shots, woodwork, cards). Use BBC Sport's live
+  text commentary (each fixture has a /sport/football/live/... page) rather than betting sites, whose terms
+  usually forbid scraping. It would also need more frequent builds during games (e.g. a Cloudflare Worker, milestone 8).
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
