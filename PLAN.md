@@ -86,7 +86,10 @@ Mitigation: v1 uses only feeds and titles, and transcripts are a later experimen
 
 ## Milestones
 
-**Status (21 Oct 2026):** 1–5 are done. `npm run bulletin` builds a real bulletin end to end, scripted by Gemini's free tier.
+**Status (21 Oct 2026):** 1–6 are done. It's live at https://jimbodajam.github.io/heartsnews/, rebuilt by
+`.github/workflows/bulletin.yml` every 3 hours (at :17), on every push to main, and on demand. A run takes about 2 minutes.
+The Kickback returns HTTP 403 to GitHub's servers (it works from home), so Fan Zone is thin in CI. Options: a self-hosted
+runner on the home PC, or asking the forum for access. Don't try to get around the block. `npm run bulletin` builds a real bulletin end to end, scripted by Gemini's free tier.
 If Flash is busy (frequent 503s), it retries and then falls back to Flash-Lite; if all else fails, templates take over.
 The writer sits behind `ScriptModel`, so moving to Claude (about 1–2p per bulletin with Haiku) is a small change. Sources added:
 Hearts Standard (YouTube) and the Kickback's Terrace board (hot threads plus their latest posts).
