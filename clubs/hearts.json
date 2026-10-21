@@ -1,0 +1,33 @@
+{
+  "id": "hearts",
+  "name": "Heart of Midlothian",
+  "shortName": "Hearts",
+  "nicknames": ["Jambos", "Jam Tarts"],
+  "colours": { "primary": "#6d1a2a", "secondary": "#f2efe6", "accent": "#e0b13a" },
+  "keywords": ["hearts", "heart of midlothian", "tynecastle", "jambos", "jambo"],
+  "sportsdb": { "teamId": "133643", "leagueId": "4330" },
+  "sources": [
+    { "id": "bbc", "name": "BBC Sport", "kind": "press", "type": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/football/teams/heart-of-midlothian/rss.xml" },
+    { "id": "evening-news", "name": "Edinburgh Evening News", "kind": "press", "type": "rss",
+      "url": "https://www.edinburghnews.scotsman.com/sport/football/hearts/rss" },
+    { "id": "scotsman", "name": "The Scotsman", "kind": "press", "type": "rss",
+      "url": "https://www.scotsman.com/sport/football/hearts/rss" },
+    { "id": "daily-record", "name": "Daily Record", "kind": "press", "type": "rss",
+      "url": "https://www.dailyrecord.co.uk/all-about/hearts-fc?service=rss" },
+    { "id": "official", "name": "heartsfc.co.uk", "kind": "official", "type": "rss",
+      "url": "https://www.heartsfc.co.uk/blogs/news.atom" },
+    { "id": "google-news", "name": "Google News", "kind": "aggregator", "type": "rss", "filter": true, "maxAgeDays": 3,
+      "url": "https://news.google.com/rss/search?q=%22Heart+of+Midlothian%22+OR+%22Hearts+FC%22+when:3d&hl=en-GB&gl=GB&ceid=GB:en" },
+    { "id": "hearts-tv", "name": "Hearts TV (YouTube)", "kind": "video", "type": "youtube",
+      "url": "UCUMDz4A44VglneE3z1cBpAA" },
+    { "id": "hearts-digest", "name": "The Hearts Digest (podcast)", "kind": "podcast", "type": "rss", "maxAgeDays": 30,
+      "url": "https://feeds.acast.com/public/shows/66ba267a3889f01ccfc8e858" },
+    { "id": "reddit-heartsfc", "name": "r/HeartsFC", "kind": "forum", "type": "reddit",
+      "url": "HeartsFC" },
+    { "id": "reddit-spfl", "name": "r/ScottishFootball", "kind": "forum", "type": "reddit", "filter": true,
+      "url": "ScottishFootball" },
+    { "id": "kickback", "name": "Jambos Kickback", "kind": "forum", "type": "rss", "enabled": false,
+      "url": "", "note": "Forum address still to confirm. r/hearts is the card game, not the club." }
+  ]
+}

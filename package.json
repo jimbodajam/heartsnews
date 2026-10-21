@@ -1,0 +1,19 @@
+{
+  "name": "heartsnews",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "pipeline",
+    "site"
+  ],
+  "scripts": {
+    "collect": "npm -w pipeline run collect",
+    "dev": "npm -w site run dev",
+    "build": "npm -w site run build",
+    "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

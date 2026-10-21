@@ -1,0 +1,15 @@
+{
+  "name": "@heartsnews/pipeline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "collect": "tsx src/collect.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hearts News 24</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #050407;
+        overflow: hidden;
+      }
+      body {
+        display: grid;
+        place-items: center;
+      }
+      canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        cursor: pointer;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="tv" tabindex="0" aria-label="Hearts News 24 broadcast"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

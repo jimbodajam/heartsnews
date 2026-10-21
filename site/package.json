@@ -1,0 +1,13 @@
+{
+  "name": "@heartsnews/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit -p . && vite build",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}
