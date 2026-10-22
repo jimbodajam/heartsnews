@@ -173,6 +173,18 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   an image to 320×180, quantises it to the palette with dithering, and saves it as a background, plus a player switch
   to use it instead of the code-drawn set, with the outlined sprites in front. Needs images supplied by the user (own
   photos, AI-generated, or properly licensed): a TV studio, Tynecastle at night, the Gorgie skyline.
+- **GPU voice bake-off:** now that voices render on the home PC's 2080 Ti (11 GB), compare bigger TTS models with
+  Kokoro, using the same couple of lines (a headline and an excited goal update), on a listen-and-rate page like the
+  earlier Kokoro/Piper/edge-tts test. Candidates:
+  - **Chatterbox** (Resemble AI, MIT licence, ~0.5B): voice cloning plus an emotion slider. Current favourite.
+  - **F5-TTS:** strong voice cloning; its weights are non-commercial only, which is fine for this project.
+  - **Orpheus** (3B): the most expressive, with inline tags like `<laugh>` and `<sigh>`; slow but fits.
+  - **Dia** (1.6B): built for two-speaker dialogue; tight on 11 GB.
+  
+  The main prize is real Scottish accents through cloning. Reference clips must come from people who agree to it
+  (the user, friends, or freely licensed recordings), never real broadcasters or players. Note each model's speed
+  per line and its VRAM use. Check what's newest first, because these models move quickly. The winner would slot
+  into `tools/gpu/voices.py`, with Kokoro kept as the fallback (and still used by the GitHub build).
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
