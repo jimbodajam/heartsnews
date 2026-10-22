@@ -1,8 +1,10 @@
 // Builds small pixel-art portraits of the squad and coaching staff from the club's website photos, so
 // stories about a person can show their face. Re-run when the squad changes.
 // Usage: npm run faces   → site/public/faces/<slug>.png + faces.json
+// A hand-made portrait at art/faces/<slug>.png (transparent background) is used instead of the club photo.
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -11,6 +13,7 @@ import { decodeEntities } from './text.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'site/public/faces');
+const ART = resolve(ROOT, 'art/faces');
 const PAGES = ['first-team-squad', 'first-team-coaching-staff'];
 export const FACE_SIZE = 24;
 
@@ -42,7 +45,7 @@ function people(html: string): { name: string; img: string }[] {
  * Head and shoulders from a cut-out photo: trim the transparent edges, take a square from the top centre,
  * shrink to FACE_SIZE and limit the palette so it reads as pixel art.
  */
-async function portrait(png: Buffer): Promise<Buffer> {
+export async function portrait(png: Buffer): Promise<Buffer> {
   const trimmed = await sharp(png).trim().toBuffer({ resolveWithObject: true });
   const { width, height } = trimmed.info;
   const side = Math.round(Math.min(width * 0.62, height));
@@ -60,9 +63,16 @@ async function main() {
   for (const page of PAGES) {
     for (const p of people(await fetchText(`https://www.heartsfc.co.uk/pages/${page}`))) {
       try {
+        const file = `${slug(p.name)}.png`;
+        const art = resolve(ART, file);
+        if (existsSync(art)) {
+          await writeFile(resolve(OUT, file), await portrait(await readFile(art)));
+          faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file });
+          console.log(`  ✔ ${p.name} (art/faces)`);
+          continue;
+        }
         const res = await fetch(p.img, { signal: AbortSignal.timeout(20_000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const file = `${slug(p.name)}.png`;
         await writeFile(resolve(OUT, file), await portrait(Buffer.from(await res.arrayBuffer())));
         faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file });
         console.log(`  ✔ ${p.name}`);
