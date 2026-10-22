@@ -1,5 +1,6 @@
-// Breaking news from the ground: polls the Worker's live.json, and for each goal or red card builds a short package
-// (the anchor hands over, our reporter gives the score and a line from BBC's description), voices it with Kokoro and
+// Breaking news from the ground: polls the Worker's live.json, and for each goal or red card, both kick-offs,
+// half-time and full time builds a short package (the anchor hands over, our reporter gives the score and a line
+// from BBC's description), voices it with Kokoro and
 // writes site/public/breaking/breaking.json. `npm run live` runs this alongside the programmes and publishes each one.
 // Usage, to try it on its own: npm run breaking [-- --replay [--from 17:15] [--speed 20]] [--publish] [--templates]
 //   --replay      replay the recorded Trabzonspor v Hearts (22 Oct 2026) instead of reading the Worker
@@ -14,14 +15,14 @@ import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { BbcData, BbcEvent } from '../../../shared/bbc.ts';
-import { BREAKING_PATH, type BreakingFeed, type BreakingPackage } from '../../../shared/breaking.ts';
+import { BREAKING_PATH, type BreakingFeed, type BreakingPackage, type Period } from '../../../shared/breaking.ts';
 import { LIVE_URL, type LiveFeed, liveMatch } from '../../../shared/live.ts';
 import { publishSite } from '../publish.ts';
 import type { Channel } from '../script/facts.ts';
 import { geminiFromEnv } from '../script/llm.ts';
 import { dropUnusedClips, voiceLines } from '../voice.ts';
 import { EventTracker, type TrackerState } from './detect.ts';
-import { buildPackage } from './script.ts';
+import { buildPackage, buildPeriodPackage } from './script.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const FEED = resolve(ROOT, 'site/public', BREAKING_PATH);
@@ -117,9 +118,13 @@ export interface WatchOptions {
   templates?: boolean;
   /** Stop when this says so (a replay that's run out). */
   stop?: () => boolean;
+  /** Told of every read of live.json, so `npm run live` can time its programmes around the match. */
+  onFeed?: (feed: LiveFeed) => void;
 }
 
-export async function watchBreaking({ source, publish, pace = 1, persist = true, templates, stop }: WatchOptions): Promise<void> {
+const PERIOD: Record<Period, string> = { ko1: 'KICK-OFF', ko2: 'SECOND HALF UNDER WAY', ht: 'HALF TIME', ft: 'FULL TIME' };
+
+export async function watchBreaking({ source, publish, pace = 1, persist = true, templates, stop, onFeed }: WatchOptions): Promise<void> {
   const channel = JSON.parse(await readFile(resolve(ROOT, 'channel.json'), 'utf8')) as Channel;
   // Flash-Lite only: Flash's 20 free requests a day are for the bulletins.
   const model = templates ? undefined : geminiFromEnv([30_000], ['gemini-flash-lite-latest']);
@@ -133,7 +138,7 @@ export async function watchBreaking({ source, publish, pace = 1, persist = true,
   }
   const tracker = new EventTracker(state);
   await mkdir(DIR, { recursive: true });
-  console.log(`[breaking] Watching for goals and red cards${model ? '' : ' (plain lines, no AI)'}`);
+  console.log(`[breaking] Watching for goals, red cards, kick-offs, half-time and full time${model ? '' : ' (plain lines, no AI)'}`);
 
   while (!stop?.()) {
     let feed: LiveFeed | undefined;
@@ -141,22 +146,36 @@ export async function watchBreaking({ source, publish, pace = 1, persist = true,
       feed = await source();
       const m = feed.match;
       const before = JSON.stringify(tracker.state);
-      const ready = m ? tracker.update(m, Date.parse(feed.updated)) : [];
+      onFeed?.(feed);
+      const now = Date.parse(feed.updated);
+      const ready = m ? tracker.update(m, now) : [];
+      const period = m ? tracker.period(m, now) : undefined;
       if (persist && JSON.stringify(tracker.state) !== before) {
         await mkdir(dirname(STATE), { recursive: true });
         await writeFile(STATE, JSON.stringify(tracker.state));
       }
-      for (const r of ready) {
+      const jobs = [
+        ...ready.map((r) => ({
+          key: r.key,
+          said: `${r.event.kind === 'goal' ? 'GOAL' : 'RED CARD'}: ${r.event.player} ${r.event.minute}`,
+          text: r.text,
+          build: () => buildPackage({ key: r.key, match: r.match, event: r.event, text: r.text, channel, model }),
+        })),
+        ...(period
+          ? [{ key: period.key, said: PERIOD[period.period], text: period.text, build: () => buildPeriodPackage({ ...period, channel, model }) }]
+          : []),
+      ];
+      for (const job of jobs) {
         const started = Date.now();
         try {
-          console.log(`[breaking] ${r.event.kind === 'goal' ? 'GOAL' : 'RED CARD'}: ${r.event.player} ${r.event.minute}${r.text.length ? '' : ' (no description from BBC)'}`);
-          const pkg = await buildPackage({ key: r.key, match: r.match, event: r.event, text: r.text, channel, model });
+          console.log(`[breaking] ${job.said}${job.text.length ? '' : ' (no description from BBC)'}`);
+          const pkg = await job.build();
           for (const line of pkg.segments.flatMap((s) => s.lines)) console.log(`  ${line.speaker}: ${line.text}`);
           await addToFeed(pkg);
           if (publish) await publish();
           console.log(`[breaking] ${publish ? 'On air' : 'Written'} in ${Math.round((Date.now() - started) / 1000)}s`);
         } catch (err) {
-          console.error(`[breaking] Couldn't put out ${r.key}: ${said(err)}`);
+          console.error(`[breaking] Couldn't put out ${job.key}: ${said(err)}`);
         }
       }
     } catch (err) {

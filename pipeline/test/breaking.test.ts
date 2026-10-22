@@ -1,13 +1,18 @@
 // Breaking news against the recording of Trabzonspor v Hearts (22 Oct 2026): 1-0 Salah pen 32', 2-0 Franculino 58',
-// Sidny Cabral sent off (second yellow) 90'+5. Run with `npm test`.
+// Sidny Cabral sent off (second yellow) 90'+5; kick-off 16:47, half-time 17:37, second half 17:52, full time 18:43.
+// Run with `npm test`.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { BbcData, BbcEvent } from '../../shared/bbc.ts';
+import type { Graphic } from '../../shared/bulletin.ts';
 import { type LiveMatch, liveMatch } from '../../shared/live.ts';
-import { DESCRIPTION_WAIT_MS, EventTracker, type ReadyEvent } from '../src/breaking/detect.ts';
-import { anchorLine, buildPackage, checkLine, gameReading, periodLine, plainLine, SIGN_OFF, spokenMinute, wordNumbers } from '../src/breaking/script.ts';
+import { DESCRIPTION_WAIT_MS, EventTracker, periodsReached, type ReadyEvent, type ReadyPeriod } from '../src/breaking/detect.ts';
+import {
+  anchorLine, buildPackage, buildPeriodPackage, checkLine, checkPeriodLine, gameReading, periodLine, plainLine, SIGN_OFF, spokenMinute, wordNumbers,
+} from '../src/breaking/script.ts';
+import { Cadence } from '../src/cadence.ts';
 import type { Channel } from '../src/script/facts.ts';
 import type { ScriptModel } from '../src/script/llm.ts';
 
@@ -126,6 +131,129 @@ test('AI lines must name the player and use no numbers but the score and minute'
   assert.equal(checkLine(knocking, m, dju), undefined);
   assert.ok(checkLine(knocking, m, dju, [61, 4, 1]));
   assert.equal(checkLine(knocking.replace('61%', '65%'), m, dju, [61, 4, 1]), undefined);
+});
+
+/** Polls the recording every 20s like `replay`, for the kick-off, half-time and full-time break-ins. */
+function replayPeriods(from = '16:30:00'): { at: string; ready: ReadyPeriod }[] {
+  const tracker = new EventTracker();
+  const out: { at: string; ready: ReadyPeriod }[] = [];
+  const end = Date.parse(rec.snapshots[rec.snapshots.length - 1].at) + 5 * 60_000;
+  for (let t = Date.parse(`2026-10-22T${from}Z`); t <= end; t += 20_000) {
+    const m = matchAt(t);
+    tracker.update(m, t);
+    const ready = tracker.period(m, t);
+    if (ready) out.push({ at: new Date(t).toISOString().slice(11, 19), ready });
+  }
+  return out;
+}
+
+test('kick-offs, half-time and full time are each ready once, with BBC posts when there are some', () => {
+  const got = replayPeriods();
+  assert.deepEqual(
+    got.map((g) => [g.ready.period, g.at, g.ready.text.length]),
+    [
+      // Live at 16:47:04, with the pre-match team news post and "And we're off."
+      ['ko1', '16:47:20', 4],
+      // Half-time at 17:37:15 with an empty post; its two paragraphs come at 17:38:15.
+      ['ht', '17:38:20', 2],
+      // "We go again." on its own, first read at 17:53:00: it stands for 45s.
+      ['ko2', '17:54:00', 1],
+      // No full-time post in the recording: two minutes, then plain.
+      ['ft', '18:45:40', 0],
+    ],
+  );
+  assert.match(got[0].ready.text.join(' '), /Rogers Mato/);
+  // Starting in the second half, only full time is still to come.
+  assert.deepEqual(replayPeriods('18:00:00').map((g) => g.ready.period), ['ft']);
+});
+
+test('a period still waiting when the next comes round is dropped', () => {
+  const tracker = new EventTracker();
+  const t0 = Date.parse('2026-10-22T16:30:00Z');
+  tracker.period(matchAt(t0), t0);
+  const ht = { ...matchAt(Date.parse('2026-10-22T17:37:15Z')), posts: [] };
+  assert.equal(tracker.period(ht, t0 + 1000), undefined); // ko1 is old news by now, and half-time waits for BBC
+  assert.equal(periodsReached(ht).join(), 'ko1,ht');
+  const ft = matchAt(Date.parse('2026-10-22T18:52:03Z'));
+  assert.equal(tracker.period(ft, t0 + 2000), undefined);
+  assert.equal(tracker.period(ft, t0 + 2000 + DESCRIPTION_WAIT_MS)?.period, 'ft');
+  assert.ok(tracker.state.done.includes('period:ht') && tracker.state.done.includes('period:ko2'));
+});
+
+test('kick-off, half-time and full-time packages', async () => {
+  const [ko1, ht, ko2, ft] = replayPeriods().map((g) => g.ready);
+  const pkg = (r: ReadyPeriod, model?: ScriptModel) => buildPeriodPackage({ ...r, channel, model, now: new Date('2026-10-22T17:00:00Z') });
+
+  const kick = await pkg(ko1);
+  assert.equal(kick.flash, 'KICK-OFF');
+  assert.deepEqual(kick.segments.map((s) => [s.scene, s.lines[0].text]), [
+    ['desk', "We're under way in Trabzonspor against Hearts. Let's go to Gregor Moffat at Papara Park."],
+    ['pitchside', `We're under way here at Papara Park: Trabzonspor against Hearts in the UEFA Conference League. ${SIGN_OFF}`],
+  ]);
+  assert.deepEqual(kick.segments[1].lines[0].graphic, {
+    type: 'result', home: 'Trabzonspor', away: 'Hearts', homeScore: 0, awayScore: 0, competition: 'UEFA Conference League',
+    status: 'KICK-OFF', homeScorers: [], awayScorers: [],
+  });
+
+  const second = await pkg(ko2);
+  assert.equal(second.segments[1].lines[0].text, `The second half is under way here, and it's Trabzonspor 1, Hearts 0. ${SIGN_OFF}`);
+  assert.deepEqual((second.segments[1].lines[0].graphic as { homeScorers: string[] }).homeScorers, ["Salah 32' pen"]);
+
+  // The breaks: periodLine and the stats card.
+  const half = await pkg(ht);
+  assert.equal(half.flash, 'HALF TIME');
+  assert.equal(half.segments[0].lines[0].text, "It's half-time in Trabzonspor against Hearts. Let's go to Gregor Moffat at Papara Park.");
+  assert.equal(half.segments[1].lines[0].text, periodLine(ht.match, 'ht').text);
+  const card = half.segments[1].lines[0].graphic as Extract<Graphic, { type: 'stats' }>;
+  assert.equal(card.type, 'stats');
+  assert.equal(card.status, 'HALF TIME');
+  assert.deepEqual(card.rows[0], { label: 'POSSESSION', home: 57, away: 43, percent: true });
+  const full = await pkg(ft);
+  assert.equal(full.segments[0].strap, 'FULL TIME: Trabzonspor 2-0 Hearts');
+  assert.match(full.segments[1].lines[0].text, /^It's full time here, and it's Trabzonspor 2, Hearts 0\./);
+  assert.equal((full.segments[1].lines[0].graphic as { status: string }).status, 'FULL TIME');
+
+  // AI lines from BBC's post: the stats it was given are allowed, invented numbers aren't.
+  const said = (line: string): ScriptModel => ({ name: 'fake', generateJson: async () => ({ line }) });
+  const good = "Hearts are still in this, but Salah's penalty is the difference, and it's Trabzonspor 1, Hearts 0. Trabzonspor have had 57 per cent of the ball.";
+  assert.equal((await pkg(ht, said(good))).segments[1].lines[0].text, `${good} ${SIGN_OFF}`);
+  assert.equal((await pkg(ht, said(good.replace('57', '67')))).segments[1].lines[0].text, periodLine(ht.match, 'ht').text);
+  const ko = "We're off here, and Rogers Mato is at left-back for Hearts, up against Mo Salah.";
+  assert.equal((await pkg(ko1, said(ko))).segments[1].lines[0].text, `${ko} ${SIGN_OFF}`);
+  assert.equal(checkPeriodLine("Three changes for Hearts. It's nil-nil.", ko1.match), undefined);
+});
+
+test('programmes: none while the match is on, straight after half-time and full time', () => {
+  const every = 30 * 60_000;
+  const cadence = new Cadence(every);
+  const feedAt = (t: number) => ({ updated: new Date(t).toISOString(), match: matchAt(t) });
+  const due: [string, string][] = [];
+  let last = Date.parse('2026-10-22T16:20:00Z');
+  for (let t = Date.parse('2026-10-22T16:30:00Z'); t <= Date.parse('2026-10-22T19:30:00Z'); t += 20_000) {
+    cadence.see(feedAt(t), t);
+    const why = cadence.due(t, last);
+    if (why) {
+      due.push([new Date(t).toISOString().slice(11, 16), why]);
+      last = t;
+    }
+  }
+  assert.deepEqual(due, [
+    // The 16:50 programme is held: kick-off was at 16:47.
+    ['17:37', 'ht'],
+    ['18:43', 'ft'],
+    ['19:13', 'regular'],
+  ]);
+  // A half-time programme that isn't ready until the second half is under way is dropped.
+  const ht = new Cadence(every);
+  const at = (hm: string) => Date.parse(`2026-10-22T${hm}:00Z`);
+  ht.see(feedAt(at('17:30')), at('17:30'));
+  ht.see(feedAt(at('17:40')), at('17:40'));
+  assert.equal(ht.due(at('17:40'), at('16:20')), 'ht');
+  assert.ok(ht.wanted('ht', at('17:45')));
+  ht.see(feedAt(at('17:55')), at('17:55'));
+  assert.ok(!ht.wanted('ht', at('17:55')));
+  // With no word from the Worker for a while, programmes carry on as normal.
+  assert.equal(ht.due(at('18:10'), at('17:30')), 'regular');
 });
 
 test('a package: anchor at the desk, reporter at the ground with the score card', async () => {
