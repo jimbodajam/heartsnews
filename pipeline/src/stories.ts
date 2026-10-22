@@ -73,6 +73,29 @@ function categorise(text: string): StoryCategory {
 
 const outlet = (it: Item) => it.publisher ?? it.sourceName;
 
+/**
+ * Another club's take on us: one of their fan sites ("Celtic FC News", "The Celtic Way"), or a search hit whose
+ * headline is led by them ("Celtic player ratings as…"). Real, but their story rather than ours.
+ */
+function rivalAngle(it: Item, club: ClubConfig): 'outlet' | 'headline' | undefined {
+  const rivals = club.rivals ?? [];
+  if (mentionsAny(outlet(it), rivals) && !mentionsAny(outlet(it), club.keywords)) return 'outlet';
+  if (it.kind !== 'aggregator') return undefined;
+  // A scoreline names the home side first ("Celtic 2-4 Hearts"), so a club followed by a score doesn't lead.
+  const first = (names: string[]) => {
+    const at = names.map((n) => normaliseTitle(it.title).search(new RegExp(`\\b${normaliseTitle(n)}\\b(?! \\d)`))).filter((i) => i >= 0);
+    return at.length ? Math.min(...at) : Infinity;
+  };
+  return first(rivals) < first(club.keywords) ? 'headline' : undefined;
+}
+
+/** Only sinks a story when every outlet carrying it is coming at it from a rival's side. */
+function rivalWeight(items: Item[], club: ClubConfig): number {
+  const angles = items.map((it) => rivalAngle(it, club));
+  if (angles.some((a) => !a)) return 1;
+  return angles.includes('headline') ? 0.5 : 0.25;
+}
+
 /** Signings and injuries are what fans most want to hear about. */
 const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, injury: 1.15, match: 1.1, news: 1 };
 
@@ -127,7 +150,8 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
         Math.max(...c.items.map((it) => KIND_WEIGHT[it.kind])) *
         CATEGORY_WEIGHT[category] *
         (mentionsAny(lead.title, club.keywords) ? 1 : 0.4) *
-        (MINOR.test(lead.title) ? 0.3 : 1);
+        (MINOR.test(lead.title) ? 0.3 : 1) *
+        rivalWeight(c.items, club);
       return {
         id: `s${shortHash(lead.url).slice(0, 6)}`,
         title: speakable(lead.title),

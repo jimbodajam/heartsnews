@@ -35,6 +35,8 @@ export interface ClubConfig {
   nicknames: string[];
   colours: { primary: string; secondary: string; accent: string };
   keywords: string[];
+  /** Other clubs' names and nicknames, to spot their fan sites and their angle on our news. */
+  rivals?: string[];
   sportsdb: { teamId: string; leagueId: string };
   /** BBC Sport slugs: the team page (bbc.co.uk/sport/football/teams/<team>) and the league table's tournament. */
   bbc?: { team: string; league: string };
