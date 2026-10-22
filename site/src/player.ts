@@ -1,10 +1,12 @@
+import type { BreakingPackage } from '../../shared/breaking';
 import type { Bulletin, Graphic, Line, Presenter, Segment, SegmentKind } from '../../shared/bulletin';
 import { playSting } from './audio/sting';
 import type { Speaking, Voices } from './audio/voice';
+import { isFresh } from './breaking';
 import { drawGraphic, drawSidePanel } from './gfx/graphics';
 import {
-  drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS, STING_MS,
-  Ticker, type TickerItem,
+  BREAKING_MS, drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS,
+  STING_MS, Ticker, type TickerItem,
 } from './gfx/overlay';
 import { type LiveScore, scoreLine } from './live';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
@@ -35,6 +37,7 @@ const LABEL: Record<SegmentKind, string> = {
   debate: 'THE DEBATE',
   opponent: 'OPPOSITION FOCUS',
   adverts: 'AD BREAK',
+  breaking: 'BREAKING',
 };
 
 /** The same graphic again (bulletin JSON has no shared objects): an advert by its id, anything else by content. */
@@ -60,7 +63,10 @@ export class Player {
   night?: boolean;
 
   private ticker = new Ticker();
-  private mode: 'splash' | 'ident' | 'sting' | 'show' = 'splash';
+  private mode: 'splash' | 'ident' | 'sting' | 'show' | 'breaking' = 'splash';
+  /** Breaking news waiting for the current line to finish, and the one on air now. */
+  private breakingQueue: BreakingPackage[] = [];
+  private breaking?: BreakingPackage;
   private modeAt = 0;
   private seg?: Segment;
   private line?: Line;
@@ -101,7 +107,40 @@ export class Player {
   }
 
   private presenter(id: string): Presenter {
-    return this.bulletin.presenters.find((p) => p.id === id) ?? this.bulletin.presenters[0];
+    // Breaking news brings its own cast: the reporter at the ground may not be in this programme.
+    return this.bulletin.presenters.find((p) => p.id === id) ?? this.breaking?.presenters.find((p) => p.id === id) ?? this.bulletin.presenters[0];
+  }
+
+  /** Breaking news has come in: it goes out after the current line. */
+  queueBreaking(p: BreakingPackage): void {
+    this.breakingQueue.push(p);
+    for (const line of p.segments.flatMap((s) => s.lines)) if (line.audio) this.voices.preload(line.audio).catch(() => undefined);
+  }
+
+  /** Play any breaking news that's waiting, then carry on with the programme where it was. */
+  private async breakIn(): Promise<void> {
+    if (this.breaking) return;
+    for (let p = this.breakingQueue.shift(); p; p = this.breakingQueue.shift()) {
+      if (!isFresh(p)) continue;
+      const was = { seg: this.seg, line: this.line, segGraphic: this.segGraphic, shot: this.shot, strap: this.strap, strapped: new Set(this.strapped) };
+      this.breaking = p;
+      this.setMode('breaking');
+      this.sting('breaking');
+      await this.wait(BREAKING_MS);
+      for (const seg of p.segments) {
+        this.seg = seg;
+        this.line = undefined;
+        this.segGraphic = undefined;
+        this.strap = undefined;
+        this.strapped.clear();
+        this.setMode('show');
+        for (let i = 0; i < seg.lines.length; i++) await this.playLine(seg, i);
+      }
+      await this.wait(400);
+      this.breaking = undefined;
+      ({ seg: this.seg, line: this.line, segGraphic: this.segGraphic, shot: this.shot, strap: this.strap } = was);
+      this.strapped = was.strapped;
+    }
   }
 
   private setMode(mode: Player['mode']): void {
@@ -136,7 +175,7 @@ export class Player {
     }
   }
 
-  private sting(kind: 'ident' | 'segment'): void {
+  private sting(kind: 'ident' | 'segment' | 'breaking'): void {
     if (!this.voices.muted) playSting(kind);
   }
 
@@ -202,6 +241,7 @@ export class Player {
     await speaking.done;
     this.speaking = undefined;
     await this.wait(350);
+    await this.breakIn();
   }
 
   private pickShot(seg: Segment, i: number, line: Line): Shot {
@@ -235,6 +275,7 @@ export class Player {
       else rect(g, 0, 0, W, H, C.black);
       if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
       if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+      if (this.mode === 'breaking') drawBreaking(g, age, this.breaking?.flash ?? '');
       return;
     }
 
@@ -248,6 +289,7 @@ export class Player {
     this.ticker.draw(g, this.tickerItems(), now);
 
     if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+    if (this.mode === 'breaking') drawBreaking(g, age, this.breaking?.flash ?? '');
   }
 
   /** A goal: the ticker jumps to the score and flashes. */

@@ -6,6 +6,7 @@ pipeline/out/
 snapshots/
 site/public/voice-samples/
 site/public/bulletins/audio/
+site/public/breaking/
 site/public/memory.json
 *.log
 .DS_Store

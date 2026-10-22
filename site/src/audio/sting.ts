@@ -22,10 +22,18 @@ function note(a: AudioContext, freq: number, start: number, dur: number, type: O
 
 const N = { C4: 261.63, G4: 392, C5: 523.25, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, C3: 130.81, G3: 196 };
 
-export function playSting(kind: 'ident' | 'segment'): void {
+export function playSting(kind: 'ident' | 'segment' | 'breaking'): void {
   const a = audioContext();
   const t = a.currentTime + 0.05;
-  if (kind === 'ident') {
+  if (kind === 'breaking') {
+    // Urgent: a newsroom alarm of high pips, then a low hit under a held chord.
+    for (let i = 0; i < 3; i++) {
+      note(a, N.A5, t + i * 0.24, 0.1);
+      note(a, N.E5, t + i * 0.24 + 0.12, 0.1);
+    }
+    note(a, N.C3, t + 0.78, 1.2, 'square', 0.05);
+    [N.C5, N.G5, N.C6].forEach((f) => note(a, f, t + 0.78, 1.2, 'triangle', 0.05));
+  } else if (kind === 'ident') {
     [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => note(a, f, t + i * 0.11, 0.12));
     [N.C5, N.E5, N.G5].forEach((f) => note(a, f, t + 0.5, 1.1, 'triangle', 0.06));
     note(a, N.C3, t + 0.5, 1.1, 'square', 0.04);

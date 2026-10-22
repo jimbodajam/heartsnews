@@ -58,11 +58,14 @@ async function callGemini(key: string, model: string, prompt: string, schema: ob
  * Google Gemini via its REST API. Needs GEMINI_API_KEY. GEMINI_MODEL overrides the main model.
  * The free tier is often busy, so each model is retried with backoff before falling back to the lighter one.
  * `timeoutsMs` gives each model in turn its time limit (a script piece is quick; the fact-check reads everything).
+ * `models` replaces the usual pair, e.g. Flash-Lite alone to leave Flash's small daily quota for the bulletins.
  */
-export function geminiFromEnv(timeoutsMs: [number, number] = [120_000, 90_000]): ScriptModel | undefined {
+export function geminiFromEnv(
+  timeoutsMs: number[] = [120_000, 90_000],
+  models = [process.env.GEMINI_MODEL ?? 'gemini-flash-latest', 'gemini-flash-lite-latest'],
+): ScriptModel | undefined {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return undefined;
-  const models = [process.env.GEMINI_MODEL ?? 'gemini-flash-latest', 'gemini-flash-lite-latest'];
   // Requests run side by side, so the name lists every model that answered one.
   const used = new Set<string>();
   return {

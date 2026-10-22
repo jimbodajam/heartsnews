@@ -184,6 +184,27 @@ export function drawSting(g: Ctx, age: number, label: string, title: string): vo
   g.restore();
 }
 
+/**
+ * Breaking-news flash: red bars slam in over the programme, BREAKING NEWS across them and the big word ("GOAL")
+ * flashing between. Lasts BREAKING_MS.
+ */
+export const BREAKING_MS = 2800;
+export function drawBreaking(g: Ctx, age: number, flash: string): void {
+  const inT = easeOut(clamp01(age / 250));
+  const outT = clamp01((age - (BREAKING_MS - 300)) / 300);
+  // Two bars close in from top and bottom, then open out again.
+  const half = Math.round((H / 2) * inT * (1 - outT * outT));
+  rect(g, 0, 0, W, half, C.red);
+  rect(g, 0, H - half, W, half, C.red);
+  if (half < H / 2 - 1) return;
+  rect(g, 0, 52, W, 2, C.white);
+  rect(g, 0, 126, W, 2, C.white);
+  rect(g, 0, 56, W, 14, C.white);
+  drawTextCentred(g, 'BREAKING NEWS', W / 2, 61, C.red);
+  const on = Math.floor(age / 220) % 2 === 0;
+  drawTextCentred(g, fit(flash, W - 20, 4), W / 2, 84, on ? C.gold : C.white, 4);
+}
+
 export function drawSplash(g: Ctx, t: number, name: string, status: string): void {
   drawMaroon(g);
   drawHeart(g, W / 2 - 21, 30, 6, C.gold);

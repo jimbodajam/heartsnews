@@ -4,7 +4,10 @@
 
 import { type BbcAction, type BbcData, type BbcEvent, block } from './bbc.ts';
 
-export type LiveStatus = 'pre' | 'live' | 'ht' | 'ft' | 'postponed';
+/** The deployed Worker (worker/). */
+export const LIVE_URL = 'https://heartsnews-live.heartsnews.workers.dev/live.json';
+
+export type LiveStatus ='pre' | 'live' | 'ht' | 'ft' | 'postponed';
 
 /** A BBC live text post for one of the key moments of our match. */
 export interface LivePost {

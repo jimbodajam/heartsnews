@@ -11,7 +11,7 @@ import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
-import type { Bulletin } from '../../shared/bulletin.ts';
+import type { Bulletin, Line, Presenter } from '../../shared/bulletin.ts';
 import { loadPronunciations, pronouncer } from './pronounce.ts';
 import { shortHash } from './text.ts';
 
@@ -74,31 +74,31 @@ async function renderOnGpu(jobs: Job[]): Promise<void> {
   }
 }
 
-/** Render any missing clips for a bulletin file and write the clip paths back into it. */
-export async function renderVoices(bulletinPath: string): Promise<void> {
-  const bulletin = JSON.parse(await readFile(bulletinPath, 'utf8')) as Bulletin;
-  const outDir = resolve(dirname(bulletinPath), AUDIO_DIR);
+/**
+ * Render any missing clips for these lines into `<dir>/audio/`, and set each line's `audio` to its clip's path
+ * relative to `dir`. Returns how many were rendered and reused.
+ */
+export async function voiceLines(presenters: Presenter[], lines: Line[], dir: string): Promise<{ rendered: number; reused: number }> {
+  const outDir = resolve(dir, AUDIO_DIR);
   await mkdir(outDir, { recursive: true });
   const say = pronouncer(loadPronunciations());
 
   let reused = 0;
   const jobs: Job[] = [];
-  for (const seg of bulletin.segments) {
-    for (const line of seg.lines) {
-      const p = bulletin.presenters.find((x) => x.id === line.speaker);
-      if (!p?.tts) {
-        delete line.audio;
-        continue;
-      }
-      const speed = p.tts.speed ?? 1;
-      // The spoken text (with respellings) goes into the hash, so editing pronunciations re-renders affected lines.
-      const spoken = say(line.text);
-      const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${spoken}`)}.${CLIP_EXT}`;
-      const file = resolve(outDir, name);
-      line.audio = `${AUDIO_DIR}/${name}`;
-      if (existsSync(file)) reused++;
-      else if (!jobs.some((j) => j.out === file)) jobs.push({ text: spoken, voice: p.tts.voice, speed, out: file });
+  for (const line of lines) {
+    const p = presenters.find((x) => x.id === line.speaker);
+    if (!p?.tts) {
+      delete line.audio;
+      continue;
     }
+    const speed = p.tts.speed ?? 1;
+    // The spoken text (with respellings) goes into the hash, so editing pronunciations re-renders affected lines.
+    const spoken = say(line.text);
+    const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${spoken}`)}.${CLIP_EXT}`;
+    const file = resolve(outDir, name);
+    line.audio = `${AUDIO_DIR}/${name}`;
+    if (existsSync(file)) reused++;
+    else if (!jobs.some((j) => j.out === file)) jobs.push({ text: spoken, voice: p.tts.voice, speed, out: file });
   }
 
   // The GPU does the whole batch in seconds when it's set up (tools/gpu/setup.sh); otherwise Kokoro runs on the CPU.
@@ -121,16 +121,31 @@ export async function renderVoices(bulletinPath: string): Promise<void> {
     await renderClip(tts, j.text, j.voice, j.speed, j.out);
     console.log(`  ${j.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${j.text.slice(0, 50)}…`);
   }
-  const rendered = jobs.length;
+  return { rendered: jobs.length, reused };
+}
+
+/** Delete the clips in `<dir>/audio/` that none of these lines use, so the deployed site only holds what's playing. */
+export async function dropUnusedClips(lines: Line[], dir: string): Promise<number> {
+  const outDir = resolve(dir, AUDIO_DIR);
+  const keep = new Set(lines.map((l) => l.audio?.split('/').pop()));
+  const stale = (await readdir(outDir)).filter((f) => !keep.has(f));
+  await Promise.all(stale.map((f) => rm(resolve(outDir, f))));
+  return stale.length;
+}
+
+/** Render any missing clips for a bulletin file and write the clip paths back into it. */
+export async function renderVoices(bulletinPath: string): Promise<void> {
+  const bulletin = JSON.parse(await readFile(bulletinPath, 'utf8')) as Bulletin;
+  const dir = dirname(bulletinPath);
+  const lines = bulletin.segments.flatMap((s) => s.lines);
+  const { rendered, reused } = await voiceLines(bulletin.presenters, lines, dir);
 
   await writeFile(bulletinPath, `${JSON.stringify(bulletin, null, 2)}\n`);
 
   // Drop clips from earlier bulletins so the folder (and the deployed site) only holds what's playing.
-  const keep = new Set(bulletin.segments.flatMap((s) => s.lines.map((l) => l.audio?.split('/').pop())));
-  const stale = (await readdir(outDir)).filter((f) => !keep.has(f));
-  await Promise.all(stale.map((f) => rm(resolve(outDir, f))));
-  if (stale.length) console.log(`${stale.length} old clips removed`);
-  console.log(`${rendered} clips rendered, ${reused} reused → ${outDir}`);
+  const stale = await dropUnusedClips(lines, dir);
+  if (stale) console.log(`${stale} old clips removed`);
+  console.log(`${rendered} clips rendered, ${reused} reused → ${resolve(dir, AUDIO_DIR)}`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

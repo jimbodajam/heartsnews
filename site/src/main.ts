@@ -1,7 +1,10 @@
+import { BREAKING_PATH } from '../../shared/breaking';
 import type { Bulletin } from '../../shared/bulletin';
+import { LIVE_URL } from '../../shared/live';
 import { audioContext } from './audio/sting';
 import { Voices } from './audio/voice';
 import { drawSplash } from './gfx/overlay';
+import { BreakingNews } from './breaking';
 import { createScreen } from './gfx/screen';
 import { type FeedSource, LiveScore, workerSource } from './live';
 import { Player } from './player';
@@ -14,7 +17,7 @@ let START_SEGMENT = params.get('segment') ?? undefined;
 const PITCHSIDE = import.meta.env.DEV && params.get('scene') === 'pitchside';
 // ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`), and in
 // dev ?live=replay[&from=17:15][&speed=20] replays the recorded Trabzonspor v Hearts match.
-const LIVE = params.get('live') ?? 'https://heartsnews-live.heartsnews.workers.dev/live.json';
+const LIVE = params.get('live') ?? LIVE_URL;
 
 async function liveSource(): Promise<{ source: FeedSource; pace: number } | undefined> {
   if (LIVE === 'off') return undefined;
@@ -61,6 +64,10 @@ async function boot(): Promise<void> {
     player.live = new LiveScore(live.source, live.pace);
     player.live.onGoal = () => player.goal();
     player.live.start();
+    // Goals and red cards: the home PC publishes a package for each, and the player breaks in with it.
+    const breaking = new BreakingNews(BREAKING_PATH, player.live, live.pace);
+    breaking.onPackage = (p) => player.queueBreaking(p);
+    breaking.start();
   }
 
   // ?tv=1 starts with the retro TV filter on (T toggles it).
