@@ -4,7 +4,7 @@ export type { Story };
 import { detectPhase, type Phase } from '../matchday.ts';
 import { emptyMemory, findAired, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
-import type { ClubConfig, Fixture, Item, MatchData } from '../types.ts';
+import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
 
 /**
  * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted stories among the top
@@ -42,6 +42,8 @@ export interface Facts {
   results: Fixture[];
   nextFixtures: Fixture[];
   phase: Phase;
+  /** Next opponent's form and both XIs, on build-up days. */
+  opponent?: OpponentFocus;
   table: MatchData['table'];
   window: { open: boolean; days: number };
 }
@@ -76,6 +78,8 @@ export function buildFacts(
     results: (match?.last ?? []).filter((f) => f.homeScore !== undefined).slice(0, 5),
     nextFixtures: (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3),
     phase: detectPhase(match, now),
+    // Not during or straight after a game: then the match itself is the story.
+    opponent: ['preview', 'normal'].includes(detectPhase(match, now).kind) ? match?.opponent : undefined,
     table: match?.table ?? [],
     window: transferWindow(now),
   };

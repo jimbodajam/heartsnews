@@ -1,7 +1,7 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
 export type SceneId = 'desk' | 'transfer' | 'touchscreen';
-export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate';
+export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent';
 export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat';
 export type HairStyle = 'short' | 'quiff' | 'bald' | 'long' | 'bob' | 'ponytail';
 
@@ -67,7 +67,11 @@ export type Graphic =
       awayScorers?: string[];
     }
   | { type: 'quote'; text: string; author: string }
-  | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] };
+  | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] }
+  /** A team's recent results with W/D/L. */
+  | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }
+  /** A starting XI on a pitch: rows from the goalkeeper forwards. */
+  | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean };
 
 export interface Line {
   speaker: string; // Presenter id

@@ -1,6 +1,7 @@
 import { dayPhrase, partOfDay, spokenList, spokenOrdinal, timePhrase } from '../time.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
+import { describeXI, formOf } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
 /** The words of a bulletin, before it is laid out into segments, speakers and graphics. */
@@ -24,6 +25,8 @@ export interface Draft {
   debate?: Debate;
   /** New opinions voiced in this bulletin, so presenters stay consistent next time. AI only. */
   opinions?: { speaker: string; topic: string; view: string }[];
+  /** The analyst on the next opponent's form and both XIs (build-up days). */
+  opponent?: { form: string; theirXI?: string; ourXI?: string };
   outro: string;
 }
 
@@ -129,7 +132,25 @@ export function templateDraft(f: Facts): Draft {
           ? ` Full time: ${name(phase.result.home)} ${phase.result.homeScore}, ${name(phase.result.away)} ${phase.result.awayScore}.`
           : '';
 
+  let opponent: Draft['opponent'];
+  const o = f.opponent;
+  if (o) {
+    const form = formOf(o);
+    const wins = form.filter((r) => r.outcome === 'W').length;
+    const latest = form[0];
+    const xiVerb = o.confirmed ? 'start with' : 'lined up last time with';
+    opponent = {
+      form: form.length
+        ? `Let's look at the opposition. ${o.opponent} have won ${wins} of their last ${form.length}` +
+          (latest ? `, most recently ${latest.outcome === 'W' ? 'beating' : latest.outcome === 'L' ? 'losing to' : 'drawing with'} ${latest.against} ${latest.score}.` : '.')
+        : `Let's look at the opposition, ${o.opponent}.`,
+      theirXI: o.theirXI ? `${o.opponent} ${xiVerb} ${describeXI(o.theirXI)}.` : undefined,
+      ourXI: o.ourXI ? `${club.shortName} ${o.confirmed ? 'start with' : 'went with'} ${describeXI(o.ourXI)}.` : undefined,
+    };
+  }
+
   return {
+    opponent,
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
     headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,

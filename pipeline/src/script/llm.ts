@@ -3,6 +3,7 @@ import { dayPhrase, daysUntil, partOfDay, timePhrase, ukHour } from '../time.ts'
 import type { Fixture } from '../types.ts';
 import { findAired, predictionRecord } from '../memory.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
+import { formOf, xiText } from './opponent.ts';
 import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
 
 /** Any model that can answer a prompt with JSON matching a schema. Swap providers by adding another. */
@@ -150,6 +151,7 @@ const DRAFT_SCHEMA = {
       type: 'ARRAY',
       items: { type: 'OBJECT', properties: { speaker: STR, topic: STR, view: STR }, required: ['speaker', 'topic', 'view'] },
     },
+    opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } },
     outro: STR,
   },
   required: ['welcome', 'headlines', 'matchHandoff', 'transferIntro', 'transfers', 'features', 'fans', 'debate', 'opinions', 'outro'],
@@ -246,6 +248,18 @@ function airedNote(f: Facts, title: string): string {
   return `aired ${a.times}x, last ${last}`;
 }
 
+/** The next opponent's results and both XIs, when there's a game coming up. */
+function opponentData(f: Facts): string {
+  const o = f.opponent;
+  if (!o) return 'Opposition focus: (no game in the next few days)';
+  const form = formOf(o).map((r) => `${r.outcome} ${r.score} ${r.venue === 'H' ? 'at home to' : 'away to'} ${r.against} (${r.competition})`);
+  const kind = o.confirmed ? 'CONFIRMED starting XI for this match' : 'starting XI from their last match (not yet confirmed for this one)';
+  return `Opposition focus for ${teamName(f.club, o.fixture.home)} against ${teamName(f.club, o.fixture.away)}:
+${o.opponent} recent results, newest first: ${form.join('; ') || '(none)'}
+${o.opponent} ${kind}: ${o.theirXI ? xiText(o.theirXI) : '(unknown)'}
+${f.club.shortName} ${kind}: ${o.ourXI ? xiText(o.ourXI) : '(unknown)'}`;
+}
+
 /** Everything the script may draw on, as one block. The fact-checker gets exactly the same block. */
 export function dataSection(f: Facts): string {
   const { club, now } = f;
@@ -293,6 +307,8 @@ ${fanVideos || '(none)'}
 
 Articles for in-depth packages ([id] title (outlet; expert), then the article text or a video transcript):
 ${articles || '(none)'}
+
+${opponentData(f)}
 END DATA`;
 }
 
@@ -369,6 +385,10 @@ Fill in the JSON:
   record when it fits. Facts they mention must still come from the DATA.
   ${next ? `Finish with each predicting ${name(next.home)} against ${name(next.away)}: say the score in their line AND put it in predictions
   (homeGoals = ${name(next.home)}, awayGoals = ${name(next.away)}). The two predictions must differ.` : 'There is no fixture to predict, so predictions is an empty list.'}
+- opponent: only if there's an opposition focus in the DATA (otherwise leave it out). ${firstName(presenter(f, channel.cast.analyst))} at the
+  touchscreen: "form" sums up ${f.opponent?.opponent ?? 'the opponent'}'s recent results and what they mean; "theirXI" talks through their
+  shape and the key names; "ourXI" does the same for ${club.shortName}. One or two sentences each. Say "confirmed" only for a
+  confirmed XI; otherwise call it how they lined up last time. Use only the names given.
 - opinions: 1 to 4 new, specific views any presenter expressed in this script that they should remember next time
   (speaker id, short topic, the view in under 20 words). Only views actually voiced above.
 - outro: ${firstName(a)} signs off this bulletin. This is a 24-hour rolling news channel, so say the coverage continues
@@ -463,6 +483,12 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
       .filter((x): x is Feature => Boolean(x)),
     debate,
     opinions,
+    // Each opposition line is kept only where there's data behind it; otherwise the template line stands.
+    opponent: base.opponent && {
+      form: pick(ai.opponent?.form, base.opponent.form),
+      theirXI: pickOptional(ai.opponent?.theirXI, base.opponent.theirXI),
+      ourXI: pickOptional(ai.opponent?.ourXI, base.opponent.ourXI),
+    },
     fans: fansOk
       ? {
           text: fans.text.trim(),

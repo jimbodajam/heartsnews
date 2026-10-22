@@ -72,6 +72,29 @@ export interface Fixture {
   /** Live progress as the BBC shows it, e.g. "63'" or "HT". */
   period?: string;
   scorers?: { side: 'home' | 'away'; player: string; minute: string }[];
+  /** BBC team page slugs (e.g. "motherwell") and the match page path, when the data came from the BBC. */
+  homeSlug?: string;
+  awaySlug?: string;
+  link?: string;
+}
+
+/** A team's starting XI in formation: rows from the goalkeeper forwards, players by surname. */
+export interface Lineup {
+  team: string;
+  formation: string; // "4-2-3-1"
+  rows: string[][];
+}
+
+/** Matchday build-up material about the next opponent and both teams' line-ups. */
+export interface OpponentFocus {
+  fixture: Fixture;
+  opponent: string;
+  /** Their recent results, newest first. */
+  results: Fixture[];
+  theirXI?: Lineup;
+  ourXI?: Lineup;
+  /** True when the XIs are the confirmed teams for this match, not the last starting line-ups. */
+  confirmed: boolean;
 }
 
 export interface Standing {
@@ -90,4 +113,5 @@ export interface MatchData {
   next: Fixture[];
   last: Fixture[];
   table: Standing[];
+  opponent?: OpponentFocus;
 }

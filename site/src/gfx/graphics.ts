@@ -198,6 +198,51 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'form': {
+      const top = panel(g, x, y, w, h, `${gr.team}: LAST ${gr.results.length}`);
+      const colour = { W: C.green, D: C.gold, L: C.red };
+      gr.results.forEach((r, i) => {
+        const ry = top + 1 + i * 10;
+        if (ry + 8 > y + h - 2) return;
+        rect(g, x + 6, ry - 1, 8, 8, colour[r.outcome]);
+        drawText(g, r.outcome, x + 8, ry + 1, C.ink);
+        drawText(g, fit(`${r.score}  ${r.venue === 'H' ? 'V' : 'AT'} ${r.against}`, w - 26), x + 19, ry + 1, C.white);
+      });
+      break;
+    }
+
+    case 'formation': {
+      const top = panel(g, x, y, w, h, `${gr.label}: ${gr.team} ${gr.formation}`);
+      const px = x + 4;
+      const py = top - 1;
+      const pw = w - 8;
+      // Keep every player above the subtitles.
+      const ph = Math.min(y + h - 3, CAPTION_SAFE_BOTTOM) - py;
+      // Striped grass and faint white markings, attacking left to right.
+      for (let i = 0; i < 10; i++) rect(g, px + (i * pw) / 10, py, pw / 10 + 1, ph, i % 2 ? '#2a7135' : '#2f7d3b');
+      g.globalAlpha = 0.45;
+      frame(g, px, py, pw, ph, C.white);
+      rect(g, px + pw / 2, py, 1, ph, C.white);
+      frame(g, px + pw / 2 - 6, py + ph / 2 - 6, 13, 13, C.white);
+      frame(g, px, py + ph * 0.25, Math.round(pw * 0.12), Math.round(ph * 0.5), C.white);
+      frame(g, px + pw - Math.round(pw * 0.12), py + ph * 0.25, Math.round(pw * 0.12), Math.round(ph * 0.5), C.white);
+      g.globalAlpha = 1;
+      // Players: one column per line of the formation, spread evenly down the pitch, surname underneath.
+      const cols = gr.rows.length;
+      const kit = gr.ours ? C.maroonLight : C.light;
+      gr.rows.forEach((row, i) => {
+        const cx = px + (pw * (i + 0.5)) / cols;
+        row.forEach((name, j) => {
+          const cy = Math.round(py + (ph * (j + 0.5)) / row.length - 5);
+          rect(g, cx - 3, cy, 6, 6, C.ink);
+          rect(g, cx - 2, cy + 1, 4, 4, kit);
+          const surname = name.split(' ').pop() ?? name;
+          drawTextCentred(g, fit(surname, pw / cols - 2), cx, cy + 7, C.white);
+        });
+      });
+      break;
+    }
+
     case 'quote': {
       // The speaker goes in the title bar: the bottom of the panel is often under the subtitles.
       const top = panel(g, x, y, w, h, `IN QUOTES: ${gr.author}`);

@@ -16,7 +16,7 @@ import {
 
 type Shot = 'wide' | 'single' | 'full';
 
-const FULLSCREEN: Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions'];
+const FULLSCREEN: Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'formation'];
 
 const LABEL: Record<SegmentKind, string> = {
   headlines: 'HEADLINES',
@@ -25,6 +25,7 @@ const LABEL: Record<SegmentKind, string> = {
   fans: 'FAN ZONE',
   match: 'MATCH CENTRE',
   debate: 'THE DEBATE',
+  opponent: 'OPPOSITION FOCUS',
 };
 
 /**

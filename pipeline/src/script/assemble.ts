@@ -3,6 +3,7 @@ import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
+import { formOf } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
@@ -164,7 +165,8 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   const [f1, f2, f3, f4, f5] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
   const debate = draft.debate ? debateSegment(f, draft.debate) : undefined;
   const byId = (id: string) => segments.find((s) => s.id === id);
-  const ordered = [byId('headlines'), f1, byId('match'), f2, debate, f3, byId('transfers'), f4, f5, byId('fans')].filter(
+  const opposition = draft.opponent && f.opponent ? opponentSegment(f, draft.opponent) : undefined;
+  const ordered = [byId('headlines'), f1, byId('match'), opposition, f2, debate, f3, byId('transfers'), f4, f5, byId('fans')].filter(
     (s): s is Segment => Boolean(s),
   );
 
@@ -185,6 +187,44 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     presenters: channel.presenters,
     ticker,
     segments: ordered,
+  };
+}
+
+/** The analyst at the touchscreen on the next opponent: their form, then both XIs on a pitch. */
+function opponentSegment(f: Facts, d: NonNullable<Draft['opponent']>): Segment | undefined {
+  const o = f.opponent;
+  if (!o) return undefined;
+  const analyst = f.channel.cast.analyst;
+  const label = o.confirmed ? 'CONFIRMED XI' : 'LAST XI';
+  const lines: Line[] = [
+    {
+      speaker: analyst,
+      text: d.form,
+      graphic: { type: 'form', team: o.opponent, results: formOf(o).map(({ against, score, outcome, venue }) => ({ against, score, outcome, venue })) },
+    },
+  ];
+  if (d.theirXI && o.theirXI) {
+    lines.push({
+      speaker: analyst,
+      text: d.theirXI,
+      graphic: { type: 'formation', label, team: o.theirXI.team, formation: o.theirXI.formation, rows: o.theirXI.rows, ours: false },
+    });
+  }
+  if (d.ourXI && o.ourXI) {
+    lines.push({
+      speaker: analyst,
+      text: d.ourXI,
+      graphic: { type: 'formation', label, team: o.ourXI.team, formation: o.ourXI.formation, rows: o.ourXI.rows, ours: true },
+    });
+  }
+  return {
+    id: 'opponent',
+    kind: 'opponent',
+    title: `Focus on ${o.opponent}`,
+    strap: `${teamName(f.club, o.fixture.home)} v ${teamName(f.club, o.fixture.away)}: the opposition`,
+    scene: 'touchscreen',
+    presenters: [analyst],
+    lines,
   };
 }
 
