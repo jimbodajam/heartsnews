@@ -33,7 +33,13 @@ async function callGemini(key: string, model: string, prompt: string, schema: ob
   }
   const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
-  return JSON.parse(text);
+  // An empty or cut-off reply is the model having a bad moment, not a bad request: worth another go.
+  if (!text.trim()) throw new RetryableError(`${model} returned an empty response`);
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new RetryableError(`${model} returned bad JSON (${text.length} chars): ${(err as Error).message}`);
+  }
 }
 
 /**
@@ -282,6 +288,12 @@ export function dataSection(f: Facts): string {
   const fanVideos = f.fanVideos
     .map((v) => `"${v.title}" (${v.sourceName.replace(/\s*\(.*?\)/, '')}, ${whenSaid(v.publishedAt, now).replace('earlier ', '')}):\n${truncate(v.transcript ?? '', 2500)}`)
     .join('\n\n');
+  // Headlines need more than a title to be worth reading out. In-depth articles appear in full below, so skip those here.
+  const featureIds = new Set(f.features.map((s) => s.id));
+  const headlineText = f.pool
+    .filter((s) => !featureIds.has(s.id) && (s.body?.length ?? 0) > s.summary.length + 100)
+    .map((s) => `[${s.id}] ${s.title}\n${truncate(s.body ?? '', 800)}`)
+    .join('\n\n');
   const articles = f.features
     .map((s) => {
       const a = findAired(f.memory, s.title);
@@ -304,6 +316,9 @@ ${threads || '(none)'}
 
 Supporters' YouTube channel, latest shows (auto-generated captions, so expect mis-heard words; this is fan opinion):
 ${fanVideos || '(none)'}
+
+Opening of the article for other top stories ([id] title, then the start of the article):
+${headlineText || '(none)'}
 
 Articles for in-depth packages ([id] title (outlet; expert), then the article text or a video transcript):
 ${articles || '(none)'}
@@ -357,8 +372,11 @@ ${dataSection(f)}
 
 Fill in the JSON:
 - welcome: ${firstName(a)} greets viewers ("Good ${partOfDay(now)}") and introduces the headlines.
-- headlines: the 3 or 4 most important stories, most important first, using their ids. Each is a self-contained read of 1-2 sentences.
-  Mention the outlet when it helps. Don't repeat the same story twice.
+- headlines: the 3 or 4 most important stories, most important first, using their ids. Each is a self-contained read of
+  2 or 3 sentences (about 40 to 70 words; this overrides the 35-word line limit): what happened, the key detail or
+  number from the article text, then why it matters for ${club.shortName} or what comes next. Use the article text
+  (opening or in-depth) where there is one, not just the title. Rewrite outlet headlines in your own words, never
+  read a title out as it is. Mention the outlet once. Don't repeat the same story twice.
 - matchHandoff: ${firstName(a)} hands over to ${firstName(analyst)} in the Match Centre.
 - result, table, next: ${firstName(analyst)} covers the last result, the league position and the next fixture (use "today", "tomorrow" or the weekday,
   and UK kick-off times). Full spoken sentences, one or two each (the result line starts by thanking ${firstName(a)}); the table is on screen, so mention only our position, points
@@ -407,7 +425,7 @@ function tidyQuote(text: string): string {
 /** Lowercase letters and digits only, for checking a quote against the article regardless of punctuation. */
 const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
-const usable = (s: unknown): s is string => typeof s === 'string' && s.trim().length > 0 && s.length <= 450;
+const usable = (s: unknown): s is string => typeof s === 'string' && s.trim().length > 0 && s.length <= 600;
 
 /** Take each part of the AI draft only if it is well-formed and refers to real stories; otherwise keep the template's. */
 export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
