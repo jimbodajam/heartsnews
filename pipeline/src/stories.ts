@@ -73,6 +73,26 @@ function categorise(text: string): StoryCategory {
 
 const outlet = (it: Item) => it.publisher ?? it.sourceName;
 
+/** Signings and injuries are what fans most want to hear about. */
+const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, injury: 1.15, match: 1.1, news: 1 };
+
+/**
+ * Situational boosts on top of a story's own importance: stories about the next (or current) opponent on a
+ * matchday, and stories the Kickback is busy talking about.
+ */
+export function boostStories(stories: Story[], opts: { opponent?: string; fanThreads: Item[] }): void {
+  const opponent = opts.opponent && normaliseTitle(opts.opponent);
+  const buzz = tokens(opts.fanThreads.map((t) => `${t.title} ${t.summary}`).join(' '));
+  for (const s of stories) {
+    let boost = 1;
+    if (opponent && normaliseTitle(s.title).includes(opponent)) boost *= 1.3;
+    const own = tokens(s.title);
+    const overlap = [...own].filter((w) => buzz.has(w)).length;
+    if (overlap >= 3) boost *= 1.2;
+    s.score = Math.round(s.score * boost * 1000) / 1000;
+  }
+}
+
 export function buildStories(items: Item[], club: ClubConfig, now = new Date()): Story[] {
   const clusters: { tokens: Set<string>; items: Item[] }[] = [];
   for (const item of items) {
@@ -98,17 +118,21 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
       // Aggregator hits are often reposts of the same article, so they count for less than a second newsroom.
       const direct = new Set(ranked.filter((it) => it.kind !== 'aggregator').map(outlet)).size;
       const reposts = sources.length - direct;
+      const category = categorise(text);
+      // Importance: a big story stays big all day (30-hour half-life, like rolling news running it on repeat),
+      // boosted by how many newsrooms have it, the most official source, and what kind of story it is.
       const score =
-        0.5 ** (hours / 18) *
+        0.5 ** (hours / 30) *
         (1 + 0.5 * Math.max(0, direct - 1) + 0.15 * reposts) *
         Math.max(...c.items.map((it) => KIND_WEIGHT[it.kind])) *
+        CATEGORY_WEIGHT[category] *
         (mentionsAny(lead.title, club.keywords) ? 1 : 0.4) *
         (MINOR.test(lead.title) ? 0.3 : 1);
       return {
         id: `s${shortHash(lead.url).slice(0, 6)}`,
         title: speakable(lead.title),
         summary: ranked.find((it) => it.summary)?.summary ?? '',
-        category: categorise(text),
+        category,
         sources,
         latest,
         score: Math.round(score * 1000) / 1000,

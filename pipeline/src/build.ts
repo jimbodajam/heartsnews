@@ -12,13 +12,14 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, FEATURE_CANDIDATES, teamName, type Channel } from './script/facts.ts';
+import { buildFacts, FEATURE_CANDIDATES, isUs, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
 import { remember } from './script/remember.ts';
 import { fetchArticleText } from './collectors/article.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { freshness, loadMemory, settlePredictions, trimMemory } from './memory.ts';
-import { addBodies, buildStories } from './stories.ts';
+import { addBodies, boostStories, buildStories, fanThreads } from './stories.ts';
+import { detectPhase } from './matchday.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -74,8 +75,15 @@ async function main() {
     }
   }
   settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
-  for (const s of stories) s.score = Math.round(s.score * freshness(memory, s) * 1000) / 1000;
+  // Weighting: matchday opponent and Kickback buzz boost a story; a recent airing cools it down for a while.
+  const phase = detectPhase(match, now);
+  const fixture = phase.kind === 'preview' || phase.kind === 'live' ? phase.fixture : phase.kind === 'reaction' ? phase.result : undefined;
+  const opponent = fixture && (isUs(club, fixture.home) ? fixture.away : fixture.home);
+  boostStories(stories, { opponent, fanThreads: fanThreads(items) });
+  for (const s of stories) s.score = Math.round(s.score * freshness(memory, s, now) * 1000) / 1000;
   stories.sort((a, b) => b.score - a.score);
+  console.log(`\nWeighted for this bulletin:`);
+  for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
   await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
   const facts = buildFacts(club, channel, stories, items, match, now, memory);

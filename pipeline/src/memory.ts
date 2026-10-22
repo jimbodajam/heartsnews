@@ -78,14 +78,18 @@ export function findAired(memory: Memory, title: string): AiredStory | undefined
 }
 
 /**
- * Score multiplier so the channel moves on: each airing halves a story's weight, unless it has fresh
- * coverage since it was last on, in which case it stays reasonably high (it's a genuine update).
+ * Score multiplier for a story that has been on recently. Like rolling news, a big story keeps coming back:
+ * just after airing it drops to 40%, recovers to ~70% after an hour and ~90% after three, so other stories get
+ * their turn in between. Many airings add a little fatigue, and fresh coverage since it last aired lifts the
+ * cooldown entirely (it's a genuine update).
  */
-export function freshness(memory: Memory, story: Story): number {
+export function freshness(memory: Memory, story: Story, now: Date): number {
   const a = findAired(memory, story.title);
   if (!a) return 1;
-  const penalty = 0.5 ** a.times;
-  return story.latest > a.lastAired ? Math.max(penalty, 0.7) : penalty;
+  const fatigue = Math.max(0.6, 1 - 0.04 * a.times);
+  if (story.latest > a.lastAired) return fatigue;
+  const hours = (now.getTime() - Date.parse(a.lastAired)) / 3_600_000;
+  return (1 - 0.6 * Math.exp(-hours / 1.5)) * fatigue;
 }
 
 export function recordAired(memory: Memory, stories: Story[], inDepth: Set<string>, now: Date): void {

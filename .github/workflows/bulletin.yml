@@ -24,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:

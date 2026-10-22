@@ -160,10 +160,11 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
 
   // In-depth packages go between the regular segments, like a rolling news hour:
   // headlines → story → Match Centre → story → Transfer Centre → story → Fan Zone.
-  const [f1, f2, f3] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
+  // Up to five packages spread through the hour, so there's always substance between the regular segments.
+  const [f1, f2, f3, f4, f5] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
   const debate = draft.debate ? debateSegment(f, draft.debate) : undefined;
   const byId = (id: string) => segments.find((s) => s.id === id);
-  const ordered = [byId('headlines'), f1, byId('match'), debate, f2, byId('transfers'), f3, byId('fans')].filter(
+  const ordered = [byId('headlines'), f1, byId('match'), f2, debate, f3, byId('transfers'), f4, f5, byId('fans')].filter(
     (s): s is Segment => Boolean(s),
   );
 

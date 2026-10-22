@@ -6,9 +6,12 @@ import { emptyMemory, findAired, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData } from '../types.ts';
 
-/** How many stories get an in-depth package, chosen from the top FEATURE_CANDIDATES that have enough article text. */
-export const FEATURE_COUNT = 3;
-export const FEATURE_CANDIDATES = 6;
+/**
+ * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted stories among the top
+ * FEATURE_CANDIDATES that have enough article or transcript text. Repeats are fine (with a fresh angle).
+ */
+export const FEATURE_COUNT = 5;
+export const FEATURE_CANDIDATES = 12;
 const MIN_BODY = 400;
 
 export interface Channel {
@@ -43,12 +46,6 @@ export interface Facts {
   window: { open: boolean; days: number };
 }
 
-/** A story already covered in depth only gets another package if there's been new coverage since. */
-function needsDepth(memory: Memory, s: Story): boolean {
-  const a = findAired(memory, s.title);
-  return !a || a.inDepth === 0 || s.latest > a.lastAired;
-}
-
 export function buildFacts(
   club: ClubConfig,
   channel: Channel,
@@ -66,7 +63,7 @@ export function buildFacts(
     pool: stories.slice(0, 10),
     features: stories
       .slice(0, FEATURE_CANDIDATES)
-      .filter((s) => (s.body?.length ?? 0) >= MIN_BODY && needsDepth(memory, s))
+      .filter((s) => (s.body?.length ?? 0) >= MIN_BODY)
       .slice(0, FEATURE_COUNT),
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
     fans: fanThreads(items).slice(0, 5),
@@ -100,9 +97,14 @@ export function presenter(facts: Facts, id: string): Presenter {
 
 export const firstName = (p: Presenter) => p.name.split(' ')[0];
 
-/** Who joins the lead anchor to discuss a story: the Transfer Centre reporter, the analyst, or the other anchor. */
+/**
+ * Who joins the lead anchor to discuss a story: the Transfer Centre reporter, the analyst, or the other anchor.
+ * When a story comes round again, the other anchor and the specialist take turns, so a repeat sounds different.
+ */
 export function expertFor(f: Facts, s: Story): string {
-  if (s.category === 'transfer') return f.channel.cast.transfers;
-  if (s.category === 'match' || s.category === 'injury') return f.channel.cast.analyst;
-  return f.channel.cast.anchors[1];
+  const { transfers, analyst, anchors } = f.channel.cast;
+  const specialist = s.category === 'transfer' ? transfers : s.category === 'match' || s.category === 'injury' ? analyst : anchors[1];
+  const times = findAired(f.memory, s.title)?.inDepth ?? 0;
+  if (times % 2 === 0) return specialist;
+  return specialist === anchors[1] ? analyst : anchors[1];
 }

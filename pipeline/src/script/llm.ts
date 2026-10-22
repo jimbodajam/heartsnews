@@ -15,7 +15,7 @@ class RetryableError extends Error {}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function callGemini(key: string, model: string, prompt: string, schema: object): Promise<unknown> {
+async function callGemini(key: string, model: string, prompt: string, schema: object, timeoutMs: number): Promise<unknown> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
@@ -23,8 +23,7 @@ async function callGemini(key: string, model: string, prompt: string, schema: ob
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.7 },
     }),
-    // Full scripts with in-depth packages are long; allow a few minutes before trying the lighter model.
-    signal: AbortSignal.timeout(180_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const message = `${model} HTTP ${res.status}: ${(await res.text()).slice(0, 200).replace(/\s+/g, ' ')}`;
@@ -59,7 +58,8 @@ export function geminiFromEnv(): ScriptModel | undefined {
           }
           try {
             used.model = model;
-            return await callGemini(key, model, prompt, schema);
+            // Full scripts with five packages are long: the main model gets five minutes, the lighter one three.
+            return await callGemini(key, model, prompt, schema, model === models[0] ? 300_000 : 180_000);
           } catch (err) {
             last = err;
             // A timeout already cost minutes, so go straight to the next (faster) model rather than retry.
@@ -277,7 +277,11 @@ function buildPrompt(f: Facts): string {
     .map((v) => `"${v.title}" (${v.sourceName.replace(/\s*\(.*?\)/, '')}, ${whenSaid(v.publishedAt, now).replace('earlier ', '')}):\n${truncate(v.transcript ?? '', 2500)}`)
     .join('\n\n');
   const articles = f.features
-    .map((s) => `[${s.id}] ${s.title} (${s.sources[0]}; expert: ${firstName(presenter(f, expertFor(f, s)))})\n${truncate(s.body ?? '', 3000)}`)
+    .map((s) => {
+      const a = findAired(f.memory, s.title);
+      const before = a?.inDepth ? `; covered in depth ${a.inDepth}x before, last ${airedNote(f, s.title).replace(/^.*last /, '')}` : '';
+      return `[${s.id}] ${s.title} (${s.sources[0]}; expert: ${firstName(presenter(f, expertFor(f, s)))}${before})\n${truncate(s.body ?? '', 2500)}`;
+    })
     .join('\n\n');
 
   return `You are the scriptwriter for "${channel.spokenName}", a 24-hour TV sports news channel about ${club.name} (${club.shortName}).
@@ -345,6 +349,9 @@ Fill in the JSON:
   "expert" lines are the named expert explaining. Cover what happened, the key details, why it matters for ${club.shortName}
   and what comes next. Make it a conversation (the lead can ask the expert a question). Explain in your own words;
   don't copy sentences from the article. Credit the outlet once.
+  A big story is meant to come round again during the day. For articles "covered in depth before", viewers may have
+  seen it, so take a fresh angle: different details from the article, what it means for tonight or the next game, or
+  the expert's own take. Open with something like "Back to our top story…" rather than introducing it from scratch.
   quote is optional: only if the article contains a direct quote from a named person, copy at most 25 words of it
   exactly, word for word, with "by" being that person's name. Otherwise leave quote out.
 - fans: text is ${firstName(b)} summarising the supporters' mood in 1-3 sentences; score runs from -1 (raging) to 1 (buzzing);
@@ -363,6 +370,11 @@ Fill in the JSON:
 
 export async function writeWithModel(model: ScriptModel, f: Facts): Promise<Partial<Draft>> {
   return (await model.generateJson(buildPrompt(f), DRAFT_SCHEMA)) as Partial<Draft>;
+}
+
+/** Spoken quotes from auto-captions stutter ("we're we're"); drop immediate word repeats for the on-screen card. */
+function tidyQuote(text: string): string {
+  return text.trim().replace(/\b(\w+(?:'\w+)?)(\s+\1\b)+/gi, '$1');
 }
 
 /** Lowercase letters and digits only, for checking a quote against the article regardless of punctuation. */
@@ -402,7 +414,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
       const q = x.quote;
       const genuine =
         q && usable(q.text) && usable(q.by) && q.text.split(/\s+/).length <= 30 && squash(story.body ?? '').includes(squash(q.text));
-      return { storyId: story.id, lines: lines.slice(0, 7), quote: genuine ? { text: q.text.trim(), by: q.by.trim() } : undefined };
+      return { storyId: story.id, lines: lines.slice(0, 7), quote: genuine ? { text: tidyQuote(q.text), by: q.by.trim() } : undefined };
     })
     .filter((x): x is Feature => Boolean(x));
 
@@ -438,7 +450,10 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
     next: pickOptional(ai.next, base.next),
     transferIntro: pick(ai.transferIntro, base.transferIntro),
     transfers: Array.isArray(ai.transfers) ? transfers : base.transfers,
-    features: features.length ? features : base.features,
+    // Keep the AI's packages and fill any it skipped with the template versions, in weighting order.
+    features: f.features
+      .map((s) => features.find((x) => x.storyId === s.id) ?? base.features.find((x) => x.storyId === s.id))
+      .filter((x): x is Feature => Boolean(x)),
     debate,
     opinions,
     fans: fansOk
