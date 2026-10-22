@@ -15,8 +15,9 @@ const BULLETIN_URL = params.get('bulletin') ?? 'bulletins/latest.json';
 let START_SEGMENT = params.get('segment') ?? undefined;
 // In dev, ?scene=pitchside opens on a demo of our reporter at the ground (see pitchside-preview.ts).
 const PITCHSIDE = import.meta.env.DEV && params.get('scene') === 'pitchside';
-// ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`), and in
-// dev ?live=replay[&from=17:15][&speed=20] replays the recorded Trabzonspor v Hearts match.
+// ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`, or
+// `npm run replay` with &speed=20 to poll as fast as it replays), and in dev ?live=replay[&from=17:15][&speed=20]
+// replays the recorded Trabzonspor v Hearts match in the page alone (no breaking news).
 const LIVE = params.get('live') ?? LIVE_URL;
 
 async function liveSource(): Promise<{ source: FeedSource; pace: number } | undefined> {
@@ -27,7 +28,7 @@ async function liveSource(): Promise<{ source: FeedSource; pace: number } | unde
     const { replaySource } = await import('./live-replay');
     return { source: replaySource(params.get('from') ?? undefined, speed), pace: speed };
   }
-  return { source: workerSource(LIVE), pace: 1 };
+  return { source: workerSource(LIVE), pace: Number(params.get('speed')) || 1 };
 }
 
 async function fetchBulletin(): Promise<Bulletin> {

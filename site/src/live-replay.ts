@@ -1,5 +1,6 @@
 // Dev only: live.json replayed from the recording of Trabzonspor v Hearts (22 Oct 2026), sped up, to watch the live
 // score in the ticker without a match on. ?live=replay[&from=17:15][&speed=20] (UTC time; kick-off was 16:45 UTC).
+// For the Worker's code and the break-ins too, use `npm run replay` instead.
 
 import club from '../../clubs/hearts.json';
 import type { BbcData, BbcEvent } from '../../shared/bbc';

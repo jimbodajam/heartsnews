@@ -16,6 +16,7 @@
     "breaking": "tsx src/breaking/index.ts",
     "record": "tsx src/record-match.ts",
     "trim-recording": "tsx src/trim-recording.ts",
+    "replay": "tsx src/replay.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {

@@ -3,7 +3,8 @@
 // from BBC's description), voices it with Kokoro and
 // writes site/public/breaking/breaking.json. `npm run live` runs this alongside the programmes and publishes each one.
 // Usage, to try it on its own: npm run breaking [-- --replay [--from 17:15] [--speed 20]] [--publish] [--templates]
-//   --replay      replay the recorded Trabzonspor v Hearts (22 Oct 2026) instead of reading the Worker
+// (`npm run replay` runs a replay with the player as well.)
+//   --replay      replay the recorded Trabzonspor v Hearts (22 Oct 2026) through the Worker's code instead of reading it
 //   --from HH:MM  where the replay starts, UTC (default 16:30; kick-off was 16:45)
 //   --speed N     how much faster than real time the replay runs (default 20)
 //   --publish     put each package on air (gh-pages); otherwise it's only written for `npm run dev`
@@ -14,10 +15,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { BbcData, BbcEvent } from '../../../shared/bbc.ts';
 import { BREAKING_PATH, type BreakingFeed, type BreakingPackage, type Period } from '../../../shared/breaking.ts';
-import { LIVE_URL, type LiveFeed, liveMatch } from '../../../shared/live.ts';
+import { LIVE_URL, type LiveFeed } from '../../../shared/live.ts';
 import { publishSite } from '../publish.ts';
+import { openFixture, replay } from '../recording.ts';
 import type { Channel } from '../script/facts.ts';
 import { geminiFromEnv } from '../script/llm.ts';
 import { dropUnusedClips, voiceLines } from '../voice.ts';
@@ -45,24 +46,16 @@ export function workerSource(url = process.env.HEARTSNEWS_LIVE_URL ?? LIVE_URL):
   };
 }
 
-/** live.json as the recorded match had it, replayed from `from` (UTC) at `speed` times real time. */
-export function replaySource(from = '16:30', speed = 20): FeedSource & { over: () => boolean } {
-  const rec = JSON.parse(readFileSync(resolve(ROOT, 'shared/test/fixtures/2026-10-22-trabzonspor-hearts.json'), 'utf8')) as {
-    teamEvent: BbcEvent;
-    snapshots: { at: string; page: BbcData }[];
-  };
+/** live.json as the recorded match had it, through the Worker's code, replayed from `from` (UTC) at `speed` times real time. */
+export function replaySource(from?: string, speed = 20): FeedSource & { over: () => boolean } {
   const club = JSON.parse(readFileSync(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
-  const start = Date.parse(`2026-10-22T${from.length === 5 ? `${from}:00` : from}Z`);
-  const began = Date.now();
-  const now = () => start + (Date.now() - began) * speed;
-  // Over once the recording has run out, plus long enough for anything still waiting on a description.
-  const end = Date.parse(rec.snapshots[rec.snapshots.length - 1].at) + 5 * 60_000;
-  const source = async () => {
-    const t = now();
-    const snap = rec.snapshots.filter((s) => Date.parse(s.at) <= t).pop() ?? rec.snapshots[0];
-    return { updated: new Date(t).toISOString(), match: liveMatch(rec.teamEvent, club.bbc.team, snap.page) };
-  };
-  return Object.assign(source, { over: () => now() > end });
+  const r = replay(openFixture(), { team: club.bbc.team, from, speed });
+  return Object.assign(r.feed, { over: r.over });
+}
+
+/** Empty site/public/breaking, so a replay's packages come out fresh. */
+export async function resetBreaking(): Promise<void> {
+  await rm(DIR, { recursive: true, force: true });
 }
 
 /** How long until the next read: every 20s while the game's on, less often either side of it. */
@@ -189,19 +182,18 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (existsSync(resolve(ROOT, '.env'))) process.loadEnvFile(resolve(ROOT, '.env'));
   const args = process.argv.slice(2);
   const opt = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
-  const replay = args.includes('--replay');
+  const replaying = args.includes('--replay');
   const speed = Number(opt('--speed')) || 20;
-  const source = replay ? replaySource(opt('--from'), speed) : workerSource();
+  const source = replaying ? replaySource(opt('--from'), speed) : workerSource();
   const run = async () => {
-    // A replay starts from an empty feed, so its packages come out fresh.
-    if (replay) await rm(DIR, { recursive: true, force: true });
+    if (replaying) await resetBreaking();
     await watchBreaking({
       source,
       publish: args.includes('--publish') ? publishBreaking : undefined,
-      pace: replay ? speed : 1,
-      persist: !replay,
+      pace: replaying ? speed : 1,
+      persist: !replaying,
       templates: args.includes('--templates'),
-      stop: replay ? (source as ReturnType<typeof replaySource>).over : undefined,
+      stop: replaying ? (source as ReturnType<typeof replaySource>).over : undefined,
     });
   };
   run().catch((err) => {
