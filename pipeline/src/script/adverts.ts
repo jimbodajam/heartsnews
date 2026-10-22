@@ -14,7 +14,7 @@ export interface Advert {
   art: AdArt;
   colours: { bg: string; fg: string; accent: string };
   /**
-   * Backdrop pictures (pixel art), made screen-sized by `npm run adverts` into site/public/adverts/<id>-<n>.png. The
+   * Backdrop pictures (pixel art), made screen-sized by `npm run adverts` into site/public/breaks/<id>-<n>.png. The
    * advert cuts between them line by line. `position` is which part to keep when cropping to widescreen.
    */
   photos?: { from: string; position?: 'centre' | 'top' | 'bottom' | 'left' | 'right' }[];
@@ -58,7 +58,7 @@ export function adBreaks(cfg: AdvertsConfig, now: Date): Segment[] {
           return ad.lines
             .filter((l) => voices.has(l.voice))
             .map((l, i) => {
-              const photo = shots ? `adverts/${ad.id}-${Math.min(l.shot ?? i % shots, shots - 1)}.png` : undefined;
+              const photo = shots ? `breaks/${ad.id}-${Math.min(l.shot ?? i % shots, shots - 1)}.png` : undefined;
               const graphic: Graphic = { type: 'advert', id: ad.id, brand: ad.brand, tagline: ad.tagline, small: ad.small, art: ad.art, colours: ad.colours, photo };
               return { speaker: l.voice, text: l.text, graphic };
             });

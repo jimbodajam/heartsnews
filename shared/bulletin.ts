@@ -101,7 +101,7 @@ export type Graphic =
       small?: string;
       art: AdArt;
       colours: { bg: string; fg: string; accent: string };
-      /** This line's backdrop picture (adverts/<id>-<n>.png); without one the code-drawn card shows. */
+      /** This line's backdrop picture (breaks/<id>-<n>.png); without one the code-drawn card shows. */
       photo?: string;
     };
 

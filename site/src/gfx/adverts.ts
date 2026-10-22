@@ -145,7 +145,7 @@ function background(colour: string): HTMLCanvasElement {
   return c;
 }
 
-// Pixel-art backdrops (`npm run adverts` → adverts/<id>-<n>.png, a little bigger than the screen), loaded on first
+// Pixel-art backdrops (`npm run adverts` → breaks/<id>-<n>.png, a little bigger than the screen), loaded on first
 // use. An advert without one keeps the code-drawn card.
 const photos = new Map<string, HTMLImageElement>();
 function photoFor(path?: string): HTMLImageElement | undefined {
