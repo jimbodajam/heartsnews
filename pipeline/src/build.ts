@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, FEATURE_CANDIDATES, isUs, teamName, type Channel } from './script/facts.ts';
+import { buildFacts, FEATURE_CANDIDATES, FEATURE_COUNT, FEATURE_MAX_SCAN, isUs, MIN_BODY, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
@@ -88,6 +88,11 @@ async function main() {
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
   await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
+  // Not enough readable articles yet? Keep going down the order, a few at a time, until there are.
+  const readable = () => stories.slice(0, FEATURE_MAX_SCAN).filter((s) => (s.body?.length ?? 0) >= MIN_BODY).length;
+  for (let i = FEATURE_CANDIDATES; i < FEATURE_MAX_SCAN && readable() < FEATURE_COUNT; i += 6) {
+    await addBodies(stories.slice(i, Math.min(i + 6, FEATURE_MAX_SCAN)), (url) => fetchArticleText(url));
+  }
   const facts = buildFacts(club, channel, stories, items, match, now, memory);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);

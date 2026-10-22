@@ -7,12 +7,15 @@ import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
 
 /**
- * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted stories among the top
- * FEATURE_CANDIDATES that have enough article or transcript text. Repeats are fine (with a fresh angle).
+ * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted stories that have enough article or
+ * transcript text. The top FEATURE_CANDIDATES always get text (the headlines use it too); after that the build
+ * keeps reading down the order, up to FEATURE_MAX_SCAN, because many stories are unreadable Google News links.
+ * Repeats are fine (with a fresh angle).
  */
 export const FEATURE_COUNT = 5;
 export const FEATURE_CANDIDATES = 12;
-const MIN_BODY = 400;
+export const FEATURE_MAX_SCAN = 30;
+export const MIN_BODY = 400;
 
 export interface Channel {
   name: string;
@@ -64,7 +67,7 @@ export function buildFacts(
     memory,
     pool: stories.slice(0, 10),
     features: stories
-      .slice(0, FEATURE_CANDIDATES)
+      .slice(0, FEATURE_MAX_SCAN)
       .filter((s) => (s.body?.length ?? 0) >= MIN_BODY)
       .slice(0, FEATURE_COUNT),
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
