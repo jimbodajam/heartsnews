@@ -48,7 +48,15 @@ export interface Facts {
   /** Next opponent's form and both XIs, on build-up days. */
   opponent?: OpponentFocus;
   table: MatchData['table'];
+  /** The table for the competition of the game we're building up to (or just played), when it isn't the league. */
+  competitionTable?: { competition: string; rows: MatchData['table'] };
   window: { open: boolean; days: number };
+}
+
+/** The game the bulletin is built around: the one coming up, on now, or just played; otherwise the next one. */
+export function focusFixture(f: Pick<Facts, 'phase' | 'nextFixtures'>): Fixture | undefined {
+  const p = f.phase;
+  return p.kind === 'preview' || p.kind === 'live' ? p.fixture : p.kind === 'reaction' ? p.result : f.nextFixtures[0];
 }
 
 export function buildFacts(
@@ -60,6 +68,9 @@ export function buildFacts(
   now: Date,
   memory: Memory = emptyMemory(),
 ): Facts {
+  const phase = detectPhase(match, now);
+  const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
+  const competition = focusFixture({ phase, nextFixtures })?.competition;
   return {
     club,
     channel,
@@ -79,13 +90,46 @@ export function buildFacts(
       .slice(0, 2),
     lastResult: match?.last.find((f) => f.homeScore !== undefined && f.awayScore !== undefined),
     results: (match?.last ?? []).filter((f) => f.homeScore !== undefined).slice(0, 5),
-    nextFixtures: (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3),
-    phase: detectPhase(match, now),
+    nextFixtures,
+    phase,
     // Not during or straight after a game: then the match itself is the story.
-    opponent: ['preview', 'normal'].includes(detectPhase(match, now).kind) ? match?.opponent : undefined,
+    opponent: ['preview', 'normal'].includes(phase.kind) ? match?.opponent : undefined,
     table: match?.table ?? [],
+    competitionTable: match?.tables?.find((t) => t.competition === competition),
     window: transferWindow(now),
   };
+}
+
+/** One slot in the bulletin's running order: the segment id and who is on screen for it. */
+export interface Slot {
+  id: string;
+  what: string;
+  presenters: string[];
+}
+
+/**
+ * The order segments air in, like a rolling news hour: headlines → story → Match Centre → opposition → story →
+ * debate → story → Transfer Centre → stories → Fan Zone. The script prompt (for hand-overs) and the layout share it.
+ */
+export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolean; match: boolean }): Slot[] {
+  const { anchors, analyst, transfers } = f.channel.cast;
+  const pundits = f.channel.cast.debate ?? [anchors[1], transfers];
+  const story = (s?: Story): Slot | undefined => s && { id: `story-${s.id}`, what: `in-depth package: "${s.title}"`, presenters: [anchors[0], expertFor(f, s)] };
+  const [f1, f2, f3, f4, f5] = opts.features;
+  const slots: (Slot | undefined)[] = [
+    { id: 'headlines', what: 'the headlines', presenters: [...anchors] },
+    story(f1),
+    opts.match ? { id: 'match', what: 'Match Centre at the touchscreen: results, tables and the next match', presenters: [analyst] } : undefined,
+    opts.match && f.opponent ? { id: 'opponent', what: `opposition focus on ${f.opponent.opponent}: form and line-ups`, presenters: [analyst] } : undefined,
+    story(f2),
+    opts.debate ? { id: 'debate', what: 'The Debate, ending with score predictions', presenters: [...pundits] } : undefined,
+    story(f3),
+    { id: 'transfers', what: 'the Transfer Centre', presenters: [transfers] },
+    story(f4),
+    story(f5),
+    { id: 'fans', what: 'the Fan Zone: what supporters are saying', presenters: [...anchors] },
+  ];
+  return slots.filter((s): s is Slot => Boolean(s));
 }
 
 /** Data feeds use the full club name; on air it's the short one. */

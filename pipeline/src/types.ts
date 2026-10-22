@@ -115,5 +115,7 @@ export interface MatchData {
   next: Fixture[];
   last: Fixture[];
   table: Standing[];
+  /** Tables for the other competitions we're in (e.g. a European league phase), named as fixtures name them. */
+  tables?: { competition: string; rows: Standing[] }[];
   opponent?: OpponentFocus;
 }

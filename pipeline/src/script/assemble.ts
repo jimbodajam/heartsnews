@@ -1,4 +1,4 @@
-import type { Bulletin, Graphic, IconId, Line, Segment, Sidebar } from '../../../shared/bulletin.ts';
+import type { Bulletin, Graphic, IconId, Line, Segment, Sidebar, TableRow } from '../../../shared/bulletin.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
@@ -6,7 +6,8 @@ import { predictionRecord } from '../memory.ts';
 import { faceFor, loadFaces } from './faces.ts';
 import { formOf } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
-import { expertFor, firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
+import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
+import { spokenList } from '../time.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
@@ -16,6 +17,22 @@ const FACES = loadFaces();
 function headlineGraphic(s: Story): Graphic {
   const face = faceFor(s.title, FACES) ?? faceFor(s.summary, FACES);
   return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON[s.category], face };
+}
+
+/** "UEFA Conference League" → "Conference League", to fit a panel title. */
+const shortCompetition = (c: string) => c.replace(/^UEFA\s+/i, '');
+
+/** The `size` rows of a table around us, rather than always the top. */
+function rowsAroundUs(f: Facts, rows: Facts['table'], size: number): TableRow[] {
+  const at = Math.max(0, rows.findIndex((t) => isUs(f.club, t.team)));
+  const start = Math.min(Math.max(0, at - 2), Math.max(0, rows.length - size));
+  return rows.slice(start, start + size).map((t) => ({ pos: t.pos, team: teamName(f.club, t.team), played: t.played, gd: t.gd, pts: t.pts }));
+}
+
+/** A reply from the AI sometimes starts with the speaker's id ("kirsty | That's right…"): that mustn't be read out. */
+function stripSpeakerPrefix(text: string, ids: string[]): string {
+  const m = /^\s*([\w-]+)\s*\|\s*/.exec(text);
+  return m && ids.includes(m[1].toLowerCase()) ? text.slice(m[0].length) : text;
 }
 
 /** Lay a draft out as segments: who says each line, on which set, with which graphic. */
@@ -84,27 +101,31 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     }
     if (draft.table && f.table.length) {
       // The screen fits six rows: show the ones around us rather than always the top six.
-      const at = Math.max(0, f.table.findIndex((t) => isUs(club, t.team)));
-      const start = Math.min(Math.max(0, at - 2), Math.max(0, f.table.length - 6));
       lines.push({
         speaker: analyst,
         text: draft.table,
-        graphic: {
-          type: 'table',
-          title: 'League Table',
-          highlight: club.shortName,
-          rows: f.table.slice(start, start + 6).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts })),
-        },
+        graphic: { type: 'table', title: 'League Table', highlight: club.shortName, rows: rowsAroundUs(f, f.table, 6) },
+      });
+    }
+    // On a European (or cup group) matchday, that competition's table too.
+    const ct = f.competitionTable;
+    if (draft.competitionTable && ct) {
+      lines.push({
+        speaker: analyst,
+        text: draft.competitionTable,
+        graphic: { type: 'table', title: `${shortCompetition(ct.competition)} Table`, highlight: club.shortName, rows: rowsAroundUs(f, ct.rows, 6) },
       });
     }
     if (draft.next && f.nextFixtures.length) {
+      // Building up to a game, the card is that game alone, big; otherwise the next few.
+      const upcoming = f.phase.kind === 'preview' ? [f.phase.fixture] : f.nextFixtures;
       lines.push({
         speaker: analyst,
         text: draft.next,
         graphic: {
           type: 'fixtures',
-          title: f.nextFixtures.length > 1 ? 'Coming Up' : 'Next Match',
-          fixtures: f.nextFixtures.map((x) => ({ date: x.date, home: name(x.home), away: name(x.away), competition: x.competition })),
+          title: upcoming.length > 1 ? 'Coming Up' : 'Next Match',
+          fixtures: upcoming.map((x) => ({ date: x.date, home: name(x.home), away: name(x.away), competition: x.competition })),
         },
       });
     }
@@ -146,7 +167,15 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     lines: transferLines,
   });
 
-  // Fan Zone back at the desk, then the sign-off.
+  // Fan Zone back at the desk: the mood, then the busiest threads and the supporters' channel one by one, then the sign-off.
+  const fanCard = (ref?: string): Graphic | undefined => {
+    const i = Number(ref?.slice(1)) - 1;
+    const thread = ref?.startsWith('T') ? f.fans[i] : undefined;
+    if (thread) return { type: 'headline', title: thread.title, source: `${thread.sourceName}: ${thread.engagement ?? 0} replies`, icon: 'chat' };
+    const video = ref?.startsWith('V') ? f.fanVideos[i] : undefined;
+    if (video) return { type: 'headline', title: video.title, source: video.sourceName.replace(/\s*\(.*?\)/, ''), icon: 'mic' };
+    return undefined;
+  };
   segments.push({
     id: 'fans',
     kind: 'fans',
@@ -160,24 +189,42 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
         text: draft.fans.text,
         graphic: f.fans.length ? { type: 'sentiment', score: draft.fans.score, topics: draft.fans.topics } : undefined,
       },
+      ...(draft.fans.lines ?? []).map((l): Line => ({ speaker: l.speaker, text: l.text, graphic: fanCard(l.ref) })),
       { speaker: a, text: draft.outro },
     ],
   });
 
-  // In-depth packages go between the regular segments, like a rolling news hour:
-  // headlines → story → Match Centre → story → Transfer Centre → story → Fan Zone.
-  // Up to five packages spread through the hour, so there's always substance between the regular segments.
-  const [f1, f2, f3, f4, f5] = draft.features.map((feat) => featureSegment(f, feat)).filter((s): s is Segment => Boolean(s));
   const debate = draft.debate ? debateSegment(f, draft.debate) : undefined;
-  const byId = (id: string) => segments.find((s) => s.id === id);
+  if (debate) segments.push(debate);
   const opposition = draft.opponent && f.opponent ? opponentSegment(f, draft.opponent) : undefined;
-  const ordered = [byId('headlines'), f1, byId('match'), opposition, f2, debate, f3, byId('transfers'), f4, f5, byId('fans')].filter(
-    (s): s is Segment => Boolean(s),
-  );
+  if (opposition) segments.push(opposition);
+  for (const feat of draft.features) {
+    const s = featureSegment(f, feat);
+    if (s) segments.push(s);
+  }
 
-  // Whoever is on air just before the Match Centre hands over to it.
-  const matchAt = ordered.findIndex((s) => s.id === 'match');
-  if (matchAt > 0) ordered[matchAt - 1].lines.push({ speaker: a, text: draft.matchHandoff });
+  // Up to five in-depth packages spread between the regular segments, like a rolling news hour (see runningOrder).
+  const featured = draft.features.map((x) => f.features.find((s) => s.id === x.storyId)).filter((s): s is Story => Boolean(s));
+  const ordered = runningOrder(f, { features: featured, debate: Boolean(debate), match: hasMatch })
+    .map((slot) => segments.find((s) => s.id === slot.id))
+    .filter((s): s is Segment => Boolean(s));
+
+  // "Still to come" after the headlines.
+  const later = ordered.slice(1);
+  const comingUp = draft.comingUp ?? defaultComingUp(f, later);
+  if (comingUp) ordered[0].lines.push({ speaker: a, text: comingUp });
+
+  // A hand-over into every segment, said by someone on screen in the one before.
+  for (let i = 1; i < ordered.length; i++) {
+    const [prev, seg] = [ordered[i - 1], ordered[i]];
+    const written = draft.transitions?.find((t) => t.to === seg.id && prev.presenters.includes(t.speaker));
+    const speaker = prev.presenters.includes(a) ? a : prev.presenters[0];
+    const text = written?.text ?? (seg.id === 'match' ? draft.matchHandoff : defaultHandover(f, seg));
+    if (text) prev.lines.push({ speaker: written?.speaker ?? speaker, text });
+  }
+
+  const ids = channel.presenters.map((p) => p.id);
+  for (const seg of ordered) for (const l of seg.lines) l.text = stripSpeakerPrefix(l.text, ids);
 
   const ticker = [
     ...f.pool.slice(0, 8).map((s) => `${s.title} - ${s.sources[0]}`),
@@ -196,20 +243,43 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   };
 }
 
-/** Next match, last result and the table around us, for the side panel beside presenters in close-up. */
+const names = (f: Facts, ids: string[]) => spokenList(ids.map((id) => firstName(presenter(f, id))));
+
+/** A plain "still to come" when the AI didn't write one: the debate, Transfer Centre and Fan Zone, if they're on later. */
+function defaultComingUp(f: Facts, later: Segment[]): string | undefined {
+  const bits = later.flatMap((s) => {
+    if (s.kind === 'debate') return [`${names(f, s.presenters)} in The Debate`];
+    if (s.kind === 'transfers') return ['the latest from the Transfer Centre'];
+    if (s.kind === 'fans') return ['what the supporters are saying in the Fan Zone'];
+    return [];
+  });
+  return bits.length ? `Still to come: ${spokenList(bits)}.` : undefined;
+}
+
+/** A plain hand-over into a segment when the AI didn't write one. Packages and the opposition focus introduce themselves. */
+function defaultHandover(f: Facts, seg: Segment): string | undefined {
+  if (seg.kind === 'debate') return `Time for The Debate now, with ${names(f, seg.presenters)}.`;
+  if (seg.kind === 'transfers') return `Let's head over to ${names(f, seg.presenters)} in the Transfer Centre.`;
+  if (seg.kind === 'fans') return `Now, let's find out what the supporters are saying in the Fan Zone.`;
+  return undefined;
+}
+
+/**
+ * Next match, last result and the table around us, for the side panel beside presenters in close-up. Building up
+ * to (or during) a European or cup group game, the table is that competition's.
+ */
 function sidebar(f: Facts): Sidebar {
   const name = (n: string) => teamName(f.club, n);
   const n = f.nextFixtures[0];
   const r = f.lastResult;
-  const at = Math.max(0, f.table.findIndex((t) => isUs(f.club, t.team)));
-  const start = Math.min(Math.max(0, at - 2), Math.max(0, f.table.length - 5));
+  const ct = ['preview', 'live'].includes(f.phase.kind) ? f.competitionTable : undefined;
+  const rows = ct?.rows ?? f.table;
   return {
     highlight: f.club.shortName,
     next: n && { date: n.date, home: name(n.home), away: name(n.away), competition: n.competition },
     last: r && { home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition },
-    table: f.table.length
-      ? f.table.slice(start, start + 5).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts }))
-      : undefined,
+    table: rows.length ? rowsAroundUs(f, rows, 5) : undefined,
+    tableTitle: ct ? shortCompetition(ct.competition) : undefined,
   };
 }
 
@@ -289,13 +359,34 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   if (!s) return undefined;
   const lead = f.channel.cast.anchors[0];
   const expert = expertFor(f, s);
+  // The lead sometimes turns to the wrong colleague ("Kirsty, …" when Fraser is alongside): use the right name.
+  const others = f.channel.presenters.filter((p) => p.id !== expert && p.id !== lead).map(firstName);
+  const expertName = firstName(presenter(f, expert));
   const lines: Line[] = feat.lines.map((l, i) => ({
     speaker: l.role === 'lead' ? lead : expert,
-    text: l.text,
+    text: l.role === 'lead' ? l.text.replace(new RegExp(`^(${others.join('|')}),`), `${expertName},`) : l.text,
     graphic: i === 0 ? headlineGraphic(s) : undefined,
   }));
+  // A match report shows the result card (with scorers) from the expert's first line; the quote goes on the next one.
+  const experts = lines.filter((l, i) => i > 0 && l.speaker === expert);
+  const r = feat.result;
+  if (r) {
+    const target = experts.shift() ?? lines[1];
+    if (target) {
+      target.graphic = {
+        type: 'result',
+        home: teamName(f.club, r.home),
+        away: teamName(f.club, r.away),
+        homeScore: r.homeScore,
+        awayScore: r.awayScore,
+        competition: r.competition ?? 'MATCH REPORT',
+        homeScorers: r.homeScorers,
+        awayScorers: r.awayScorers,
+      };
+    }
+  }
   if (feat.quote) {
-    const target = lines.find((l, i) => i > 0 && l.speaker === expert) ?? lines[1];
+    const target = experts.shift() ?? (r ? undefined : lines[1]);
     if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by, face: faceFor(feat.quote.by, FACES) };
   }
   return {

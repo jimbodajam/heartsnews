@@ -17,7 +17,7 @@ import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
 import { buildFacts, FEATURE_CANDIDATES, FEATURE_COUNT, FEATURE_MAX_SCAN, isUs, MIN_BODY, teamName, type Channel } from './script/facts.ts';
-import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
+import { geminiFromEnv, mergeDraft, reportScorers, writeWithModel } from './script/llm.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
 import { fetchArticleText } from './collectors/article.ts';
@@ -108,8 +108,23 @@ async function main() {
   if (model) {
     try {
       console.log(`\nWriting script with ${model.name}…`);
-      draft = mergeDraft(draft, await writeWithModel(model, facts), facts);
+      const ai = await writeWithModel(model, facts);
+      // The raw reply, to see what the writer gave before the checks in mergeDraft kept or dropped it.
+      await writeFile(resolve(OUT, 'ai-draft.json'), JSON.stringify(ai, null, 2));
+      draft = mergeDraft(draft, ai, facts);
       writer = model.name;
+      // Match reports whose card has the score but no scorers: ask for the goals on their own.
+      for (const feat of draft.features) {
+        const r = feat.result;
+        const s = facts.features.find((x) => x.id === feat.storyId);
+        if (!r || !s?.body || r.homeScore + r.awayScore === 0 || r.homeScorers?.length || r.awayScorers?.length) continue;
+        try {
+          feat.result = await reportScorers(model, r, s.title, s.body);
+          console.log(`Scorers for ${r.home} ${r.homeScore}-${r.awayScore} ${r.away}: ${[...(feat.result.homeScorers ?? []), ...(feat.result.awayScorers ?? [])].join(', ') || '(none that add up)'}`);
+        } catch (err) {
+          console.warn(`Couldn't get the scorers for ${s.title}: ${(err as Error).message}`);
+        }
+      }
     } catch (err) {
       console.warn(`AI writer failed, using templates instead: ${(err as Error).message}`);
     }

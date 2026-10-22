@@ -8,9 +8,15 @@ import { firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 export interface Draft {
   welcome: string;
   headlines: { storyId: string; text: string }[];
+  /** The lead anchor's "still to come" after the headlines. AI only; the layout has a plain fallback. */
+  comingUp?: string;
+  /** Spoken hand-overs into each segment (by segment id), by someone already on screen. AI only. */
+  transitions?: { to: string; speaker: string; text: string }[];
   matchHandoff: string;
   result?: string;
   table?: string;
+  /** Our place in the table of the competition we're building up to, when that isn't the league (e.g. Europe). */
+  competitionTable?: string;
   next?: string;
   transferIntro: string;
   transfers: {
@@ -20,7 +26,11 @@ export interface Draft {
   }[];
   /** In-depth packages: the lead anchor steers, the expert (analyst, reporter or co-anchor) adds detail. */
   features: Feature[];
-  fans: { text: string; score: number; topics: string[] };
+  /**
+   * The Fan Zone: `text` opens on the overall mood, then `lines` go through the busiest threads ("T1"…) and the
+   * supporters' channel shows ("V1"…) as a conversation between the anchors.
+   */
+  fans: { text: string; score: number; topics: string[]; lines?: { speaker: string; text: string; ref?: string }[] };
   /** Two pundits arguing a talking point in character, ending with score predictions. AI only. */
   debate?: Debate;
   /** New opinions voiced in this bulletin, so presenters stay consistent next time. AI only. */
@@ -41,6 +51,29 @@ export interface Feature {
   lines: { role: 'lead' | 'expert'; text: string }[];
   /** A direct quote, copied word for word from the article. */
   quote?: { text: string; by: string };
+  /** For a match report: the score and scorers, shown as a result card. */
+  result?: StoryResult;
+}
+
+export interface StoryResult {
+  home: string;
+  away: string;
+  homeScore: number;
+  awayScore: number;
+  competition?: string;
+  homeScorers?: string[];
+  awayScorers?: string[];
+}
+
+/** "Match Report: Celtic Women 2-4 Hearts Women" → the score, so a match report can show a result card. */
+export function scoreFromTitle(title: string): StoryResult | undefined {
+  const team = "[A-Z][\\w'.&]*(?: [A-Z][\\w'.&]*){0,3}";
+  const re = new RegExp(`^(${team}) (\\d{1,2}) ?[-–] ?(\\d{1,2}) (${team})$`);
+  for (const part of title.split(/[:|]/).map((p) => p.trim())) {
+    const m = re.exec(part);
+    if (m) return { home: m[1], away: m[4], homeScore: Number(m[2]), awayScore: Number(m[3]) };
+  }
+  return undefined;
 }
 
 const POSITIVE = /\b(brilliant|great|class|delighted|buzzing|superb|quality|love|excellent|happy|positive|belief|proud|magic|unreal|fantastic|confident|promising|outstanding|deserved)\b/gi;
@@ -107,6 +140,13 @@ export function templateDraft(f: Facts): Draft {
     table = `${club.shortName} are ${spokenOrdinal(us.pos)} in the league on ${us.pts} points${gap}.`;
   }
 
+  let competitionTable: string | undefined;
+  const ct = f.competitionTable;
+  const usThere = ct?.rows.find((r) => isUs(club, r.team));
+  if (ct && usThere) {
+    competitionTable = `In the ${ct.competition}, ${club.shortName} are ${spokenOrdinal(usThere.pos)} of ${ct.rows.length} on ${usThere.pts} points.`;
+  }
+
   let next: string | undefined;
   const n = f.nextFixtures[0];
   if (n) {
@@ -156,6 +196,7 @@ export function templateDraft(f: Facts): Draft {
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,
     result,
     table,
+    competitionTable,
     next,
     transferIntro: f.transfers.length ? `${windowLine} Here's what's being talked about.` : `${windowLine} It's quiet on the transfer front at the moment.`,
     transfers: f.transfers.map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
@@ -170,6 +211,7 @@ export function templateDraft(f: Facts): Draft {
             { role: 'lead', text: `Let's take a closer look at one of today's main stories. ${sentence(s.title)}` },
             { role: 'expert', text: `${sentence(truncate(standfirst, 300))} ${attribution(s.sources)}` },
           ],
+          result: scoreFromTitle(s.title),
         };
       })
       .filter((x): x is Feature => Boolean(x)),

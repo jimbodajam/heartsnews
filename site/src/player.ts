@@ -43,6 +43,8 @@ export class Player {
   private modeAt = 0;
   private seg?: Segment;
   private line?: Line;
+  /** The last graphic shown in this segment: a close-up without its own stays on the story rather than the sidebar. */
+  private segGraphic?: Graphic;
   private shot: Shot = 'wide';
   private graphicAt = 0;
   private speaking?: Speaking;
@@ -128,6 +130,7 @@ export class Player {
       for (const seg of this.bulletin.segments.slice(first)) {
         this.seg = seg;
         this.line = undefined;
+        this.segGraphic = undefined;
         this.shot = 'wide';
         this.strap = undefined;
         this.strapped.clear();
@@ -150,6 +153,7 @@ export class Player {
     if (line.graphic && line.graphic !== this.line?.graphic) this.graphicAt = performance.now();
     this.shot = this.pickShot(seg, i, line);
     this.line = line;
+    if (line.graphic) this.segGraphic = line.graphic;
     if (!this.strapped.has(p.id)) {
       this.strapped.add(p.id);
       this.strap = { name: p.name, role: p.role, at: performance.now() };
@@ -232,7 +236,8 @@ export class Player {
           drawPresenter(g, 92, top, p.look, pose(p), 3);
           drawDesk(g, deskY, -20, W + 20);
           drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
-          if (graphic) drawGraphic(g, graphic, 168, 22, 142, 80, graphicAge, now);
+          const shown = graphic ?? this.segGraphic;
+          if (shown) drawGraphic(g, shown, 168, 22, 142, 80, graphic ? graphicAge : Infinity, now);
           else if (this.bulletin.sidebar) drawSidePanel(g, this.bulletin.sidebar, 168, 22, 142, 80, now);
           return;
         }

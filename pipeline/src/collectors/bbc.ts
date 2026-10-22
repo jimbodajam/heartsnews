@@ -168,9 +168,22 @@ export async function collectBbcMatchData(club: ClubConfig, now = new Date()): P
   const tableData = initialData(tableHtml);
   const tKey = Object.keys(tableData).find((k) => k.startsWith('football-table'));
   const tournaments =
-    (tableData[tKey ?? '']?.data as { tournaments?: { urn: string; stages: { rounds: { participants: BbcStanding[] }[] }[] }[] } | undefined)
+    (tableData[tKey ?? '']?.data as { tournaments?: { urn: string; name?: string; stages: { rounds: { participants: BbcStanding[] }[] }[] }[] } | undefined)
       ?.tournaments ?? [];
-  const rows = tournaments.find((t) => t.urn.includes(league))?.stages[0]?.rounds[0]?.participants ?? [];
+  const standings = (t?: (typeof tournaments)[number]) =>
+    (t?.stages[0]?.rounds[0]?.participants ?? []).map(
+      (r): Standing => ({
+        pos: r.rank,
+        team: r.shortName,
+        played: r.matchesPlayed,
+        won: r.wins,
+        drawn: r.draws,
+        lost: r.losses,
+        gd: r.goalDifference,
+        pts: r.points,
+        form: (r.formGuide ?? []).map((g) => g.value).filter((v) => v !== '-').join(''),
+      }),
+    );
 
   // Live games count as "next" until they finish, so the matchday logic can see them.
   const next = all.filter((f) => f.status === 'pre' || f.status === 'live').sort((a, b) => a.date.localeCompare(b.date));
@@ -184,18 +197,10 @@ export async function collectBbcMatchData(club: ClubConfig, now = new Date()): P
     next,
     last,
     opponent,
-    table: rows.map(
-      (r): Standing => ({
-        pos: r.rank,
-        team: r.shortName,
-        played: r.matchesPlayed,
-        won: r.wins,
-        drawn: r.draws,
-        lost: r.losses,
-        gd: r.goalDifference,
-        pts: r.points,
-        form: (r.formGuide ?? []).map((g) => g.value).filter((v) => v !== '-').join(''),
-      }),
-    ),
+    table: standings(tournaments.find((t) => t.urn.includes(league))),
+    tables: tournaments
+      .filter((t) => !t.urn.includes(league) && t.name)
+      .map((t) => ({ competition: t.name!, rows: standings(t) }))
+      .filter((t) => t.rows.length),
   };
 }

@@ -101,7 +101,7 @@ export function drawSidePanel(g: Ctx, sb: Sidebar, x: number, y: number, w: numb
     const r = sb.last;
     drawGraphic(g, { type: 'result', home: r.home, away: r.away, homeScore: r.homeScore, awayScore: r.awayScore, competition: 'LAST RESULT' }, x, y, w, h, age, now);
   } else if (page === 'table' && sb.table) {
-    drawGraphic(g, { type: 'table', title: 'LEAGUE TABLE', rows: sb.table, highlight: sb.highlight }, x, y, w, h, age, now);
+    drawGraphic(g, { type: 'table', title: sb.tableTitle ? `${sb.tableTitle} TABLE` : 'LEAGUE TABLE', rows: sb.table, highlight: sb.highlight }, x, y, w, h, age, now);
   }
 }
 
