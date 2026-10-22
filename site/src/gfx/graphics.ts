@@ -56,6 +56,29 @@ function countdown(iso: string): string {
 
 const PAGE_MS = 6000;
 
+// Pixel portraits (24×24, from `npm run faces`) load on first use; until then the icon shows instead.
+const FACE_PX = 24;
+const faceCache = new Map<string, HTMLImageElement>();
+function faceImage(path?: string): HTMLImageElement | undefined {
+  if (!path) return undefined;
+  let img = faceCache.get(path);
+  if (!img) {
+    img = new Image();
+    img.src = path;
+    faceCache.set(path, img);
+  }
+  return img.complete && img.naturalWidth ? img : undefined;
+}
+
+/** A portrait in a small gold frame. Returns its width. */
+function drawFace(g: Ctx, img: HTMLImageElement, x: number, y: number, scale: number): number {
+  const size = FACE_PX * scale;
+  rect(g, x - 1, y - 1, size + 2, size + 2, C.gold);
+  rect(g, x, y, size, size, C.navy);
+  g.drawImage(img, x, y, size, size);
+  return size;
+}
+
 /**
  * The Sky-style info panel beside a presenter in close-up when there's no story graphic: it rotates between
  * the next match (with a countdown), the last result and the league table around us.
@@ -101,8 +124,9 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       const top = panel(g, x, y, w, h, 'LATEST');
       const s = big ? 2 : 1;
       const iconS = big ? 3 : 2;
-      drawIcon(g, gr.icon ?? 'ball', x + 6, top + 1, iconS);
-      const tx = x + 12 + 8 * iconS;
+      const portrait = faceImage(gr.face);
+      const pictureW = portrait ? drawFace(g, portrait, x + 6, top + 1, big ? 2 : 1) : (drawIcon(g, gr.icon ?? 'ball', x + 6, top + 1, iconS), 8 * iconS);
+      const tx = x + 12 + pictureW;
       const maxLines = Math.floor((y + h - 14 - top) / (LINE_H * s));
       wrap(gr.title, x + w - 6 - tx, s)
         .slice(0, maxLines)
@@ -286,11 +310,14 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
     case 'quote': {
       // The speaker goes in the title bar: the bottom of the panel is often under the subtitles.
       const top = panel(g, x, y, w, h, `IN QUOTES: ${gr.author}`);
-      drawText(g, '"', x + 6, top, C.gold, 3);
+      // The speaker's portrait if we have it, otherwise a big quote mark.
+      const portrait = faceImage(gr.face);
+      const indent = portrait ? drawFace(g, portrait, x + 6, top + 1, big ? 2 : 1) + 12 : 22;
+      if (!portrait) drawText(g, '"', x + 6, top, C.gold, 3);
       const s = big ? 2 : 1;
-      const lines = wrap(gr.text, w - 30, s);
+      const lines = wrap(gr.text, w - indent - 8, s);
       const maxLines = Math.floor((y + h - 4 - top) / (LINE_H * s));
-      lines.slice(0, maxLines).forEach((l, i) => drawText(g, l, x + 22, top + 2 + i * LINE_H * s, C.white, s));
+      lines.slice(0, maxLines).forEach((l, i) => drawText(g, l, x + indent, top + 2 + i * LINE_H * s, C.white, s));
       break;
     }
   }

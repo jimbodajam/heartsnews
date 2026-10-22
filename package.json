@@ -13,6 +13,7 @@
     "snapshot": "npm -w pipeline run snapshot",
     "pronounce": "npm -w pipeline run pronounce --",
     "pixelate": "npm -w pipeline run pixelate --",
+    "faces": "npm -w pipeline run faces",
     "dev": "npm -w site run dev",
     "build": "npm -w site run build",
     "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"

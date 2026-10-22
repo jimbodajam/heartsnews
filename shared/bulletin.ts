@@ -49,7 +49,7 @@ export interface TableRow {
 }
 
 export type Graphic =
-  | { type: 'headline'; title: string; source?: string; icon?: IconId }
+  | { type: 'headline'; title: string; source?: string; icon?: IconId; /** Pixel portrait (faces/<slug>.png) of who it's about. */ face?: string }
   | { type: 'transfer'; player: string; from: string; to: string; status: 'rumour' | 'talks' | 'medical' | 'done'; fee?: string }
   | { type: 'sentiment'; score: number; topics: string[] } // score: -1 (raging) .. 1 (buzzing)
   | { type: 'table'; title: string; rows: TableRow[]; highlight: string }
@@ -66,7 +66,7 @@ export type Graphic =
       homeScorers?: string[];
       awayScorers?: string[];
     }
-  | { type: 'quote'; text: string; author: string }
+  | { type: 'quote'; text: string; author: string; face?: string }
   | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] }
   /** A team's recent results with W/D/L. */
   | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }

@@ -3,14 +3,19 @@ import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
+import { faceFor, loadFaces } from './faces.ts';
 import { formOf } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
+const FACES = loadFaces();
+
+/** A story's headline card, with the portrait of whoever it's about when we have one. */
 function headlineGraphic(s: Story): Graphic {
-  return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON[s.category] };
+  const face = faceFor(s.title, FACES) ?? faceFor(s.summary, FACES);
+  return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON[s.category], face };
 }
 
 /** Lay a draft out as segments: who says each line, on which set, with which graphic. */
@@ -291,7 +296,7 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   }));
   if (feat.quote) {
     const target = lines.find((l, i) => i > 0 && l.speaker === expert) ?? lines[1];
-    if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by };
+    if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by, face: faceFor(feat.quote.by, FACES) };
   }
   return {
     id: `story-${s.id}`,

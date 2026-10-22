@@ -9,6 +9,7 @@
     "snapshot": "tsx src/snapshot.ts",
     "pronounce": "tsx src/pronounce-check.ts",
     "pixelate": "tsx src/pixelate.ts",
+    "faces": "tsx src/faces.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
