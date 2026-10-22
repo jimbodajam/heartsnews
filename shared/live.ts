@@ -1,8 +1,10 @@
 // The live.json format the Worker (worker/) serves during a match and the player polls, and the code that builds it
 // from BBC Sport. The score, clock, goals and red cards come from the match page's live-header (the team page has
-// goals but not cards, so it's only the fallback); the commentary comes from the match page's live text stream.
+// goals but not cards, so it's only the fallback); the commentary comes from the match page's live text stream, and
+// the team stats from its match-stats block.
 
 import { type BbcAction, type BbcData, type BbcEvent, block } from './bbc.ts';
+import type { Graphic } from './bulletin.ts';
 
 /** The deployed Worker (worker/). */
 export const LIVE_URL = 'https://heartsnews-live.heartsnews.workers.dev/live.json';
@@ -33,6 +35,22 @@ export interface LiveEvent {
   post?: LivePost;
 }
 
+/** One side's match stats, as BBC has them. Saves are by this side's goalkeeper. */
+export interface TeamStats {
+  possession: number; // %, one decimal place: 60.7
+  shots: number;
+  onTarget: number;
+  corners: number;
+  fouls: number;
+  saves: number;
+  touchesInBox: number;
+}
+
+export interface MatchStats {
+  home: TeamStats;
+  away: TeamStats;
+}
+
 export interface LiveMatch {
   status: LiveStatus;
   /** While live: the minute, e.g. "32'" or "45'+2". */
@@ -47,6 +65,8 @@ export interface LiveMatch {
   events: LiveEvent[];
   /** Key posts for our match among BBC's latest 20 (older ones drop off), newest first. */
   posts: LivePost[];
+  /** Live team stats, from about five minutes in. Noisy early on. */
+  stats?: MatchStats;
   link?: string;
 }
 
@@ -160,6 +180,55 @@ function attachPosts(events: LiveEvent[], posts: LivePost[]): void {
   }
 }
 
+type BbcStats = Record<string, { total?: number } | undefined>;
+
+/** The team stats on a BBC match page, once both sides have possession figures (none before about five minutes in). */
+export function matchStats(page: BbcData): MatchStats | undefined {
+  const d = block<{ homeTeam?: { stats?: BbcStats }; awayTeam?: { stats?: BbcStats } }>(page, 'match-stats?');
+  const side = (s?: BbcStats): TeamStats | undefined => {
+    const n = (k: string) => s?.[k]?.total ?? 0;
+    if (typeof s?.possessionPercentage?.total !== 'number') return undefined;
+    return {
+      possession: n('possessionPercentage'),
+      shots: n('shotsTotal'),
+      onTarget: n('shotsOnTarget'),
+      corners: n('cornersWon'),
+      fouls: n('foulsCommitted'),
+      saves: n('shotsSaved'),
+      touchesInBox: n('touchesInBox'),
+    };
+  };
+  const home = side(d?.homeTeam?.stats);
+  const away = side(d?.awayTeam?.stats);
+  return home && away ? { home, away } : undefined;
+}
+
+/** Possession as whole numbers that add up to 100: 60.7 / 39.3 → 61 / 39. */
+export function possession(stats: MatchStats): { home: number; away: number } {
+  const home = Math.round(stats.home.possession);
+  return { home, away: 100 - home };
+}
+
+type StatsGraphic = Extract<Graphic, { type: 'stats' }>;
+
+/** The stats card: the score and the stats that matter on air, side by side. */
+export function statsCard(match: Omit<StatsGraphic, 'type' | 'rows'>, stats: MatchStats): StatsGraphic {
+  const { home: h, away: a } = stats;
+  const pos = possession(stats);
+  return {
+    type: 'stats',
+    ...match,
+    rows: [
+      { label: 'POSSESSION', home: pos.home, away: pos.away, percent: true },
+      { label: 'SHOTS', home: h.shots, away: a.shots },
+      { label: 'ON TARGET', home: h.onTarget, away: a.onTarget },
+      { label: 'CORNERS', home: h.corners, away: a.corners },
+      { label: 'SAVES', home: h.saves, away: a.saves },
+      { label: 'FOULS', home: h.fouls, away: a.fouls },
+    ],
+  };
+}
+
 const STATUS: Record<string, LiveStatus> = { PreEvent: 'pre', MidEvent: 'live', PostEvent: 'ft', Postponed: 'postponed' };
 
 /**
@@ -189,6 +258,7 @@ export function liveMatch(teamEvent: BbcEvent, team: string, page?: BbcData): Li
     us: e.away.urn?.split(':').pop() === team ? 'away' : 'home',
     events,
     posts,
+    stats: page && status !== 'pre' ? matchStats(page) : undefined,
     link: teamEvent.onwardJourneyLink,
   };
 }

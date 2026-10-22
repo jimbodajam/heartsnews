@@ -1,7 +1,9 @@
 import type { Presenter } from '../../../shared/bulletin.ts';
+import type { MatchStats } from '../../../shared/live.ts';
 import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
 import { detectPhase, type Phase } from '../matchday.ts';
+import { minuteOf, READ } from '../reading.ts';
 import { emptyMemory, findAired, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
@@ -50,7 +52,18 @@ export interface Facts {
   table: MatchData['table'];
   /** The table for the competition of the game we're building up to (or just played), when it isn't the league. */
   competitionTable?: { competition: string; rows: MatchData['table'] };
+  /** BBC's team stats for the game on now or just played, once they mean something (READ.fromMinute in). */
+  matchStats?: { fixture: Fixture; stats: MatchStats; minute: number; final: boolean };
   window: { open: boolean; days: number };
+}
+
+/** The stats for the game on now (from its minute; 45 at half-time) or just played. */
+function statsOf(phase: Phase): Facts['matchStats'] {
+  const fixture = phase.kind === 'live' ? phase.fixture : phase.kind === 'reaction' ? phase.result : undefined;
+  if (!fixture?.stats) return undefined;
+  const final = phase.kind === 'reaction';
+  const minute = final ? 90 : fixture.period === 'HT' ? 45 : minuteOf(fixture.period ?? '');
+  return minute >= READ.fromMinute ? { fixture, stats: fixture.stats, minute, final } : undefined;
 }
 
 /** The game the bulletin is built around: the one coming up, on now, or just played; otherwise the next one. */
@@ -96,6 +109,7 @@ export function buildFacts(
     opponent: ['preview', 'normal'].includes(phase.kind) ? match?.opponent : undefined,
     table: match?.table ?? [],
     competitionTable: match?.tables?.find((t) => t.competition === competition),
+    matchStats: statsOf(phase),
     window: transferWindow(now),
   };
 }

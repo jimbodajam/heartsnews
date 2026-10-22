@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { BbcData, BbcEvent } from '../bbc.ts';
-import { type LiveMatch, liveMatch, todaysEvent } from '../live.ts';
+import { type LiveMatch, liveMatch, possession, statsCard, todaysEvent } from '../live.ts';
 
 const TEAM = 'heart-of-midlothian';
 const rec = JSON.parse(readFileSync(new URL('fixtures/2026-10-22-trabzonspor-hearts.json', import.meta.url), 'utf8')) as {
@@ -112,8 +112,32 @@ test('full time, and posts about other games are left out', () => {
   }
 });
 
+test('team stats: none before kick-off, then live through to full time', () => {
+  assert.equal(at('16:30:00').stats, undefined);
+  assert.deepEqual(at('17:37:15').stats, {
+    home: { possession: 56.8, shots: 6, onTarget: 3, corners: 3, fouls: 9, saves: 1, touchesInBox: 12 },
+    away: { possession: 43.2, shots: 8, onTarget: 1, corners: 1, fouls: 9, saves: 2, touchesInBox: 12 },
+  });
+  const ft = at('23:59:59');
+  assert.deepEqual(ft.stats, {
+    home: { possession: 60.7, shots: 11, onTarget: 5, corners: 6, fouls: 12, saves: 1, touchesInBox: 22 },
+    away: { possession: 39.3, shots: 10, onTarget: 1, corners: 1, fouls: 15, saves: 3, touchesInBox: 14 },
+  });
+  assert.deepEqual(possession(ft.stats!), { home: 61, away: 39 });
+});
+
+test('the stats card', () => {
+  const m = at('23:59:59');
+  const card = statsCard({ home: 'Trabzonspor', away: 'Hearts', homeScore: 2, awayScore: 0, competition: m.competition, status: 'FULL TIME' }, m.stats!);
+  assert.deepEqual(
+    card.rows.map((r) => `${r.label} ${r.home}-${r.away}`),
+    ['POSSESSION 61-39', 'SHOTS 11-10', 'ON TARGET 5-1', 'CORNERS 6-1', 'SAVES 1-3', 'FOULS 12-15'],
+  );
+});
+
 test('without the match page, falls back to the team page', () => {
   const m = liveMatch(rec.teamEvent, TEAM);
   assert.equal(m.status, 'pre');
   assert.deepEqual(m.posts, []);
+  assert.equal(m.stats, undefined);
 });

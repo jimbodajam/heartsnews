@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import type { BbcData, BbcEvent } from '../../shared/bbc.ts';
 import { type LiveMatch, liveMatch } from '../../shared/live.ts';
 import { DESCRIPTION_WAIT_MS, EventTracker, type ReadyEvent } from '../src/breaking/detect.ts';
-import { anchorLine, buildPackage, checkLine, plainLine, SIGN_OFF, spokenMinute, wordNumbers } from '../src/breaking/script.ts';
+import { anchorLine, buildPackage, checkLine, gameReading, periodLine, plainLine, SIGN_OFF, spokenMinute, wordNumbers } from '../src/breaking/script.ts';
 import type { Channel } from '../src/script/facts.ts';
 import type { ScriptModel } from '../src/script/llm.ts';
 
@@ -81,6 +81,32 @@ test('plain lines: who, when and the score, neutral', () => {
   assert.equal(spokenMinute("45'+2"), 'in the second minute of added time');
 });
 
+test("our read on the game, from the stats as they were at each break-in", () => {
+  const got = replay();
+  const [salah, dju, red] = got.map((g) => gameReading(g.ready.match, g.ready.event)?.text);
+  // 32': 59% for Trabzonspor but six shots to three for Hearts. Mixed, so nobody is said to be on top.
+  assert.equal(salah, "It's been a cagey one, with just two shots on target between them.");
+  assert.equal(dju, 'Trabzonspor have been knocking on the door, with 61 per cent of the ball and four shots on target to one.');
+  assert.equal(red, 'Trabzonspor have been on top, with 61 per cent of the ball and five shots on target to one.');
+  const r = got[1].ready;
+  assert.equal(
+    plainLine(r.match, r.event, gameReading(r.match, r.event)),
+    `It's a goal for Trabzonspor: Franculino Djú, on 58 minutes, and it's Trabzonspor 2, Hearts 0. ${dju} ${SIGN_OFF}`,
+  );
+});
+
+test('half-time and full-time lines from the stats', () => {
+  assert.equal(
+    periodLine(matchAt(Date.parse('2026-10-22T17:37:15Z')), 'ht').text,
+    `It's half-time here, and it's Trabzonspor 1, Hearts 0. Trabzonspor have had 57 per cent of the ball. On shots it's Trabzonspor six, Hearts eight, and three to one on target. ${SIGN_OFF}`,
+  );
+  const ft = periodLine(matchAt(Date.parse('2026-10-22T18:52:03Z')), 'ft');
+  assert.match(ft.text, /^It's full time here, and it's Trabzonspor 2, Hearts 0\. On shots .* Trabzonspor have been on top, with 61 per cent/);
+  assert.ok(ft.numbers.includes(61) && ft.numbers.includes(11));
+  // Before BBC has stats, just the score.
+  assert.equal(periodLine({ ...matchAt(Date.parse('2026-10-22T17:37:15Z')), stats: undefined }, 'ht').text, `It's half-time here, and it's Trabzonspor 1, Hearts 0. ${SIGN_OFF}`);
+});
+
 test('AI lines must name the player and use no numbers but the score and minute', () => {
   const m = matchAt(Date.parse('2026-10-22T18:44:01Z'));
   const dju = m.events[1];
@@ -95,6 +121,11 @@ test('AI lines must name the player and use no numbers but the score and minute'
   assert.ok(checkLine("Franculino Dju on fifty-eight minutes, one of the goals of the night. It's two-nil.", m, dju));
   assert.equal(checkLine("Franculino Dju from twenty yards! It's two-nil.", m, dju), undefined);
   assert.deepEqual(wordNumbers('thirty-two minutes, one-nil, ninety, hundred'), [32, 1, 0, 90, 100]);
+  // Stats only when they were given.
+  const knocking = "Franculino Dju scores, and Trabzonspor have had 61% of the ball and four shots on target to one. It's Trabzonspor 2, Hearts 0.";
+  assert.equal(checkLine(knocking, m, dju), undefined);
+  assert.ok(checkLine(knocking, m, dju, [61, 4, 1]));
+  assert.equal(checkLine(knocking.replace('61%', '65%'), m, dju, [61, 4, 1]), undefined);
 });
 
 test('a package: anchor at the desk, reporter at the ground with the score card', async () => {
@@ -114,5 +145,5 @@ test('a package: anchor at the desk, reporter at the ground with the score card'
   // A model that fails leaves the plain line.
   const broken: ScriptModel = { name: 'broken', generateJson: async () => { throw new Error('busy'); } };
   const plain = await buildPackage({ key: 'k', match: m, event: salah, text: ['x'], channel, model: broken });
-  assert.equal(plain.segments[1].lines[0].text, plainLine(m, salah));
+  assert.equal(plain.segments[1].lines[0].text, plainLine(m, salah, gameReading(m, salah)));
 });

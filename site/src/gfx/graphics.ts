@@ -245,6 +245,43 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'stats': {
+      const top = panel(g, x, y, w, h, gr.competition);
+      const live = /live/i.test(gr.status);
+      if (!live || Math.floor(now / 500) % 2) drawTextRight(g, gr.status, x + w - 5, y + 3, live ? C.red : C.gold);
+      // The score across the top, then one row per stat: the numbers either side of the label, and a bar split
+      // between the two sides underneath (home gold, away light), growing in as each row appears.
+      const score = `${gr.homeScore} - ${gr.awayScore}`;
+      const sw = measure(score);
+      drawTextCentred(g, score, cx, top, C.gold);
+      drawText(g, fit(gr.home, w / 2 - sw / 2 - 12), x + 6, top, C.white);
+      drawTextRight(g, fit(gr.away, w / 2 - sw / 2 - 12), x + w - 6, top, C.white);
+      const rowH = 9;
+      const first = top + 9;
+      const maxRows = Math.floor((Math.min(y + h - 1, CAPTION_SAFE_BOTTOM) - first) / rowH);
+      const visible = Math.floor(age / 120);
+      const bx = x + 6;
+      const bw = w - 12;
+      gr.rows.slice(0, Math.min(visible, maxRows)).forEach((r, i) => {
+        const ry = first + i * rowH;
+        const val = (n: number) => (r.percent ? `${n}%` : String(n));
+        drawText(g, val(r.home), bx, ry, C.white);
+        drawTextRight(g, val(r.away), bx + bw, ry, C.white);
+        drawTextCentred(g, r.label, cx, ry, C.grey);
+        const total = r.home + r.away;
+        const grow = easeOut(clamp01((age - i * 120) / 500));
+        rect(g, bx, ry + 6, bw, 2, C.navy);
+        if (total > 0) {
+          // Each side grows in from its own end.
+          const hw = Math.round(bw * (r.home / total) * grow);
+          const aw = Math.round(bw * (r.away / total) * grow);
+          rect(g, bx, ry + 6, hw, 2, C.gold);
+          rect(g, bx + bw - aw, ry + 6, aw, 2, C.light);
+        }
+      });
+      break;
+    }
+
     case 'predictions': {
       const top = panel(g, x, y, w, h, 'PREDICTIONS');
       drawTextCentred(g, fit(gr.fixture, w - 12), cx, top + 1, C.light);

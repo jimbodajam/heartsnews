@@ -230,10 +230,11 @@ side should add up to its score. Leave out scorers the article doesn't name. Oth
       parts: ['match', 'stories', ...(f.opponent ? (['opponent'] as DataPart[]) : [])],
       schema: {
         type: 'OBJECT',
-        properties: { result: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
+        properties: { result: STR, stats: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
         // Asking for every field that has data stops a lighter model running them all together in one.
         required: [
           ...(f.lastResult || f.phase.kind === 'live' ? ['result'] : []),
+          ...(f.matchStats ? ['stats'] : []),
           ...(f.table.length && f.phase.kind !== 'live' ? ['table'] : []),
           ...(ct ? ['competitionTable'] : []),
           ...(next ? ['next'] : []),
@@ -249,6 +250,13 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
       ? `\n  This is a build-up bulletin, so "next" is all about ${name(focus.home)} against ${name(focus.away)} ${dayPhrase(new Date(focus.date), now)}: the competition and the kick-off time.
   Don't move on to later fixtures in it.`
       : ''
+  }
+- stats: ${
+    f.matchStats
+      ? `straight after "result", with the match stats on screen: what they say about how the game ${f.matchStats.final ? 'went' : 'is going'}.
+  Use our reading of the stats given in the data (and only that: if it says nothing is clear-cut, don't say anyone was
+  on top), with one or two of the numbers exactly as given. Stay neutral, even when ${club.shortName} come off worse.`
+      : 'leave it out (no stats).'
   }
 - competitionTable: ${
     ct

@@ -1,4 +1,6 @@
-export type SourceKind = 'press' | 'official' | 'aggregator' | 'video' | 'podcast' | 'forum';
+import type { MatchStats } from '../../shared/live.ts';
+
+export type SourceKind ='press' | 'official' | 'aggregator' | 'video' | 'podcast' | 'forum';
 
 export interface SourceConfig {
   id: string;
@@ -74,6 +76,8 @@ export interface Fixture {
   /** Live progress as the BBC shows it, e.g. "63'" or "HT". */
   period?: string;
   scorers?: { side: 'home' | 'away'; player: string; minute: string }[];
+  /** BBC's team stats, for a game on now or just played (read from the match page). */
+  stats?: MatchStats;
   /** BBC team page slugs (e.g. "motherwell") and the match page path, when the data came from the BBC. */
   homeSlug?: string;
   awaySlug?: string;

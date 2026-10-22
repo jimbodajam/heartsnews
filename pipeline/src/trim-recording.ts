@@ -1,6 +1,6 @@
 // Trims a match recording (from `npm run record`) to what live.json is built from, small enough to commit as a test
-// fixture: the team page's event for the match, and each change to the match page's live-header and the key posts
-// in its live text stream.
+// fixture: the team page's event for the match, and each change to the match page's live-header, the key posts in
+// its live text stream and the team stats.
 // Usage: npm run trim-recording -- <recording dir name> [out file]
 //   e.g. npm run trim-recording -- 2026-10-22-trabzonspor-hearts
 // Writes shared/test/fixtures/<name>.json by default.
@@ -41,10 +41,15 @@ async function main() {
     const results = block<{ results: Record<string, unknown>[] }>(data, 'stream?')?.results ?? [];
     const e = block<{ sportDataEvent?: BbcEvent }>(data, 'live-header?')?.sportDataEvent;
     const side = ({ shortName, urn, score, scoreUnconfirmed, actions }: BbcEvent['home']) => ({ shortName, urn, score, scoreUnconfirmed, actions });
+    // The team stats' top level only (the attack/distribution/... breakdowns repeat or go unused).
+    const stats = block<Record<'homeTeam' | 'awayTeam', { stats?: Record<string, unknown> } | undefined>>(data, 'match-stats?');
+    const topStats = (t?: { stats?: Record<string, unknown> }) =>
+      t?.stats && { stats: Object.fromEntries(Object.entries(t.stats).filter(([, v]) => typeof (v as { total?: unknown })?.total === 'number')) };
     const page: BbcData = {
       'live-header?': {
         data: { sportDataEvent: e && { home: side(e.home), away: side(e.away), status: e.status, periodLabel: e.periodLabel, tournament: e.tournament, venue: e.venue } },
       },
+      'match-stats?': { data: stats && { homeTeam: topStats(stats.homeTeam), awayTeam: topStats(stats.awayTeam) } },
       // Every coded post, not just the key ones, so the parser's filtering is tested too; only the fields it reads.
       'stream?': {
         data: {

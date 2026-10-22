@@ -1,6 +1,7 @@
 import { dayPhrase, partOfDay, spokenList, spokenOrdinal, timePhrase } from '../time.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
+import { howItsGone } from '../reading.ts';
 import { describeXI, formOf } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
 
@@ -17,6 +18,8 @@ export interface Draft {
   table?: string;
   /** Our place in the table of the competition we're building up to, when that isn't the league (e.g. Europe). */
   competitionTable?: string;
+  /** What the team stats say about the game on now or just played, with them on screen. */
+  stats?: string;
   next?: string;
   transferIntro: string;
   transfers: {
@@ -147,6 +150,14 @@ export function templateDraft(f: Facts): Draft {
     competitionTable = `In the ${ct.competition}, ${club.shortName} are ${spokenOrdinal(usThere.pos)} of ${ct.rows.length} on ${usThere.pts} points.`;
   }
 
+  let stats: string | undefined;
+  const ms = f.matchStats;
+  if (ms) {
+    const names = { home: name(ms.fixture.home), away: name(ms.fixture.away) };
+    const score = { home: ms.fixture.homeScore ?? 0, away: ms.fixture.awayScore ?? 0 };
+    stats = `A look at the numbers${ms.final ? '' : ' so far'}. ${howItsGone(names, ms.stats, score, ms.minute).text}`;
+  }
+
   let next: string | undefined;
   const n = f.nextFixtures[0];
   if (n) {
@@ -197,6 +208,7 @@ export function templateDraft(f: Facts): Draft {
     result,
     table,
     competitionTable,
+    stats,
     next,
     transferIntro: f.transfers.length ? `${windowLine} Here's what's being talked about.` : `${windowLine} It's quiet on the transfer front at the moment.`,
     transfers: f.transfers.map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),

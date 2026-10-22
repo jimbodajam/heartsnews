@@ -74,6 +74,18 @@ export type Graphic =
       homeScorers?: string[];
       awayScorers?: string[];
     }
+  /** Team stats side by side under the score, e.g. at half-time: possession, shots, on target… */
+  | {
+      type: 'stats';
+      home: string;
+      away: string;
+      homeScore: number;
+      awayScore: number;
+      competition: string;
+      /** e.g. "HALF TIME", "FULL TIME", "LIVE 63'". */
+      status: string;
+      rows: { label: string; home: number; away: number; /** Shown as "61%". */ percent?: boolean }[];
+    }
   | { type: 'quote'; text: string; author: string; face?: string }
   | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] }
   /** A team's recent results with W/D/L. */

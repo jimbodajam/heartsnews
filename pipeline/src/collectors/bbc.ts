@@ -1,4 +1,5 @@
 import { type BbcEvent, type BbcSide, eventsIn, initialData } from '../../../shared/bbc.ts';
+import { matchStats } from '../../../shared/live.ts';
 import { fetchText } from '../http.ts';
 import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } from '../types.ts';
 
@@ -165,7 +166,14 @@ export async function collectBbcMatchData(club: ClubConfig, now = new Date()): P
 
   // Opponent focus only when the next game is close (within five days), to keep requests down otherwise.
   const soon = next[0] && Date.parse(next[0].date) - now.getTime() < 5 * 86_400_000 ? next[0] : undefined;
-  const opponent = soon ? await opponentFocus(team, soon, last).catch(() => undefined) : undefined;
+  // The team stats for a game on now or finished in the last 30 hours, for the Match Centre.
+  const statsFor = [...next.filter((f) => f.status === 'live'), ...last.slice(0, 1).filter((f) => now.getTime() - Date.parse(f.date) < 30 * 3_600_000)];
+  const [opponent] = await Promise.all([
+    soon ? opponentFocus(team, soon, last).catch(() => undefined) : undefined,
+    ...statsFor.map(async (f) => {
+      if (f.link) f.stats = await fetchText(`https://www.bbc.co.uk${f.link}`).then((html) => matchStats(initialData(html)), () => undefined);
+    }),
+  ]);
 
   return {
     next,

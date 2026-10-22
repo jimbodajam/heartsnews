@@ -1,4 +1,5 @@
 import type { Bulletin, Graphic, IconId, Line, Segment, Sidebar, TableRow } from '../../../shared/bulletin.ts';
+import { statsCard } from '../../../shared/live.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
@@ -102,6 +103,25 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
           homeScorers: scorerLabels(r, 'home'),
           awayScorers: scorerLabels(r, 'away'),
         },
+      });
+    }
+    const ms = f.matchStats;
+    if (draft.stats && ms) {
+      const x = ms.fixture;
+      lines.push({
+        speaker: analyst,
+        text: draft.stats,
+        graphic: statsCard(
+          {
+            home: name(x.home),
+            away: name(x.away),
+            homeScore: x.homeScore ?? 0,
+            awayScore: x.awayScore ?? 0,
+            competition: x.competition,
+            status: ms.final ? 'FULL TIME' : x.period === 'HT' ? 'HALF TIME' : `LIVE ${x.period}`,
+          },
+          ms.stats,
+        ),
       });
     }
     if (draft.table && f.table.length) {

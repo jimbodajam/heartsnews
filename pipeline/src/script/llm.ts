@@ -3,6 +3,7 @@ import { dayPhrase, daysUntil, timePhrase } from '../time.ts';
 import type { Fixture } from '../types.ts';
 import { findAired } from '../memory.ts';
 import { scorerLabels } from '../matchday.ts';
+import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
 import { formOf, xiText } from './opponent.ts';
 import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
@@ -186,11 +187,22 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
     })
     .join('\n\n');
 
+  const ms = f.matchStats;
+  const stats = ms
+    ? `${statsBrief(
+        { home: name(ms.fixture.home), away: name(ms.fixture.away) },
+        ms.stats,
+        { home: ms.fixture.homeScore ?? 0, away: ms.fixture.awayScore ?? 0 },
+        ms.minute,
+        ms.final ? 'full time' : ms.fixture.period === 'HT' ? 'half-time' : `as of ${ms.fixture.period}`,
+      )}\n`
+    : '';
+
   const blocks: Record<DataPart, string> = {
     stories: `Stories (id | category | on air before? | outlets | published UTC | title | summary):\n${stories || '(none)'}`,
     match: `Recent results, newest first (form is oldest to newest, last letter = most recent game):
 ${results || '(none)'}
-League table: ${table || '(none)'}
+${stats}League table: ${table || '(none)'}
 ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}\n` : ''}Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}`,
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
@@ -402,6 +414,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
     result: pickOptional(ai.result, base.result),
     table: pickOptional(ai.table, base.table),
     competitionTable: pickOptional(ai.competitionTable, base.competitionTable),
+    stats: pickOptional(ai.stats, base.stats),
     next: pickOptional(ai.next, base.next),
     transferIntro: pick(ai.transferIntro, base.transferIntro),
     transfers: Array.isArray(ai.transfers) ? transfers : base.transfers,
