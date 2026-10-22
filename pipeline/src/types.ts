@@ -17,6 +17,10 @@ export interface SourceConfig {
    * fetch fails, the build uses the latest snapshot from the repo's `snapshots` branch instead.
    */
   snapshot?: boolean;
+  /** youtube: also fetch video transcripts (at home, in `npm run snapshot`, since YouTube blocks GitHub). */
+  transcripts?: boolean;
+  /** A supporters' channel: its videos are fan opinion for the debate and Fan Zone, credited to the channel. */
+  fan?: boolean;
   /** Keep only items that mention one of the club's keywords (for general feeds). */
   filter?: boolean;
   maxAgeDays?: number;
@@ -51,6 +55,8 @@ export interface Item {
   publishedAt: string;
   /** Views, comments or similar, when the source exposes it. */
   engagement?: number;
+  /** What was said in a video, from its captions. */
+  transcript?: string;
 }
 
 export interface Fixture {

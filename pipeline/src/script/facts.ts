@@ -32,6 +32,8 @@ export interface Facts {
   features: Story[];
   transfers: Story[];
   fans: Item[];
+  /** Recent videos from supporters' channels with transcripts: fan opinion, not fact. */
+  fanVideos: Item[];
   lastResult?: Fixture;
   /** Recent results, newest first, for form. */
   results: Fixture[];
@@ -68,6 +70,11 @@ export function buildFacts(
       .slice(0, FEATURE_COUNT),
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
     fans: fanThreads(items).slice(0, 5),
+    fanVideos: items
+      .filter((it) => it.transcript && club.sources.find((s) => s.id === it.sourceId)?.fan)
+      .filter((it) => now.getTime() - Date.parse(it.publishedAt) < 4 * 86_400_000)
+      .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+      .slice(0, 2),
     lastResult: match?.last.find((f) => f.homeScore !== undefined && f.awayScore !== undefined),
     results: (match?.last ?? []).filter((f) => f.homeScore !== undefined).slice(0, 5),
     nextFixtures: (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3),

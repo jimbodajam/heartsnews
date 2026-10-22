@@ -16,6 +16,7 @@ import { buildFacts, FEATURE_CANDIDATES, teamName, type Channel } from './script
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
 import { remember } from './script/remember.ts';
 import { fetchArticleText } from './collectors/article.ts';
+import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { freshness, loadMemory, settlePredictions, trimMemory } from './memory.ts';
 import { addBodies, buildStories } from './stories.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
@@ -53,6 +54,9 @@ async function main() {
     await writeFile(resolve(OUT, 'items.json'), JSON.stringify(items, null, 2));
     if (match) await writeFile(resolve(OUT, 'match.json'), JSON.stringify(match, null, 2));
   }
+
+  const transcripts = await loadTranscripts(resolve(ROOT, 'snapshots/transcripts.json'), TRANSCRIPT_CACHE);
+  console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached (of ${transcripts.length} available)`);
 
   const stories = buildStories(items, club, now);
   await writeFile(resolve(OUT, 'stories.json'), JSON.stringify(stories.map(({ items: _, ...s }) => s), null, 2));

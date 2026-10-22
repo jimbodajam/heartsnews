@@ -29,8 +29,11 @@ const STOP = new Set(
 const KIND_RANK: Record<SourceKind, number> = { official: 0, press: 1, video: 2, podcast: 3, aggregator: 4, forum: 5 };
 const KIND_WEIGHT: Record<SourceKind, number> = { official: 1.2, press: 1, video: 0.8, aggregator: 0.8, podcast: 0.6, forum: 0 };
 
-const JUNK = /betting tips|\bodds\b|bet builder|free bets?/i;
-const LISTINGS = /how to watch|live stream|tv channel|what channel/i;
+// Betting tips and "watch it here" listings aren't news, so they're dropped outright.
+const JUNK =
+  /betting|\bbets?\b|\bodds\b|\btips\b|\bpicks\b|bet builder|^watch\b|how to watch|live stream|tv channel|what channel|match sheet|detailed view|\bpage \d+\b/i;
+// Real but minor: goal clips, highlight reels and gossip round-ups sink down the order.
+const MINOR = /\b(goals|highlights)\b|gossip/i;
 
 const TRANSFER = /\b(transfers?|signs?|signing|signed|loan|bid|swoop|target(ed|s)?|linked with|pre-contract|medical|move for|release clause|transfer window)\b/i;
 const INJURY = /\b(injur\w*|ruled out|sidelined|fitness|hamstring|knee|ankle|surgery|setback|left behind)\b/i;
@@ -100,7 +103,7 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
         (1 + 0.5 * Math.max(0, direct - 1) + 0.15 * reposts) *
         Math.max(...c.items.map((it) => KIND_WEIGHT[it.kind])) *
         (mentionsAny(lead.title, club.keywords) ? 1 : 0.4) *
-        (LISTINGS.test(lead.title) ? 0.3 : 1);
+        (MINOR.test(lead.title) ? 0.3 : 1);
       return {
         id: `s${shortHash(lead.url).slice(0, 6)}`,
         title: speakable(lead.title),
@@ -132,6 +135,12 @@ export async function addBodies(stories: Story[], fetchArticle: (url: string) =>
         } catch {
           // Some outlets refuse article pages; try the next one.
         }
+      }
+      // No article? A video's transcript is the next best thing (press conferences, fan shows).
+      const transcript = s.items.find((i) => (i.transcript?.length ?? 0) > 300)?.transcript;
+      if (transcript) {
+        s.body = transcript;
+        return;
       }
       const longest = s.items.map((i) => i.summary).sort((a, b) => b.length - a.length)[0];
       if (longest) s.body = longest;

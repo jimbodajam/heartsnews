@@ -1,5 +1,6 @@
 // Collects the sources that block GitHub's servers (marked "snapshot" in the club config, e.g. the Kickback)
-// from a home connection, and publishes them to the repo's `snapshots` branch. The scheduled build reads
+// plus YouTube transcripts (channels marked "transcripts") from a home connection, and publishes them to the
+// repo's `snapshots` branch. The scheduled build reads
 // that branch whenever its own fetch of those sources is refused.
 // Usage: npm run snapshot   (needs the GitHub CLI `gh` logged in; run it as often as you like)
 
@@ -8,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectOne, type Snapshot } from './collectors/index.ts';
+import { fetchTranscripts, TRANSCRIPT_CACHE, type TranscriptSnapshot } from './collectors/transcripts.ts';
 import type { ClubConfig } from './types.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -53,7 +55,19 @@ async function main() {
     files[`${src.id}.json`] = `${JSON.stringify(snap, null, 2)}\n`;
     console.log(`  ✔ ${src.name.padEnd(30)} ${items.length} items`);
   }
-  if (!Object.keys(files).length) return console.log('No sources are marked "snapshot" in the club config.');
+
+  // Transcripts for the past week's videos on channels marked "transcripts".
+  const videos = [];
+  for (const src of club.sources.filter((s) => s.transcripts && s.enabled !== false)) {
+    videos.push(...(await collectOne({ ...src, maxAgeDays: 7 }, club, now)));
+  }
+  if (videos.length) {
+    const { transcripts, fetched, failed } = await fetchTranscripts(videos, TRANSCRIPT_CACHE);
+    const snap: TranscriptSnapshot = { collectedAt: now.toISOString(), items: transcripts };
+    files['transcripts.json'] = `${JSON.stringify(snap, null, 2)}\n`;
+    console.log(`  ✔ ${'Video transcripts'.padEnd(30)} ${transcripts.length} of ${videos.length} videos (${fetched} new, ${failed} without captions)`);
+  }
+  if (!Object.keys(files).length) return console.log('No sources are marked "snapshot" or "transcripts" in the club config.');
 
   const repo = githubRepo();
   await publish(repo, files, `Home snapshot ${now.toISOString()}`);
