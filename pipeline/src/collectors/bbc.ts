@@ -124,10 +124,12 @@ function monthKey(now: Date, offset: number): string {
 export async function collectBbcMatchData(club: ClubConfig, now = new Date()): Promise<MatchData> {
   if (!club.bbc) throw new Error('no bbc config for club');
   const { team, league } = club.bbc;
-  // Upcoming (and today's), this and next month's fixtures (on matchday the default page only shows today),
-  // this month's results, and last month's results so early-month bulletins still have form.
-  const [upcoming, thisMonth, nextMonth, recent, older, tableHtml] = await Promise.all([
+  // Upcoming (and today's), the rest of this month, this and next month's fixtures, this month's results, and
+  // last month's results so early-month bulletins still have form. On matchday both the default and this month's
+  // page only show today, so the rest of the month comes from ?filter=fixtures (tomorrow to month end).
+  const [upcoming, restOfMonth, thisMonth, nextMonth, recent, older, tableHtml] = await Promise.all([
     pageEvents(`${team}/scores-fixtures`),
+    pageEvents(`${team}/scores-fixtures?filter=fixtures`).catch(() => []),
     pageEvents(`${team}/scores-fixtures/${monthKey(now, 0)}`).catch(() => []),
     pageEvents(`${team}/scores-fixtures/${monthKey(now, 1)}`).catch(() => []),
     pageEvents(`${team}/scores-fixtures?filter=results`),
@@ -136,7 +138,7 @@ export async function collectBbcMatchData(club: ClubConfig, now = new Date()): P
   ]);
 
   const seen = new Set<string>();
-  const all = [...upcoming, ...thisMonth, ...nextMonth, ...recent, ...older]
+  const all = [...upcoming, ...restOfMonth, ...thisMonth,...nextMonth, ...recent, ...older]
     .map(toFixture)
     .filter((f) => !seen.has(f.date + f.home) && seen.add(f.date + f.home));
 
