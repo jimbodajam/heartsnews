@@ -144,6 +144,14 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   debate and Fan Zone, and the manager's own words for in-depth packages (the word-for-word quote check can verify
   quotes against the transcript). Later: Whisper transcription for podcasts, whose audio is openly in their RSS feeds,
   if a fan podcast posts regularly.
+- **Fan phone-in:** pick a hot Kickback topic, sum up the main views, and have two or three made-up callers
+  ("Davie from Gorgie, you're on Hearts News 24") phone in and argue with the presenters. The callers are fictional
+  composites of the general mood, never based on real posters or their usernames. Use spare Kokoro voices (e.g.
+  bm_daniel, bf_lily, bm_fable) through a "phone line" audio filter (band-pass in ffmpeg), with a caller strap and a
+  phone graphic on screen.
+- **Morning papers round-up:** in breakfast bulletins (about 6–10am), a presenter runs through what the papers and
+  sites are saying about Hearts, from the morning's press headlines with each outlet credited. Show pixel-art newspaper
+  front pages with the headline; draw the mastheads in our own pixel style rather than copying real logos.
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
