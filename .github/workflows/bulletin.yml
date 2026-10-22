@@ -1,6 +1,7 @@
-# Builds a fresh bulletin (collect → script → voices) and publishes the player to GitHub Pages.
-# Runs every hour, on every push to main, and on demand from the Actions tab. Each build starts from the
-# previous one's memory.json (read back from the live site), so the channel moves on to new stories.
+# Builds a fresh bulletin (collect → script → voices) and publishes the player to the gh-pages branch, which
+# GitHub Pages serves. This is the fallback: when the home PC is running `npm run live` it publishes the same way,
+# so scheduled and push builds skip themselves while its programme is fresh. A manual run always builds.
+# Each build starts from the previous one's memory.json (read back from the live site), so the channel moves on.
 
 name: Bulletin
 
@@ -12,9 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # One bulletin at a time; a newer run replaces a queued one.
 concurrency:
@@ -27,52 +26,60 @@ jobs:
     timeout-minutes: 40
     env:
       ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      # Skip unless the programme on air is older than this (the home PC publishes every 30 minutes).
+      FRESH_MINUTES: 75
     steps:
       - uses: actions/checkout@v5
 
+      - name: Check whether the home PC is on air
+        id: fresh
+        run: |
+          if [ "${{ github.event_name }}" != workflow_dispatch ] && git fetch --depth=1 origin gh-pages; then
+            age=$(git show FETCH_HEAD:bulletins/latest.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(Math.round((Date.now()-Date.parse(JSON.parse(s).generatedAt))/60000)))')
+            echo "Programme on air is ${age} minutes old"
+            if [ "$age" -lt "$FRESH_MINUTES" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "::notice::Skipped: the programme on air is ${age} minutes old"; fi
+          fi
+
       - uses: actions/setup-node@v5
+        if: steps.fresh.outputs.skip != 'true'
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - if: steps.fresh.outputs.skip != 'true'
+        run: npm ci
 
       # The Kokoro voice model (~330MB) downloads on first use; keep it between runs.
       - name: Cache voice model
+        if: steps.fresh.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: node_modules/@huggingface/transformers/.cache
           key: kokoro-${{ hashFiles('package-lock.json') }}
 
       - name: Install ffmpeg
+        if: steps.fresh.outputs.skip != 'true'
         run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -yq ffmpeg)
 
       # Forum data collected at home by `npm run snapshot`, for sources that block GitHub's servers.
       - name: Fetch home snapshots
+        if: steps.fresh.outputs.skip != 'true'
         run: |
           mkdir -p snapshots
           if git fetch --depth=1 origin snapshots; then git archive FETCH_HEAD | tar -x -C snapshots; ls -l snapshots; else echo "No snapshots branch yet"; fi
 
       - name: Build bulletin
+        if: steps.fresh.outputs.skip != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run bulletin
 
       - name: Build site
+        if: steps.fresh.outputs.skip != 'true'
         run: npm run build
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: site/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages
+        if: steps.fresh.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish-site

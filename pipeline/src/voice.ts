@@ -7,6 +7,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
@@ -41,6 +42,38 @@ export async function renderClip(tts: KokoroTTS, text: string, voice: string, sp
   if (res.status !== 0) throw new Error(`ffmpeg failed: ${res.stderr}`);
 }
 
+interface Job {
+  text: string;
+  voice: string;
+  speed: number;
+  out: string;
+}
+
+const GPU_HOME = resolve(homedir(), '.cache/heartsnews-gpu');
+const GPU_PYTHON = resolve(GPU_HOME, 'env/bin/python');
+
+/** GPU voices are used when tools/gpu/setup.sh has been run, unless HEARTSNEWS_GPU=0. */
+function gpuAvailable(): boolean {
+  return process.env.HEARTSNEWS_GPU !== '0' && existsSync(GPU_PYTHON) && existsSync(resolve(GPU_HOME, 'models/kokoro-v1.0.onnx'));
+}
+
+/** Render every job in one batch on the GPU (tools/gpu/voices.py writes WAVs), then convert to MP3. */
+async function renderOnGpu(jobs: Job[]): Promise<void> {
+  const wav = (out: string) => out.replace(/\.mp3$/, '.wav');
+  const res = spawnSync(GPU_PYTHON, ['-I', resolve(ROOT, 'tools/gpu/voices.py')], {
+    input: JSON.stringify(jobs.map((j) => ({ ...j, out: wav(j.out) }))),
+    stdio: ['pipe', 'inherit', 'inherit'],
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (res.status !== 0) throw new Error(`tools/gpu/voices.py exited with ${res.status ?? res.signal}`);
+  if (!hasFfmpeg) return;
+  for (const j of jobs) {
+    const conv = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav(j.out), '-b:a', '96k', j.out]);
+    await rm(wav(j.out), { force: true });
+    if (conv.status !== 0) throw new Error(`ffmpeg failed: ${conv.stderr}`);
+  }
+}
+
 /** Render any missing clips for a bulletin file and write the clip paths back into it. */
 export async function renderVoices(bulletinPath: string): Promise<void> {
   const bulletin = JSON.parse(await readFile(bulletinPath, 'utf8')) as Bulletin;
@@ -48,10 +81,8 @@ export async function renderVoices(bulletinPath: string): Promise<void> {
   await mkdir(outDir, { recursive: true });
   const say = pronouncer(loadPronunciations());
 
-  let tts: KokoroTTS | undefined;
-  let rendered = 0;
   let reused = 0;
-
+  const jobs: Job[] = [];
   for (const seg of bulletin.segments) {
     for (const line of seg.lines) {
       const p = bulletin.presenters.find((x) => x.id === line.speaker);
@@ -65,18 +96,32 @@ export async function renderVoices(bulletinPath: string): Promise<void> {
       const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${spoken}`)}.${CLIP_EXT}`;
       const file = resolve(outDir, name);
       line.audio = `${AUDIO_DIR}/${name}`;
-      if (existsSync(file)) {
-        reused++;
-        continue;
-      }
-
-      tts ??= await loadKokoro();
-      const started = Date.now();
-      await renderClip(tts, spoken, p.tts.voice, speed, file);
-      rendered++;
-      console.log(`  ${p.name.padEnd(16)} ${p.tts.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${line.text.slice(0, 50)}…`);
+      if (existsSync(file)) reused++;
+      else if (!jobs.some((j) => j.out === file)) jobs.push({ text: spoken, voice: p.tts.voice, speed, out: file });
     }
   }
+
+  // The GPU does the whole batch in seconds when it's set up (tools/gpu/setup.sh); otherwise Kokoro runs on the CPU.
+  let remaining = jobs;
+  if (jobs.length && gpuAvailable()) {
+    const started = Date.now();
+    try {
+      await renderOnGpu(jobs);
+      remaining = [];
+      console.log(`  ${jobs.length} clips on the GPU in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+    } catch (err) {
+      console.warn(`GPU voices failed, using the CPU instead: ${(err as Error).message}`);
+      remaining = jobs.filter((j) => !existsSync(j.out));
+    }
+  }
+  let tts: KokoroTTS | undefined;
+  for (const j of remaining) {
+    tts ??= await loadKokoro();
+    const started = Date.now();
+    await renderClip(tts, j.text, j.voice, j.speed, j.out);
+    console.log(`  ${j.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${j.text.slice(0, 50)}…`);
+  }
+  const rendered = jobs.length;
 
   await writeFile(bulletinPath, `${JSON.stringify(bulletin, null, 2)}\n`);
 
