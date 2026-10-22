@@ -4,6 +4,9 @@
 //   --templates  skip the AI writer even if GEMINI_API_KEY is set
 //   --no-voice   don't render Kokoro clips
 //   --no-check   skip the fact-check pass
+//   --fresh      weigh stories as if nothing had aired yet (no cooldowns), to see the strongest bulletin.
+//                Presenters keep their opinions and predictions. Memory isn't saved, so the live channel's
+//                memory.json is left alone.
 // Put GEMINI_API_KEY (and optionally GEMINI_MODEL) in a .env file at the repo root.
 
 import { existsSync } from 'node:fs';
@@ -67,8 +70,10 @@ async function main() {
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
 
   // Memory: move on from stories already on air, and settle any predictions whose result is now in.
+  const fresh = flags.has('--fresh');
   const { memory, from } = await loadMemory(channel.siteUrl && new URL('memory.json', channel.siteUrl).href, MEMORY);
-  console.log(`\nMemory from ${from}: ${memory.aired.length} aired stories`);
+  if (fresh) memory.aired = [];
+  console.log(`\nMemory from ${from}: ${memory.aired.length} aired stories${fresh ? ' (--fresh: cooldowns cleared, not saved)' : ''}`);
   // A renamed presenter keeps their memory under the new id.
   for (const p of channel.presenters) {
     for (const old of p.formerIds ?? []) {
@@ -130,9 +135,11 @@ async function main() {
   }
   await writeFile(BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
 
-  remember(facts, draft);
-  trimMemory(memory, now);
-  await writeFile(MEMORY, `${JSON.stringify(memory, null, 2)}\n`);
+  if (!fresh) {
+    remember(facts, draft);
+    trimMemory(memory, now);
+    await writeFile(MEMORY, `${JSON.stringify(memory, null, 2)}\n`);
+  }
   console.log(`\nBulletin written (${writer}):`);
   for (const seg of bulletin.segments) {
     console.log(`  [${seg.title}]`);

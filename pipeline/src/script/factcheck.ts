@@ -70,9 +70,9 @@ export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin
     const [si, li] = (c.lineId ?? '').split('.').map(Number);
     const line = bulletin.segments[si]?.lines[li];
     if (!line) continue;
-    // The model sometimes echoes the "id | speaker |" prefix from the script listing; that mustn't be read out.
-    const text = typeof c.text === 'string' ? c.text.replace(/^\s*\d+\.\d+\s*\|\s*[\w-]+\s*\|\s*/, '').trim() : '';
-    if (c.action === 'fix' && text && text.length <= 500) {
+    // The model sometimes echoes the "id | speaker |" (or just "speaker |") prefix from the script listing; that mustn't be read out.
+    const text = typeof c.text === 'string' ? c.text.replace(/^\s*(?:\d+\.\d+\s*\|\s*)?[\w-]+\s*\|\s*/, '').trim() : '';
+    if (c.action === 'fix' && text && text.length <= 600) {
       result.fixed.push({ line: c.lineId, was: line.text, now: text, reason: c.reason });
       line.text = text;
     } else if (c.action === 'drop') {
