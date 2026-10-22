@@ -10,6 +10,7 @@
     "pronounce": "tsx src/pronounce-check.ts",
     "pixelate": "tsx src/pixelate.ts",
     "faces": "tsx src/faces.ts",
+    "adverts": "tsx src/advert-art.ts",
     "publish-site": "tsx src/publish.ts",
     "live": "tsx src/live.ts",
     "typecheck": "tsc --noEmit -p ."

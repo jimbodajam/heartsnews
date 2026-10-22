@@ -59,9 +59,12 @@ ${script}`;
 }
 
 export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin): Promise<FactCheckResult> {
-  // Score predictions are the pundits' own calls, matched to the card on screen: not facts to check.
+  // Score predictions are the pundits' own calls, matched to the card on screen, and the adverts are fixed copy
+  // (adverts.json): neither is a fact to check.
   const lines = bulletin.segments.flatMap((s, si) =>
-    s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' })).filter((l) => !l.prediction),
+    s.kind === 'adverts'
+      ? []
+      : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' })).filter((l) => !l.prediction),
   );
   const res = (await model.generateJson(buildPrompt(f, lines), SCHEMA)) as {
     corrections?: { lineId: string; action: 'fix' | 'drop'; text?: string; reason: string }[];

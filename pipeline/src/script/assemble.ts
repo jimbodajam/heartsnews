@@ -3,6 +3,7 @@ import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
+import { adBreaks, loadAdverts } from './adverts.ts';
 import { faceFor, loadFaces } from './faces.ts';
 import { formOf } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
@@ -12,6 +13,10 @@ import { spokenList } from '../time.ts';
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
 
 const FACES = loadFaces();
+const ADVERTS = loadAdverts();
+
+/** Going into an ad break, in turn. */
+const BREAK_LINES = ["We'll take a short break now. Stay with us.", "Time for a quick break. Don't go anywhere."];
 
 /** A story's headline card, with the portrait of whoever it's about when we have one. */
 function headlineGraphic(s: Story): Graphic {
@@ -214,11 +219,28 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   const comingUp = draft.comingUp ?? defaultComingUp(f, later);
   if (comingUp) ordered[0].lines.push({ speaker: a, text: comingUp });
 
-  // A hand-over into every segment, said by someone on screen in the one before.
+  // Ad breaks (adverts.json): the first after the debate (or halfway through), the second just before the Fan Zone.
+  const breaks = ADVERTS ? adBreaks(ADVERTS, now) : [];
+  const fansAt = ordered.findIndex((s) => s.id === 'fans');
+  if (breaks[1] && fansAt > 0) ordered.splice(fansAt, 0, breaks[1]);
+  const debateAt = ordered.findIndex((s) => s.id === 'debate');
+  const firstAt = debateAt > 0 ? debateAt + 1 : Math.ceil(ordered.length / 2);
+  if (breaks[0] && ordered[firstAt]?.kind !== 'adverts' && ordered[firstAt - 1]?.kind !== 'adverts') ordered.splice(firstAt, 0, breaks[0]);
+
+  // A hand-over into every segment, said by someone on screen in the one before; around a break, "stay with us" and "welcome back".
+  let breakNo = 0;
   for (let i = 1; i < ordered.length; i++) {
     const [prev, seg] = [ordered[i - 1], ordered[i]];
-    const written = draft.transitions?.find((t) => t.to === seg.id && prev.presenters.includes(t.speaker));
     const speaker = prev.presenters.includes(a) ? a : prev.presenters[0];
+    if (seg.kind === 'adverts') {
+      prev.lines.push({ speaker, text: BREAK_LINES[breakNo++ % BREAK_LINES.length] });
+      continue;
+    }
+    if (prev.kind === 'adverts') {
+      seg.lines.unshift({ speaker: seg.presenters[0], text: `Welcome back to ${channel.spokenName}.` });
+      continue;
+    }
+    const written = draft.transitions?.find((t) => t.to === seg.id && prev.presenters.includes(t.speaker));
     const text = written?.text ?? (seg.id === 'match' ? draft.matchHandoff : defaultHandover(f, seg));
     if (text) prev.lines.push({ speaker: written?.speaker ?? speaker, text });
   }
@@ -236,7 +258,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     generatedAt: now.toISOString(),
     generatedBy,
     channel: { name: channel.name, club: club.name, colours: club.colours },
-    presenters: channel.presenters,
+    presenters: breaks.length && ADVERTS ? [...channel.presenters, ...ADVERTS.voices] : channel.presenters,
     ticker,
     segments: ordered,
     sidebar: sidebar(f),

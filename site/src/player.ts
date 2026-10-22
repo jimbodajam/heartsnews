@@ -7,8 +7,10 @@ import {
   IDENT_MS, STING_MS,
 } from './gfx/overlay';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
+import { drawAdvert, preloadAdvert } from './gfx/adverts';
+import { C } from './gfx/palette';
 import type { Ctx } from './gfx/screen';
-import { W } from './gfx/screen';
+import { H, rect, W } from './gfx/screen';
 import {
   drawDesk, drawDeskBackground, drawGraphicBackground, drawImageStudio, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
   drawTransferBackground, drawWallClock,
@@ -26,7 +28,15 @@ const LABEL: Record<SegmentKind, string> = {
   match: 'MATCH CENTRE',
   debate: 'THE DEBATE',
   opponent: 'OPPOSITION FOCUS',
+  adverts: 'AD BREAK',
 };
+
+/** The same graphic again (bulletin JSON has no shared objects): an advert by its id, anything else by content. */
+function sameGraphic(a?: Graphic, b?: Graphic): boolean {
+  if (!a || !b) return a === b;
+  if (a.type === 'advert' && b.type === 'advert') return a.id === b.id;
+  return a === b || JSON.stringify(a) === JSON.stringify(b);
+}
 
 /**
  * Plays a bulletin on a loop: ident → for each segment, a sting then each line spoken by its presenter.
@@ -47,6 +57,8 @@ export class Player {
   private segGraphic?: Graphic;
   private shot: Shot = 'wide';
   private graphicAt = 0;
+  /** When the current line started. */
+  private lineAt = 0;
   private speaking?: Speaking;
   private strap?: { name: string; role: string; at: number };
   private strapped = new Set<string>();
@@ -107,6 +119,7 @@ export class Player {
       for (const line of seg.lines) {
         const url = this.clipUrl(line);
         if (url) this.voices.preload(url).catch(() => undefined);
+        if (line.graphic?.type === 'advert') preloadAdvert(line.graphic);
       }
     }
   }
@@ -150,11 +163,18 @@ export class Player {
   private async playLine(seg: Segment, i: number): Promise<void> {
     const line = seg.lines[i];
     const p = this.presenter(line.speaker);
-    if (line.graphic && line.graphic !== this.line?.graphic) this.graphicAt = performance.now();
+    if (line.graphic && !sameGraphic(line.graphic, this.line?.graphic)) this.graphicAt = performance.now();
+    this.lineAt = performance.now();
+    // In an ad break, start fetching the next line's backdrop now.
+    const upcoming = seg.lines[i + 1]?.graphic;
+    if (upcoming?.type === 'advert') preloadAdvert(upcoming);
     this.shot = this.pickShot(seg, i, line);
     this.line = line;
     if (line.graphic) this.segGraphic = line.graphic;
-    if (!this.strapped.has(p.id)) {
+    // Voiceovers in an ad break don't get a name strap.
+    if (seg.kind === 'adverts') {
+      this.strap = undefined;
+    } else if (!this.strapped.has(p.id)) {
       this.strapped.add(p.id);
       this.strap = { name: p.name, role: p.role, at: performance.now() };
     } else if (this.strap?.name !== p.name) {
@@ -191,6 +211,16 @@ export class Player {
     if (this.mode === 'splash') return drawSplash(g, t, name, this.status);
     if (this.mode === 'ident') return drawIdent(g, age, name);
     const seg = this.seg!;
+
+    // An ad break fills the screen: no channel logo, clock, straps or ticker, just the advert (and subtitles).
+    if (seg.kind === 'adverts') {
+      const ad = this.line?.graphic;
+      if (this.mode === 'show' && ad?.type === 'advert') drawAdvert(g, ad, now - this.graphicAt, t, now - this.lineAt);
+      else rect(g, 0, 0, W, H, C.black);
+      if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
+      if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+      return;
+    }
 
     this.drawScene(seg, now);
     drawBug(g, name, !!bulletin.demo);

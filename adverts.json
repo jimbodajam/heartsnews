@@ -1,0 +1,105 @@
+{
+  "voices": [
+    {
+      "id": "vo-lily", "name": "Voiceover", "role": "Advert", "voice": "female", "tts": { "voice": "bf_lily" },
+      "look": { "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "long", "suit": "#2b3160", "shirt": "#f2efe6" }
+    },
+    {
+      "id": "vo-alice", "name": "Voiceover", "role": "Advert", "voice": "female", "tts": { "voice": "bf_alice" },
+      "look": { "skin": "#e8b796", "hair": "#2a1a14", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
+    },
+    {
+      "id": "vo-daniel", "name": "Voiceover", "role": "Advert", "voice": "male", "tts": { "voice": "bm_daniel" },
+      "look": { "skin": "#f0c4a0", "hair": "#3a2a20", "hairStyle": "short", "suit": "#26262e", "shirt": "#f2efe6" }
+    },
+    {
+      "id": "vo-fable", "name": "Voiceover", "role": "Advert", "voice": "male", "tts": { "voice": "bm_fable" },
+      "look": { "skin": "#f0c4a0", "hair": "#3a2a20", "hairStyle": "short", "suit": "#26262e", "shirt": "#f2efe6" }
+    }
+  ],
+  "breaks": [
+    ["gorgie-farm", "gorgie-fish-bar"],
+    ["club-store", "the-diggers", "hampden-tickets"]
+  ],
+  "adverts": [
+    {
+      "id": "gorgie-farm",
+      "brand": "Gorgie Farm",
+      "tagline": "A proper community farm in the middle of the city",
+      "small": "Gorgie Road, Edinburgh",
+      "art": "pig",
+      "colours": { "bg": "#2f6b2f", "fg": "#f2efe6", "accent": "#f5d76e" },
+      "photos": [
+        { "from": "art/adverts/GorgieFarm/Gemini_Generated_Image_yw4ac8yw4ac8yw4a.jpg" },
+        { "from": "art/adverts/GorgieFarm/Gemini_Generated_Image_plhygdplhygdplhy.jpg" }
+      ],
+      "lines": [
+        { "voice": "vo-lily", "text": "Fancy a day out in Gorgie that doesn't involve a forty-minute queue for a pie?", "shot": 0 },
+        { "voice": "vo-lily", "text": "Come and meet the pigs, the goats and the rest of the gang at Gorgie Farm, a proper community farm right here in the city.", "shot": 1 },
+        { "voice": "vo-lily", "text": "Gorgie Farm. The only kids in Gorgie who are happy on a Monday.", "shot": 0 }
+      ]
+    },
+    {
+      "id": "gorgie-fish-bar",
+      "brand": "Gorgie Fish Bar",
+      "tagline": "Battered, never beaten",
+      "small": "Gorgie, Edinburgh",
+      "art": "fish",
+      "colours": { "bg": "#1f4e79", "fg": "#f2efe6", "accent": "#f5d76e" },
+      "photos": [
+        { "from": "art/adverts/GorgieFishBar/Gemini_Generated_Image_jmp7cgjmp7cgjmp7.jpg" },
+        { "from": "art/adverts/GorgieFishBar/Gemini_Generated_Image_xvzc29xvzc29xvzc.jpg" }
+      ],
+      "lines": [
+        { "voice": "vo-fable", "text": "Ninety minutes of shouting at the referee builds up an appetite.", "shot": 0 },
+        { "voice": "vo-fable", "text": "Whether it's a fish supper after the final whistle or a chippy on a cold Tuesday night, Gorgie Fish Bar has got you covered.", "shot": 1 },
+        { "voice": "vo-fable", "text": "Salt and sauce? Of course. This is Edinburgh.", "shot": 1 },
+        { "voice": "vo-fable", "text": "Gorgie Fish Bar. Battered, never beaten.", "shot": 0 }
+      ]
+    },
+    {
+      "id": "club-store",
+      "brand": "Hearts Club Store",
+      "tagline": "Wear your heart on your sleeve",
+      "small": "Tynecastle Park and online",
+      "art": "shirt",
+      "colours": { "bg": "#6d1a2a", "fg": "#f2efe6", "accent": "#e0b13a" },
+      "lines": [
+        { "voice": "vo-alice", "text": "From the Wheatfield to the Roseburn, look the part on matchday." },
+        { "voice": "vo-alice", "text": "Shirts, scarves, hats and gifts for every Jambo, young and old. Find them at the Hearts Club Store at Tynecastle Park, or online any time." },
+        { "voice": "vo-alice", "text": "The Hearts Club Store. Wear your heart on your sleeve." }
+      ]
+    },
+    {
+      "id": "the-diggers",
+      "brand": "The Diggers",
+      "tagline": "Dead good pints",
+      "small": "The Athletic Arms, Angle Park Terrace",
+      "art": "pint",
+      "colours": { "bg": "#2a1d14", "fg": "#f2e6c9", "accent": "#d9a441" },
+      "photos": [
+        { "from": "art/adverts/Diggers/Gemini_Generated_Image_tghc8qtghc8qtghc.jpg", "position": "bottom" },
+        { "from": "art/adverts/Diggers/Gemini_Generated_Image_tdwa0utdwa0utdwa.jpg" }
+      ],
+      "lines": [
+        { "voice": "vo-daniel", "text": "Between two cemeteries on Angle Park Terrace, there's a pub that's been pouring pints since Victorian times.", "shot": 0 },
+        { "voice": "vo-daniel", "text": "The sign says the Athletic Arms. But nobody in Gorgie calls it that. It's the Diggers, after the gravediggers who used to stop in for one after a shift.", "shot": 0 },
+        { "voice": "vo-daniel", "text": "The Diggers. Dead good pints.", "shot": 1 }
+      ]
+    },
+    {
+      "id": "hampden-tickets",
+      "brand": "Hearts v Hibs",
+      "tagline": "Turn Hampden maroon",
+      "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+      "art": "ticket",
+      "colours": { "bg": "#3d0d17", "fg": "#f2efe6", "accent": "#e0b13a" },
+      "until": "2026-11-01T15:00:00Z",
+      "lines": [
+        { "voice": "vo-fable", "text": "One city. Two clubs. One place in the final." },
+        { "voice": "vo-fable", "text": "Hearts against Hibs in the League Cup semi-final at Hampden Park. Sunday the first of November, three o'clock." },
+        { "voice": "vo-fable", "text": "Be there. Be loud. Turn Hampden maroon. For tickets, visit the Hearts website." }
+      ]
+    }
+  ]
+}
