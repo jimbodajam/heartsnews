@@ -161,6 +161,13 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   slightly different face shape.
 - **Team formation graphic:** a pixel pitch showing the expected or confirmed XI in formation with player names
   (overlaps with "Hearts tactics and line-up" above). It could show the opposition's likely XI too in the build-up.
+- **Longer programmes, built segment by segment:** for a 15–30 minute programme, write each segment (headlines, each
+  package, debate, phone-in…) as its own small AI request, run side by side, then assemble. Each piece stays fast and
+  reliable (no Flash timeouts), a failed piece falls back to a template on its own, and the length can be anything. The
+  next programme is built while the current one airs, so build time only has to be shorter than the programme.
+- **Reliable build trigger:** GitHub's scheduler skips many runs (only 2 of ~9 overnight on 21–22 Oct). For
+  back-to-back programmes, use a free external timer (Cloudflare Worker cron or cron-job.org) that calls the
+  workflow_dispatch API, with a narrowly scoped GitHub token. Manual triggering is fine while tweaking.
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
