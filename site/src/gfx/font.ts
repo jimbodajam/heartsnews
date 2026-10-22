@@ -20,20 +20,60 @@ const GLYPHS: Record<string, string> = {
   '>': '#..|.#.|..#|.#.|#..', '<': '..#|.#.|#..|.#.|..#', '•': '.|.|#|.|.', '#': '#.#|###|#.#|###|#.#',
 };
 
+// A larger 5×7 face for headlines, names, scores and stings: anything drawn at scale 2 or more uses it,
+// which reads far more smoothly than blowing the tiny font up.
+const BIG: Record<string, string> = {
+  A: '.###.|#...#|#...#|#####|#...#|#...#|#...#', B: '####.|#...#|#...#|####.|#...#|#...#|####.',
+  C: '.###.|#...#|#....|#....|#....|#...#|.###.', D: '####.|#...#|#...#|#...#|#...#|#...#|####.',
+  E: '#####|#....|#....|####.|#....|#....|#####', F: '#####|#....|#....|####.|#....|#....|#....',
+  G: '.###.|#...#|#....|#.###|#...#|#...#|.####', H: '#...#|#...#|#...#|#####|#...#|#...#|#...#',
+  I: '###|.#.|.#.|.#.|.#.|.#.|###', J: '..###|...#.|...#.|...#.|#..#.|#..#.|.##..',
+  K: '#...#|#..#.|#.#..|##...|#.#..|#..#.|#...#', L: '#....|#....|#....|#....|#....|#....|#####',
+  M: '#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#', N: '#...#|##..#|#.#.#|#..##|#...#|#...#|#...#',
+  O: '.###.|#...#|#...#|#...#|#...#|#...#|.###.', P: '####.|#...#|#...#|####.|#....|#....|#....',
+  Q: '.###.|#...#|#...#|#...#|#.#.#|#..#.|.##.#', R: '####.|#...#|#...#|####.|#.#..|#..#.|#...#',
+  S: '.####|#....|#....|.###.|....#|....#|####.', T: '#####|..#..|..#..|..#..|..#..|..#..|..#..',
+  U: '#...#|#...#|#...#|#...#|#...#|#...#|.###.', V: '#...#|#...#|#...#|#...#|#...#|.#.#.|..#..',
+  W: '#...#|#...#|#...#|#.#.#|#.#.#|##.##|#...#', X: '#...#|#...#|.#.#.|..#..|.#.#.|#...#|#...#',
+  Y: '#...#|#...#|.#.#.|..#..|..#..|..#..|..#..', Z: '#####|....#|...#.|..#..|.#...|#....|#####',
+  '0': '.###.|#...#|#..##|#.#.#|##..#|#...#|.###.', '1': '..#..|.##..|..#..|..#..|..#..|..#..|.###.',
+  '2': '.###.|#...#|....#|...#.|..#..|.#...|#####', '3': '####.|....#|....#|.###.|....#|....#|####.',
+  '4': '...#.|..##.|.#.#.|#..#.|#####|...#.|...#.', '5': '#####|#....|####.|....#|....#|#...#|.###.',
+  '6': '.###.|#....|#....|####.|#...#|#...#|.###.', '7': '#####|....#|...#.|..#..|.#...|.#...|.#...',
+  '8': '.###.|#...#|#...#|.###.|#...#|#...#|.###.', '9': '.###.|#...#|#...#|.####|....#|....#|.###.',
+  ' ': '...|...|...|...|...|...|...', '.': '.|.|.|.|.|.|#', ',': '.|.|.|.|.|#|#', '!': '#|#|#|#|#|.|#',
+  '?': '.###.|#...#|....#|...#.|..#..|.....|..#..', "'": '#|#|.|.|.|.|.', '"': '#.#|#.#|...|...|...|...|...',
+  '-': '....|....|....|####|....|....|....', '+': '.....|..#..|..#..|#####|..#..|..#..|.....',
+  ':': '.|.|#|.|.|#|.', ';': '.|.|#|.|.|#|#', '/': '....#|...#.|...#.|..#..|.#...|.#...|#....',
+  '(': '.#|#.|#.|#.|#.|#.|.#', ')': '#.|.#|.#|.#|.#|.#|#.', '&': '.##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#',
+  '£': '..##.|.#..#|.#...|###..|.#...|.#...|#####', '%': '##..#|##..#|...#.|..#..|.#...|#..##|#..##',
+  '=': '.....|.....|#####|.....|#####|.....|.....', '>': '#....|.#...|..#..|...#.|..#..|.#...|#....',
+  '<': '....#|...#.|..#..|.#...|..#..|...#.|....#', '•': '...|...|.#.|###|.#.|...|...',
+  '#': '.#.#.|.#.#.|#####|.#.#.|#####|.#.#.|.#.#.',
+};
+
 interface Glyph {
   w: number;
+  h: number;
   rows: string[];
 }
 
 const parsed = new Map<string, Glyph>();
-function glyph(ch: string): Glyph {
-  let gl = parsed.get(ch);
+function glyph(ch: string, big = false): Glyph {
+  const key = (big ? 'B' : 'S') + ch;
+  let gl = parsed.get(key);
   if (!gl) {
-    const rows = (GLYPHS[ch] ?? GLYPHS['?']).split('|');
-    gl = { w: rows[0].length, rows };
-    parsed.set(ch, gl);
+    const set = big ? BIG : GLYPHS;
+    const rows = (set[ch] ?? set['?']).split('|');
+    gl = { w: rows[0].length, h: rows.length, rows };
+    parsed.set(key, gl);
   }
   return gl;
+}
+
+/** Scale 2+ uses the big face at a pixel size that keeps text roughly the height callers expect. */
+function face(scale: number): { big: boolean; px: number } {
+  return scale >= 2 ? { big: true, px: Math.max(1, Math.round((scale * 5) / 7)) } : { big: false, px: scale };
 }
 
 export const GLYPH_H = 5;
@@ -53,18 +93,19 @@ export function normalise(text: string): string {
 }
 
 export function measure(text: string, scale = 1): number {
+  const { big, px } = face(scale);
   let w = 0;
-  for (const ch of normalise(text)) w += (glyph(ch).w + 1) * scale;
-  return Math.max(0, w - scale);
+  for (const ch of normalise(text)) w += (glyph(ch, big).w + 1) * px;
+  return Math.max(0, w - px);
 }
 
 const glyphCache = new Map<string, HTMLCanvasElement>();
-function glyphCanvas(ch: string, color: string): HTMLCanvasElement {
-  const key = ch + color;
+function glyphCanvas(ch: string, color: string, big: boolean): HTMLCanvasElement {
+  const key = (big ? 'B' : 'S') + ch + color;
   let c = glyphCache.get(key);
   if (!c) {
-    const gl = glyph(ch);
-    c = offscreen(gl.w, GLYPH_H, (g) => {
+    const gl = glyph(ch, big);
+    c = offscreen(gl.w, gl.h, (g) => {
       g.fillStyle = color;
       gl.rows.forEach((row, y) => [...row].forEach((p, x) => p === '#' && g.fillRect(x, y, 1, 1)));
     });
@@ -75,12 +116,14 @@ function glyphCanvas(ch: string, color: string): HTMLCanvasElement {
 
 /** Draws text with its top-left at (x, y). Returns the width drawn. */
 export function drawText(g: Ctx, text: string, x: number, y: number, color: string, scale = 1): number {
+  const { big, px } = face(scale);
   let cx = Math.round(x);
-  const top = Math.round(y);
+  // The big face is 7 rows tall: centre it in the space the small face would have taken.
+  const top = Math.round(y + (big ? (GLYPH_H * scale - 7 * px) / 2 : 0));
   for (const ch of normalise(text)) {
-    const gl = glyph(ch);
-    if (ch !== ' ') g.drawImage(glyphCanvas(ch, color), cx, top, gl.w * scale, GLYPH_H * scale);
-    cx += (gl.w + 1) * scale;
+    const gl = glyph(ch, big);
+    if (ch !== ' ') g.drawImage(glyphCanvas(ch, color, big), cx, top, gl.w * px, gl.h * px);
+    cx += (gl.w + 1) * px;
   }
   return cx - Math.round(x);
 }

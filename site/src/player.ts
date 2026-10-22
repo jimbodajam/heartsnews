@@ -10,7 +10,7 @@ import { drawPresenter, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presen
 import type { Ctx } from './gfx/screen';
 import { W } from './gfx/screen';
 import {
-  drawDesk, drawDeskBackground, drawGraphicBackground, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
+  drawDesk, drawDeskBackground, drawGraphicBackground, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
   drawTransferBackground, drawWallClock,
 } from './gfx/studio';
 
@@ -217,6 +217,7 @@ export class Player {
           const deskY = top + SEATED_DESK_Y * 3;
           // Panned so the video wall's heart logo sits off to the left, not behind the presenter's head.
           drawDeskBackground(g, 140);
+          drawStudioLife(g, 140, t);
           drawPresenter(g, 92, top, p.look, pose(p), 3);
           drawDesk(g, deskY, -20, W + 20);
           drawHands(g, 92, deskY, 3, p.look.skin);
@@ -227,6 +228,7 @@ export class Player {
         const top = 40;
         const deskY = top + SEATED_DESK_Y * 2;
         drawDeskBackground(g, 0);
+        drawStudioLife(g, 0, t);
         onScreen.slice(0, 2).forEach((p, k) => drawPresenter(g, xs[k], top, p.look, pose(p), 2));
         drawDesk(g, deskY, 40, 280);
         onScreen.slice(0, 2).forEach((p, k) => drawHands(g, xs[k], deskY, 2, p.look.skin));

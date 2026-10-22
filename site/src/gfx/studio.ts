@@ -73,11 +73,62 @@ export function drawDeskBackground(g: Ctx, pan: number): void {
         }
       }
       drawHeart(o, vx + 81 + 40 - 10, vy + 6, 3, C.gold);
-      drawTextCentred(o, 'HEARTS NEWS 24', vx + 81 + 40, vy + 35 + 14, C.white);
     }),
     0,
     0,
   );
+}
+
+const MARQUEE = 'HEARTS NEWS 24  •  ROLLING NEWS FROM GORGIE  •  ';
+
+/**
+ * The moving parts of the studio, drawn over the cached set each frame: chasing lights down the pillars,
+ * a scrolling message on the lower middle screen, and a sheen of light sweeping across the video wall.
+ */
+export function drawStudioLife(g: Ctx, pan: number, t: number): void {
+  const vx = 38 - pan;
+  const vy = 12;
+
+  // Pillar lights: a bright dot runs down each pillar with a fading tail.
+  const lit = Math.floor(t * 8) % 14;
+  for (const px of [10 - pan / 2, 302 - pan / 2]) {
+    for (let k = 0; k < 3; k++) {
+      const i = (lit - k + 14) % 14;
+      g.globalAlpha = 1 - k * 0.35;
+      rect(g, px + 3, 20 + i * 6, 2, 2, k === 0 ? C.white : '#9fd8f0');
+    }
+  }
+  g.globalAlpha = 1;
+
+  // Scrolling message on the lower middle screen.
+  const sx = vx + 81;
+  const sy = vy + 35;
+  const period = measure(MARQUEE) + 1;
+  const off = (t * 14) % period;
+  g.save();
+  g.beginPath();
+  g.rect(sx, sy, 79, 33);
+  g.clip();
+  drawText(g, MARQUEE, sx + 4 - off, sy + 14, C.white);
+  drawText(g, MARQUEE, sx + 4 - off + period, sy + 14, C.white);
+  g.restore();
+
+  // Every few seconds a diagonal band of light sweeps across the whole wall.
+  const cycle = 7;
+  const p = (t % cycle) / cycle;
+  if (p < 0.45) {
+    const bx = vx - 40 + (p / 0.45) * 330;
+    g.save();
+    g.beginPath();
+    g.rect(vx, vy, 241, 68);
+    g.clip();
+    g.globalAlpha = 0.13;
+    for (let j = 0; j < 68; j++) rect(g, bx + j * 0.6, vy + j, 16, 1, C.white);
+    g.globalAlpha = 0.07;
+    for (let j = 0; j < 68; j++) rect(g, bx + 22 + j * 0.6, vy + j, 6, 1, C.white);
+    g.restore();
+    g.globalAlpha = 1;
+  }
 }
 
 /** The presenters' desk: a light worktop over a maroon front with the channel logo. */

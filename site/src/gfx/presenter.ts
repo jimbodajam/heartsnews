@@ -1,6 +1,6 @@
 import type { PresenterLook } from '../../../shared/bulletin';
 import { C, shade } from './palette';
-import type { Ctx } from './screen';
+import { offscreen, type Ctx } from './screen';
 
 export interface Pose {
   /** 0 = closed, 1 = wide open. */
@@ -14,12 +14,42 @@ export interface Pose {
 export const SEATED_DESK_Y = 26;
 export const STANDING_H = 58;
 
+// Presenters are painted at 1× into a small sprite canvas, outlined, then scaled up onto the screen.
+// Sprite x runs -14..13 and y -2..57 around an origin of (OX, OY) in that canvas.
+const SPR_W = 40;
+const SPR_H = 66;
+const OX = 20;
+const OY = 4;
+const OUTLINE = '#0b0a0e';
+const sprite = offscreen(SPR_W, SPR_H, () => {});
+const silhouette = offscreen(SPR_W, SPR_H, () => {});
+
 /**
- * Draws a presenter built from rectangles on a grid of `s`-sized pixels.
+ * Draws a presenter on a grid of `s`-sized pixels with a one-pixel dark outline, like hand-made pixel art.
  * `cx` is the horizontal centre of the face, `top` the top of the head.
- * Sprite x runs -14..13; y runs 0 (hair) to 31 (waist), or 57 (shoes) when standing.
  */
 export function drawPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, pose: Pose, s: number, standing = false): void {
+  const sg = sprite.getContext('2d')!;
+  sg.clearRect(0, 0, SPR_W, SPR_H);
+  paintPresenter(sg, OX, OY, look, pose, 1, standing);
+
+  const og = silhouette.getContext('2d')!;
+  og.globalCompositeOperation = 'source-over';
+  og.clearRect(0, 0, SPR_W, SPR_H);
+  og.drawImage(sprite, 0, 0);
+  og.globalCompositeOperation = 'source-in';
+  og.fillStyle = OUTLINE;
+  og.fillRect(0, 0, SPR_W, SPR_H);
+  og.globalCompositeOperation = 'source-over';
+
+  const x0 = Math.round(cx - OX * s);
+  const y0 = Math.round(top - OY * s);
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) g.drawImage(silhouette, x0 + dx * s, y0 + dy * s, SPR_W * s, SPR_H * s);
+  g.drawImage(sprite, x0, y0, SPR_W * s, SPR_H * s);
+}
+
+/** Paints a presenter from rectangles. `cx`/`top` are the face centre and top of head, in `s`-sized pixels. */
+function paintPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, pose: Pose, s: number, standing = false): void {
   const y0 = top + pose.bob * s;
   const r = (x: number, y: number, w: number, h: number, c: string) => {
     g.fillStyle = c;
@@ -64,6 +94,8 @@ export function drawPresenter(g: Ctx, cx: number, top: number, look: PresenterLo
     r(-1, 19, 2, 1, C.gold);
     r(-4, 17, 1, 8, suitLight);
     r(3, 17, 1, 8, suitLight);
+    r(-10, 18, 5, 1, suitLight);
+    r(5, 19, 5, 13, shade(look.suit, -0.12));
   } else {
     r(-11, 17, 22, 1, look.suit);
     r(-12, 18, 24, 14, look.suit);
@@ -78,6 +110,9 @@ export function drawPresenter(g: Ctx, cx: number, top: number, look: PresenterLo
     r(-1, 21, 2, 3, look.shirt);
     r(-4, 17, 1, 7, suitLight);
     r(3, 17, 1, 7, suitLight);
+    // Light from the left: a lit shoulder, and the far side of the jacket in shade.
+    r(-11, 18, 5, 1, suitLight);
+    r(5, 19, 6, 13, shade(look.suit, -0.12));
     if (look.tie) {
       r(-1, 17, 2, 1, shade(look.tie, -0.25));
       r(-1, 18, 2, 7, look.tie);
@@ -98,6 +133,9 @@ export function drawPresenter(g: Ctx, cx: number, top: number, look: PresenterLo
   }
   r(-7, 7, 1, 2, look.skin);
   r(6, 7, 1, 2, look.skin);
+  // Shade down the far side of the face, and a little light on the near cheek.
+  r(5, 4, 1, fem ? 7 : 8, skinShadow);
+  r(-5, 6, 1, 3, shade(look.skin, 0.12));
 
   switch (look.hairStyle) {
     case 'short':
@@ -145,6 +183,9 @@ export function drawPresenter(g: Ctx, cx: number, top: number, look: PresenterLo
       break;
     }
   }
+
+  // A highlight where the studio lights catch the hair.
+  if (look.hairStyle !== 'bald') r(-4, look.hairStyle === 'quiff' ? 0 : 1, 3, 1, shade(hair, 0.3));
 
   // Face.
   r(-4, 5, 2, 1, hairDark);
