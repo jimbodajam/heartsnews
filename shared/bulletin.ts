@@ -14,6 +14,8 @@ export interface PresenterLook {
   tie?: string;
   glasses?: boolean;
   beard?: boolean;
+  /** Body and face shape: "female" gives a softer jaw, lashes, lip colour, earrings and a tailored jacket. */
+  build?: 'male' | 'female';
 }
 
 export interface Presenter {

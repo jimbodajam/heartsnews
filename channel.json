@@ -12,7 +12,7 @@
     {
       "id": "isla", "name": "Isla Brodie", "role": "Presenter", "voice": "female", "tts": { "voice": "bf_emma" },
       "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
-      "look": { "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
+      "look": { "build": "female", "skin": "#e8b796", "hair": "#8a4b2a", "hairStyle": "bob", "suit": "#2b3160", "shirt": "#f2efe6" }
     },
     {
       "id": "fraser", "name": "Fraser Lennox", "role": "Presenter", "voice": "male", "tts": { "voice": "bm_george" },
@@ -27,7 +27,7 @@
     {
       "id": "kirsty", "name": "Kirsty Reid", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
       "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
-      "look": { "skin": "#8d5a3b", "hair": "#1a1416", "hairStyle": "ponytail", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
+      "look": { "build": "female", "skin": "#8d5a3b", "hair": "#2a1a14", "hairStyle": "long", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
     }
   ]
 }
