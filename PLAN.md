@@ -168,6 +168,11 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
 - **Reliable build trigger:** GitHub's scheduler skips many runs (only 2 of ~9 overnight on 21–22 Oct). For
   back-to-back programmes, use a free external timer (Cloudflare Worker cron or cron-job.org) that calls the
   workflow_dispatch API, with a narrowly scoped GitHub token. Manual triggering is fine while tweaking.
+- **Painted-style backgrounds (spike, future):** pro pixel-art games like TMNT: Shredder's Revenge pair hand-painted,
+  detailed backgrounds with simpler sprites. To approximate that: an `npm run pixelate -- image.jpg` tool that shrinks
+  an image to 320×180, quantises it to the palette with dithering, and saves it as a background, plus a player switch
+  to use it instead of the code-drawn set, with the outlined sprites in front. Needs images supplied by the user (own
+  photos, AI-generated, or properly licensed): a TV studio, Tynecastle at night, the Gorgie skyline.
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
