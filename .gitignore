@@ -1,6 +1,7 @@
 node_modules/
 .env
 dist/
+.wrangler/
 pipeline/out/
 snapshots/
 site/public/voice-samples/

@@ -1,3 +1,4 @@
+import { type BbcEvent, type BbcSide, eventsIn, initialData } from '../../../shared/bbc.ts';
 import { fetchText } from '../http.ts';
 import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } from '../types.ts';
 
@@ -5,25 +6,7 @@ import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } 
 // live status, and the full league table. Usually updated within minutes of the final whistle.
 
 export const BASE = 'https://www.bbc.co.uk/sport/football/teams';
-
-interface BbcSide {
-  shortName: string;
-  urn?: string;
-  score?: string;
-  scoreUnconfirmed?: string;
-  runningScores?: { fulltime?: string };
-  actions?: { playerName: string; actionType: string; actions: { type: string; timeLabel?: { value: string } }[] }[];
-}
-
-interface BbcEvent {
-  home: BbcSide;
-  away: BbcSide;
-  startDateTime: string;
-  status: string; // PreEvent | MidEvent | PostEvent | Postponed | ...
-  periodLabel?: { value: string };
-  tournament?: { name: string };
-  onwardJourneyLink?: string;
-}
+export { eventsIn, initialData };
 
 interface BbcLineupTeam {
   name: { shortName: string };
@@ -41,19 +24,6 @@ interface BbcStanding {
   goalDifference: number;
   points: number;
   formGuide?: { value: string }[];
-}
-
-export function initialData(html: string): Record<string, { data?: unknown }> {
-  const m = /window\.__INITIAL_DATA__\s*=\s*("(?:[^"\\]|\\.)*")/.exec(html);
-  if (!m) throw new Error('BBC page has no __INITIAL_DATA__');
-  return (JSON.parse(JSON.parse(m[1])) as { data: Record<string, { data?: unknown }> }).data;
-}
-
-/** The fixtures and results listed in a scores-fixtures page's data. */
-export function eventsIn(data: Record<string, { data?: unknown }>): BbcEvent[] {
-  const key = Object.keys(data).find((k) => k.startsWith('sport-data-scores-fixtures'));
-  const groups = (data[key ?? '']?.data as { eventGroups?: { secondaryGroups: { events: BbcEvent[] }[] }[] } | undefined)?.eventGroups ?? [];
-  return groups.flatMap((g) => g.secondaryGroups.flatMap((s) => s.events));
 }
 
 async function pageEvents(path: string): Promise<BbcEvent[]> {

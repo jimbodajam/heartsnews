@@ -14,6 +14,7 @@
     "publish-site": "tsx src/publish.ts",
     "live": "tsx src/live.ts",
     "record": "tsx src/record-match.ts",
+    "trim-recording": "tsx src/trim-recording.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {

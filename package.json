@@ -4,7 +4,8 @@
   "type": "module",
   "workspaces": [
     "pipeline",
-    "site"
+    "site",
+    "worker"
   ],
   "scripts": {
     "collect": "npm -w pipeline run collect",
@@ -19,9 +20,13 @@
     "publish-site": "npm -w pipeline run publish-site",
     "live": "npm -w pipeline run live --",
     "record": "npm -w pipeline run record --",
+    "trim-recording": "npm -w pipeline run trim-recording --",
+    "worker:dev": "npm -w worker run dev",
+    "worker:deploy": "npm -w worker run deploy",
     "dev": "npm -w site run dev",
     "build": "npm -w site run build",
-    "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck"
+    "test": "node --test \"shared/test/*.test.ts\"",
+    "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck && npm -w worker run typecheck"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

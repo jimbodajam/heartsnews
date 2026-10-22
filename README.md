@@ -11,7 +11,9 @@ A rolling 24-hour pixel-art sports news channel for Heart of Midlothian. See [PL
 | `clubs/hearts.json` | Club config: names, colours, keywords, source feeds, TheSportsDB ids |
 | `pipeline/` | Node/TS: collects news (`npm run collect`) → `pipeline/out/items.json` + `match.json` |
 | `shared/bulletin.ts` | The `bulletin.json` format the pipeline writes and the player reads |
+| `shared/live.ts` | The `live.json` match feed format, built from BBC Sport (tested against a recording in `shared/test/`) |
 | `site/` | Vite + Canvas player. Plays `site/public/bulletins/latest.json` |
+| `worker/` | Cloudflare Worker serving `live.json` during a match: score, clock, goals, red cards, BBC live text |
 
 ## Commands (run inside WSL)
 
@@ -26,7 +28,13 @@ npm run voice       # render each bulletin line with its presenter's Kokoro voic
 npm run dev         # player at http://localhost:5173
 npm run build       # static site → site/dist
 npm run typecheck
+npm test            # live.json parser against the recorded Trabzonspor v Hearts match
+npm run record      # record the next match from BBC into pipeline/out/recordings/
+npm run trim-recording -- <dir>   # trim a recording into a test fixture in shared/test/fixtures/
+npm run worker:deploy             # deploy the live Worker (run `npx wrangler login` in worker/ first)
 ```
+
+`npm run worker:dev` needs glibc 2.35+, so it won't run on an older WSL distro; deploying works anywhere.
 
 Player URL options: `?segment=match` jumps straight to a segment, and `?bulletin=bulletins/x.json` plays another file.
 Keys: **M** mute, **C** captions, **→** skip, **F** fullscreen.
