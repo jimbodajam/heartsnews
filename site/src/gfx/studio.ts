@@ -79,7 +79,45 @@ export function drawDeskBackground(g: Ctx, pan: number): void {
   );
 }
 
-const MARQUEE = 'HEARTS NEWS 24  •  ROLLING NEWS FROM GORGIE  •  ';
+// ── Painted studio (optional): a pixelated image from `npm run pixelate` replaces the code-drawn set. ──
+// Positions below are where the image's 3×3 video wall sits at 320×180.
+const IMG_WALL = { x: 63, y: 31, w: 194, h: 111 };
+const IMG_TOP_TILE = { cx: 160, y: 38 };
+// The close-up is a 2× zoom on this 160×90 window of the image, so pixels stay whole.
+const CLOSE = { sx: 30, sy: 10 };
+
+/** The painted studio for a desk shot, with our heart on the top screen and a light sweep across the wall. */
+export function drawImageStudio(g: Ctx, img: HTMLImageElement, shot: 'wide' | 'close', t: number): void {
+  if (shot === 'wide') {
+    g.drawImage(img, 0, 0, W, H);
+    drawHeart(g, IMG_TOP_TILE.cx - 10, IMG_TOP_TILE.y, 3, C.gold);
+    sweep(g, IMG_WALL.x, IMG_WALL.y, IMG_WALL.w, IMG_WALL.h, t);
+  } else {
+    g.drawImage(img, CLOSE.sx, CLOSE.sy, W / 2, H / 2, 0, 0, W, H);
+    drawHeart(g, (IMG_TOP_TILE.cx - 10 - CLOSE.sx) * 2, (IMG_TOP_TILE.y - CLOSE.sy) * 2, 6, C.gold);
+    sweep(g, (IMG_WALL.x - CLOSE.sx) * 2, (IMG_WALL.y - CLOSE.sy) * 2, IMG_WALL.w * 2, IMG_WALL.h * 2, t);
+  }
+}
+
+/** Every few seconds a diagonal band of light sweeps across a screen area. */
+function sweep(g: Ctx, x: number, y: number, w: number, h: number, t: number): void {
+  const cycle = 7;
+  const p = (t % cycle) / cycle;
+  if (p >= 0.45) return;
+  const bx = x - 40 + (p / 0.45) * (w + 90);
+  g.save();
+  g.beginPath();
+  g.rect(x, y, w, h);
+  g.clip();
+  g.globalAlpha = 0.13;
+  for (let j = 0; j < h; j++) rect(g, bx + j * 0.6, y + j, 16, 1, C.white);
+  g.globalAlpha = 0.07;
+  for (let j = 0; j < h; j++) rect(g, bx + 22 + j * 0.6, y + j, 6, 1, C.white);
+  g.restore();
+  g.globalAlpha = 1;
+}
+
+const MARQUEE ='HEARTS NEWS 24  •  ROLLING NEWS FROM GORGIE  •  ';
 
 /**
  * The moving parts of the studio, drawn over the cached set each frame: chasing lights down the pillars,
@@ -113,22 +151,7 @@ export function drawStudioLife(g: Ctx, pan: number, t: number): void {
   drawText(g, MARQUEE, sx + 4 - off + period, sy + 14, C.white);
   g.restore();
 
-  // Every few seconds a diagonal band of light sweeps across the whole wall.
-  const cycle = 7;
-  const p = (t % cycle) / cycle;
-  if (p < 0.45) {
-    const bx = vx - 40 + (p / 0.45) * 330;
-    g.save();
-    g.beginPath();
-    g.rect(vx, vy, 241, 68);
-    g.clip();
-    g.globalAlpha = 0.13;
-    for (let j = 0; j < 68; j++) rect(g, bx + j * 0.6, vy + j, 16, 1, C.white);
-    g.globalAlpha = 0.07;
-    for (let j = 0; j < 68; j++) rect(g, bx + 22 + j * 0.6, vy + j, 6, 1, C.white);
-    g.restore();
-    g.globalAlpha = 1;
-  }
+  sweep(g, vx, vy, 241, 68, t);
 }
 
 /** The presenters' desk: a light worktop over a maroon front with the channel logo. */

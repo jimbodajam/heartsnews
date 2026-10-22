@@ -8,11 +8,13 @@
     "bulletin": "tsx src/build.ts",
     "snapshot": "tsx src/snapshot.ts",
     "pronounce": "tsx src/pronounce-check.ts",
+    "pixelate": "tsx src/pixelate.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.2",
     "kokoro-js": "^1.2.1",
+    "sharp": "^0.35.5",
     "youtube-transcript": "^1.3.1"
   },
   "devDependencies": {

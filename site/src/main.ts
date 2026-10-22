@@ -35,6 +35,12 @@ async function boot(): Promise<void> {
     fetchBulletin().catch(() => undefined),
   );
 
+  // Painted studio background, if one has been made with `npm run pixelate`. ?bg=classic starts with the code-drawn set.
+  player.classicStudio = params.get('bg') === 'classic';
+  const studio = new Image();
+  studio.onload = () => (player.studioImage = studio);
+  studio.src = 'backgrounds/studio.png';
+
   // Browsers only allow sound after a user gesture, hence the "click to tune in" splash.
   const start = async () => {
     player.status = 'TUNING IN...';
@@ -51,6 +57,9 @@ async function boot(): Promise<void> {
         break;
       case 'c':
         player.captions = !player.captions;
+        break;
+      case 'b':
+        player.classicStudio = !player.classicStudio;
         break;
       case 'arrowright':
       case 'n':

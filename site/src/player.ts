@@ -10,7 +10,7 @@ import { drawPresenter, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presen
 import type { Ctx } from './gfx/screen';
 import { W } from './gfx/screen';
 import {
-  drawDesk, drawDeskBackground, drawGraphicBackground, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
+  drawDesk, drawDeskBackground, drawGraphicBackground, drawImageStudio, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
   drawTransferBackground, drawWallClock,
 } from './gfx/studio';
 
@@ -35,6 +35,9 @@ const LABEL: Record<SegmentKind, string> = {
 export class Player {
   captions = true;
   status = 'CLICK TO TUNE IN';
+  /** Optional painted studio background (from `npm run pixelate`); `classicStudio` switches back to the code-drawn set. */
+  studioImage?: HTMLImageElement;
+  classicStudio = false;
 
   private mode: 'splash' | 'ident' | 'sting' | 'show' = 'splash';
   private modeAt = 0;
@@ -65,6 +68,10 @@ export class Player {
   skip(): void {
     this.speaking?.cancel();
     this.cancelWait?.();
+  }
+
+  private paintedStudio(): boolean {
+    return Boolean(this.studioImage) && !this.classicStudio;
   }
 
   private presenter(id: string): Presenter {
@@ -216,9 +223,13 @@ export class Player {
           const p = this.presenter(this.line.speaker);
           const top = 30;
           const deskY = top + SEATED_DESK_Y * 3;
-          // Panned so the video wall's heart logo sits off to the left, not behind the presenter's head.
-          drawDeskBackground(g, 140);
-          drawStudioLife(g, 140, t);
+          if (this.paintedStudio()) {
+            drawImageStudio(g, this.studioImage!, 'close', t);
+          } else {
+            // Panned so the video wall's heart logo sits off to the left, not behind the presenter's head.
+            drawDeskBackground(g, 140);
+            drawStudioLife(g, 140, t);
+          }
           drawPresenter(g, 92, top, p.look, pose(p), 3);
           drawDesk(g, deskY, -20, W + 20);
           drawHands(g, 92, deskY, 3, p.look.skin);
@@ -228,8 +239,12 @@ export class Player {
         const xs = onScreen.length === 1 ? [160] : [115, 205];
         const top = 40;
         const deskY = top + SEATED_DESK_Y * 2;
-        drawDeskBackground(g, 0);
-        drawStudioLife(g, 0, t);
+        if (this.paintedStudio()) {
+          drawImageStudio(g, this.studioImage!, 'wide', t);
+        } else {
+          drawDeskBackground(g, 0);
+          drawStudioLife(g, 0, t);
+        }
         onScreen.slice(0, 2).forEach((p, k) => drawPresenter(g, xs[k], top, p.look, pose(p), 2));
         drawDesk(g, deskY, 40, 280);
         onScreen.slice(0, 2).forEach((p, k) => drawHands(g, xs[k], deskY, 2, p.look.skin));
