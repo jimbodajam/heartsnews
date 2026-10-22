@@ -4,7 +4,7 @@ import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } 
 // BBC Sport team pages embed their data as JSON (window.__INITIAL_DATA__): fixtures, results with scorers,
 // live status, and the full league table. Usually updated within minutes of the final whistle.
 
-const BASE = 'https://www.bbc.co.uk/sport/football/teams';
+export const BASE = 'https://www.bbc.co.uk/sport/football/teams';
 
 interface BbcSide {
   shortName: string;
@@ -43,22 +43,26 @@ interface BbcStanding {
   formGuide?: { value: string }[];
 }
 
-function initialData(html: string): Record<string, { data?: unknown }> {
+export function initialData(html: string): Record<string, { data?: unknown }> {
   const m = /window\.__INITIAL_DATA__\s*=\s*("(?:[^"\\]|\\.)*")/.exec(html);
   if (!m) throw new Error('BBC page has no __INITIAL_DATA__');
   return (JSON.parse(JSON.parse(m[1])) as { data: Record<string, { data?: unknown }> }).data;
 }
 
-async function pageEvents(path: string): Promise<BbcEvent[]> {
-  const data = initialData(await fetchText(`${BASE}/${path}`));
+/** The fixtures and results listed in a scores-fixtures page's data. */
+export function eventsIn(data: Record<string, { data?: unknown }>): BbcEvent[] {
   const key = Object.keys(data).find((k) => k.startsWith('sport-data-scores-fixtures'));
   const groups = (data[key ?? '']?.data as { eventGroups?: { secondaryGroups: { events: BbcEvent[] }[] }[] } | undefined)?.eventGroups ?? [];
   return groups.flatMap((g) => g.secondaryGroups.flatMap((s) => s.events));
 }
 
+async function pageEvents(path: string): Promise<BbcEvent[]> {
+  return eventsIn(initialData(await fetchText(`${BASE}/${path}`)));
+}
+
 const STATUS: Record<string, Fixture['status']> = { PreEvent: 'pre', MidEvent: 'live', PostEvent: 'done', Postponed: 'postponed' };
 
-function toFixture(e: BbcEvent): Fixture {
+export function toFixture(e: BbcEvent): Fixture {
   const score = (s: BbcSide) => {
     const v = s.score ?? s.scoreUnconfirmed ?? s.runningScores?.fulltime;
     return v === undefined || v === '' ? undefined : Number(v);
