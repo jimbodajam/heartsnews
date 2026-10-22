@@ -152,6 +152,15 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
 - **Morning papers round-up:** in breakfast bulletins (about 6–10am), a presenter runs through what the papers and
   sites are saying about Hearts, from the morning's press headlines with each outlet credited. Show pixel-art newspaper
   front pages with the headline; draw the mastheads in our own pixel style rather than copying real logos.
+- **Pixel portraits of real people:** story graphics show a pixel-art face of the person the story is about (e.g.
+  Vrancken on a press-conference story) instead of a generic icon. You supply reference photos; the pipeline converts
+  each to a small pixel portrait (downscale to ~24×24 or 32×32, quantise to the channel palette, tidy by hand if
+  needed) stored as `site/public/faces/<name>.png`, and matches stories to faces by name in the title or text.
+- **Better female presenter sprites:** Isla and Kirsty currently read as male. Give them more feminine features:
+  longer or styled hair over the shoulders, eyelashes, lip colour, earrings, a blouse or tailored jacket shape, and a
+  slightly different face shape.
+- **Team formation graphic:** a pixel pitch showing the expected or confirmed XI in formation with player names
+  (overlaps with "Hearts tactics and line-up" above). It could show the opposition's likely XI too in the build-up.
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
