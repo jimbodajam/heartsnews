@@ -86,7 +86,17 @@ Mitigation: v1 uses only feeds and titles, and transcripts are a later experimen
 
 ## Milestones
 
-**Status (21 Oct 2026):** 1–6 are done. It's live at https://jimbodajam.github.io/heartsnews/, rebuilt by
+**Status (22 Oct 2026):** 1–6 and 10 are done, and so is much of 7 and the backlog (marked "done" below). Hosting is
+hybrid: the home PC runs `npm run live` (GPU voices) and publishes to gh-pages, with the GitHub build as a backstop.
+The script is now written **segment by segment** (`pipeline/src/script/pieces.ts`): headlines, Match Centre, Transfer
+Centre, each in-depth package, the Fan Zone and The Debate are separate small requests (three at a time,
+`SCRIPT_CONCURRENCY`), and a last "links" request writes "still to come", the hand-overs and the sign-off from what the
+others said. A piece that fails gets a second go, then its template stands in on its own. A bulletin takes about 1.5
+minutes to write instead of 2–4. **Quota:** `gemini-flash-latest` (3.8 Flash) allows only 20 free requests a day, and a
+bulletin makes about 13, so most bulletins are written by Flash-Lite. Once Flash is out for the day, the writer skips it
+for the rest of the run.
+
+**Earlier status (21 Oct 2026):** 1–6 are done. It's live at https://jimbodajam.github.io/heartsnews/, rebuilt by
 `.github/workflows/bulletin.yml` every 3 hours (at :17), on every push to main, and on demand. A run takes about 2 minutes.
 The Kickback returns HTTP 403 to GitHub's servers (it works from home), so Fan Zone is thin in CI. Options: a self-hosted
 runner on the home PC, or asking the forum for access. Don't try to get around the block. `npm run bulletin` builds a real bulletin end to end, scripted by Gemini's free tier.
@@ -117,6 +127,11 @@ plus the top 5 of the table. Template mode can't tell a Hearts transfer from ano
     generation, and it's where the deliberately neutral tone picks up some character.
 
 ## Ideas backlog (saved 21 Oct 2026)
+
+Done since: next opponent focus, Hearts line-up and formation graphic, adverts, Sky-style side panel, YouTube
+transcripts, pixel portraits, female presenter sprites, the fact-check pass, segment-by-segment writing. Paused: the
+painted-background spike. Still open: On This Day, Youth focus, Loan Watch, Fan phone-in, Morning papers, over to the
+stadium, the reliable trigger (less urgent now the PC runs the loop), the GPU voice bake-off, and `actions/cache@v4`.
 
 Bulletins currently run 3–6 minutes depending on news, so these also give a steadier length:
 
@@ -161,7 +176,8 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   slightly different face shape.
 - **Team formation graphic:** a pixel pitch showing the expected or confirmed XI in formation with player names
   (overlaps with "Hearts tactics and line-up" above). It could show the opposition's likely XI too in the build-up.
-- **Longer programmes, built segment by segment:** for a 15–30 minute programme, write each segment (headlines, each
+- **Longer programmes, built segment by segment (segment-by-segment writing done 22 Oct; longer running orders still to
+  come):** for a 15–30 minute programme, write each segment (headlines, each
   package, debate, phone-in…) as its own small AI request, run side by side, then assemble. Each piece stays fast and
   reliable (no Flash timeouts), a failed piece falls back to a template on its own, and the length can be anything. The
   next programme is built while the current one airs, so build time only has to be shorter than the programme.

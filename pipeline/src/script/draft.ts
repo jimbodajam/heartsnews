@@ -203,7 +203,8 @@ export function templateDraft(f: Facts): Draft {
     // Without AI there's no safe way to rewrite an article, so packages use the outlet's own feed summary.
     features: f.features
       .map((s): Feature | undefined => {
-        const standfirst = s.items.map((i) => i.summary).find((t) => t.length > 40);
+        // Video descriptions end in a run of hashtags, which mustn't be read out.
+        const standfirst = s.items.map((i) => i.summary.replace(/#\w+/g, '').replace(/\s*(?:…|\.{3})\s*$/, '').trim()).find((t) => t.length > 40);
         if (!standfirst) return undefined;
         return {
           storyId: s.id,

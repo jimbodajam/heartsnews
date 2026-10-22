@@ -17,7 +17,8 @@ import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
 import { buildFacts, FEATURE_CANDIDATES, FEATURE_COUNT, FEATURE_MAX_SCAN, isUs, MIN_BODY, teamName, type Channel } from './script/facts.ts';
-import { geminiFromEnv, mergeDraft, reportScorers, writeWithModel } from './script/llm.ts';
+import { geminiFromEnv, reportScorers } from './script/llm.ts';
+import { writeInPieces } from './script/pieces.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
 import { fetchArticleText } from './collectors/article.ts';
@@ -107,12 +108,12 @@ async function main() {
   const model = flags.has('--templates') ? undefined : geminiFromEnv();
   if (model) {
     try {
-      console.log(`\nWriting script with ${model.name}…`);
-      const ai = await writeWithModel(model, facts);
-      // The raw reply, to see what the writer gave before the checks in mergeDraft kept or dropped it.
-      await writeFile(resolve(OUT, 'ai-draft.json'), JSON.stringify(ai, null, 2));
-      draft = mergeDraft(draft, ai, facts);
-      writer = model.name;
+      console.log(`\nWriting script segment by segment with ${model.name}…`);
+      const pieces = await writeInPieces(model, facts, draft);
+      // The raw replies, to see what the writer gave before the checks in mergeDraft kept or dropped it.
+      await writeFile(resolve(OUT, 'ai-draft.json'), JSON.stringify(pieces.raw, null, 2));
+      draft = pieces.draft;
+      writer = pieces.failed.length ? `${model.name}, ${pieces.failed.length} parts from templates` : model.name;
       // Match reports whose card has the score but no scorers: ask for the goals on their own.
       for (const feat of draft.features) {
         const r = feat.result;
