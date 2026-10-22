@@ -3,6 +3,7 @@
 //   --cached     reuse pipeline/out/ from the last collect instead of fetching again
 //   --templates  skip the AI writer even if GEMINI_API_KEY is set
 //   --no-voice   don't render Kokoro clips
+//   --no-check   skip the fact-check pass
 // Put GEMINI_API_KEY (and optionally GEMINI_MODEL) in a .env file at the repo root.
 
 import { existsSync } from 'node:fs';
@@ -15,6 +16,7 @@ import { assemble } from './script/assemble.ts';
 import { buildFacts, FEATURE_CANDIDATES, isUs, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, mergeDraft, writeWithModel } from './script/llm.ts';
 import { remember } from './script/remember.ts';
+import { factCheck } from './script/factcheck.ts';
 import { fetchArticleText } from './collectors/article.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { freshness, loadMemory, settlePredictions, trimMemory } from './memory.ts';
@@ -106,6 +108,21 @@ async function main() {
   }
 
   const bulletin = assemble(facts, draft, writer);
+
+  // Second pass: check every AI-written line against the sources, fixing or dropping what doesn't hold up.
+  const checker = writer === 'templates' || flags.has('--no-check') ? undefined : geminiFromEnv([150_000, 120_000]);
+  if (checker) {
+    try {
+      console.log(`\nFact-checking with ${checker.name}…`);
+      const fc = await factCheck(checker, facts, bulletin);
+      console.log(`Checked ${fc.checked} lines: ${fc.fixed.length} fixed, ${fc.dropped.length} dropped`);
+      for (const x of fc.fixed) console.log(`  FIXED ${x.line} (${x.reason})\n    was: ${x.was}\n    now: ${x.now}`);
+      for (const x of fc.dropped) console.log(`  DROPPED ${x.line} (${x.reason})\n    was: ${x.was}`);
+      bulletin.generatedBy = `${bulletin.generatedBy}, checked by ${checker.name}`;
+    } catch (err) {
+      console.warn(`Fact-check failed, keeping the script unchecked: ${(err as Error).message}`);
+    }
+  }
   await writeFile(BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
 
   remember(facts, draft);
