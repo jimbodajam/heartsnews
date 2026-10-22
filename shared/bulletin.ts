@@ -1,6 +1,6 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
-export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert';
+export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside';
 export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent' | 'adverts';
 /** The 16×16 pixel picture on an advert card. */
 export type AdArt = 'pig' | 'fish' | 'shirt' | 'pint' | 'ticket';
@@ -18,6 +18,12 @@ export interface PresenterLook {
   beard?: boolean;
   /** Body and face shape: "female" gives a softer jaw, lashes, lip colour, earrings and a tailored jacket. */
   build?: 'male' | 'female';
+  /** Out at the ground: `suit` is drawn as a touchline overcoat with the collar up. */
+  coat?: boolean;
+  /** A striped scarf in this colour. */
+  scarf?: string;
+  /** A broadcast headset with a boom mic. */
+  headset?: boolean;
 }
 
 export interface Presenter {

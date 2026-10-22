@@ -6,7 +6,8 @@
     "anchors": ["isla", "fraser"],
     "transfers": "ross",
     "analyst": "kirsty",
-    "debate": ["fraser", "ross"]
+    "debate": ["fraser", "ross"],
+    "pitchside": "gregor"
   },
   "presenters": [
     {
@@ -28,6 +29,11 @@
       "id": "kirsty", "name": "Kirsty Reid", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
       "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
       "look": { "build": "female", "skin": "#8d5a3b", "hair": "#2a1a14", "hairStyle": "long", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
+    },
+    {
+      "id": "gregor", "name": "Gregor Moffat", "role": "At the ground", "voice": "male", "tts": { "voice": "bm_daniel", "speed": 1.1 },
+      "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+      "look": { "skin": "#e6ad8c", "hair": "#a39d94", "hairStyle": "short", "suit": "#3c5068", "shirt": "#c9d6ea", "tie": "#26262e", "coat": true, "scarf": "#6d1a2a", "headset": true }
     }
   ]
 }

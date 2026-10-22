@@ -22,7 +22,7 @@ export interface Channel {
   spokenName: string;
   /** Where the live site is published; memory.json is read back from here. */
   siteUrl?: string;
-  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string] };
+  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string };
   presenters: Presenter[];
 }
 

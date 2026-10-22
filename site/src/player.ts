@@ -16,6 +16,8 @@ import {
   drawDesk, drawDeskBackground, drawGraphicBackground, drawImageStudio, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
   drawTransferBackground, drawWallClock,
 } from './gfx/studio';
+import { drawPressDesk, drawStadium, type Ground, isDark } from './gfx/stadium';
+import { kitColours } from '../../shared/kits';
 
 type Shot = 'wide' | 'single' | 'full';
 
@@ -54,6 +56,8 @@ export class Player {
   classicStudio = false;
   /** Today's match, if the live feed is on: its score comes round in the ticker. */
   live?: LiveScore;
+  /** Forces the floodlights on or off at the ground (?night=1 or 0); otherwise it goes by the time of day. */
+  night?: boolean;
 
   private ticker = new Ticker();
   private mode: 'splash' | 'ident' | 'sting' | 'show' = 'splash';
@@ -67,7 +71,8 @@ export class Player {
   /** When the current line started. */
   private lineAt = 0;
   private speaking?: Speaking;
-  private strap?: { name: string; role: string; at: number };
+  /** `hold` keeps it up for the whole line, e.g. the venue strap at the ground. */
+  private strap?: { name: string; role: string; at: number; hold?: boolean };
   private strapped = new Set<string>();
   private cancelWait?: () => void;
 
@@ -181,6 +186,10 @@ export class Player {
     // Voiceovers in an ad break don't get a name strap.
     if (seg.kind === 'adverts') {
       this.strap = undefined;
+    } else if (seg.scene === 'pitchside') {
+      // At the ground the strap says where we are, and stays up.
+      const venue = this.live?.match()?.venue;
+      if (this.strap?.name !== p.name) this.strap = { name: p.name, role: venue ? `LIVE: ${venue}` : 'LIVE FROM THE GROUND', at: performance.now(), hold: true };
     } else if (!this.strapped.has(p.id)) {
       this.strapped.add(p.id);
       this.strap = { name: p.name, role: p.role, at: performance.now() };
@@ -232,7 +241,7 @@ export class Player {
     this.drawScene(seg, now);
     drawBug(g, name, !!bulletin.demo);
     drawClock(g, new Date(), t);
-    if (this.strap) drawStrap(g, this.strap.name, this.strap.role, now - this.strap.at);
+    if (this.strap) drawStrap(g, this.strap.name, this.strap.role, now - this.strap.at, this.strap.hold ? Infinity : undefined);
     if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
     const graphic = this.line?.graphic;
     drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
@@ -258,6 +267,16 @@ export class Player {
       out.push(it);
     });
     return out.length ? out : [score];
+  }
+
+  /** Where our reporter is: among the home fans (ours at Tynecastle), under floodlights once it's dark. */
+  private ground(): Ground {
+    const m = this.live?.match();
+    const { primary, secondary } = this.bulletin.channel.colours;
+    return {
+      colours: !m || m.us === 'home' ? [primary, secondary] : (kitColours(m.home.name) ?? [C.dark, C.light]),
+      night: this.night ?? isDark(new Date()),
+    };
   }
 
   private drawScene(seg: Segment, now: number): void {
@@ -326,6 +345,18 @@ export class Player {
         }
         if (graphic) drawGraphic(g, graphic, 130, 18, 182, 86, graphicAge, now);
         else drawIdleScreen(g, 130, 18, 182, 86, 'TRANSFER CENTRE');
+        return;
+      }
+
+      case 'pitchside': {
+        const top = 30;
+        const deskY = top + SEATED_DESK_Y * 3;
+        drawStadium(g, this.ground(), t);
+        const p = onScreen[0];
+        if (p) drawPresenter(g, 92, top, p.look, pose(p), 3);
+        drawPressDesk(g, deskY);
+        if (p) drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
+        if (graphic) drawGraphic(g, graphic, 168, 22, 142, 80, graphicAge, now);
         return;
       }
 

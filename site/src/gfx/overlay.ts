@@ -37,12 +37,11 @@ export function drawClock(g: Ctx, now: Date, t: number): void {
   drawText(g, 'LIVE', lx + 9, 7, C.white);
 }
 
-/** Name strap that slides in when a presenter starts talking and slides away after a few seconds. */
-export function drawStrap(g: Ctx, name: string, role: string, age: number): void {
-  const VISIBLE_MS = 5000;
-  if (age > VISIBLE_MS + 400) return;
+/** Name strap that slides in when a presenter starts talking and slides away after a few seconds (or stays up). */
+export function drawStrap(g: Ctx, name: string, role: string, age: number, visibleMs = 5000): void {
+  if (age > visibleMs + 400) return;
   const inT = easeOut(clamp01(age / 350));
-  const outT = easeOut(clamp01((age - VISIBLE_MS) / 400));
+  const outT = easeOut(clamp01((age - visibleMs) / 400));
   const w = Math.max(measure(name) + 12, measure(role) + 12, 90);
   const x = 8 - (1 - inT) * (w + 10) - outT * (w + 10);
   rect(g, x, 128, w, 11, C.white);

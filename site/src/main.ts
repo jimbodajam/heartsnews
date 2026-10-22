@@ -9,7 +9,9 @@ import { Player } from './player';
 // ?bulletin=bulletins/other.json plays a different file; ?segment=<id> jumps straight to a segment.
 const params = new URLSearchParams(location.search);
 const BULLETIN_URL = params.get('bulletin') ?? 'bulletins/latest.json';
-const START_SEGMENT = params.get('segment') ?? undefined;
+let START_SEGMENT = params.get('segment') ?? undefined;
+// In dev, ?scene=pitchside opens on a demo of our reporter at the ground (see pitchside-preview.ts).
+const PITCHSIDE = import.meta.env.DEV && params.get('scene') === 'pitchside';
 // ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`), and in
 // dev ?live=replay[&from=17:15][&speed=20] replays the recorded Trabzonspor v Hearts match.
 const LIVE = params.get('live') ?? 'https://heartsnews-live.heartsnews.workers.dev/live.json';
@@ -28,7 +30,11 @@ async function liveSource(): Promise<{ source: FeedSource; pace: number } | unde
 async function fetchBulletin(): Promise<Bulletin> {
   const res = await fetch(`${BULLETIN_URL}?t=${Date.now()}`);
   if (!res.ok) throw new Error(`Could not load bulletin (${res.status})`);
-  return (await res.json()) as Bulletin;
+  const bulletin = (await res.json()) as Bulletin;
+  if (!PITCHSIDE) return bulletin;
+  const { PREVIEW_SEGMENT, withPitchside } = await import('./pitchside-preview');
+  START_SEGMENT ??= PREVIEW_SEGMENT;
+  return withPitchside(bulletin);
 }
 
 async function boot(): Promise<void> {
@@ -62,6 +68,7 @@ async function boot(): Promise<void> {
 
   // Painted studio background, if one has been made with `npm run pixelate`. ?bg=classic starts with the code-drawn set.
   player.classicStudio = params.get('bg') === 'classic';
+  if (params.has('night')) player.night = params.get('night') === '1';
   const studio = new Image();
   studio.onload = () => (player.studioImage = studio);
   studio.src = 'backgrounds/studio.png';

@@ -121,6 +121,19 @@ function paintPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, po
     }
   }
 
+  // Out at the ground: an overcoat buttoned up over the shirt and tie, collar turned up against the wind.
+  if (look.coat) {
+    r(-3, 22, 6, 10, look.suit);
+    r(0, 22, 1, 10, suitDark);
+    r(-2, 24, 1, 1, C.ink);
+    r(-2, 28, 1, 1, C.ink);
+    r(-7, 14, 3, 4, suitLight);
+    r(4, 14, 3, 4, look.suit);
+    // Pocket flaps.
+    r(-10, 25, 4, 1, suitDark);
+    r(6, 25, 4, 1, shade(look.suit, -0.4));
+  }
+
   // Neck and head. Women get a softer, narrower jaw.
   r(-2, 13, 4, 4, skinShadow);
   if (fem) {
@@ -188,6 +201,32 @@ function paintPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, po
 
   // A highlight where the studio lights catch the hair.
   if (look.hairStyle !== 'bald') r(-4, look.hairStyle === 'quiff' ? 0 : 1, 3, 1, shade(hair, 0.3));
+
+  if (look.scarf) {
+    // Wrapped round the neck, one end hanging down the front, in stripes.
+    r(-5, 14, 10, 3, look.scarf);
+    r(-5, 15, 10, 1, C.white);
+    r(-5, 17, 3, 10, look.scarf);
+    r(-5, 19, 3, 1, C.white);
+    r(-5, 23, 3, 1, C.white);
+    r(-3, 17, 1, 10, shade(look.scarf, -0.3));
+  }
+
+  if (look.headset) {
+    // Headband over the crown, ear cups, and a boom mic that curls round to the corner of the mouth.
+    const band = look.hairStyle === 'quiff' ? -3 : -1;
+    r(-4, band, 8, 1, C.ink);
+    r(-6, band + 1, 2, 1, C.ink);
+    r(4, band + 1, 2, 1, C.ink);
+    r(-7, band + 2, 1, 6 - band, C.ink);
+    r(6, band + 2, 1, 6 - band, C.ink);
+    r(-8, 5, 3, 5, C.ink);
+    r(5, 5, 3, 5, C.ink);
+    r(-8, 6, 1, 2, C.dark);
+    r(-6, 10, 1, 1, C.dark);
+    r(-5, 11, 1, 1, C.dark);
+    r(-4, 11, 2, 2, C.black);
+  }
 
   // Face.
   r(-4, 5, 2, 1, hairDark);
