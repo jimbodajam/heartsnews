@@ -105,4 +105,13 @@ export interface Bulletin {
   presenters: Presenter[];
   ticker: string[];
   segments: Segment[];
+  /** Always-useful info for the side panel beside a presenter in close-up (Sky style). */
+  sidebar?: Sidebar;
+}
+
+export interface Sidebar {
+  highlight: string;
+  next?: FixtureRow;
+  last?: { home: string; away: string; homeScore: number; awayScore: number; competition: string };
+  table?: TableRow[];
 }

@@ -35,6 +35,9 @@ async function boot(): Promise<void> {
     fetchBulletin().catch(() => undefined),
   );
 
+  // ?tv=1 starts with the retro TV filter on (T toggles it).
+  if (params.get('tv') === '1') document.querySelector('#screen')?.classList.add('crt');
+
   // Painted studio background, if one has been made with `npm run pixelate`. ?bg=classic starts with the code-drawn set.
   player.classicStudio = params.get('bg') === 'classic';
   const studio = new Image();
@@ -60,6 +63,9 @@ async function boot(): Promise<void> {
         break;
       case 'b':
         player.classicStudio = !player.classicStudio;
+        break;
+      case 't':
+        document.querySelector('#screen')?.classList.toggle('crt');
         break;
       case 'arrowright':
       case 'n':

@@ -8,6 +8,8 @@ export interface Pose {
   blink: boolean;
   /** Idle bob offset in sprite pixels (0 or 1). */
   bob: number;
+  /** Where they're looking: -1 left, 0 camera, 1 right (eyes and nose shift a pixel). */
+  look?: number;
 }
 
 /** Sprite height in unscaled pixels: seated presenters are cut off by the desk around y = 26. */
@@ -206,20 +208,22 @@ function paintPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, po
     r(2, 7, 2, 1, shade(look.skin, 0.3));
     r(-1, 7, 2, 1, C.ink);
   }
+  // Eyes (and nose) shift a pixel towards whoever they're looking at.
+  const lx = pose.look ?? 0;
   if (pose.blink) {
     r(-4, 7, 2, 1, skinShadow);
     r(2, 7, 2, 1, skinShadow);
   } else if (fem) {
     // Wider eyes with a lash flick at the outer corners.
-    r(-4, 7, 2, 1, C.ink);
-    r(2, 7, 2, 1, C.ink);
+    r(-4 + (lx > 0 ? 1 : 0), 7, lx ? 1 : 2, 1, C.ink);
+    r(2 + (lx > 0 ? 1 : 0), 7, lx ? 1 : 2, 1, C.ink);
     r(-5, 6, 1, 1, C.ink);
     r(4, 6, 1, 1, C.ink);
   } else {
-    r(-3, 7, 1, 1, C.ink);
-    r(2, 7, 1, 1, C.ink);
+    r(-3 + lx, 7, 1, 1, C.ink);
+    r(2 + lx, 7, 1, 1, C.ink);
   }
-  r(-1, 9, 2, 1, skinShadow);
+  r(-1 + lx, 9, 2, 1, skinShadow);
   if (look.beard) {
     r(-6, 9, 12, 4, hair);
     r(-4, 13, 8, 1, hair);
@@ -239,11 +243,19 @@ function paintPresenter(g: Ctx, cx: number, top: number, look: PresenterLook, po
 }
 
 /** Natural-looking idle animation from a time (seconds) and a per-presenter phase. */
-export function idlePose(t: number, phase: number, mouth: number): Pose {
+export function idlePose(t: number, phase: number, mouth: number, look = 0): Pose {
   const blinkCycle = (t + phase * 1.7) % (3.6 + phase);
   return {
     mouth,
     blink: blinkCycle < 0.13,
     bob: Math.sin(t * 1.1 + phase * 2) > 0.75 ? 1 : 0,
+    look,
   };
+}
+
+/** How far (in sprite pixels) a speaker's hand is raised: a gesture every few seconds while they talk. */
+export function gestureLift(t: number, phase: number, talking: boolean): number {
+  if (!talking) return 0;
+  const wave = Math.sin(t * 1.3 + phase * 3);
+  return wave > 0.8 ? 4 : wave > 0.6 ? 2 : 0;
 }

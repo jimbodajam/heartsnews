@@ -1,12 +1,12 @@
 import type { Bulletin, Graphic, Line, Presenter, Segment, SegmentKind } from '../../shared/bulletin';
 import { playSting } from './audio/sting';
 import type { Speaking, Voices } from './audio/voice';
-import { drawGraphic } from './gfx/graphics';
+import { drawGraphic, drawSidePanel } from './gfx/graphics';
 import {
   drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, drawTicker,
   IDENT_MS, STING_MS,
 } from './gfx/overlay';
-import { drawPresenter, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
+import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
 import type { Ctx } from './gfx/screen';
 import { W } from './gfx/screen';
 import {
@@ -206,10 +206,9 @@ export class Player {
     const graphic = this.line?.graphic;
     const graphicAge = now - this.graphicAt;
     const talking = this.speaking ? this.line?.speaker : undefined;
-    const pose = (p: Presenter) => {
-      const phase = this.bulletin.presenters.indexOf(p) * 1.37 + 0.4;
-      return idlePose(t, phase, p.id === talking ? this.speaking!.level(now) : 0);
-    };
+    const phaseOf = (p: Presenter) => this.bulletin.presenters.indexOf(p) * 1.37 + 0.4;
+    const pose = (p: Presenter, look = 0) => idlePose(t, phaseOf(p), p.id === talking ? this.speaking!.level(now) : 0, look);
+    const lift = (p: Presenter) => gestureLift(t, phaseOf(p), p.id === talking);
     const onScreen = seg.presenters.map((id) => this.presenter(id));
 
     switch (seg.scene) {
@@ -232,8 +231,9 @@ export class Player {
           }
           drawPresenter(g, 92, top, p.look, pose(p), 3);
           drawDesk(g, deskY, -20, W + 20);
-          drawHands(g, 92, deskY, 3, p.look.skin);
+          drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
           if (graphic) drawGraphic(g, graphic, 168, 22, 142, 80, graphicAge, now);
+          else if (this.bulletin.sidebar) drawSidePanel(g, this.bulletin.sidebar, 168, 22, 142, 80, now);
           return;
         }
         const xs = onScreen.length === 1 ? [160] : [115, 205];
@@ -245,9 +245,13 @@ export class Player {
           drawDeskBackground(g, 0);
           drawStudioLife(g, 0, t);
         }
-        onScreen.slice(0, 2).forEach((p, k) => drawPresenter(g, xs[k], top, p.look, pose(p), 2));
+        // Whoever isn't talking turns to look at whoever is.
+        const pair = onScreen.slice(0, 2);
+        const talkerAt = pair.findIndex((p) => p.id === talking);
+        const lookAt = (k: number) => (talkerAt < 0 || talkerAt === k ? 0 : Math.sign(xs[talkerAt] - xs[k]));
+        pair.forEach((p, k) => drawPresenter(g, xs[k], top, p.look, pose(p, lookAt(k)), 2));
         drawDesk(g, deskY, 40, 280);
-        onScreen.slice(0, 2).forEach((p, k) => drawHands(g, xs[k], deskY, 2, p.look.skin));
+        pair.forEach((p, k) => drawHands(g, xs[k], deskY, 2, p.look.skin, lift(p), p.look.suit));
         return;
       }
 
@@ -269,7 +273,9 @@ export class Player {
         if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
         else drawIdleScreen(g, 12, 32, 204, 84, 'MATCH CENTRE');
         const p = onScreen[0];
-        if (p) drawPresenter(g, 266, 142 - STANDING_H * 2, p.look, pose(p), 2, true);
+        // The analyst glances across at the screen every few seconds while talking it through.
+        const glance = graphic && t % 5 < 1.6 ? -1 : 0;
+        if (p) drawPresenter(g, 266, 142 - STANDING_H * 2, p.look, pose(p, glance), 2, true);
         return;
       }
     }

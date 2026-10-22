@@ -169,10 +169,19 @@ export function drawDesk(g: Ctx, y0: number, x0: number, x1: number): void {
   drawText(g, 'HN24', cx - (tw + 18) / 2 + 18, y0 + 19, C.white, 2);
 }
 
-/** Hands resting on the desk in front of a seated presenter. */
-export function drawHands(g: Ctx, cx: number, deskY: number, s: number, skin: string): void {
+/**
+ * Hands resting on the desk in front of a seated presenter. `lift` raises the right hand (in sprite pixels)
+ * for a gesture, with the jacket sleeve showing beneath it.
+ */
+export function drawHands(g: Ctx, cx: number, deskY: number, s: number, skin: string, lift = 0, sleeve: string = C.ink): void {
   rect(g, cx - 10 * s, deskY - s, 3 * s, 2 * s, skin);
-  rect(g, cx + 7 * s, deskY - s, 3 * s, 2 * s, skin);
+  if (lift > 0) {
+    rect(g, cx + 7 * s - 1, deskY - (lift + 1) * s - 1, 3 * s + 2, (lift + 2) * s + 2, C.black);
+    rect(g, cx + 7 * s, deskY - (lift - 1) * s, 3 * s, lift * s, sleeve);
+    rect(g, cx + 7 * s, deskY - (lift + 1) * s, 3 * s, 2 * s, skin);
+  } else {
+    rect(g, cx + 7 * s, deskY - s, 3 * s, 2 * s, skin);
+  }
 }
 
 export function drawTransferBackground(g: Ctx): void {

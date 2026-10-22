@@ -1,4 +1,4 @@
-import type { Bulletin, Graphic, IconId, Line, Segment } from '../../../shared/bulletin.ts';
+import type { Bulletin, Graphic, IconId, Line, Segment, Sidebar } from '../../../shared/bulletin.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
@@ -187,6 +187,24 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     presenters: channel.presenters,
     ticker,
     segments: ordered,
+    sidebar: sidebar(f),
+  };
+}
+
+/** Next match, last result and the table around us, for the side panel beside presenters in close-up. */
+function sidebar(f: Facts): Sidebar {
+  const name = (n: string) => teamName(f.club, n);
+  const n = f.nextFixtures[0];
+  const r = f.lastResult;
+  const at = Math.max(0, f.table.findIndex((t) => isUs(f.club, t.team)));
+  const start = Math.min(Math.max(0, at - 2), Math.max(0, f.table.length - 5));
+  return {
+    highlight: f.club.shortName,
+    next: n && { date: n.date, home: name(n.home), away: name(n.away), competition: n.competition },
+    last: r && { home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition },
+    table: f.table.length
+      ? f.table.slice(start, start + 5).map((t) => ({ pos: t.pos, team: name(t.team), played: t.played, gd: t.gd, pts: t.pts }))
+      : undefined,
   };
 }
 

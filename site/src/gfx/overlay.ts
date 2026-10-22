@@ -160,5 +160,5 @@ export function drawSplash(g: Ctx, t: number, name: string, status: string): voi
   const drawn = drawText(g, main, x, 82, C.white, 3);
   if (num) drawText(g, ` ${num}`, x + drawn, 82, C.gold, 3);
   if (t % 1.2 < 0.8) drawTextCentred(g, status, W / 2, 112, C.white, 2);
-  drawTextCentred(g, 'M MUTE   C CAPTIONS   > SKIP   F FULLSCREEN', W / 2, 160, C.light);
+  drawTextCentred(g, 'M MUTE   C CAPTIONS   > SKIP   F FULLSCREEN   T RETRO TV', W / 2, 160, C.light);
 }

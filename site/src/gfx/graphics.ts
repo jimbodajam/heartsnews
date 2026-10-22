@@ -1,4 +1,4 @@
-import type { Graphic } from '../../../shared/bulletin';
+import type { Graphic, Sidebar } from '../../../shared/bulletin';
 import { drawText, drawTextCentred, drawTextRight, fit, LINE_H, measure, wrap } from './font';
 import { drawIcon } from './icons';
 import { C } from './palette';
@@ -41,6 +41,46 @@ const STATUS: Record<'rumour' | 'talks' | 'medical' | 'done', [string, string]> 
   medical: ['MEDICAL', C.amber],
   done: ['DONE DEAL', C.green],
 };
+
+/** "KICK-OFF IN 2H 14M", "IN PROGRESS", or the day and time further out. */
+function countdown(iso: string): string {
+  const ms = Date.parse(iso) - Date.now();
+  if (ms < 0) return ms > -2.25 * 3_600_000 ? 'IN PROGRESS' : '';
+  if (ms < 24 * 3_600_000) {
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    return `KICK-OFF IN ${h ? `${h}H ` : ''}${m}M`;
+  }
+  return shortDate(iso);
+}
+
+const PAGE_MS = 6000;
+
+/**
+ * The Sky-style info panel beside a presenter in close-up when there's no story graphic: it rotates between
+ * the next match (with a countdown), the last result and the league table around us.
+ */
+export function drawSidePanel(g: Ctx, sb: Sidebar, x: number, y: number, w: number, h: number, now: number): void {
+  const pages = [sb.next && 'next', sb.last && 'last', sb.table?.length && 'table'].filter(Boolean) as ('next' | 'last' | 'table')[];
+  if (!pages.length) return;
+  const page = pages[Math.floor(now / PAGE_MS) % pages.length];
+  const age = now % PAGE_MS;
+  const cx = x + w / 2;
+  if (page === 'next' && sb.next) {
+    const n = sb.next;
+    panel(g, x, y, w, h, 'NEXT MATCH');
+    drawTextCentred(g, fit(n.home, w - 10, 2), cx, y + 16, C.white, 2);
+    drawTextCentred(g, 'V', cx, y + 29, C.grey);
+    drawTextCentred(g, fit(n.away, w - 10, 2), cx, y + 37, C.white, 2);
+    drawTextCentred(g, fit(n.competition, w - 10), cx, y + 52, C.grey);
+    drawTextCentred(g, countdown(n.date), cx, y + 62, C.gold);
+  } else if (page === 'last' && sb.last) {
+    const r = sb.last;
+    drawGraphic(g, { type: 'result', home: r.home, away: r.away, homeScore: r.homeScore, awayScore: r.awayScore, competition: 'LAST RESULT' }, x, y, w, h, age, now);
+  } else if (page === 'table' && sb.table) {
+    drawGraphic(g, { type: 'table', title: 'LEAGUE TABLE', rows: sb.table, highlight: sb.highlight }, x, y, w, h, age, now);
+  }
+}
 
 /**
  * Draws an on-screen graphic into the box (x, y, w, h). `age` is ms since it first appeared,
