@@ -60,23 +60,57 @@ export function drawHeadlineBar(g: Ctx, label: string, text: string): void {
   drawText(g, fit(text, W - lw - 10), lw + 5, HEADLINE_Y + 5, C.ink);
 }
 
-/** Scrolling news ticker along the bottom. */
-export function drawTicker(g: Ctx, items: string[], t: number): void {
-  rect(g, 0, TICKER_Y, W, H - TICKER_Y, C.black);
-  rect(g, 0, TICKER_Y, W, 1, C.maroonLight);
-  rect(g, 0, TICKER_Y + 1, 32, H - TICKER_Y - 1, C.white);
-  drawText(g, 'NEWS', 8, TICKER_Y + 5, C.maroon);
-  if (!items.length) return;
-  const text = `${items.join('  •  ')}  •  `;
-  const period = measure(text) + 1;
-  const x0 = 34 - ((t * 32) % period);
-  g.save();
-  g.beginPath();
-  g.rect(33, TICKER_Y + 1, W - 33, H - TICKER_Y);
-  g.clip();
-  drawText(g, text, x0, TICKER_Y + 5, C.white);
-  drawText(g, text, x0 + period, TICKER_Y + 5, C.white);
-  g.restore();
+/** A ticker item; `score` ones (the live match) stand out in gold. */
+export interface TickerItem {
+  text: string;
+  score?: boolean;
+}
+
+/** How long the ticker flashes "GOAL" after the score changes. */
+const GOAL_FLASH_MS = 8000;
+
+/**
+ * Scrolling news ticker along the bottom. It keeps its own scroll position so the items can change under it (the
+ * live score's minute ticking over) without the text jumping.
+ */
+export class Ticker {
+  private pos = 0;
+  private last?: number;
+  private goalAt = -Infinity;
+
+  /** A goal: bring the first item (the score) to the front now and flash it. */
+  goal(now: number): void {
+    this.pos = 0;
+    this.goalAt = now;
+  }
+
+  draw(g: Ctx, items: TickerItem[], now: number): void {
+    // Capped so the ticker carries on where it was after an ad break rather than leaping ahead.
+    this.pos += Math.min(now - (this.last ?? now), 100) * 0.032;
+    this.last = now;
+    const flashing = now - this.goalAt < GOAL_FLASH_MS;
+    const blink = flashing && now % 500 < 250;
+
+    rect(g, 0, TICKER_Y, W, H - TICKER_Y, C.black);
+    rect(g, 0, TICKER_Y, W, 1, C.maroonLight);
+    rect(g, 0, TICKER_Y + 1, 32, H - TICKER_Y - 1, blink ? C.gold : C.white);
+    drawTextCentred(g, flashing ? 'GOAL' : 'NEWS', 16, TICKER_Y + 5, C.maroon);
+    if (!items.length) return;
+    const parts = items.map((it) => ({ ...it, text: `${it.text}  •  `, w: measure(`${it.text}  •  `) + 1 }));
+    const period = parts.reduce((s, p) => s + p.w, 0);
+    this.pos %= period;
+    g.save();
+    g.beginPath();
+    g.rect(33, TICKER_Y + 1, W - 33, H - TICKER_Y);
+    g.clip();
+    for (let x = 34 - this.pos; x < W; ) {
+      for (const p of parts) {
+        if (x + p.w > 33 && x < W) drawText(g, p.text, x, TICKER_Y + 5, p.score ? (blink ? C.white : C.gold) : C.white);
+        x += p.w;
+      }
+    }
+    g.restore();
+  }
 }
 
 /** Two-line subtitles that page through the line in step with the speech. */

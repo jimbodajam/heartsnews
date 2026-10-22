@@ -3,12 +3,27 @@ import { audioContext } from './audio/sting';
 import { Voices } from './audio/voice';
 import { drawSplash } from './gfx/overlay';
 import { createScreen } from './gfx/screen';
+import { type FeedSource, LiveScore, workerSource } from './live';
 import { Player } from './player';
 
 // ?bulletin=bulletins/other.json plays a different file; ?segment=<id> jumps straight to a segment.
 const params = new URLSearchParams(location.search);
 const BULLETIN_URL = params.get('bulletin') ?? 'bulletins/latest.json';
 const START_SEGMENT = params.get('segment') ?? undefined;
+// ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`), and in
+// dev ?live=replay[&from=17:15][&speed=20] replays the recorded Trabzonspor v Hearts match.
+const LIVE = params.get('live') ?? 'https://heartsnews-live.heartsnews.workers.dev/live.json';
+
+async function liveSource(): Promise<{ source: FeedSource; pace: number } | undefined> {
+  if (LIVE === 'off') return undefined;
+  if (LIVE === 'replay') {
+    if (!import.meta.env.DEV) return undefined;
+    const speed = Number(params.get('speed')) || 20;
+    const { replaySource } = await import('./live-replay');
+    return { source: replaySource(params.get('from') ?? undefined, speed), pace: speed };
+  }
+  return { source: workerSource(LIVE), pace: 1 };
+}
 
 async function fetchBulletin(): Promise<Bulletin> {
   const res = await fetch(`${BULLETIN_URL}?t=${Date.now()}`);
@@ -34,6 +49,13 @@ async function boot(): Promise<void> {
   const player = new Player(g, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
     fetchBulletin().catch(() => undefined),
   );
+
+  const live = await liveSource();
+  if (live) {
+    player.live = new LiveScore(live.source, live.pace);
+    player.live.onGoal = () => player.goal();
+    player.live.start();
+  }
 
   // ?tv=1 starts with the retro TV filter on (T toggles it).
   if (params.get('tv') === '1') document.querySelector('#screen')?.classList.add('crt');

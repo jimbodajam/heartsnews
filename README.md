@@ -37,4 +37,7 @@ npm run worker:deploy             # deploy the live Worker (run `npx wrangler lo
 `npm run worker:dev` needs glibc 2.35+, so it won't run on an older WSL distro; deploying works anywhere.
 
 Player URL options: `?segment=match` jumps straight to a segment, and `?bulletin=bulletins/x.json` plays another file.
+On a match day the player polls the live Worker and the score and scorers come round in the ticker (gold), flashing
+GOAL when the score changes. `?live=off` turns that off, `?live=<url>` reads `live.json` from elsewhere, and in dev
+`?live=replay&from=17:15&speed=10` replays the recorded Trabzonspor v Hearts match (`from` is UTC; kick-off 16:45).
 Keys: **M** mute, **C** captions, **→** skip, **F** fullscreen.

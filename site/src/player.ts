@@ -3,9 +3,10 @@ import { playSting } from './audio/sting';
 import type { Speaking, Voices } from './audio/voice';
 import { drawGraphic, drawSidePanel } from './gfx/graphics';
 import {
-  drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, drawTicker,
-  IDENT_MS, STING_MS,
+  drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS, STING_MS,
+  Ticker, type TickerItem,
 } from './gfx/overlay';
+import { type LiveScore, scoreLine } from './live';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
 import { drawAdvert, preloadAdvert } from './gfx/adverts';
 import { C } from './gfx/palette';
@@ -18,7 +19,10 @@ import {
 
 type Shot = 'wide' | 'single' | 'full';
 
-const FULLSCREEN: Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'formation'];
+/** The live score comes round in the ticker after every this many headlines. */
+const SCORE_EVERY = 3;
+
+const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'formation'];
 
 const LABEL: Record<SegmentKind, string> = {
   headlines: 'HEADLINES',
@@ -48,7 +52,10 @@ export class Player {
   /** Optional painted studio background (from `npm run pixelate`); `classicStudio` switches back to the code-drawn set. */
   studioImage?: HTMLImageElement;
   classicStudio = false;
+  /** Today's match, if the live feed is on: its score comes round in the ticker. */
+  live?: LiveScore;
 
+  private ticker = new Ticker();
   private mode: 'splash' | 'ident' | 'sting' | 'show' = 'splash';
   private modeAt = 0;
   private seg?: Segment;
@@ -229,9 +236,28 @@ export class Player {
     if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
     const graphic = this.line?.graphic;
     drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
-    drawTicker(g, bulletin.ticker, t);
+    this.ticker.draw(g, this.tickerItems(), now);
 
     if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+  }
+
+  /** A goal: the ticker jumps to the score and flashes. */
+  goal(): void {
+    this.ticker.goal(performance.now());
+  }
+
+  /** The bulletin's headlines, with the live score first and again after every few. */
+  private tickerItems(): TickerItem[] {
+    const items: TickerItem[] = this.bulletin.ticker.map((text) => ({ text }));
+    const match = this.live?.match();
+    if (!match) return items;
+    const score = { text: scoreLine(match), score: true };
+    const out: TickerItem[] = [];
+    items.forEach((it, i) => {
+      if (i % SCORE_EVERY === 0) out.push(score);
+      out.push(it);
+    });
+    return out.length ? out : [score];
   }
 
   private drawScene(seg: Segment, now: number): void {
