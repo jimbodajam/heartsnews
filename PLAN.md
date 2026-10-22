@@ -138,6 +138,12 @@ Bulletins currently run 3–6 minutes depending on news, so these also give a st
   the latest known score and timestamp. Stretch goal: in-game events (shots, woodwork, cards). Use BBC Sport's live
   text commentary (each fixture has a /sport/football/live/... page) rather than betting sites, whose terms
   usually forbid scraping. It would also need more frequent builds during games (e.g. a Cloudflare Worker, milestone 8).
+- **YouTube transcripts (high value):** pull captions for new Hearts Standard videos (a few a week) and Hearts TV
+  (press conferences, interviews) with a caption library such as `youtube-transcript`. YouTube blocks GitHub's servers,
+  so fetch them in `npm run snapshot` at home and publish with the Kickback data. Uses: real fan-channel opinion for the
+  debate and Fan Zone, and the manager's own words for in-depth packages (the word-for-word quote check can verify
+  quotes against the transcript). Later: Whisper transcription for podcasts, whose audio is openly in their RSS feeds,
+  if a fan podcast posts regularly.
 - **Also pending from earlier:** a fact-check pass (Flash-Lite still invents small details, e.g. "live from
   Tynecastle"), and bumping the GitHub Actions versions before the Node 20 retirement.
 
