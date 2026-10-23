@@ -176,3 +176,23 @@ test('publishing takes turns', async () => {
   await dropLock(store, 'publish', 'github:b');
   assert.ok(await takeLock(store, 'publish', 'home:c', 60_000, new Date(t.getTime() + 62_000)));
 });
+
+test('the ingest is started once each half hour, at :07 and :37, and asked again if GitHub said no', async () => {
+  const { d1 } = setUp();
+  const started: string[] = [];
+  let refuse = false;
+  const ingest = async () => {
+    if (refuse) throw new Error('GitHub: HTTP 502');
+    started.push(new Date(now).toISOString().slice(11, 16));
+  };
+  let now = 0;
+  for (now = at('20:00'); now <= at('21:10'); now += 60_000) {
+    refuse = now === at('20:37');
+    await tick(d1, undefined, { dispatch: async () => undefined, now, ingest });
+  }
+  // The first tick starts it (no slot yet), then each slot once; 20:37 was refused, so 20:38 asks again.
+  assert.deepEqual(started, ['20:00', '20:07', '20:38', '21:07']);
+  // A replay never starts it.
+  await tick(d1, undefined, { dispatch: async () => undefined, now: at('21:37'), ingest, test: 'r' });
+  assert.equal(started.length, 4);
+});

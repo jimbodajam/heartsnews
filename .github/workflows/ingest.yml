@@ -1,13 +1,12 @@
 # Gets the latest Hearts news into the channel's store (pipeline/src/ingest.ts, issue #30): every item collected, and
 # every press and official article fetched once, in full, and tagged from its text. Then the new articles are read into
-# claims and storylines, with a brief on each (issue #25), by Workers AI. On its own clock, apart from the
-# bulletins: a programme never waits on it.
+# claims and storylines, with a brief on each (issue #25), by Workers AI. Apart from the bulletins: a programme never
+# waits on it.
 
 name: Ingest
 
 on:
-  schedule:
-    - cron: '7,37 * * * *'
+  # Started at :07 and :37 by the Worker's clock (worker/src/clock.ts): GitHub's own schedule drops most runs here.
   workflow_dispatch:
 
 permissions:

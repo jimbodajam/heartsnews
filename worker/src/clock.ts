@@ -5,6 +5,8 @@
 // jobs itself through /store (pipeline/src/agent.ts). Otherwise, or if it hasn't claimed one within a minute or two,
 // GitHub Actions is asked to build it (workflow_dispatch). A job is claimed once, so only one runner publishes it.
 // A replayed match goes through this same code from the PC (`npm run replay -- --queue`), as test jobs.
+// It also starts the ingest (.github/workflows/ingest.yml, pipeline/src/ingest.ts) at :07 and :37: GitHub's own schedule
+// drops or delays most runs on this repo.
 
 import { EventTracker, type TrackerState } from '../../pipeline/src/breaking/detect.ts';
 import { Cadence, type CadenceState } from '../../pipeline/src/cadence.ts';
@@ -26,6 +28,8 @@ const REDISPATCH_MS = 10 * 60_000;
 const MAX_DISPATCHES = 3;
 /** A package still queued after this long is no longer news. */
 const BREAKING_STALE_MS = 20 * 60_000;
+/** The ingest runs every half hour, this far past :00 and :30 (clear of the programmes). */
+export const INGEST_OFFSET_MS = 7 * 60_000;
 
 export type JobKind = 'programme' | 'breaking';
 /** Asks GitHub Actions to build a job. */
@@ -37,12 +41,16 @@ export interface TickOptions {
   now?: number;
   /** A replay's run id: its jobs are test jobs, it keeps its own tracker, and there are no programmes. */
   test?: string;
+  /** Asks GitHub Actions to run the ingest. A replay never does. */
+  ingest?: () => Promise<void>;
 }
 
 export interface TickReport {
   queued: string[];
   dispatched: string[];
   errors: string[];
+  /** Whether the ingest was started this run. */
+  ingested?: boolean;
 }
 
 interface Statement {
@@ -60,10 +68,12 @@ const setState = (key: string, value: unknown, at: string): Statement => ({
 });
 
 /** One run of the clock: queue what's due, tidy the queue, and send GitHub what the home PC won't take. */
-export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatch, now = Date.now(), test }: TickOptions): Promise<TickReport> {
+export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatch, now = Date.now(), test, ingest }: TickOptions): Promise<TickReport> {
   const prefix = test ? 'test:' : '';
   const at = iso(now);
-  const [rows] = await run(db, [{ sql: 'SELECT key, value FROM state WHERE key IN (?, ?, ?)', params: [`${prefix}tracker`, `${prefix}cadence`, 'home_seen'] }]);
+  const [rows] = await run(db, [
+    { sql: 'SELECT key, value FROM state WHERE key IN (?, ?, ?, ?)', params: [`${prefix}tracker`, `${prefix}cadence`, 'home_seen', 'ingest_slot'] },
+  ]);
   const state = new Map(rows.map((r) => [String(r.key), JSON.parse(String(r.value)) as unknown]));
   const tracker = new EventTracker((state.get(`${prefix}tracker`) as TrackerState) ?? { done: [] });
   const cadence = new Cadence(EVERY_MS, (state.get(`${prefix}cadence`) as CadenceState) ?? {});
@@ -145,22 +155,42 @@ export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatc
       },
     ]);
   }
+
+  // The ingest, once per half-hour slot. If GitHub doesn't take the ask, it's tried again the next minute.
+  const slot = Math.floor((now - INGEST_OFFSET_MS) / EVERY_MS);
+  if (ingest && !test && state.get('ingest_slot') !== slot) {
+    try {
+      await ingest();
+      await run(db, [setState('ingest_slot', slot, at)]);
+      report.ingested = true;
+    } catch (err) {
+      report.errors.push(`ingest: ${(err as Error).message}`);
+    }
+  }
   return report;
 }
 
-/** Dispatches the bulletin workflow on GitHub with a job's id, using a token that can only run this repo's workflows. */
+/** Runs one of this repo's workflows on GitHub (workflow_dispatch), with a token that can only run its workflows. */
+async function runWorkflow(repo: string, token: string, workflow: string, inputs: Record<string, string>, fetchFn: typeof fetch): Promise<void> {
+  const res = await fetchFn(`https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: 'application/vnd.github+json',
+      'content-type': 'application/json',
+      'user-agent': 'heartsnews-live',
+    },
+    body: JSON.stringify({ ref: 'main', inputs }),
+  });
+  if (!res.ok) throw new Error(`GitHub: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
+}
+
+/** Dispatches the bulletin workflow with a job's id. */
 export function dispatcher(repo: string, token: string, fetchFn: typeof fetch = fetch): Dispatch {
-  return async ({ id, kind }) => {
-    const res = await fetchFn(`https://api.github.com/repos/${repo}/actions/workflows/bulletin.yml/dispatches`, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${token}`,
-        accept: 'application/vnd.github+json',
-        'content-type': 'application/json',
-        'user-agent': 'heartsnews-live',
-      },
-      body: JSON.stringify({ ref: 'main', inputs: { job: id, kind } }),
-    });
-    if (!res.ok) throw new Error(`GitHub: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
-  };
+  return ({ id, kind }) => runWorkflow(repo, token, 'bulletin.yml', { job: id, kind }, fetchFn);
+}
+
+/** Starts the ingest workflow. */
+export function ingester(repo: string, token: string, fetchFn: typeof fetch = fetch): () => Promise<void> {
+  return () => runWorkflow(repo, token, 'ingest.yml', {}, fetchFn);
 }

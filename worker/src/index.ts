@@ -3,12 +3,13 @@
 // few times a minute however many viewers are polling. (Cloudflare's Cache API has no effect on workers.dev.) The
 // logic is in feed.ts, which a recorded match can be replayed through (`npm run replay`).
 // It also serves /store, the channel's memory in D1, to the bulletin builds (store.ts), and is the channel's clock:
-// a cron trigger every minute queues the programmes and breaking news that are due and hands them out (clock.ts).
+// a cron trigger every minute queues the programmes and breaking news that are due and hands them out, and starts the
+// ingest every half hour (clock.ts).
 // Deploy (owner only): npx wrangler login, then npm run worker:deploy.
 
 import club from '../../clubs/hearts.json';
 import { initialData } from '../../shared/bbc.ts';
-import { dispatcher, tick } from './clock.ts';
+import { dispatcher, ingester, tick } from './clock.ts';
 import { liveFeed } from './feed.ts';
 import { store, type StoreEnv } from './store.ts';
 
@@ -38,8 +39,10 @@ async function clock(env: Env): Promise<void> {
       : async () => {
           throw new Error('GITHUB_DISPATCH_TOKEN is not set');
         };
-  const r = await tick(env.DB, feed ?? undefined, { dispatch });
+  const ingest = env.GITHUB_REPO && env.GITHUB_DISPATCH_TOKEN ? ingester(env.GITHUB_REPO, env.GITHUB_DISPATCH_TOKEN) : undefined;
+  const r = await tick(env.DB, feed ?? undefined, { dispatch, ingest });
   if (r.queued.length || r.dispatched.length) console.log(`clock: queued ${r.queued.join(', ') || 'nothing'}; sent to GitHub ${r.dispatched.join(', ') || 'nothing'}`);
+  if (r.ingested) console.log('clock: started the ingest');
   for (const e of r.errors) console.warn(`clock: couldn't send ${e}`);
 }
 
