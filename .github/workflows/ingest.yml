@@ -1,5 +1,6 @@
 # Gets the latest Hearts news into the channel's store (pipeline/src/ingest.ts, issue #30): every item collected, and
-# every press and official article fetched once, in full, and tagged from its text. On its own clock, apart from the
+# every press and official article fetched once, in full, and tagged from its text. Then the new articles are read into
+# claims and storylines, with a brief on each (issue #25), by Workers AI. On its own clock, apart from the
 # bulletins: a programme never waits on it.
 
 name: Ingest
@@ -42,4 +43,6 @@ jobs:
       - name: Ingest
         env:
           STORE_TOKEN: ${{ secrets.STORE_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: npm run ingest

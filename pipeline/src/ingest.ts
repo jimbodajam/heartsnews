@@ -2,7 +2,9 @@
 // from its text. Collects the latest news, writes every item (aggregators and videos too, headline-tagged), then
 // fetches each article the store has no text for, retrying a page that fails a few times before giving up on it.
 // Separate from building a bulletin: GitHub runs it on the clock (.github/workflows/ingest.yml).
-// Usage: npm run ingest. Needs STORE_TOKEN (in .env or the GitHub secrets).
+// Then reads the new articles into claims and storylines (storylines.ts, issue #25).
+// Usage: npm run ingest. Needs STORE_TOKEN, and CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (with Workers AI) for
+// the storylines (in .env or the GitHub secrets).
 
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -14,9 +16,11 @@ import { collectPlayers } from './collectors/sportsdb.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
-import { ingestItems, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
 import type { ClubConfig } from './types.ts';
+import { DEFAULT_BUDGET, workersAiFromEnv } from './workers-ai.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -97,6 +101,20 @@ async function main() {
     if (articles.length < TAG_BATCH) break;
   }
   console.log(`Tagged ${retagged} articles from their full text.`);
+
+  // What the articles say, filed under storylines with a brief on each (issue #25).
+  console.log('\nStorylines…');
+  const at = new Date();
+  const model = workersAiFromEnv({ used: await neuronsToday(store, at), ...DEFAULT_BUDGET });
+  await updateStorylines({
+    store,
+    model,
+    entities,
+    match,
+    names: new Map(club.sources.map((s) => [s.id, s.name.replace(/ \(.*\)$/, '')])),
+    club: club.name,
+    now: at,
+  });
 }
 
 main().catch((err) => {

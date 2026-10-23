@@ -2,6 +2,7 @@ import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { Remembered } from './script/remember.ts';
+import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
 import type { Item, SourceKind } from './types.ts';
 
@@ -397,6 +398,233 @@ export function textTagWrites(tags: Map<string, Tags>, now: Date): Statement[] {
 
 export async function saveTextTags(store: Store, tags: Map<string, Tags>, now: Date): Promise<void> {
   if (tags.size) await store.batch(textTagWrites(tags, now));
+}
+
+// ---- Claims, storylines and briefs ----
+// The ingest's reading (storylines.ts, issue #25): each new article sifted once into claims, filed under storylines,
+// and a brief kept on each storyline that changed. The ingest runs one at a time (its workflow's concurrency group),
+// so new rows take ids counted on from the highest, and a batch can link storylines, claims and sources in one go.
+
+/** Articles are sifted for claims while their text is kept; headline-only items for a week. */
+const HEADLINE_DAYS = 7;
+/** A video's transcript comes from the home PC's snapshot; one with none after this long counts as a headline. */
+const TRANSCRIPT_WAIT_MS = 2 * DAY_MS;
+
+const ARTICLE_WHERE = `sifted_at IS NULL AND first_seen >= ? AND (
+    (kind IN ('press', 'official') AND fetch_status = 'ok' AND body IS NOT NULL) OR (kind = 'video' AND transcript IS NOT NULL))`;
+const HEADLINE_WHERE = `i.sifted_at IS NULL AND i.first_seen >= ? AND (i.kind = 'aggregator'
+    OR (i.kind IN ('press', 'official') AND i.fetch_status = 'gave_up') OR (i.kind = 'video' AND i.transcript IS NULL AND i.first_seen < ?))`;
+
+const neuronsKey = (now: Date) => `workers_ai:${now.toISOString().slice(0, 10)}`;
+
+/** Workers AI neurons used so far today (UTC), by every run. */
+export async function neuronsToday(store: Store, now: Date): Promise<number> {
+  const [[row]] = await store.batch([{ sql: 'SELECT value FROM state WHERE key = ?', params: [neuronsKey(now)] }]);
+  return row ? Number(JSON.parse(String(row.value))) : 0;
+}
+
+/** Storylines with their claims, each claim with the items it came from (oldest first). */
+function toStorylines(storylines: Row[], claims: Row[]): Storyline[] {
+  const byId = new Map<number, Storyline>();
+  for (const r of storylines) {
+    byId.set(Number(r.id), {
+      id: Number(r.id),
+      kind: r.kind as StorylineKind,
+      ...(r.entity_id ? { entity: String(r.entity_id) } : {}),
+      ...(r.category ? { category: String(r.category) } : {}),
+      title: String(r.title),
+      ...(r.fixture ? { fixture: String(r.fixture) } : {}),
+      ...(r.kick_off ? { kickOff: String(r.kick_off) } : {}),
+      status: r.status as 'open' | 'closed',
+      openedAt: String(r.opened_at),
+      updatedAt: String(r.updated_at),
+      ...(r.brief ? { brief: JSON.parse(String(r.brief)) as Brief } : {}),
+      ...(r.brief_at ? { briefAt: String(r.brief_at) } : {}),
+      claims: [],
+    });
+  }
+  for (const r of claims) {
+    byId.get(Number(r.storyline_id))?.claims.push({
+      id: Number(r.id),
+      text: String(r.text),
+      status: r.status as ClaimStatus,
+      firstSeen: String(r.first_seen),
+      ...(r.replaced_by != null ? { replacedBy: Number(r.replaced_by) } : {}),
+      ...(r.disputes != null ? { disputes: Number(r.disputes) } : {}),
+      sources: (JSON.parse(String(r.sources ?? '[]')) as ClaimSource[]).filter((s) => s.item),
+    });
+  }
+  return [...byId.values()];
+}
+
+const STORYLINE_COLUMNS = 'id, kind, entity_id, category, title, fixture, kick_off, status, opened_at, updated_at, brief, brief_at';
+const CLAIMS_OF = (where: string) => `SELECT c.id, c.storyline_id, c.text, c.status, c.first_seen, c.replaced_by, c.disputes,
+    json_group_array(json_object('item', cs.item_id, 'outlet', COALESCE(i.publisher, i.source), 'corroboration', cs.corroboration, 'at', cs.at)) AS sources
+  FROM claims c LEFT JOIN claim_sources cs ON cs.claim_id = c.id LEFT JOIN items i ON i.id = cs.item_id
+  WHERE c.storyline_id IN (SELECT id FROM storylines WHERE ${where}) GROUP BY c.id ORDER BY c.first_seen, c.id`;
+
+/**
+ * Everything the reading needs at the start of a run: the open storylines, the ids new rows count on from, the
+ * Workers AI neurons used today, and what's waiting to be read (articles with text, oldest first, up to
+ * `limits.articles`; headline-only items up to `limits.headlines`, each marked whether its tags say it's about anyone
+ * or anything in particular).
+ */
+export async function loadStoryDesk(store: Store, now: Date, limits: { articles: number; headlines: number }): Promise<StoryDesk> {
+  const textSince = new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString();
+  const headlineSince = new Date(now.getTime() - HEADLINE_DAYS * DAY_MS).toISOString();
+  const transcriptBy = new Date(now.getTime() - TRANSCRIPT_WAIT_MS).toISOString();
+  const [storylines, claims, ids, neurons, waiting, articles, headlines] = await store.batch([
+    { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE status = 'open' ORDER BY id` },
+    { sql: CLAIMS_OF(`status = 'open'`) },
+    { sql: 'SELECT (SELECT COALESCE(MAX(id), 0) FROM storylines) AS storyline, (SELECT COALESCE(MAX(id), 0) FROM claims) AS claim' },
+    { sql: 'SELECT value FROM state WHERE key = ?', params: [neuronsKey(now)] },
+    {
+      sql: `SELECT (SELECT COUNT(*) FROM items WHERE ${ARTICLE_WHERE}) AS articles,
+              (SELECT MIN(first_seen) FROM (SELECT first_seen FROM items WHERE ${ARTICLE_WHERE}
+                UNION ALL SELECT i.first_seen FROM items i WHERE ${HEADLINE_WHERE})) AS oldest`,
+      params: [textSince, textSince, headlineSince, transcriptBy],
+    },
+    {
+      sql: `SELECT id, source, publisher, kind, title, published_at, first_seen, COALESCE(body, transcript) AS text FROM items
+            WHERE ${ARTICLE_WHERE} ORDER BY COALESCE(published_at, first_seen), id LIMIT ?`,
+      params: [textSince, limits.articles],
+    },
+    {
+      sql: `SELECT i.id, i.source, i.publisher, i.kind, i.title, i.published_at, i.first_seen,
+              (COALESCE(t.category, 'news') != 'news' OR EXISTS (SELECT 1 FROM item_entities ie JOIN entities e ON e.id = ie.entity_id
+                WHERE ie.item_id = i.id AND e.type IN ('player', 'staff'))) AS tagged
+            FROM items i LEFT JOIN item_tags t ON t.item_id = i.id
+            WHERE ${HEADLINE_WHERE} ORDER BY COALESCE(i.published_at, i.first_seen), i.id LIMIT ?`,
+      params: [headlineSince, transcriptBy, limits.headlines],
+    },
+  ]);
+  const toItem = (r: Row): SiftItem => ({
+    id: String(r.id),
+    source: String(r.source),
+    ...(r.publisher ? { publisher: String(r.publisher) } : {}),
+    kind: r.kind as SourceKind,
+    title: String(r.title),
+    publishedAt: String(r.published_at || r.first_seen),
+    ...(r.text != null ? { text: String(r.text) } : {}),
+    ...(r.tagged != null ? { tagged: Number(r.tagged) === 1 } : {}),
+  });
+  return {
+    open: toStorylines(storylines, claims),
+    nextIds: { storyline: Number(ids[0].storyline) + 1, claim: Number(ids[0].claim) + 1 },
+    neuronsToday: neurons[0] ? Number(JSON.parse(String(neurons[0].value))) : 0,
+    waiting: { articles: Number(waiting[0].articles), ...(waiting[0].oldest ? { oldest: String(waiting[0].oldest) } : {}) },
+    articles: articles.map(toItem),
+    headlines: headlines.map(toItem),
+  };
+}
+
+/** Open storylines again (after a batch of claims went in), and the ids new rows count on from. */
+export async function loadOpenStorylines(store: Store): Promise<{ open: Storyline[]; nextIds: StoryDesk['nextIds'] }> {
+  const [storylines, claims, ids] = await store.batch([
+    { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE status = 'open' ORDER BY id` },
+    { sql: CLAIMS_OF(`status = 'open'`) },
+    { sql: 'SELECT (SELECT COALESCE(MAX(id), 0) FROM storylines) AS storyline, (SELECT COALESCE(MAX(id), 0) FROM claims) AS claim' },
+  ]);
+  return { open: toStorylines(storylines, claims), nextIds: { storyline: Number(ids[0].storyline) + 1, claim: Number(ids[0].claim) + 1 } };
+}
+
+/**
+ * Storylines whose brief is due: none yet, or a claim read from an article (not just corroborated by a headline)
+ * since the last one. Open ones, and any closed in the last day (resolved by the claim that closed them).
+ */
+export async function storylinesDueBriefs(store: Store, now: Date, limit: number): Promise<Storyline[]> {
+  const due = `(status = 'open' OR closed_at >= '${new Date(now.getTime() - DAY_MS).toISOString()}') AND (brief_at IS NULL OR EXISTS (
+      SELECT 1 FROM claims c JOIN claim_sources cs ON cs.claim_id = c.id
+      WHERE c.storyline_id = storylines.id AND cs.corroboration = 0 AND cs.at > storylines.brief_at))`;
+  const [storylines, claims] = await store.batch([
+    { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE ${due} ORDER BY updated_at DESC LIMIT ?`, params: [limit] },
+    { sql: CLAIMS_OF(`id IN (SELECT id FROM storylines WHERE ${due} ORDER BY updated_at DESC LIMIT ?)`), params: [limit] },
+  ]);
+  return toStorylines(storylines, claims);
+}
+
+/** Adds this run's Workers AI use to today's count. */
+function neuronWrites(neurons: number, now: Date): Statement[] {
+  if (neurons <= 0) return [];
+  return [
+    {
+      sql: `INSERT INTO state (key, value, updated_at) VALUES (?, ?, ?)
+            ON CONFLICT (key) DO UPDATE SET value = CAST(state.value AS REAL) + CAST(excluded.value AS REAL), updated_at = excluded.updated_at`,
+      params: [neuronsKey(now), String(Math.round(neurons)), now.toISOString()],
+    },
+  ];
+}
+
+/** What one batch of reading found: new storylines and claims, their sources, and what it did to older claims. */
+export function siftWrites(plan: SiftPlan, neurons: number, now: Date): Statement[] {
+  const at = now.toISOString();
+  return [
+    ...each(
+      `INSERT INTO storylines (id, kind, entity_id, category, title, fixture, kick_off, status, opened_at, updated_at)
+        SELECT value ->> 'id', value ->> 'kind', value ->> 'entity', value ->> 'category', value ->> 'title', value ->> 'fixture',
+          value ->> 'kickOff', 'open', value ->> 'openedAt', value ->> 'openedAt' FROM json_each(?)`,
+      plan.storylines.map((s) => ({ ...s, entity: s.entity ?? null, category: s.category ?? null, fixture: s.fixture ?? null, kickOff: s.kickOff ?? null })),
+    ),
+    ...each(
+      `INSERT INTO claims (id, storyline_id, text, status, first_seen, disputes)
+        SELECT value ->> 'id', value ->> 'storylineId', value ->> 'text', value ->> 'status', value ->> 'firstSeen', value ->> 'disputes' FROM json_each(?)`,
+      plan.claims.map((c) => ({ ...c, disputes: c.disputes ?? null })),
+    ),
+    ...each(
+      `UPDATE claims SET status = j.value ->> 'status', replaced_by = COALESCE(j.value ->> 'replacedBy', claims.replaced_by)
+        FROM json_each(?) AS j WHERE claims.id = j.value ->> 'id'`,
+      plan.statuses.map((s) => ({ ...s, replacedBy: s.replacedBy ?? null })),
+    ),
+    ...each(
+      `INSERT OR IGNORE INTO claim_sources (claim_id, item_id, corroboration, at)
+        SELECT value ->> 'claimId', value ->> 'itemId', value ->> 'corroboration', ? FROM json_each(?)`,
+      plan.sources.map((s) => ({ ...s, corroboration: s.corroboration ? 1 : 0 })),
+      [at],
+    ),
+    ...each(
+      `UPDATE storylines SET updated_at = MAX(storylines.updated_at, j.value ->> 'at') FROM json_each(?) AS j WHERE storylines.id = j.value ->> 'id'`,
+      plan.touched,
+    ),
+    ...closeWrites(plan.resolved.map((id) => ({ id, reason: 'resolved' as const })), now),
+    ...each(`UPDATE items SET sifted_at = ? WHERE id IN (SELECT value ->> 'id' FROM json_each(?))`, plan.sifted.map((id) => ({ id })), [at]),
+    ...neuronWrites(neurons, now),
+  ];
+}
+
+export function closeWrites(closing: { id: number; reason: CloseReason }[], now: Date): Statement[] {
+  return each(
+    `UPDATE storylines SET status = 'closed', closed_at = ?, close_reason = j.value ->> 'reason'
+      FROM json_each(?) AS j WHERE storylines.id = j.value ->> 'id' AND storylines.status = 'open'`,
+    closing,
+    [now.toISOString()],
+  );
+}
+
+export async function saveSift(store: Store, plan: SiftPlan, neurons: number, now: Date): Promise<void> {
+  await store.batch(siftWrites(plan, neurons, now));
+}
+
+export async function closeStorylines(store: Store, closing: { id: number; reason: CloseReason }[], now: Date): Promise<void> {
+  if (closing.length) await store.batch(closeWrites(closing, now));
+}
+
+/** New briefs (and titles), and the Workers AI they took. */
+export async function saveBriefs(store: Store, briefs: { id: number; title: string; brief: Brief }[], neurons: number, now: Date): Promise<void> {
+  const statements = [
+    ...each(
+      `UPDATE storylines SET title = j.value ->> 'title', brief = j.value ->> 'brief', brief_at = ? FROM json_each(?) AS j WHERE storylines.id = j.value ->> 'id'`,
+      briefs.map((b) => ({ id: b.id, title: b.title, brief: JSON.stringify(b.brief) })),
+      [now.toISOString()],
+    ),
+    ...neuronWrites(neurons, now),
+  ];
+  if (statements.length) await store.batch(statements);
+}
+
+/** Workers AI used without anything to save (a run that failed part-way) still counts against the day. */
+export async function saveNeurons(store: Store, neurons: number, now: Date): Promise<void> {
+  const statements = neuronWrites(neurons, now);
+  if (statements.length) await store.batch(statements);
 }
 
 // ---- The job queue ----
