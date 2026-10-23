@@ -25,6 +25,7 @@
     "trim-recording": "npm -w pipeline run trim-recording --",
     "replay": "npm -w pipeline run replay --",
     "store:import": "npm -w pipeline run store:import --",
+    "ingest": "npm -w pipeline run ingest",
     "worker:dev": "npm -w worker run dev",
     "worker:deploy": "npm -w worker run deploy",
     "dev": "npm -w site run dev",

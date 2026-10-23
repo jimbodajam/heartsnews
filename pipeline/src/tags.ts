@@ -2,11 +2,12 @@ import type { Entity } from './entities.ts';
 import type { Item } from './types.ts';
 
 // What each item is about (story engine stage 1, issue #24): the people, clubs and competitions it names, its
-// category and a rough mood, from its headline and summary. No AI: names come from the entity list, the rest from
-// word patterns. Tags are saved in the store by item id (store.ts), and stories group by them (stories.ts).
+// category and a rough mood, from its headline and summary, or from the article itself once `npm run ingest` has
+// fetched it (stage 1b, issue #30). No AI: names come from the entity list, the rest from word patterns. Tags are
+// saved in the store by item id (store.ts), and stories group by them (stories.ts).
 
 /** Bump when tagging changes enough that items already in the store should be tagged again. */
-export const TAGGER_VERSION = 1;
+export const TAGGER_VERSION = 2;
 
 export type Category = 'transfer' | 'contract' | 'injury' | 'discipline' | 'match' | 'news';
 export type Mood = 'good' | 'bad' | 'neutral';
@@ -60,34 +61,60 @@ export function mood(text: string): Mood {
 const plain = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** An article's opening is its first paragraph, and the next too while they come to less than this (a one-line lede). */
+const OPENING_CHARS = 120;
+
+/** The headline and the article's first paragraphs, where whoever the story is about gets named. */
+export function opening(title: string, text: string): string {
+  const out = [title];
+  let size = 0;
+  for (const p of text.split(/\n+/).map((p) => p.trim()).filter(Boolean)) {
+    if (size >= OPENING_CHARS) break;
+    out.push(p);
+    size += p.length;
+  }
+  return out.join('\n');
+}
+
 /**
  * A name as a whole word. A one-word name for a person (a surname) must be capitalised, so "white" in a sentence
  * isn't Tom White; full names and club names match in any case ("WOUTER VRANCKEN | Injury latest").
  */
-function nameMatcher(e: Entity): (text: string) => boolean {
+function nameMatcher(e: Entity): (text: string) => number {
   const person = e.type === 'player' || e.type === 'staff';
   const names = [...new Set([e.name, ...e.aliases].map((n) => plain(n).trim()).filter((n) => n.length > 2))];
   const word = (list: string[], flags: string) =>
     list.length ? new RegExp(`(?:^|[^\\p{L}])(?:${list.map(escape).join('|')})(?=$|[^\\p{L}])`, flags) : undefined;
-  const loose = word(names.filter((n) => !person || /\s/.test(n)), 'iu');
-  const strict = word(names.filter((n) => person && !/\s/.test(n)).flatMap((n) => [n, n.toUpperCase()]), 'u');
-  return (text) => Boolean(loose?.test(text) || strict?.test(text));
+  const loose = word(names.filter((n) => !person || /\s/.test(n)), 'giu');
+  const strict = word(names.filter((n) => person && !/\s/.test(n)).flatMap((n) => [n, n.toUpperCase()]), 'gu');
+  // How many times it's named. "Harry Milne" also matches as "Milne", so take the larger count, not the sum.
+  const count = (re: RegExp | undefined, text: string) => (re ? (text.match(re)?.length ?? 0) : 0);
+  return (text) => Math.max(count(loose, text), count(strict, text));
 }
 
 const isPerson = (e: Entity) => e.type === 'player' || e.type === 'staff';
 
-/** Tags items against the entity list. Forum threads aren't tagged: they're opinion, not stories. */
-export function tagItems(items: Item[], entities: Entity[]): Map<string, Tags> {
-  const matchers = entities.map((e) => ({ e, named: nameMatcher(e) }));
+/**
+ * Tags items against the entity list. Forum threads aren't tagged: they're opinion, not stories.
+ * With an article's full text (`texts`, by item id) it's tagged from that instead: whoever is named in the headline
+ * and opening or more than once, not in passing, and the category from the headline, or the opening if the headline
+ * doesn't say.
+ */
+export function tagItems(items: Item[], entities: Entity[], texts = new Map<string, string>()): Map<string, Tags> {
+  const matchers = entities.map((e) => ({ e, count: nameMatcher(e) }));
   const tags = new Map<string, Tags>();
   for (const it of items) {
     if (it.kind === 'forum') continue;
-    const text = plain(`${it.title}\n${it.summary}`);
-    const named = matchers.filter((m) => m.named(text)).map((m) => m.e);
+    const body = texts.get(it.id);
+    const lead = body ? opening(it.title, body) : `${it.title}\n${it.summary}`;
+    const leadPlain = plain(lead);
+    const bodyPlain = body ? plain(body) : '';
+    const named = matchers.filter((m) => m.count(leadPlain) > 0 || m.count(bodyPlain) > 1).map((m) => m.e);
     const players = named.filter((e) => e.type === 'player');
+    const headline = categorise(it.title);
     tags.set(it.id, {
-      category: categorise(it.title),
-      mood: mood(`${it.title} ${it.summary}`),
+      category: body && headline === 'news' ? categorise(lead) : headline,
+      mood: mood(lead),
       entities: named.map((e) => e.id),
       people: named.filter(isPerson).map((e) => e.id),
       about: (players.length ? players : named.filter((e) => e.type === 'staff')).map((e) => e.id),

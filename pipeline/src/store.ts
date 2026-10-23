@@ -3,7 +3,7 @@ import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { Remembered } from './script/remember.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
-import type { Item } from './types.ts';
+import type { Item, SourceKind } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
 // Every query the pipeline makes is here, so nothing else talks SQL. The schema is in worker/migrations/.
@@ -173,84 +173,7 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
   }
 
   statements.push({ sql: 'INSERT INTO bulletins (id, generated_at, phase, runner) VALUES (?, ?, ?, ?)', params: [id, at, r.bulletin.phase, r.bulletin.runner] });
-
-  // Items: first_seen sticks; a newly fetched body or transcript fills in.
-  const items = r.items.map((it) => ({
-    id: it.id,
-    source: it.sourceId,
-    kind: it.kind,
-    publisher: it.publisher ?? null,
-    title: it.title,
-    summary: it.summary,
-    url: it.url,
-    publishedAt: it.publishedAt,
-    body: text(r.bodies.get(it.id)),
-    transcript: text(it.transcript),
-  }));
-  statements.push(
-    ...each(
-      `INSERT INTO items (id, source, kind, publisher, title, summary, url, published_at, first_seen, body, transcript)
-        SELECT value ->> 'id', value ->> 'source', value ->> 'kind', value ->> 'publisher', value ->> 'title',
-          value ->> 'summary', value ->> 'url', value ->> 'publishedAt', ?, value ->> 'body', value ->> 'transcript'
-        FROM json_each(?) WHERE true
-        ON CONFLICT (id) DO UPDATE SET title = excluded.title, summary = excluded.summary,
-          publisher = COALESCE(excluded.publisher, items.publisher), body = COALESCE(excluded.body, items.body),
-          transcript = COALESCE(excluded.transcript, items.transcript)`,
-      items,
-      [at],
-    ),
-    {
-      sql: 'UPDATE items SET body = NULL, transcript = NULL WHERE first_seen < ? AND (body IS NOT NULL OR transcript IS NOT NULL)',
-      params: [new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString()],
-    },
-  );
-
-  // Entities: names and types refresh; aliases added by hand are kept. People no longer at the club go inactive.
-  statements.push(
-    ...each(
-      `INSERT INTO entities (id, type, name, aliases, active)
-        SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?) WHERE true
-        ON CONFLICT (id) DO UPDATE SET type = excluded.type, name = excluded.name, active = 1,
-          aliases = CASE WHEN entities.aliases = '[]' THEN excluded.aliases ELSE entities.aliases END`,
-      r.entities.map((e) => ({ ...e, aliases: JSON.stringify(e.aliases) })),
-    ),
-  );
-  const people = r.entities.filter((e) => e.type === 'player' || e.type === 'staff').map((e) => e.id);
-  if (people.length) {
-    statements.push({
-      sql: `UPDATE entities SET active = 0 WHERE type IN ('player', 'staff') AND active = 1 AND id NOT IN (SELECT value FROM json_each(?))`,
-      params: [JSON.stringify(people)],
-    });
-  }
-
-  // Tags: each item is tagged once, and again only by a newer tagger (its old entity links go first). The entity
-  // links written are just those of items whose tags were written this build.
-  const itemIds = new Set(r.items.map((it) => it.id));
-  const tagged = [...r.tags].filter(([itemId]) => itemIds.has(itemId));
-  statements.push(
-    ...each(
-      `DELETE FROM item_entities WHERE item_id IN (
-        SELECT item_id FROM item_tags WHERE tagger_version < ? AND item_id IN (SELECT value ->> 'item' FROM json_each(?)))`,
-      tagged.map(([item]) => ({ item })),
-      [TAGGER_VERSION],
-    ),
-    ...each(
-      `INSERT INTO item_tags (item_id, category, mood, tagger_version, tagged_at)
-        SELECT value ->> 'item', value ->> 'category', value ->> 'mood', ?, ? FROM json_each(?) WHERE true
-        ON CONFLICT (item_id) DO UPDATE SET category = excluded.category, mood = excluded.mood,
-          tagger_version = excluded.tagger_version, tagged_at = excluded.tagged_at
-        WHERE excluded.tagger_version > item_tags.tagger_version`,
-      tagged.map(([item, t]) => ({ item, category: t.category, mood: t.mood })),
-      [TAGGER_VERSION, at],
-    ),
-    ...each(
-      `INSERT OR IGNORE INTO item_entities (item_id, entity_id)
-        SELECT t.item_id, j.value ->> 'entity' FROM (SELECT item_id FROM item_tags WHERE tagged_at = ?) AS t
-        JOIN json_each(?) AS j ON j.value ->> 'item' = t.item_id`,
-      tagged.flatMap(([item, t]) => t.entities.map((entity) => ({ item, entity }))),
-      [at],
-    ),
-  );
+  statements.push(...itemWrites(r.items, r.bodies, now), ...entityWrites(r.entities), ...tagWrites(r.items, r.tags, at));
 
   const { aired, takes, predictions } = r.remembered;
   statements.push(
@@ -267,8 +190,213 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
   return statements;
 }
 
+/**
+ * Items: first_seen sticks; a newly fetched body or transcript fills in. A body the ingest fetched in full
+ * (fetch_status 'ok') is never replaced by a bulletin's shorter cut of it. Old text is pruned.
+ */
+function itemWrites(list: Item[], bodies: Map<string, string>, now: Date): Statement[] {
+  const at = now.toISOString();
+  const items = list.map((it) => ({
+    id: it.id,
+    source: it.sourceId,
+    kind: it.kind,
+    publisher: it.publisher ?? null,
+    title: it.title,
+    summary: it.summary,
+    url: it.url,
+    publishedAt: it.publishedAt,
+    body: text(bodies.get(it.id)),
+    transcript: text(it.transcript),
+  }));
+  return [
+    ...each(
+      `INSERT INTO items (id, source, kind, publisher, title, summary, url, published_at, first_seen, body, transcript)
+        SELECT value ->> 'id', value ->> 'source', value ->> 'kind', value ->> 'publisher', value ->> 'title',
+          value ->> 'summary', value ->> 'url', value ->> 'publishedAt', ?, value ->> 'body', value ->> 'transcript'
+        FROM json_each(?) WHERE true
+        ON CONFLICT (id) DO UPDATE SET title = excluded.title, summary = excluded.summary,
+          publisher = COALESCE(excluded.publisher, items.publisher),
+          body = CASE WHEN items.fetch_status = 'ok' THEN items.body ELSE COALESCE(excluded.body, items.body) END,
+          transcript = COALESCE(excluded.transcript, items.transcript)`,
+      items,
+      [at],
+    ),
+    {
+      sql: 'UPDATE items SET body = NULL, transcript = NULL WHERE first_seen < ? AND (body IS NOT NULL OR transcript IS NOT NULL)',
+      params: [new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString()],
+    },
+  ];
+}
+
+/** Entities: names and types refresh; aliases added by hand are kept. People no longer at the club go inactive. */
+function entityWrites(entities: Entity[]): Statement[] {
+  const statements = each(
+    `INSERT INTO entities (id, type, name, aliases, active)
+      SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?) WHERE true
+      ON CONFLICT (id) DO UPDATE SET type = excluded.type, name = excluded.name, active = 1,
+        aliases = CASE WHEN entities.aliases = '[]' THEN excluded.aliases ELSE entities.aliases END`,
+    entities.map((e) => ({ ...e, aliases: JSON.stringify(e.aliases) })),
+  );
+  const people = entities.filter((e) => e.type === 'player' || e.type === 'staff').map((e) => e.id);
+  if (people.length) {
+    statements.push({
+      sql: `UPDATE entities SET active = 0 WHERE type IN ('player', 'staff') AND active = 1 AND id NOT IN (SELECT value FROM json_each(?))`,
+      params: [JSON.stringify(people)],
+    });
+  }
+  return statements;
+}
+
+/**
+ * Tags from headlines: each item is tagged once, and again only by a newer tagger (its old entity links go first),
+ * never over tags taken from the article's full text (textTagWrites). The entity links written are just those of
+ * items whose tags were written now.
+ */
+function tagWrites(items: Item[], tags: Map<string, Tags>, at: string): Statement[] {
+  const itemIds = new Set(items.map((it) => it.id));
+  const tagged = [...tags].filter(([itemId]) => itemIds.has(itemId));
+  return [
+    ...each(
+      `DELETE FROM item_entities WHERE item_id IN (
+        SELECT item_id FROM item_tags WHERE tagger_version < ? AND from_text = 0 AND item_id IN (SELECT value ->> 'item' FROM json_each(?)))`,
+      tagged.map(([item]) => ({ item })),
+      [TAGGER_VERSION],
+    ),
+    ...each(
+      `INSERT INTO item_tags (item_id, category, mood, tagger_version, tagged_at)
+        SELECT value ->> 'item', value ->> 'category', value ->> 'mood', ?, ? FROM json_each(?) WHERE true
+        ON CONFLICT (item_id) DO UPDATE SET category = excluded.category, mood = excluded.mood,
+          tagger_version = excluded.tagger_version, tagged_at = excluded.tagged_at
+        WHERE excluded.tagger_version > item_tags.tagger_version AND item_tags.from_text = 0`,
+      tagged.map(([item, t]) => ({ item, category: t.category, mood: t.mood })),
+      [TAGGER_VERSION, at],
+    ),
+    ...each(
+      `INSERT OR IGNORE INTO item_entities (item_id, entity_id)
+        SELECT t.item_id, j.value ->> 'entity' FROM (SELECT item_id FROM item_tags WHERE tagged_at = ? AND from_text = 0) AS t
+        JOIN json_each(?) AS j ON j.value ->> 'item' = t.item_id`,
+      tagged.flatMap(([item, t]) => t.entities.map((entity) => ({ item, entity }))),
+      [at],
+    ),
+  ];
+}
+
 export async function saveBuild(store: Store, r: BuildRecord, now: Date): Promise<void> {
   await store.batch(buildWrites(r, now));
+}
+
+// ---- Ingesting ----
+// `npm run ingest` (ingest.ts) gets every press and official article into the store once, in full, and tags it from
+// that text. Aggregator links are redirects, so those items stay headline-only; video transcripts come in with their
+// items. Separate from building a bulletin, which reads and writes the store as before.
+
+/** Kinds whose links are the article itself. */
+export const ARTICLE_KINDS: SourceKind[] = ['press', 'official'];
+/** A page that refuses us, or has no readable text, is tried this many times, at least RETRY_MS apart. */
+export const MAX_ATTEMPTS = 3;
+export const RETRY_MS = 3_600_000;
+
+export interface ArticleToFetch {
+  id: string;
+  url: string;
+}
+
+export interface Fetched {
+  id: string;
+  /** The article's text, or undefined when the fetch failed. */
+  text?: string;
+  error?: string;
+}
+
+/**
+ * Writes what was collected (tagged from headlines) and the entity list, then returns every article from the last
+ * 30 days the store has no text for that's due a try: never fetched, or failed an hour or more ago. Newest first.
+ */
+export async function ingestItems(store: Store, items: Item[], entities: Entity[], tags: Map<string, Tags>, now: Date): Promise<ArticleToFetch[]> {
+  const results = await store.batch([
+    ...itemWrites(items, new Map(), now),
+    ...entityWrites(entities),
+    ...tagWrites(items, tags, now.toISOString()),
+    {
+      sql: `SELECT id, url FROM items
+            WHERE kind IN (SELECT value FROM json_each(?)) AND url IS NOT NULL AND url != '' AND first_seen >= ?
+              AND (fetch_status IS NULL OR (fetch_status = 'failed' AND fetched_at < ?))
+            ORDER BY COALESCE(published_at, first_seen) DESC`,
+      params: [
+        JSON.stringify(ARTICLE_KINDS),
+        new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString(),
+        new Date(now.getTime() - RETRY_MS).toISOString(),
+      ],
+    },
+  ]);
+  return (results.at(-1) ?? []).map((r) => ({ id: String(r.id), url: String(r.url) }));
+}
+
+/** How each fetch went. A failure on the last try gives up on that page for good. */
+export function fetchWrites(fetched: Fetched[], now: Date): Statement[] {
+  return each(
+    `UPDATE items SET body = COALESCE(j.value ->> 'text', items.body),
+        fetch_status = CASE WHEN j.value ->> 'text' IS NOT NULL THEN 'ok' WHEN items.attempts + 1 >= ? THEN 'gave_up' ELSE 'failed' END,
+        attempts = items.attempts + 1, fetched_at = ?, fetch_error = j.value ->> 'error'
+      FROM json_each(?) AS j WHERE items.id = j.value ->> 'id'`,
+    fetched.map((f) => ({ id: f.id, text: text(f.text), error: f.error ?? null })),
+    [MAX_ATTEMPTS, now.toISOString()],
+  );
+}
+
+export async function saveFetches(store: Store, fetched: Fetched[], now: Date): Promise<void> {
+  if (fetched.length) await store.batch(fetchWrites(fetched, now));
+}
+
+/** Articles fetched in full whose tags aren't from that text yet (just fetched, or a newer tagger), newest first. */
+export async function untaggedArticles(store: Store, limit: number): Promise<{ item: Item; body: string }[]> {
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT i.id, i.source, i.kind, i.publisher, i.title, i.summary, i.url, i.published_at, i.body FROM items i
+            LEFT JOIN item_tags t ON t.item_id = i.id
+            WHERE i.fetch_status = 'ok' AND i.body IS NOT NULL AND (t.item_id IS NULL OR t.from_text = 0 OR t.tagger_version < ?)
+            ORDER BY i.first_seen DESC LIMIT ?`,
+      params: [TAGGER_VERSION, limit],
+    },
+  ]);
+  return rows.map((r) => ({
+    item: {
+      id: String(r.id),
+      sourceId: String(r.source),
+      sourceName: String(r.publisher ?? r.source),
+      kind: r.kind as SourceKind,
+      ...(r.publisher ? { publisher: String(r.publisher) } : {}),
+      title: String(r.title),
+      summary: String(r.summary ?? ''),
+      url: String(r.url ?? ''),
+      publishedAt: String(r.published_at ?? ''),
+    },
+    body: String(r.body),
+  }));
+}
+
+/** Tags from an article's full text replace whatever the item had, entity links and all. */
+export function textTagWrites(tags: Map<string, Tags>, now: Date): Statement[] {
+  const list = [...tags];
+  return [
+    ...each(`DELETE FROM item_entities WHERE item_id IN (SELECT value ->> 'item' FROM json_each(?))`, list.map(([item]) => ({ item }))),
+    ...each(
+      `INSERT INTO item_tags (item_id, category, mood, tagger_version, tagged_at, from_text)
+        SELECT value ->> 'item', value ->> 'category', value ->> 'mood', ?, ?, 1 FROM json_each(?) WHERE true
+        ON CONFLICT (item_id) DO UPDATE SET category = excluded.category, mood = excluded.mood,
+          tagger_version = excluded.tagger_version, tagged_at = excluded.tagged_at, from_text = 1`,
+      list.map(([item, t]) => ({ item, category: t.category, mood: t.mood })),
+      [TAGGER_VERSION, now.toISOString()],
+    ),
+    ...each(
+      `INSERT OR IGNORE INTO item_entities (item_id, entity_id) SELECT value ->> 'item', value ->> 'entity' FROM json_each(?)`,
+      list.flatMap(([item, t]) => t.entities.map((entity) => ({ item, entity }))),
+    ),
+  ];
+}
+
+export async function saveTextTags(store: Store, tags: Map<string, Tags>, now: Date): Promise<void> {
+  if (tags.size) await store.batch(textTagWrites(tags, now));
 }
 
 // ---- The job queue ----

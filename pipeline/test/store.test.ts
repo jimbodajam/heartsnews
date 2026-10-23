@@ -163,7 +163,7 @@ test('an item is tagged once; an older tagger version is tagged again', async ()
 
   // Tagged differently next time (the squad changed, say): the first tags stand, and a new item is tagged.
   s.d1.db.prepare("INSERT INTO items (id, source, kind, title, first_seen) VALUES ('old', 'bbc', 'press', 'Old', ?)").run(t1.toISOString());
-  s.d1.db.prepare("INSERT INTO item_tags VALUES ('old', 'news', 'neutral', 0, ?)").run(t1.toISOString());
+  s.d1.db.prepare("INSERT INTO item_tags (item_id, category, mood, tagger_version, tagged_at) VALUES ('old', 'news', 'neutral', 0, ?)").run(t1.toISOString());
   s.d1.db.prepare("INSERT INTO item_entities VALUES ('old', 'hearts')").run();
   const t2 = new Date('2026-10-23T10:30:00Z');
   await saveBuild(

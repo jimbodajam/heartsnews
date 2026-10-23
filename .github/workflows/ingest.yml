@@ -1,0 +1,45 @@
+# Gets the latest Hearts news into the channel's store (pipeline/src/ingest.ts, issue #30): every item collected, and
+# every press and official article fetched once, in full, and tagged from its text. On its own clock, apart from the
+# bulletins: a programme never waits on it.
+
+name: Ingest
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One at a time: a slow backfill shouldn't have the next run fetching the same pages.
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Forum data and video transcripts collected at home by `npm run snapshot`, for sources that block GitHub.
+      - name: Fetch home snapshots
+        run: |
+          mkdir -p snapshots
+          if git fetch --depth=1 origin snapshots; then git archive FETCH_HEAD | tar -x -C snapshots; else echo "No snapshots branch yet"; fi
+
+      - name: Ingest
+        env:
+          STORE_TOKEN: ${{ secrets.STORE_TOKEN }}
+        run: npm run ingest
