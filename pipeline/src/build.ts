@@ -28,6 +28,7 @@ import { addBodies, boostStories, buildStories, fanThreads } from './stories.ts'
 import { detectPhase } from './matchday.ts';
 import { collectPlayers } from './collectors/sportsdb.ts';
 import { seedEntities } from './entities.ts';
+import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
 import { loadMemory, saveBuild, storeFromEnv } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
@@ -67,7 +68,16 @@ async function main() {
   const transcripts = await loadTranscripts(resolve(ROOT, 'snapshots/transcripts.json'), TRANSCRIPT_CACHE);
   console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached (of ${transcripts.length} available)`);
 
-  const stories = buildStories(items, club, now);
+  // Who and what each item is about, so stories group by person (tags.ts).
+  const players = await collectPlayers(club).catch((err) => {
+    console.warn(`Couldn't read the squad from SportsDB: ${(err as Error).message}`);
+    return [];
+  });
+  const entities = seedEntities(club, match, [loadFaces(), players]);
+  const tags = tagItems(items, entities);
+  console.log(`Tagged ${tags.size} items against ${entities.length} people, clubs and competitions`);
+
+  const stories = buildStories(items, club, now, tags);
   await writeFile(resolve(OUT, 'stories.json'), JSON.stringify(stories.map(({ items: _, ...s }) => s), null, 2));
   console.log(`\nTop stories:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
@@ -167,11 +177,7 @@ async function main() {
 
   if (save) {
     try {
-      const players = await collectPlayers(club).catch((err) => {
-        console.warn(`Couldn't read the squad from SportsDB: ${(err as Error).message}`);
-        return [];
-      });
-      const bodies = new Map(stories.filter((s) => s.bodyItem && s.body).map((s) => [s.bodyItem!, s.body!]));
+      const bodies = new Map(stories.flatMap((s) => (s.articles ?? []).flatMap((a) => (a.item ? [[a.item, a.text] as const] : []))));
       const remembered = remember(facts, draft);
       await saveBuild(
         save,
@@ -179,7 +185,8 @@ async function main() {
           bulletin: { id: bulletin.generatedAt, phase: facts.phase.kind, runner: process.env.GITHUB_ACTIONS === 'true' ? 'github' : 'home' },
           items,
           bodies,
-          entities: seedEntities(club, match, [loadFaces(), players]),
+          entities,
+          tags,
           remembered,
           settled,
           renames,

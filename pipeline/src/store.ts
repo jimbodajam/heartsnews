@@ -2,6 +2,7 @@ import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { Remembered } from './script/remember.ts';
+import { TAGGER_VERSION, type Tags } from './tags.ts';
 import type { Item } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
@@ -148,6 +149,8 @@ export interface BuildRecord {
   /** Article text fetched this build, by item id. */
   bodies: Map<string, string>;
   entities: Entity[];
+  /** What each item is about (tags.ts), by item id. */
+  tags: Map<string, Tags>;
   remembered: Remembered;
   /** Predictions whose result came in this build. */
   settled: PresenterPrediction[];
@@ -219,6 +222,35 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
       params: [JSON.stringify(people)],
     });
   }
+
+  // Tags: each item is tagged once, and again only by a newer tagger (its old entity links go first). The entity
+  // links written are just those of items whose tags were written this build.
+  const itemIds = new Set(r.items.map((it) => it.id));
+  const tagged = [...r.tags].filter(([itemId]) => itemIds.has(itemId));
+  statements.push(
+    ...each(
+      `DELETE FROM item_entities WHERE item_id IN (
+        SELECT item_id FROM item_tags WHERE tagger_version < ? AND item_id IN (SELECT value ->> 'item' FROM json_each(?)))`,
+      tagged.map(([item]) => ({ item })),
+      [TAGGER_VERSION],
+    ),
+    ...each(
+      `INSERT INTO item_tags (item_id, category, mood, tagger_version, tagged_at)
+        SELECT value ->> 'item', value ->> 'category', value ->> 'mood', ?, ? FROM json_each(?) WHERE true
+        ON CONFLICT (item_id) DO UPDATE SET category = excluded.category, mood = excluded.mood,
+          tagger_version = excluded.tagger_version, tagged_at = excluded.tagged_at
+        WHERE excluded.tagger_version > item_tags.tagger_version`,
+      tagged.map(([item, t]) => ({ item, category: t.category, mood: t.mood })),
+      [TAGGER_VERSION, at],
+    ),
+    ...each(
+      `INSERT OR IGNORE INTO item_entities (item_id, entity_id)
+        SELECT t.item_id, j.value ->> 'entity' FROM (SELECT item_id FROM item_tags WHERE tagged_at = ?) AS t
+        JOIN json_each(?) AS j ON j.value ->> 'item' = t.item_id`,
+      tagged.flatMap(([item, t]) => t.entities.map((entity) => ({ item, entity }))),
+      [at],
+    ),
+  );
 
   const { aired, takes, predictions } = r.remembered;
   statements.push(

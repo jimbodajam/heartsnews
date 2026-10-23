@@ -11,7 +11,7 @@ import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
 import { spokenList } from '../time.ts';
 
-const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', injury: 'medical', match: 'ball', news: 'mic' };
+const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', contract: 'contract', injury: 'medical', discipline: 'whistle', match: 'ball', news: 'mic' };
 
 const FACES = loadFaces();
 const ADVERTS = loadAdverts();

@@ -1,10 +1,19 @@
+import { CATEGORIES, categorise, type Category, type Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle, shortHash } from './text.ts';
 import type { ClubConfig, Item, SourceKind } from './types.ts';
 
 // Turns raw items into ranked stories: the same news from several outlets becomes one story,
 // scored by freshness, how many outlets carry it and how authoritative they are.
 
-export type StoryCategory = 'transfer' | 'injury' | 'match' | 'news';
+export type StoryCategory = Category;
+
+/** One outlet's text for a story: its article, or failing that a video transcript or feed summary. */
+export interface Article {
+  outlet: string;
+  text: string;
+  /** The item whose article page this is, so the store can keep it. */
+  item?: string;
+}
 
 export interface Story {
   id: string;
@@ -16,10 +25,12 @@ export interface Story {
   latest: string;
   score: number;
   items: Item[];
-  /** Full article text, fetched only for stories covered in depth. */
+  /** Players and staff the story is about, by entity id. */
+  people: string[];
+  /** Up to three outlets' text, fetched only for stories covered in depth. */
+  articles?: Article[];
+  /** All of the articles' text together, for checking quotes and scores against. */
   body?: string;
-  /** The item whose article the body is, so the store can keep it. */
-  bodyItem?: string;
 }
 
 const STOP = new Set(
@@ -37,9 +48,14 @@ const JUNK =
 // Real but minor: goal clips, highlight reels and gossip round-ups sink down the order.
 const MINOR = /\b(goals|highlights)\b|gossip/i;
 
-const TRANSFER = /\b(transfers?|signs?|signing|signed|loan|bid|swoop|target(ed|s)?|linked with|pre-contract|medical|move for|release clause|transfer window)\b/i;
-const INJURY = /\b(injur\w*|ruled out|sidelined|fitness|hamstring|knee|ankle|surgery|setback|left behind)\b/i;
-const MATCH = /\b(preview|report|kick-off|line-?ups?|team news|player ratings|talking points|referee|result|draw|defeat|thrash\w*|beat|hammer\w*|win|vs?\.?)\b/i;
+/**
+ * Categories where who it's about makes it the same story: "Milne ruled out", "Vrancken on the full-back problem" and
+ * "Hearts injury list grows" share no headline words but are one injury story. Not matches: a preview, the team news
+ * and the report name the same players but are different stories.
+ */
+const BY_PERSON = new Set<Category>(['injury', 'transfer', 'contract', 'discipline']);
+/** How far apart two items about the same person can be and still be one story. */
+const SAME_STORY_MS = 48 * 3.6e6;
 
 /**
  * Tidy a headline for reading aloud and showing on screen. YouTube-style titles become plain
@@ -64,13 +80,6 @@ export function sameStory(a: Set<string>, b: Set<string>): boolean {
   let shared = 0;
   for (const t of a) if (b.has(t)) shared++;
   return shared >= 3 && shared / Math.min(a.size, b.size) >= 0.5;
-}
-
-function categorise(text: string): StoryCategory {
-  if (TRANSFER.test(text)) return 'transfer';
-  if (INJURY.test(text)) return 'injury';
-  if (MATCH.test(text)) return 'match';
-  return 'news';
 }
 
 const outlet = (it: Item) => it.publisher ?? it.sourceName;
@@ -99,7 +108,7 @@ function rivalWeight(items: Item[], club: ClubConfig): number {
 }
 
 /** Signings and injuries are what fans most want to hear about. */
-const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, injury: 1.15, match: 1.1, news: 1 };
+const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, contract: 1.15, injury: 1.15, discipline: 1.1, match: 1.1, news: 1 };
 
 /**
  * Situational boosts on top of a story's own importance: stories about the next (or current) opponent on a
@@ -118,18 +127,65 @@ export function boostStories(stories: Story[], opts: { opponent?: string; fanThr
   }
 }
 
-export function buildStories(items: Item[], club: ClubConfig, now = new Date()): Story[] {
-  const clusters: { tokens: Set<string>; items: Item[] }[] = [];
+interface Cluster {
+  tokens: Set<string>;
+  items: Item[];
+  /** The first item's category. */
+  category: Category;
+  /** Everyone named so far, with when each item naming them was published. */
+  people: Map<string, number[]>;
+}
+
+/**
+ * The story an item about someone belongs to: one in the same category naming who it's mainly about within 48 hours,
+ * the one sharing the most such people if there are several.
+ */
+function samePerson(clusters: Cluster[], tags: Tags | undefined, at: number): Cluster | undefined {
+  if (!tags?.about.length || !BY_PERSON.has(tags.category)) return undefined;
+  let best: Cluster | undefined;
+  let most = 0;
+  for (const c of clusters) {
+    if (c.category !== tags.category) continue;
+    const shared = tags.about.filter((p) => c.people.get(p)?.some((t) => Math.abs(t - at) <= SAME_STORY_MS)).length;
+    if (shared > most) [best, most] = [c, shared];
+  }
+  return best;
+}
+
+/**
+ * The category most of a story's headlines have ("Trabzonspor win despite late red card" doesn't make a match report
+ * a discipline story). "news" only if none has another; a tie goes to the one categorise checks first.
+ */
+function vote(categories: Category[]): Category {
+  const counts = new Map<Category, number>();
+  for (const c of categories) if (c !== 'news') counts.set(c, (counts.get(c) ?? 0) + 1);
+  let best: Category = 'news';
+  for (const c of CATEGORIES) if ((counts.get(c) ?? 0) > (counts.get(best) ?? 0)) best = c;
+  return best;
+}
+
+/**
+ * Groups items into stories: by who they're about (from their tags) for injuries, transfers, contracts and discipline,
+ * otherwise by shared headline words. Untagged items group by headline words only.
+ */
+export function buildStories(items: Item[], club: ClubConfig, now = new Date(), tags = new Map<string, Tags>()): Story[] {
+  const clusters: Cluster[] = [];
   for (const item of items) {
     if (item.kind === 'forum' || JUNK.test(item.title)) continue;
     const t = tokens(item.title);
-    const home = clusters.find((c) => sameStory(c.tokens, t));
-    if (home) {
-      home.items.push(item);
-      for (const w of t) home.tokens.add(w);
-    } else {
-      clusters.push({ tokens: t, items: [item] });
+    const tagged = tags.get(item.id);
+    const at = Date.parse(item.publishedAt);
+    const byPerson = samePerson(clusters, tagged, at);
+    let home = byPerson ?? clusters.find((c) => sameStory(c.tokens, t));
+    if (!home) {
+      home = { tokens: new Set(), items: [], category: tagged?.category ?? categorise(item.title), people: new Map() };
+      clusters.push(home);
     }
+    home.items.push(item);
+    // Only headlines grouped by their words add to the story's words: a big story about someone has so many
+    // headlines that, with all their words, it would match nearly anything.
+    if (!byPerson) for (const w of t) home.tokens.add(w);
+    for (const p of tagged?.people ?? []) home.people.set(p, [...(home.people.get(p) ?? []), at]);
   }
 
   return clusters
@@ -139,11 +195,11 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
       const latest = c.items.reduce((m, it) => (it.publishedAt > m ? it.publishedAt : m), lead.publishedAt);
       const sources = [...new Set(ranked.map(outlet))];
       const hours = Math.max(0, (now.getTime() - new Date(latest).getTime()) / 3.6e6);
-      const text = c.items.map((it) => it.title).join(' ');
       // Aggregator hits are often reposts of the same article, so they count for less than a second newsroom.
       const direct = new Set(ranked.filter((it) => it.kind !== 'aggregator').map(outlet)).size;
       const reposts = sources.length - direct;
-      const category = categorise(text);
+      // A story about someone keeps the category it was grouped by; otherwise its headlines vote.
+      const category = BY_PERSON.has(c.category) && c.people.size ? c.category : vote(c.items.map((it) => tags.get(it.id)?.category ?? categorise(it.title)));
       // Importance: a big story stays big all day (30-hour half-life, like rolling news running it on repeat),
       // boosted by how many newsrooms have it, the most official source, and what kind of story it is.
       const score =
@@ -163,38 +219,44 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date()):
         latest,
         score: Math.round(score * 1000) / 1000,
         items: ranked,
+        people: [...c.people.keys()],
       };
     })
     .sort((a, b) => b.score - a.score);
 }
 
+/** How many outlets' articles a story is written from. */
+const MAX_ARTICLES = 3;
+
 /**
- * Fetch article text for the stories that get an in-depth package. Tries each outlet's page in turn
- * (aggregator links are redirects, so they're skipped) and falls back to the longest feed summary.
+ * Fetch article text for the stories that get an in-depth package: up to three articles, each from a different
+ * outlet, so the writer can combine them. Tries each outlet's page in turn (aggregator links are redirects, so
+ * they're skipped) and falls back to a video transcript, then the longest feed summary.
  */
 export async function addBodies(stories: Story[], fetchArticle: (url: string) => Promise<string>): Promise<void> {
   await Promise.all(
     stories.map(async (s) => {
+      const articles: Article[] = [];
       for (const it of s.items.filter((i) => i.kind === 'press' || i.kind === 'official')) {
+        if (articles.length >= MAX_ARTICLES) break;
+        if (articles.some((a) => a.outlet === outlet(it))) continue;
         try {
           const text = await fetchArticle(it.url);
-          if (text.length > 300) {
-            s.body = text;
-            s.bodyItem = it.id;
-            return;
-          }
+          if (text.length > 300) articles.push({ outlet: outlet(it), text, item: it.id });
         } catch {
           // Some outlets refuse article pages; try the next one.
         }
       }
-      // No article? A video's transcript is the next best thing (press conferences, fan shows).
-      const transcript = s.items.find((i) => (i.transcript?.length ?? 0) > 300)?.transcript;
-      if (transcript) {
-        s.body = transcript;
-        return;
+      if (!articles.length) {
+        // No article? A video's transcript is the next best thing (press conferences, fan shows).
+        const video = s.items.find((i) => (i.transcript?.length ?? 0) > 300);
+        const longest = [...s.items].sort((a, b) => b.summary.length - a.summary.length)[0];
+        if (video?.transcript) articles.push({ outlet: outlet(video), text: video.transcript });
+        else if (longest?.summary) articles.push({ outlet: outlet(longest), text: longest.summary });
       }
-      const longest = s.items.map((i) => i.summary).sort((a, b) => b.length - a.length)[0];
-      if (longest) s.body = longest;
+      if (!articles.length) return;
+      s.articles = articles;
+      s.body = articles.map((a) => a.text).join('\n\n');
     }),
   );
 }

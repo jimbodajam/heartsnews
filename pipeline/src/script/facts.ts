@@ -168,7 +168,8 @@ export const firstName = (p: Presenter) => p.name.split(' ')[0];
  */
 export function expertFor(f: Facts, s: Story): string {
   const { transfers, analyst, anchors } = f.channel.cast;
-  const specialist = s.category === 'transfer' ? transfers : s.category === 'match' || s.category === 'injury' ? analyst : anchors[1];
+  const specialist =
+    s.category === 'transfer' || s.category === 'contract' ? transfers : ['match', 'injury', 'discipline'].includes(s.category) ? analyst : anchors[1];
   const times = findAired(f.memory, s.title)?.inDepth ?? 0;
   if (times % 2 === 0) return specialist;
   return specialist === anchors[1] ? analyst : anchors[1];

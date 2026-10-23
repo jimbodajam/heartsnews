@@ -7,6 +7,7 @@ import { store as endpoint } from '../../worker/src/store.ts';
 import { freshness, settlePredictions } from '../src/memory.ts';
 import { buildWrites, connectStore, imported, importWrites, loadMemory, saveBuild, type BuildRecord, type Store } from '../src/store.ts';
 import type { Story } from '../src/stories.ts';
+import { TAGGER_VERSION, type Tags } from '../src/tags.ts';
 import type { Item } from '../src/types.ts';
 import { memoryD1 } from './d1.ts';
 
@@ -35,6 +36,7 @@ const record = (at: Date, over: Partial<BuildRecord> = {}): BuildRecord => ({
   bulletin: { id: at.toISOString(), phase: 'normal', runner: 'home' },
   items: [item('a'), item('b', { transcript: 'What was said' })],
   bodies: new Map([['a', 'The article about Milne']]),
+  tags: new Map(),
   entities: [
     { id: 'hearts', type: 'club', name: 'Heart of Midlothian', aliases: ['Hearts', 'Jambos'] },
     { id: 'harry-milne', type: 'player', name: 'Harry Milne', aliases: [] },
@@ -147,6 +149,41 @@ test('a second build: first_seen and bodies stick, a new call replaces the old, 
   again.remembered.predictions = [{ presenter: 'ross', home: 'Hearts', away: 'Celtic', date: '2026-11-01T15:00:00.000Z', homeGoals: 3, awayGoals: 1, madeAt: t3.toISOString() }];
   await saveBuild(s.store, again, t3);
   assert.deepEqual(rows(s, "SELECT home_goals, bulletin_id FROM predictions WHERE presenter_id = 'ross'"), [{ home_goals: 3, bulletin_id: t3.toISOString() }]);
+});
+
+test('an item is tagged once; an older tagger version is tagged again', async () => {
+  const s = setUp();
+  const tags = (entities: string[]): Tags => ({ category: 'injury', mood: 'bad', entities, people: entities, about: entities });
+  const t1 = new Date('2026-10-23T10:00:00Z');
+  await saveBuild(s.store, record(t1, { tags: new Map([['a', tags(['harry-milne'])]]) }), t1);
+  assert.deepEqual(rows(s, 'SELECT item_id, category, mood, tagger_version, tagged_at FROM item_tags'), [
+    { item_id: 'a', category: 'injury', mood: 'bad', tagger_version: TAGGER_VERSION, tagged_at: t1.toISOString() },
+  ]);
+  assert.deepEqual(rows(s, 'SELECT item_id, entity_id FROM item_entities'), [{ item_id: 'a', entity_id: 'harry-milne' }]);
+
+  // Tagged differently next time (the squad changed, say): the first tags stand, and a new item is tagged.
+  s.d1.db.prepare("INSERT INTO items (id, source, kind, title, first_seen) VALUES ('old', 'bbc', 'press', 'Old', ?)").run(t1.toISOString());
+  s.d1.db.prepare("INSERT INTO item_tags VALUES ('old', 'news', 'neutral', 0, ?)").run(t1.toISOString());
+  s.d1.db.prepare("INSERT INTO item_entities VALUES ('old', 'hearts')").run();
+  const t2 = new Date('2026-10-23T10:30:00Z');
+  await saveBuild(
+    s.store,
+    record(t2, {
+      items: [item('a'), item('b'), item('old')],
+      tags: new Map([['a', tags(['wouter-vrancken'])], ['b', tags(['wouter-vrancken'])], ['old', tags(['harry-milne'])]]),
+    }),
+    t2,
+  );
+  assert.deepEqual(rows(s, 'SELECT item_id, tagged_at FROM item_tags ORDER BY item_id'), [
+    { item_id: 'a', tagged_at: t1.toISOString() },
+    { item_id: 'b', tagged_at: t2.toISOString() },
+    { item_id: 'old', tagged_at: t2.toISOString() },
+  ]);
+  assert.deepEqual(rows(s, 'SELECT item_id, entity_id FROM item_entities ORDER BY item_id'), [
+    { item_id: 'a', entity_id: 'harry-milne' },
+    { item_id: 'b', entity_id: 'wouter-vrancken' },
+    { item_id: 'old', entity_id: 'harry-milne' },
+  ]);
 });
 
 test('a failed batch writes nothing', async () => {

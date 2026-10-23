@@ -41,5 +41,17 @@ export function seedEntities(club: ClubConfig, match: MatchData | undefined, peo
       add({ id, type: byId.get(id)?.type ?? p.role ?? 'player', name: p.name, aliases: [] });
     }
   }
-  return [...byId.values()];
+  // Headlines often use the surname alone ("Milne ruled out"), so it's an alias, unless two people share it.
+  const entities = [...byId.values()];
+  const surname = (e: Entity) => (e.type === 'player' || e.type === 'staff') && /\s/.test(e.name) ? e.name.split(/\s+/).at(-1)! : undefined;
+  const count = new Map<string, number>();
+  for (const e of entities) {
+    const s = surname(e);
+    if (s) count.set(slug(s), (count.get(slug(s)) ?? 0) + 1);
+  }
+  for (const e of entities) {
+    const s = surname(e);
+    if (s && count.get(slug(s)) === 1 && !e.aliases.includes(s)) e.aliases = [...e.aliases, s];
+  }
+  return entities;
 }

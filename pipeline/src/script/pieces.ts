@@ -192,7 +192,8 @@ function pieces(f: Facts): Piece[] {
 This is where viewers get the real substance behind a headline. 4 to 6 lines: "lead" lines are ${firstName(a)} introducing
 and steering, "expert" lines are ${expert} explaining. Cover what happened, the key details, why it matters for ${club.shortName}
 and what comes next. Make it a conversation (the lead can ask the expert a question). Explain in your own words;
-don't copy sentences from the article. Credit the outlet once. The lead addresses ${expert} by name (and nobody else).
+don't copy sentences from the articles. When there's more than one outlet, combine them into one account; when outlets
+disagree, say so and credit each. Otherwise credit the outlet once. The lead addresses ${expert} by name (and nobody else).
 ${place}
 A big story is meant to come round again during the day. If the article was "covered in depth before", viewers may have
 seen it, so take a fresh angle: different details from the article, what it means for tonight or the next game, or the
@@ -221,7 +222,8 @@ side should add up to its score. Leave out scorers the article doesn't name. Oth
   2 or 3 sentences (about 40 to 70 words; this overrides the 35-word line limit): what happened, the key detail or
   number from the article text, then why it matters for ${club.shortName} or what comes next. Use the article text
   (opening or in-depth) where there is one, not just the title. Rewrite outlet headlines in your own words, never
-  read a title out as it is. Mention the outlet once. Don't repeat the same story twice.`,
+  read a title out as it is. Where a story has several outlets, combine them; when they disagree, say so and credit
+  each. Otherwise mention the outlet once. Don't repeat the same story twice.`,
   });
 
   if (f.lastResult || f.table.length || next || f.phase.kind === 'live') {

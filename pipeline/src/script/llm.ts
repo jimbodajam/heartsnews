@@ -1,3 +1,4 @@
+import type { Story } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { dayPhrase, daysUntil, timePhrase } from '../time.ts';
 import type { Fixture } from '../types.ts';
@@ -176,14 +177,14 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
   const featureIds = new Set(f.features.map((s) => s.id));
   const headlineText = f.pool
     .filter((s) => !featureIds.has(s.id) && (s.body?.length ?? 0) > s.summary.length + 100)
-    .map((s) => `[${s.id}] ${s.title}\n${truncate(s.body ?? '', 800)}`)
+    .map((s) => `[${s.id}] ${s.title}\n${byOutlet(s, 800, 500)}`)
     .join('\n\n');
   const articles = f.features
     .filter((s) => !articleIds || articleIds.includes(s.id))
     .map((s) => {
       const a = findAired(f.memory, s.title);
       const before = a?.inDepth ? `; covered in depth ${a.inDepth}x before, last ${airedNote(f, s.title).replace(/^.*last /, '')}` : '';
-      return `[${s.id}] ${s.title} (${s.sources[0]}; expert: ${firstName(presenter(f, expertFor(f, s)))}${before})\n${truncate(s.body ?? '', 2500)}`;
+      return `[${s.id}] ${s.title} (expert: ${firstName(presenter(f, expertFor(f, s)))}${before})\n${byOutlet(s, 2500, 1800)}`;
     })
     .join('\n\n');
 
@@ -207,11 +208,17 @@ ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
     videos: `Supporters' YouTube channel, latest shows (ref, title; auto-generated captions, so expect mis-heard words; this is fan opinion):\n${fanVideos || '(none)'}`,
-    openings: `Opening of the article for other top stories ([id] title, then the start of the article):\n${headlineText || '(none)'}`,
-    articles: `Articles for in-depth packages ([id] title (outlet; expert), then the article text or a video transcript):\n${articles || '(none)'}`,
+    openings: `Opening of the articles for other top stories ([id] title, then the start of each outlet's article):\n${headlineText || '(none)'}`,
+    articles: `Articles for in-depth packages ([id] title (expert), then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
     opponent: opponentData(f),
   };
   return `DATA\n${ALL_PARTS.filter((p) => parts.includes(p)).map((p) => blocks[p]).join('\n\n')}\nEND DATA`;
+}
+
+/** A story's text, one block per outlet ("From BBC Sport: …"): `one` characters for a lone article, `each` for several. */
+function byOutlet(s: Story, one: number, each: number): string {
+  const articles = s.articles ?? (s.body ? [{ outlet: s.sources[0], text: s.body }] : []);
+  return articles.map((a) => `From ${a.outlet}:\n${truncate(a.text, articles.length > 1 ? each : one)}`).join('\n');
 }
 
 /** Spoken quotes from auto-captions stutter ("we're we're"); drop immediate word repeats for the on-screen card. */
