@@ -2,3 +2,10 @@ name = "heartsnews-live"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 workers_dev = true
+
+# The channel's memory (src/store.ts). Create it once with `npx wrangler d1 create heartsnews` and paste its id here.
+[[d1_databases]]
+binding = "DB"
+database_name = "heartsnews"
+database_id = "9600a5c8-b2a6-47d4-bab1-c38a5d392249"
+migrations_dir = "migrations"

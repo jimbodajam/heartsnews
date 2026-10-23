@@ -9,21 +9,22 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { fetchText } from './http.ts';
-import { decodeEntities } from './text.ts';
+import { decodeEntities, slug } from './text.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'site/public/faces');
 const ART = resolve(ROOT, 'art/faces');
-const PAGES = ['first-team-squad', 'first-team-coaching-staff'];
+const PAGES = { 'first-team-squad': 'player', 'first-team-coaching-staff': 'staff' } as const;
 export const FACE_SIZE = 24;
 
 export interface Face {
   name: string;
   surname: string;
   file: string;
+  /** Which club page they're on; the store seeds its people from this list. */
+  role?: 'player' | 'staff';
 }
 
-const slug = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 
 /** People on a club page: name from the card heading (first + last name spans) and the cut-out photo. */
@@ -60,21 +61,21 @@ export async function portrait(png: Buffer): Promise<Buffer> {
 async function main() {
   await mkdir(OUT, { recursive: true });
   const faces: Face[] = [];
-  for (const page of PAGES) {
+  for (const [page, role] of Object.entries(PAGES)) {
     for (const p of people(await fetchText(`https://www.heartsfc.co.uk/pages/${page}`))) {
       try {
         const file = `${slug(p.name)}.png`;
         const art = resolve(ART, file);
         if (existsSync(art)) {
           await writeFile(resolve(OUT, file), await portrait(await readFile(art)));
-          faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file });
+          faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file, role });
           console.log(`  ✔ ${p.name} (art/faces)`);
           continue;
         }
         const res = await fetch(p.img, { signal: AbortSignal.timeout(20_000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         await writeFile(resolve(OUT, file), await portrait(Buffer.from(await res.arrayBuffer())));
-        faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file });
+        faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file, role });
         console.log(`  ✔ ${p.name}`);
       } catch (err) {
         console.log(`  ✘ ${p.name}: ${(err as Error).message}`);

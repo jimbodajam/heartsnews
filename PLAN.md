@@ -62,8 +62,8 @@ collector. Don't try to get around a site's block.
   (`SCRIPT_CONCURRENCY`). A final "links" request writes "still to come", the hand-overs and the sign-off from what the
   segments actually say. A failed piece gets a second go, then its template stands in on its own.
 - **Checks:** `mergeDraft` keeps only well-formed parts that refer to real stories, genuine quotes and scorers that add up.
-- **Presenter brains:** personas in `channel.json`, memory (opinions, predictions, what aired) in `memory.json`,
-  published with the site and read back by the next build.
+- **Presenter brains:** personas and leanings in `channel.json`; memory (what aired, takes, predictions, every
+  collected item) in the D1 store behind the live Worker (`pipeline/src/store.ts`, schema in `worker/migrations/`).
 - **Gemini quota:** `gemini-flash-latest` (3.8 Flash) allows only 20 free requests a day and a bulletin makes about 13,
   so most bulletins are written by Flash-Lite. Once Flash is out for the day, a run skips it.
 - **Club config:** `clubs/hearts.json`. Covering the SPFL later means adding config files, not new code.

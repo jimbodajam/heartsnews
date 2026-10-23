@@ -17,6 +17,7 @@
     "record": "tsx src/record-match.ts",
     "trim-recording": "tsx src/trim-recording.ts",
     "replay": "tsx src/replay.ts",
+    "store:import": "tsx src/import-memory.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {

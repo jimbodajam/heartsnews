@@ -59,6 +59,14 @@ function ourGames(club: ClubConfig, lists: (SdbEvent[] | null | undefined)[], ne
     .sort((a, b) => (newestFirst ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
 }
 
+/** The club's people on TheSportsDB. The free key returns only the first ten, so this tops up the club's own list. */
+export async function collectPlayers(club: ClubConfig): Promise<{ name: string; role: 'player' | 'staff' }[]> {
+  const res = await fetchJson<{ player: { strPlayer: string; strPosition: string | null }[] | null }>(
+    `${BASE}/lookup_all_players.php?id=${club.sportsdb.teamId}`,
+  );
+  return (res.player ?? []).map((p) => ({ name: p.strPlayer, role: /manager|coach/i.test(p.strPosition ?? '') ? 'staff' : 'player' }));
+}
+
 export async function collectMatchData(club: ClubConfig, now = new Date()): Promise<MatchData> {
   const { teamId, leagueId } = club.sportsdb;
   // The free key returns only one event per call, so the team's own feed (which covers cup and European games)

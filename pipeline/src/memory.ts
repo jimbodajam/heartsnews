@@ -1,10 +1,7 @@
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import { sameStory, tokens, type Story } from './stories.ts';
 
 // The channel's memory between bulletins: what has been on air, and what each presenter has said and predicted.
-// It is published with the site as memory.json, and each build starts from the live copy, so it survives
-// GitHub's throwaway build machines without needing write access to the repo.
+// It lives in the store (store.ts); each build reads this summary of it at the start and writes what's new at the end.
 
 export interface AiredStory {
   title: string;
@@ -45,32 +42,10 @@ export interface Memory {
 
 const DAY_MS = 86_400_000;
 
+/** A presenter's prediction, with who made it, for writing to the store. */
+export type PresenterPrediction = Prediction & { presenter: string };
+
 export const emptyMemory = (): Memory => ({ version: 1, updatedAt: new Date(0).toISOString(), aired: [], presenters: {} });
-
-/** Latest memory: the live site's copy if reachable, else a local file, else a blank slate. */
-export async function loadMemory(url: string | undefined, localPath: string): Promise<{ memory: Memory; from: string }> {
-  if (url) {
-    try {
-      const res = await fetch(`${url}?t=${Date.now()}`, { signal: AbortSignal.timeout(15_000) });
-      if (res.ok) {
-        const m = (await res.json()) as Memory;
-        if (m.version === 1) return { memory: m, from: url };
-      }
-    } catch {
-      // Fall through to the local copy.
-    }
-  }
-  if (existsSync(localPath)) {
-    const m = JSON.parse(await readFile(localPath, 'utf8')) as Memory;
-    if (m.version === 1) return { memory: m, from: localPath };
-  }
-  return { memory: emptyMemory(), from: 'new' };
-}
-
-export function presenterMemory(memory: Memory, id: string): PresenterMemory {
-  memory.presenters[id] ??= { opinions: [], predictions: [] };
-  return memory.presenters[id];
-}
 
 export function findAired(memory: Memory, title: string): AiredStory | undefined {
   const t = tokens(title);
@@ -92,23 +67,21 @@ export function freshness(memory: Memory, story: Story, now: Date): number {
   return (1 - 0.6 * Math.exp(-hours / 1.5)) * fatigue;
 }
 
-export function recordAired(memory: Memory, stories: Story[], inDepth: Set<string>, now: Date): void {
-  const at = now.toISOString();
-  for (const s of stories) {
-    const a = findAired(memory, s.title);
-    if (a) {
-      a.times++;
-      a.lastAired = at;
-      if (inDepth.has(s.id)) a.inDepth++;
-    } else {
-      memory.aired.push({ title: s.title, firstAired: at, lastAired: at, times: 1, inDepth: inDepth.has(s.id) ? 1 : 0 });
-    }
-  }
+/**
+ * The airings to record for these stories. A story already on air keeps the title it first aired under, so its
+ * airings add up under one name however the headline changes.
+ */
+export function airings(memory: Memory, stories: Story[], inDepth: Set<string>): { title: string; inDepth: boolean }[] {
+  return stories.map((s) => ({ title: findAired(memory, s.title)?.title ?? s.title, inDepth: inDepth.has(s.id) }));
 }
 
-/** Mark predictions right or wrong once the result is in. `results` use on-air team names. */
-export function settlePredictions(memory: Memory, results: { home: string; away: string; date: string; homeScore?: number; awayScore?: number }[]): void {
-  for (const pm of Object.values(memory.presenters)) {
+/** Mark predictions right or wrong once the result is in, returning the ones settled. `results` use on-air team names. */
+export function settlePredictions(
+  memory: Memory,
+  results: { home: string; away: string; date: string; homeScore?: number; awayScore?: number }[],
+): PresenterPrediction[] {
+  const settled: PresenterPrediction[] = [];
+  for (const [presenter, pm] of Object.entries(memory.presenters)) {
     for (const p of pm.predictions) {
       if (p.outcome) continue;
       const r = results.find(
@@ -123,8 +96,10 @@ export function settlePredictions(memory: Memory, results: { home: string; away:
           : sign(r.homeScore - r.awayScore) === sign(p.homeGoals - p.awayGoals)
             ? 'right'
             : 'wrong';
+      settled.push({ ...p, presenter });
     }
   }
+  return settled;
 }
 
 /** "3 right (1 exact) from 5" style summary of settled predictions. */
@@ -134,17 +109,4 @@ export function predictionRecord(pm: PresenterMemory): string | undefined {
   const right = settled.filter((p) => p.outcome !== 'wrong').length;
   const exact = settled.filter((p) => p.outcome === 'exact').length;
   return `${right} right${exact ? ` (${exact} exact)` : ''} from ${settled.length}`;
-}
-
-/** Keep memory small: a week of airings, and each presenter's latest opinions and predictions. */
-export function trimMemory(memory: Memory, now: Date): void {
-  memory.aired = memory.aired
-    .filter((a) => now.getTime() - Date.parse(a.lastAired) < 7 * DAY_MS)
-    .sort((a, b) => b.lastAired.localeCompare(a.lastAired))
-    .slice(0, 80);
-  for (const pm of Object.values(memory.presenters)) {
-    pm.opinions = pm.opinions.slice(-15);
-    pm.predictions = pm.predictions.slice(-15);
-  }
-  memory.updatedAt = now.toISOString();
 }

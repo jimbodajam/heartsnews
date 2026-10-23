@@ -18,6 +18,8 @@ export interface Story {
   items: Item[];
   /** Full article text, fetched only for stories covered in depth. */
   body?: string;
+  /** The item whose article the body is, so the store can keep it. */
+  bodyItem?: string;
 }
 
 const STOP = new Set(
@@ -178,6 +180,7 @@ export async function addBodies(stories: Story[], fetchArticle: (url: string) =>
           const text = await fetchArticle(it.url);
           if (text.length > 300) {
             s.body = text;
+            s.bodyItem = it.id;
             return;
           }
         } catch {

@@ -22,7 +22,7 @@ export const MIN_BODY = 400;
 export interface Channel {
   name: string;
   spokenName: string;
-  /** Where the live site is published; memory.json is read back from here. */
+  /** Where the live site is published. */
   siteUrl?: string;
   cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string };
   presenters: Presenter[];

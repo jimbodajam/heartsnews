@@ -37,6 +37,11 @@ export function mentionsAny(text: string, keywords: string[]): boolean {
   return keywords.some((k) => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(lower));
 }
 
+/** "Cláudio Braga" → "claudio-braga". */
+export function slug(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 export function shortHash(s: string): string {
   return createHash('sha1').update(s).digest('hex').slice(0, 12);
 }

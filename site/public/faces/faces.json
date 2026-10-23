@@ -2,201 +2,241 @@
   {
     "name": "Beau Reus",
     "surname": "Reus",
-    "file": "beau-reus.png"
+    "file": "beau-reus.png",
+    "role": "player"
   },
   {
     "name": "Zander Clark",
     "surname": "Clark",
-    "file": "zander-clark.png"
+    "file": "zander-clark.png",
+    "role": "player"
   },
   {
     "name": "Ryan Fulton",
     "surname": "Fulton",
-    "file": "ryan-fulton.png"
+    "file": "ryan-fulton.png",
+    "role": "player"
   },
   {
     "name": "Christian Borchgrevink",
     "surname": "Borchgrevink",
-    "file": "christian-borchgrevink.png"
+    "file": "christian-borchgrevink.png",
+    "role": "player"
   },
   {
     "name": "Stephen Kingsley",
     "surname": "Kingsley",
-    "file": "stephen-kingsley.png"
+    "file": "stephen-kingsley.png",
+    "role": "player"
   },
   {
     "name": "Craig Halkett",
     "surname": "Halkett",
-    "file": "craig-halkett.png"
+    "file": "craig-halkett.png",
+    "role": "player"
   },
   {
     "name": "Jamie Mccart",
     "surname": "Mccart",
-    "file": "jamie-mccart.png"
+    "file": "jamie-mccart.png",
+    "role": "player"
   },
   {
     "name": "Stuart Findlay",
     "surname": "Findlay",
-    "file": "stuart-findlay.png"
+    "file": "stuart-findlay.png",
+    "role": "player"
   },
   {
     "name": "Harry Milne",
     "surname": "Milne",
-    "file": "harry-milne.png"
+    "file": "harry-milne.png",
+    "role": "player"
   },
   {
     "name": "Jordi Altena",
     "surname": "Altena",
-    "file": "jordi-altena.png"
+    "file": "jordi-altena.png",
+    "role": "player"
   },
   {
     "name": "Mj Kamson-Kamara",
     "surname": "Kamson-Kamara",
-    "file": "mj-kamson-kamara.png"
+    "file": "mj-kamson-kamara.png",
+    "role": "player"
   },
   {
     "name": "Malachi Fagan-Walcott",
     "surname": "Fagan-Walcott",
-    "file": "malachi-fagan-walcott.png"
+    "file": "malachi-fagan-walcott.png",
+    "role": "player"
   },
   {
     "name": "Oisin Mcentee",
     "surname": "Mcentee",
-    "file": "oisin-mcentee.png"
+    "file": "oisin-mcentee.png",
+    "role": "player"
   },
   {
     "name": "Eduardo Ageu",
     "surname": "Ageu",
-    "file": "eduardo-ageu.png"
+    "file": "eduardo-ageu.png",
+    "role": "player"
   },
   {
     "name": "Tom Renaud",
     "surname": "Renaud",
-    "file": "tom-renaud.png"
+    "file": "tom-renaud.png",
+    "role": "player"
   },
   {
     "name": "Blair Spittal",
     "surname": "Spittal",
-    "file": "blair-spittal.png"
+    "file": "blair-spittal.png",
+    "role": "player"
   },
   {
     "name": "Leart Kabashi",
     "surname": "Kabashi",
-    "file": "leart-kabashi.png"
+    "file": "leart-kabashi.png",
+    "role": "player"
   },
   {
     "name": "Tómas Magnússon",
     "surname": "Magnússon",
-    "file": "tomas-magnusson.png"
+    "file": "tomas-magnusson.png",
+    "role": "player"
   },
   {
     "name": "Aron Benjaminsen",
     "surname": "Benjaminsen",
-    "file": "aron-benjaminsen.png"
+    "file": "aron-benjaminsen.png",
+    "role": "player"
   },
   {
     "name": "Yan Dhanda",
     "surname": "Dhanda",
-    "file": "yan-dhanda.png"
+    "file": "yan-dhanda.png",
+    "role": "player"
   },
   {
     "name": "Finlay Pollock",
     "surname": "Pollock",
-    "file": "finlay-pollock.png"
+    "file": "finlay-pollock.png",
+    "role": "player"
   },
   {
     "name": "Laurent Mendy",
     "surname": "Mendy",
-    "file": "laurent-mendy.png"
+    "file": "laurent-mendy.png",
+    "role": "player"
   },
   {
     "name": "Calvin Miller",
     "surname": "Miller",
-    "file": "calvin-miller.png"
+    "file": "calvin-miller.png",
+    "role": "player"
   },
   {
     "name": "Jj Williams",
     "surname": "Williams",
-    "file": "jj-williams.png"
+    "file": "jj-williams.png",
+    "role": "player"
   },
   {
     "name": "Cláudio Braga",
     "surname": "Braga",
-    "file": "claudio-braga.png"
+    "file": "claudio-braga.png",
+    "role": "player"
   },
   {
     "name": "Landry Kabore",
     "surname": "Kabore",
-    "file": "landry-kabore.png"
+    "file": "landry-kabore.png",
+    "role": "player"
   },
   {
     "name": "Elton Kabangu",
     "surname": "Kabangu",
-    "file": "elton-kabangu.png"
+    "file": "elton-kabangu.png",
+    "role": "player"
   },
   {
     "name": "Josh Mcpake",
     "surname": "Mcpake",
-    "file": "josh-mcpake.png"
+    "file": "josh-mcpake.png",
+    "role": "player"
   },
   {
     "name": "Sabri Guendouz",
     "surname": "Guendouz",
-    "file": "sabri-guendouz.png"
+    "file": "sabri-guendouz.png",
+    "role": "player"
   },
   {
     "name": "James Wilson",
     "surname": "Wilson",
-    "file": "james-wilson.png"
+    "file": "james-wilson.png",
+    "role": "player"
   },
   {
     "name": "Sabah Kerjota",
     "surname": "Kerjota",
-    "file": "sabah-kerjota.png"
+    "file": "sabah-kerjota.png",
+    "role": "player"
   },
   {
     "name": "Rogers Mato",
     "surname": "Mato",
-    "file": "rogers-mato.png"
+    "file": "rogers-mato.png",
+    "role": "player"
   },
   {
     "name": "Amadou Ba-Sy",
     "surname": "Ba-Sy",
-    "file": "amadou-ba-sy.png"
+    "file": "amadou-ba-sy.png",
+    "role": "player"
   },
   {
     "name": "Wouter Vrancken",
     "surname": "Vrancken",
-    "file": "wouter-vrancken.png"
+    "file": "wouter-vrancken.png",
+    "role": "staff"
   },
   {
     "name": "Tim Smolders",
     "surname": "Smolders",
-    "file": "tim-smolders.png"
+    "file": "tim-smolders.png",
+    "role": "staff"
   },
   {
     "name": "Céderique Tulleners",
     "surname": "Tulleners",
-    "file": "cederique-tulleners.png"
+    "file": "cederique-tulleners.png",
+    "role": "staff"
   },
   {
     "name": "Tom White",
     "surname": "White",
-    "file": "tom-white.png"
+    "file": "tom-white.png",
+    "role": "staff"
   },
   {
     "name": "Mikey Williams",
     "surname": "Williams",
-    "file": "mikey-williams.png"
+    "file": "mikey-williams.png",
+    "role": "staff"
   },
   {
     "name": "Michael Campbell",
     "surname": "Campbell",
-    "file": "michael-campbell.png"
+    "file": "michael-campbell.png",
+    "role": "staff"
   },
   {
     "name": "Joel Cliffe",
     "surname": "Cliffe",
-    "file": "joel-cliffe.png"
+    "file": "joel-cliffe.png",
+    "role": "staff"
   }
 ]

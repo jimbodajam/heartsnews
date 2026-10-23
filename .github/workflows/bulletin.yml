@@ -1,7 +1,7 @@
 # Builds a fresh bulletin (collect → script → voices) and publishes the player to the gh-pages branch, which
 # GitHub Pages serves. This is the fallback: when the home PC is running `npm run live` it publishes the same way,
 # so scheduled and push builds skip themselves while its programme is fresh. A manual run always builds.
-# Each build starts from the previous one's memory.json (read back from the live site), so the channel moves on.
+# Each build reads and writes the channel's memory in the D1 store (pipeline/src/store.ts), so the channel moves on.
 
 name: Bulletin
 
@@ -72,6 +72,7 @@ jobs:
         if: steps.fresh.outputs.skip != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          STORE_TOKEN: ${{ secrets.STORE_TOKEN }}
         run: npm run bulletin
 
       - name: Build site

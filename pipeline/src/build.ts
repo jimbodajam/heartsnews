@@ -5,9 +5,9 @@
 //   --no-voice   don't render Kokoro clips
 //   --no-check   skip the fact-check pass
 //   --fresh      weigh stories as if nothing had aired yet (no cooldowns), to see the strongest bulletin.
-//                Presenters keep their opinions and predictions. Memory isn't saved, so the live channel's
-//                memory.json is left alone.
-// Put GEMINI_API_KEY (and optionally GEMINI_MODEL) in a .env file at the repo root.
+//                Presenters keep their opinions and predictions. Nothing is written to the store.
+// Put GEMINI_API_KEY (and optionally GEMINI_MODEL) in a .env file at the repo root, and STORE_TOKEN for the
+// channel's memory (store.ts). Without the store a bulletin still builds, with no memory.
 
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -23,17 +23,19 @@ import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
 import { fetchArticleText } from './collectors/article.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
-import { freshness, loadMemory, settlePredictions, trimMemory } from './memory.ts';
+import { emptyMemory, freshness, settlePredictions, type Memory } from './memory.ts';
 import { addBodies, boostStories, buildStories, fanThreads } from './stories.ts';
 import { detectPhase } from './matchday.ts';
+import { collectPlayers } from './collectors/sportsdb.ts';
+import { seedEntities } from './entities.ts';
+import { loadFaces } from './script/faces.ts';
+import { loadMemory, saveBuild, storeFromEnv } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'pipeline/out');
 const BULLETIN = resolve(ROOT, 'site/public/bulletins/latest.json');
-// Deployed with the site; the next build reads it back from channel.siteUrl.
-const MEMORY = resolve(ROOT, 'site/public/memory.json');
 
 const flags = new Set(process.argv.slice(2));
 const readJson = async <T>(path: string) => JSON.parse(await readFile(path, 'utf8')) as T;
@@ -71,18 +73,30 @@ async function main() {
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
 
   // Memory: move on from stories already on air, and settle any predictions whose result is now in.
+  // A pretend time (HEARTSNEWS_NOW) or --fresh reads the store but never writes to it.
   const fresh = flags.has('--fresh');
-  const { memory, from } = await loadMemory(channel.siteUrl && new URL('memory.json', channel.siteUrl).href, MEMORY);
-  if (fresh) memory.aired = [];
-  console.log(`\nMemory from ${from}: ${memory.aired.length} aired stories${fresh ? ' (--fresh: cooldowns cleared, not saved)' : ''}`);
-  // A renamed presenter keeps their memory under the new id.
-  for (const p of channel.presenters) {
-    for (const old of p.formerIds ?? []) {
-      if (memory.presenters[old] && !memory.presenters[p.id]) memory.presenters[p.id] = memory.presenters[old];
-      delete memory.presenters[old];
+  const store = storeFromEnv();
+  const save = store && !fresh && !process.env.HEARTSNEWS_NOW ? store : undefined;
+  let memory: Memory = emptyMemory();
+  if (store) {
+    try {
+      memory = await loadMemory(store, now);
+      console.log(`\nMemory from the store: ${memory.aired.length} stories aired this week`);
+    } catch (err) {
+      console.warn(`\nCouldn't read the store, building without memory: ${(err as Error).message}`);
     }
+  } else {
+    console.log('\nNo STORE_TOKEN set: building without memory.');
   }
-  settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
+  if (fresh) memory.aired = [];
+  if (!save) console.log(`Not writing to the store${fresh ? ' (--fresh: cooldowns cleared)' : process.env.HEARTSNEWS_NOW ? ' (HEARTSNEWS_NOW set)' : ''}.`);
+  // A renamed presenter keeps their memory under the new id.
+  const renames = channel.presenters.flatMap((p) => (p.formerIds ?? []).map((from) => ({ from, to: p.id })));
+  for (const { from, to } of renames) {
+    if (memory.presenters[from] && !memory.presenters[to]) memory.presenters[to] = memory.presenters[from];
+    delete memory.presenters[from];
+  }
+  const settled = settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
   // Weighting: matchday opponent and Kickback buzz boost a story; a recent airing cools it down for a while.
   const phase = detectPhase(match, now);
   const fixture = phase.kind === 'preview' || phase.kind === 'live' ? phase.fixture : phase.kind === 'reaction' ? phase.result : undefined;
@@ -151,10 +165,31 @@ async function main() {
   }
   await writeFile(BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
 
-  if (!fresh) {
-    remember(facts, draft);
-    trimMemory(memory, now);
-    await writeFile(MEMORY, `${JSON.stringify(memory, null, 2)}\n`);
+  if (save) {
+    try {
+      const players = await collectPlayers(club).catch((err) => {
+        console.warn(`Couldn't read the squad from SportsDB: ${(err as Error).message}`);
+        return [];
+      });
+      const bodies = new Map(stories.filter((s) => s.bodyItem && s.body).map((s) => [s.bodyItem!, s.body!]));
+      const remembered = remember(facts, draft);
+      await saveBuild(
+        save,
+        {
+          bulletin: { id: bulletin.generatedAt, phase: facts.phase.kind, runner: process.env.GITHUB_ACTIONS === 'true' ? 'github' : 'home' },
+          items,
+          bodies,
+          entities: seedEntities(club, match, [loadFaces(), players]),
+          remembered,
+          settled,
+          renames,
+        },
+        now,
+      );
+      console.log(`\nSaved to the store: ${items.length} items, ${remembered.aired.length} airings, ${remembered.takes.length} takes, ${remembered.predictions.length} predictions, ${settled.length} settled`);
+    } catch (err) {
+      console.warn(`\nCouldn't write to the store, so this bulletin isn't remembered: ${(err as Error).message}`);
+    }
   }
   console.log(`\nBulletin written (${writer}):`);
   for (const seg of bulletin.segments) {
