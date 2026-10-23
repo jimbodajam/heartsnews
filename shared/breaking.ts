@@ -1,5 +1,5 @@
 // The breaking.json format: short break-in packages for goals, red cards, both kick-offs, half-time and full time,
-// written by the home PC (npm run live)
+// written by whichever runner takes the job (the home PC or GitHub, pipeline/src/jobs.ts)
 // and published to gh-pages beside the site. The player polls it during a match and breaks in after the current line.
 
 import type { Presenter, Segment } from './bulletin.ts';

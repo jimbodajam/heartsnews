@@ -62,10 +62,16 @@ function ready(p: Pending, paras: string[], now: number): boolean {
   return settled || now - p.since >= DESCRIPTION_WAIT_MS;
 }
 
-/** What's been handled, kept on disk so a restart mid-match doesn't break in again for old goals. */
+/**
+ * What's been handled, and what's seen but waiting for BBC's description. The Worker's clock keeps it in the store
+ * between runs, so it never breaks in twice for the same goal.
+ */
 export interface TrackerState {
   kickOff?: string;
   done: string[];
+  /** Events and periods seen but not built yet: when first seen, and their text when it last changed. */
+  waiting?: Record<string, Pending>;
+  waitingPeriod?: Record<string, Pending>;
 }
 
 /**
@@ -85,22 +91,25 @@ export function eventKeys(events: LiveEvent[]): { key: string; event: LiveEvent 
 }
 
 export class EventTracker {
-  /** Events and periods seen but not built yet: when first seen, and their text when it last changed. */
-  private pending = new Map<string, Pending>();
-  private pendingPeriod = new Map<string, Pending>();
   state: TrackerState;
 
   constructor(state: TrackerState = { done: [] }) {
     this.state = state;
   }
 
+  private get pending(): Record<string, Pending> {
+    return (this.state.waiting ??= {});
+  }
+
+  private get pendingPeriod(): Record<string, Pending> {
+    return (this.state.waitingPeriod ??= {});
+  }
+
   private see(m: LiveMatch): void {
     if (this.state.kickOff === m.kickOff) return;
-    // A new match. If it's already under way (the PC started mid-match), what's happened so far is old news.
+    // A new match. If it's already under way (the clock started mid-match), what's happened so far is old news.
     const old = m.status === 'pre' ? [] : [...eventKeys(m.events).map((e) => e.key), ...periodsReached(m).map(periodKey)];
     this.state = { kickOff: m.kickOff, done: old };
-    this.pending.clear();
-    this.pendingPeriod.clear();
   }
 
   /** Read in live.json's match as of `now` (ms); returns the events to build packages for now. */
@@ -111,21 +120,20 @@ export class EventTracker {
     for (const { key, event } of events) {
       if (this.state.done.includes(key)) continue;
       const paras = event.post?.text ?? [];
-      let p = this.pending.get(key);
-      if (!p) this.pending.set(key, (p = { since: now, text: '', changed: now }));
+      const p = (this.pending[key] ??= { since: now, text: '', changed: now });
       if (!ready(p, paras, now)) continue;
       out.push({ key, event, match: m, text: paras });
       this.state.done.push(key);
-      this.pending.delete(key);
+      delete this.pending[key];
     }
     // A goal that's gone (ruled out after all) is no longer waiting.
-    for (const key of this.pending.keys()) if (!events.some((e) => e.key === key)) this.pending.delete(key);
+    for (const key of Object.keys(this.pending)) if (!events.some((e) => e.key === key)) delete this.pending[key];
     return out;
   }
 
   /**
    * The kick-off, half-time or full-time break-in to build now, if any. Only the latest period reached is news: one
-   * still waiting when the next comes round (or missed while the PC was off) is dropped.
+   * still waiting when the next comes round (or missed while the clock was down) is dropped.
    */
   period(m: LiveMatch, now: number): ReadyPeriod | undefined {
     this.see(m);
@@ -133,17 +141,16 @@ export class EventTracker {
     const period = reached[reached.length - 1];
     for (const key of reached.slice(0, -1).map(periodKey)) {
       if (!this.state.done.includes(key)) this.state.done.push(key);
-      this.pendingPeriod.delete(key);
+      delete this.pendingPeriod[key];
     }
     if (!period) return undefined;
     const key = periodKey(period);
     if (this.state.done.includes(key)) return undefined;
     const paras = periodPosts(m, period).flatMap((p) => p.text);
-    let p = this.pendingPeriod.get(key);
-    if (!p) this.pendingPeriod.set(key, (p = { since: now, text: '', changed: now }));
+    const p = (this.pendingPeriod[key] ??= { since: now, text: '', changed: now });
     if (!ready(p, paras, now)) return undefined;
     this.state.done.push(key);
-    this.pendingPeriod.delete(key);
+    delete this.pendingPeriod[key];
     return { key, period, match: m, text: paras };
   }
 }

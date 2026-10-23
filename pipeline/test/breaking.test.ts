@@ -12,7 +12,7 @@ import { DESCRIPTION_WAIT_MS, EventTracker, periodsReached, type ReadyEvent, typ
 import {
   anchorLine, buildPackage, buildPeriodPackage, checkLine, checkPeriodLine, gameReading, periodLine, plainLine, SIGN_OFF, spokenMinute, wordNumbers,
 } from '../src/breaking/script.ts';
-import { Cadence } from '../src/cadence.ts';
+import { Cadence, stillWanted } from '../src/cadence.ts';
 import type { Channel } from '../src/script/facts.ts';
 import type { ScriptModel } from '../src/script/llm.ts';
 
@@ -26,13 +26,18 @@ const matchAt = (t: number): LiveMatch => {
   return liveMatch(rec.teamEvent, 'heart-of-midlothian', snap.page);
 };
 
-/** Polls the recording every 20s, as the home PC would, from `from` (UTC) to the end; returns what was ready when. */
+/**
+ * Reads the recording every 20s from `from` (UTC) to the end; returns what was ready when. The tracker's state goes
+ * through JSON between reads, as it does between runs of the Worker's clock.
+ */
 function replay(from = '16:30:00'): { at: string; ready: ReadyEvent }[] {
-  const tracker = new EventTracker();
+  let state = new EventTracker().state;
   const out: { at: string; ready: ReadyEvent }[] = [];
   const end = Date.parse(rec.snapshots[rec.snapshots.length - 1].at) + 5 * 60_000;
   for (let t = Date.parse(`2026-10-22T${from}Z`); t <= end; t += 20_000) {
+    const tracker = new EventTracker(JSON.parse(JSON.stringify(state)));
     for (const ready of tracker.update(matchAt(t), t)) out.push({ at: new Date(t).toISOString().slice(11, 19), ready });
+    state = tracker.state;
   }
   return out;
 }
@@ -223,37 +228,39 @@ test('kick-off, half-time and full-time packages', async () => {
   assert.equal(checkPeriodLine("Three changes for Hearts. It's nil-nil.", ko1.match), undefined);
 });
 
-test('programmes: none while the match is on, straight after half-time and full time', () => {
+test('programmes: on :00 and :30, none while the match is on, straight after half-time and full time', () => {
   const every = 30 * 60_000;
-  const cadence = new Cadence(every);
+  const at = (hm: string) => Date.parse(`2026-10-22T${hm}:00Z`);
+  // As the Worker's clock runs it: once a minute, the state carried over in JSON between runs.
+  let state = { slot: at('16:00') };
   const feedAt = (t: number) => ({ updated: new Date(t).toISOString(), match: matchAt(t) });
   const due: [string, string][] = [];
-  let last = Date.parse('2026-10-22T16:20:00Z');
-  for (let t = Date.parse('2026-10-22T16:30:00Z'); t <= Date.parse('2026-10-22T19:30:00Z'); t += 20_000) {
+  for (let t = at('16:30'); t <= at('19:30'); t += 60_000) {
+    const cadence = new Cadence(every, JSON.parse(JSON.stringify(state)));
     cadence.see(feedAt(t), t);
-    const why = cadence.due(t, last);
-    if (why) {
-      due.push([new Date(t).toISOString().slice(11, 16), why]);
-      last = t;
-    }
+    const why = cadence.due(t);
+    if (why) due.push([new Date(t).toISOString().slice(11, 16), why]);
+    state = cadence.state as typeof state;
   }
   assert.deepEqual(due, [
-    // The 16:50 programme is held: kick-off was at 16:47.
-    ['17:37', 'ht'],
-    ['18:43', 'ft'],
-    ['19:13', 'regular'],
+    ['16:30', 'regular'],
+    // The 17:00 programme is held: kick-off was at 16:47.
+    ['17:38', 'ht'],
+    ['18:44', 'ft'],
+    // The full-time programme took the 18:30 slot.
+    ['19:00', 'regular'],
+    ['19:30', 'regular'],
   ]);
   // A half-time programme that isn't ready until the second half is under way is dropped.
-  const ht = new Cadence(every);
-  const at = (hm: string) => Date.parse(`2026-10-22T${hm}:00Z`);
-  ht.see(feedAt(at('17:30')), at('17:30'));
-  ht.see(feedAt(at('17:40')), at('17:40'));
-  assert.equal(ht.due(at('17:40'), at('16:20')), 'ht');
-  assert.ok(ht.wanted('ht', at('17:45')));
-  ht.see(feedAt(at('17:55')), at('17:55'));
-  assert.ok(!ht.wanted('ht', at('17:55')));
-  // With no word from the Worker for a while, programmes carry on as normal.
-  assert.equal(ht.due(at('18:10'), at('17:30')), 'regular');
+  assert.ok(stillWanted('ht', feedAt(at('17:45'))));
+  assert.ok(!stillWanted('ht', feedAt(at('17:55'))));
+  assert.ok(stillWanted('ft', feedAt(at('17:55'))));
+  assert.ok(stillWanted('ht', undefined));
+  // With no word from BBC for a while, programmes carry on as normal.
+  const quiet = new Cadence(every, {});
+  quiet.see(feedAt(at('17:10')), at('17:10'));
+  assert.equal(quiet.due(at('17:15')), undefined);
+  assert.equal(quiet.due(at('17:25')), 'regular');
 });
 
 test('a package: anchor at the desk, reporter at the ground with the score card', async () => {

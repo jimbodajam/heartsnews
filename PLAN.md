@@ -14,7 +14,7 @@ podcasts and YouTube. Live at https://jimbodajam.github.io/heartsnews/.
 | Audience | Public website, built just for fun |
 | Budget | As close to £0 as possible |
 | Stack | TypeScript end to end (Node pipeline + browser front end) |
-| Hosting | Hybrid: the home PC runs `npm run live` and publishes to gh-pages; GitHub Actions is the fallback. Live match data will come from a free Cloudflare Worker (22 Oct) |
+| Hosting | GitHub runs the channel and the home PC helps when it's on (#29): the Cloudflare Worker's cron is the clock and queues jobs in D1; the PC (`npm run agent`) claims them for GPU voices, otherwise GitHub Actions builds them. Both publish to gh-pages |
 | Scripting | Mixed: templates for the ticker, scores and table; a free-tier LLM writes each segment |
 | AI | Free only. Use a provider interface so Gemini, Groq or a later paid Claude key can be swapped in |
 | Voices | Real text-to-speech (Kokoro, on the PC's GPU) |
@@ -26,7 +26,7 @@ podcasts and YouTube. Live at https://jimbodajam.github.io/heartsnews/.
 ## Architecture
 
 ```
-Home PC: npm run live (every 30 min; GitHub Actions cron as fallback)
+Worker cron (every minute) queues programmes (:00 and :30) and breaking news → home PC (npm run agent) or GitHub Actions
   └─ pipeline (Node/TS)
        1. collect    → RSS, YouTube feeds + transcripts, Kickback forum, BBC fixtures/results/tables → items[]
        2. stories    → cluster the same story across sources, weight (importance, matchday, fan buzz, freshness)

@@ -1,3 +1,4 @@
+import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { Remembered } from './script/remember.ts';
@@ -236,6 +237,147 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
 
 export async function saveBuild(store: Store, r: BuildRecord, now: Date): Promise<void> {
   await store.batch(buildWrites(r, now));
+}
+
+// ---- The job queue ----
+// The Worker's clock (worker/src/clock.ts) queues the jobs; the runners claim them here. A claim is one UPDATE on a
+// queued row, so a job is only ever claimed once.
+
+export type JobKind = 'programme' | 'breaking';
+export type Runner = 'home' | 'github';
+
+export interface Job {
+  id: string;
+  kind: JobKind;
+  payload: Record<string, unknown>;
+  test: boolean;
+}
+
+const CLAIMED = 'RETURNING id, kind, payload, test';
+const toJob = (r: Row): Job => ({ id: String(r.id), kind: r.kind as JobKind, payload: JSON.parse(String(r.payload)), test: Number(r.test) === 1 });
+
+/**
+ * The home PC checking in: tells the clock it's on (so jobs wait a minute or two for it) and claims the oldest queued
+ * job of each kind it has room for, breaking news first.
+ */
+export async function checkIn(store: Store, kinds: JobKind[], now: Date): Promise<Job[]> {
+  const at = now.toISOString();
+  const results = await store.batch([
+    {
+      sql: `INSERT INTO state (key, value, updated_at) VALUES ('home_seen', ?, ?)
+            ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+      params: [JSON.stringify(at), at],
+    },
+    ...(['breaking', 'programme'] as const)
+      .filter((kind) => kinds.includes(kind))
+      .map((kind) => ({
+        sql: `UPDATE jobs SET status = 'claimed', runner = 'home', claimed_at = ?, attempts = attempts + 1
+              WHERE status = 'queued' AND id = (SELECT id FROM jobs WHERE status = 'queued' AND test = 0 AND kind = ? ORDER BY queued_at LIMIT 1)
+              ${CLAIMED}`,
+        params: [at, kind],
+      })),
+  ]);
+  return results.slice(1).flat().map(toJob);
+}
+
+/** The home PC going off: the clock stops waiting for it. */
+export async function signOff(store: Store): Promise<void> {
+  await store.batch([{ sql: `DELETE FROM state WHERE key = 'home_seen'` }]);
+}
+
+/** Claims one job by its id (GitHub, sent it by the clock). Undefined if it's been claimed already, or is gone. */
+export async function claimJob(store: Store, id: string, runner: Runner, now: Date): Promise<Job | undefined> {
+  const [[row]] = await store.batch([
+    {
+      sql: `UPDATE jobs SET status = 'claimed', runner = ?, claimed_at = ?, attempts = attempts + 1 WHERE id = ? AND status = 'queued' ${CLAIMED}`,
+      params: [runner, now.toISOString(), id],
+    },
+  ]);
+  return row && toJob(row);
+}
+
+/** How a claimed job ended. */
+export async function finishJob(store: Store, id: string, status: 'done' | 'failed' | 'dropped', now: Date, error?: string): Promise<void> {
+  await store.batch([
+    { sql: `UPDATE jobs SET status = ?, finished_at = ?, error = ? WHERE id = ? AND status = 'claimed'`, params: [status, now.toISOString(), error ?? null, id] },
+  ]);
+}
+
+/**
+ * Puts claimed jobs back in the queue (the home PC stopping mid-build). After signOff, the clock sends them to GitHub
+ * on its next run.
+ */
+export async function releaseJobs(store: Store, ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await store.batch([
+    {
+      sql: `UPDATE jobs SET status = 'queued', runner = NULL, claimed_at = NULL, dispatched_at = NULL
+            WHERE status = 'claimed' AND id IN (SELECT value FROM json_each(?))`,
+      params: [JSON.stringify(ids)],
+    },
+  ]);
+}
+
+/**
+ * Takes the lock on publishing for `ms`, if it's free (or has run out). The runners publish to gh-pages in turns, so
+ * neither publishes over a programme or package the other has just put out.
+ */
+export async function takeLock(store: Store, name: string, holder: string, ms: number, now: Date): Promise<boolean> {
+  const at = now.toISOString();
+  const [rows] = await store.batch([
+    {
+      sql: `INSERT INTO locks (name, holder, until) VALUES (?, ?, ?)
+            ON CONFLICT (name) DO UPDATE SET holder = excluded.holder, until = excluded.until WHERE locks.until < ? OR locks.holder = excluded.holder
+            RETURNING holder`,
+      params: [name, holder, new Date(now.getTime() + ms).toISOString(), at],
+    },
+  ]);
+  return rows.some((r) => r.holder === holder);
+}
+
+export async function dropLock(store: Store, name: string, holder: string): Promise<void> {
+  await store.batch([{ sql: 'DELETE FROM locks WHERE name = ? AND holder = ?', params: [name, holder] }]);
+}
+
+export interface JobRow {
+  id: string;
+  status: string;
+  runner: string | null;
+  queuedAt: string;
+  dispatchedAt: string | null;
+  claimedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+/** Jobs whose id starts with `prefix`, oldest first: a replay's test jobs, to see how long each took. */
+export async function jobsLike(store: Store, prefix: string): Promise<JobRow[]> {
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT id, status, runner, queued_at AS queuedAt, dispatched_at AS dispatchedAt, claimed_at AS claimedAt,
+              finished_at AS finishedAt, error FROM jobs WHERE substr(id, 1, length(?)) = ? ORDER BY queued_at, id`,
+      params: [prefix, prefix],
+    },
+  ]);
+  return rows as unknown as JobRow[];
+}
+
+/** Forgets a replay's tracker, so the next replay breaks in for every goal again. */
+export async function clearTestState(store: Store): Promise<void> {
+  await store.batch([{ sql: `DELETE FROM state WHERE key LIKE 'test:%'` }]);
+}
+
+/** The store as a D1 database, so the Worker's clock can run from the PC against it (a replay). */
+export function storeAsD1(store: Store): D1Database {
+  type Prepared = D1Statement & { s: Statement };
+  const prepare = (sql: string, params: unknown[] = []): Prepared => ({
+    s: { sql, params: params as Statement['params'] },
+    bind: (...values) => prepare(sql, values),
+  });
+  return {
+    prepare: (sql) => prepare(sql),
+    batch: async (statements) => (await store.batch((statements as Prepared[]).map((p) => p.s))).map((results) => ({ results })),
+  };
 }
 
 // ---- Moving over from memory.json ----

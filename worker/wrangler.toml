@@ -3,6 +3,15 @@ main = "src/index.ts"
 compatibility_date = "2026-10-01"
 workers_dev = true
 
+# The channel's clock (src/clock.ts): every minute, queue what's due and hand it out.
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# Whose bulletin workflow builds the jobs the home PC doesn't take. The token is a secret:
+# `npx wrangler secret put GITHUB_DISPATCH_TOKEN` (fine-grained, this repo only, Actions: read and write).
+GITHUB_REPO = "jimbodajam/heartsnews"
+
 # The channel's memory (src/store.ts). Create it once with `npx wrangler d1 create heartsnews` and paste its id here.
 [[d1_databases]]
 binding = "DB"
