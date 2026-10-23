@@ -49,8 +49,26 @@ jobs:
           path: node_modules/@huggingface/transformers/.cache
           key: kokoro-${{ hashFiles('package-lock.json') }}
 
+      # A ready-built ffmpeg (for MP3 clips), downloaded once and kept between runs. apt-get once stalled breaking
+      # news for 11 minutes. If the download fails, the clips come out as WAV instead.
+      - name: Cache ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ~/ffmpeg
+          key: ffmpeg-n8.1-linux64-gpl
+
       - name: Install ffmpeg
-        run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -yq ffmpeg)
+        run: |
+          if [ ! -x ~/ffmpeg/ffmpeg ]; then
+            rm -rf /tmp/ffmpeg && mkdir -p /tmp/ffmpeg
+            if curl -fsSL --max-time 120 https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linux64-gpl-8.1.tar.xz \
+                | tar -xJ -C /tmp/ffmpeg --strip-components=2 --wildcards '*/bin/ffmpeg' && /tmp/ffmpeg/ffmpeg -version > /dev/null; then
+              rm -rf ~/ffmpeg && mv /tmp/ffmpeg ~/ffmpeg
+            else
+              echo "::warning::Couldn't download ffmpeg: clips will be WAV"
+            fi
+          fi
+          if [ -x ~/ffmpeg/ffmpeg ]; then echo "$HOME/ffmpeg" >> "$GITHUB_PATH"; fi
 
       # Forum data collected at home by `npm run snapshot`, for sources that block GitHub's servers.
       - name: Fetch home snapshots

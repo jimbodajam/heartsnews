@@ -152,7 +152,12 @@ test('a replay queues test jobs, for GitHub only, through the store', async () =
   const db = storeAsD1(store);
   for (let t = at('17:15'); t <= at('17:25'); t += 60_000) await tick(db, feedAt(t), { dispatch, now: at('17:19'), test: 'run1' });
   assert.deepEqual(sent, [`test:run1:breaking:${KICK_OFF}:goal:home:Mohamed Salah:1`]);
-  assert.deepEqual(await checkIn(store, ['breaking', 'programme'], new Date(at('17:20'))), []);
+  // The Worker's own clock leaves them to the replay.
+  const workerSent: string[] = [];
+  await tick(db, undefined, { dispatch: async ({ id }) => void workerSent.push(id), now: at('17:21') });
+  assert.deepEqual(workerSent.filter((id) => id.startsWith('test:')), []);
+  // (That run queued a programme of its own, which is the PC's to take; the test job isn't.)
+  assert.deepEqual(await checkIn(store, ['breaking'], new Date(at('17:20'))), []);
   const job = await claimJob(store, sent[0], 'github', new Date(at('17:20')));
   assert.equal(job?.test, true);
   assert.equal(job?.payload.templates, true);

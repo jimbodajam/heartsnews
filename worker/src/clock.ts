@@ -116,14 +116,19 @@ export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatc
             WHERE status = 'claimed' AND claimed_at < CASE kind WHEN 'programme' THEN ? ELSE ? END`,
       params: [iso(now - CLAIM_MS.programme), iso(now - CLAIM_MS.breaking)],
     },
-    { sql: `SELECT id, kind, test, queued_at, dispatched_at, dispatches FROM jobs WHERE status = 'queued' ORDER BY kind = 'breaking' DESC, queued_at` },
+    // The Worker sends GitHub the channel's jobs; a replay sends its own test jobs.
+    {
+      sql: `SELECT id, kind, test, queued_at, dispatched_at, dispatches FROM jobs WHERE status = 'queued' AND test = ?
+            ORDER BY kind = 'breaking' DESC, queued_at`,
+      params: [test ? 1 : 0],
+    },
   ]);
 
   const report: TickReport = { queued: jobs.map((j) => j.id), dispatched: [], errors: [] };
   for (const j of queued) {
     const kind = j.kind as JobKind;
     // The home PC's to take for a minute or two, while it's on. Test jobs are for GitHub.
-    if (homeOn && !j.test && now - Date.parse(String(j.queued_at)) < GRACE_MS[kind]) continue;
+    if (homeOn && now - Date.parse(String(j.queued_at)) < GRACE_MS[kind]) continue;
     if (j.dispatched_at && (now - Date.parse(String(j.dispatched_at)) < REDISPATCH_MS || Number(j.dispatches) >= MAX_DISPATCHES)) continue;
     try {
       await dispatch({ id: String(j.id), kind });
