@@ -31,7 +31,7 @@ import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
-import { buildLedger, checkBulletin, playedMatches, type LedgerMatch } from './script/ledger.ts';
+import { buildLedger, checkBulletin, playedMatches, repeatedViews, type LedgerMatch } from './script/ledger.ts';
 import { loadMatches, loadMemory, loadOnAir, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
@@ -208,7 +208,8 @@ async function main() {
     ...[match?.opponent?.ourXI, match?.opponent?.theirXI].flatMap((xi) => xi?.rows.flat() ?? []),
   ];
   const ledger = buildLedger(club, storedMatches, freshMatches, knownPlayers,facts.phase.kind === 'live' ? facts.phase.fixture : undefined);
-  const lc = checkBulletin(ledger, bulletin, now);
+  // And a presenter saying again, near word for word, a view they've already made several times over.
+  const lc = [...checkBulletin(ledger, bulletin, now), ...repeatedViews(facts, bulletin)];
   console.log(`\nLedger check against ${ledger.matches.length} results: ${lc.filter((x) => x.action === 'fixed').length} fixed, ${lc.filter((x) => x.action === 'dropped').length} dropped`);
   for (const x of lc) console.log(`  ${x.action.toUpperCase()} ${x.line} ${x.kind} (${x.reason})\n    was: ${x.was}${x.now ? `\n    now: ${x.now}` : ''}`);
   checks.push(...lc.map(({ line: _, ...x }) => ({ checker: 'ledger' as const, ...x })));

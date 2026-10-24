@@ -6,8 +6,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { Bulletin, Line, Segment } from '../../shared/bulletin.ts';
 import { store as endpoint } from '../../worker/src/store.ts';
-import { ourResult } from '../src/script/facts.ts';
-import { buildLedger, checkBulletin, checkLine, playedMatches, type Ledger } from '../src/script/ledger.ts';
+import { emptyMemory, type Memory } from '../src/memory.ts';
+import { buildFacts, ourResult, type Channel } from '../src/script/facts.ts';
+import { buildLedger, checkBulletin, checkLine, playedMatches, repeatedViews, type Ledger } from '../src/script/ledger.ts';
 import { connectStore, loadMatches, saveBuild, saveLedger } from '../src/store.ts';
 import type { ClubConfig, Fixture } from '../src/types.ts';
 import { memoryD1 } from './d1.ts';
@@ -161,6 +162,40 @@ test('a bulletin: scores fixed in place, contradicted lines dropped, predictions
   assert.equal(bulletin.segments[2].lines[0].text, 'On this day Hearts beat Celtic 4-0.');
   // A segment never goes empty.
   assert.equal(bulletin.segments[3].lines.length, 1);
+});
+
+test("a presenter saying again a view they've made three times over loses the line; others and new views stay", () => {
+  const channel = JSON.parse(readFileSync(new URL('../../channel.json', import.meta.url), 'utf8')) as Channel;
+  const view = (h: number, v: string) => ({ topic: 'Data', view: v, at: `2026-10-24T0${h}:00:00.000Z` });
+  const memory: Memory = {
+    ...emptyMemory(),
+    presenters: {
+      ross: {
+        predictions: [],
+        opinions: [
+          view(1, 'Advanced metrics and structured pressing fully compensate for missing players to guarantee an away win.'),
+          view(2, 'Advanced metrics and structured pressing fully cover for missing players and guarantee an away win.'),
+          view(3, 'now thinks advanced metrics and structured pressing fully compensate for missing players to guarantee an away win'),
+          view(4, 'Wilson is the best signing of the window.'),
+        ],
+      },
+    },
+  };
+  const f = buildFacts(club, channel, [], [], undefined, now, memory);
+  const bulletin = {
+    segments: [
+      segment('debate', 'debate', [
+        line('My record is one right from one, and advanced metrics and structured pressing fully compensate for missing players to guarantee an away win.'),
+        line('Wilson is the best signing of the window, I said it and I stand by it.'),
+        line('Advanced metrics fully compensate for missing players, and that guarantees an away win.', { speaker: 'fraser' }),
+        line('The press will need Kingsley fit at left-back.'),
+      ]),
+    ],
+  } as unknown as Bulletin;
+  const checks = repeatedViews(f, bulletin);
+  assert.deepEqual(checks.map((c) => [c.line, c.kind, c.action]), [['0.0', 'repeat', 'dropped']]);
+  // Said only once: still his view, and he can stand by it. Fraser has never said it.
+  assert.equal(bulletin.segments[0].lines.length, 3);
 });
 
 test('the store keeps the results and goals, BBC over TheSportsDB, and the fact-check log', async () => {

@@ -86,7 +86,7 @@ export function repeats(view: string, earlier: { view: string }[]): boolean {
  * Takes with the near-identical ones folded into the newest: each with how many times it was said. `takes` newest
  * first.
  */
-function distinct(takes: Opinion[]): { take: Opinion; times: number }[] {
+export function distinct(takes: Opinion[]): { take: Opinion; times: number }[] {
   const kept: { take: Opinion; times: number }[] = [];
   for (const t of takes) {
     const same = kept.find((k) => repeats(t.view, [k.take]) || repeats(k.take.view, [t]));

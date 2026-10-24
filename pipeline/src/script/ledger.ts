@@ -1,7 +1,9 @@
 import type { Bulletin } from '../../../shared/bulletin.ts';
 import type { ClubConfig, Fixture } from '../types.ts';
+import type { Opinion } from '../memory.ts';
 import { removeLines } from './factcheck.ts';
-import { isUs, teamName } from './facts.ts';
+import { isUs, teamName, type Facts } from './facts.ts';
+import { distinct, repeats } from './notebook.ts';
 
 // The fact ledger (issue #32): every result we know, from the store's matches table and this build's fixtures feed,
 // and a check in code on each script line after the AI fact-checker has been over it. The AI checker can make the
@@ -45,7 +47,7 @@ export interface LedgerCheck {
   /** "<segment index>.<line index>", as the AI fact-check names lines. */
   line: string;
   segment: string;
-  kind: 'score' | 'outcome' | 'scorer';
+  kind: 'score' | 'outcome' | 'scorer' | 'repeat';
   action: 'fixed' | 'dropped';
   was: string;
   now?: string;
@@ -340,6 +342,35 @@ function rightScore(m: LedgerMatch, x: Mention, before: string, opponents: Map<s
   const say = (n: number) => (n === 0 ? 'nil' : (NUMBER_WORDS[n] ?? String(n)));
   const first = /^[A-Z]/.test(x.text) ? say(a).replace(/^./, (c) => c.toUpperCase()) : say(a);
   return a === b ? `${first}-all` : `${first}-${say(b)}`;
+}
+
+/** A view said this many times is made: a line saying it again is dropped. */
+export const SAID_ENOUGH = 3;
+
+/**
+ * Lines where a presenter only says again a view they've already made SAID_ENOUGH times or more (Ross's "advanced
+ * metrics cover for missing players" on 24 Oct, in the debate and two packages of one bulletin). The prompt asks the
+ * writer not to; this makes sure. Dropped, as the ledger drops a contradicted line.
+ */
+export function repeatedViews(f: Facts, bulletin: Bulletin): LedgerCheck[] {
+  const made = new Map<string, Opinion[]>();
+  for (const [id, pm] of Object.entries(f.memory.presenters)) {
+    made.set(id, distinct([...pm.opinions].reverse()).filter((d) => d.times >= SAID_ENOUGH).map((d) => d.take));
+  }
+  const checks: LedgerCheck[] = [];
+  const drop = new Set<string>();
+  bulletin.segments.forEach((seg, si) => {
+    if (seg.kind === 'adverts' || seg.kind === 'history') return;
+    seg.lines.forEach((line, li) => {
+      const views = made.get(line.speaker);
+      const view = views?.length && line.graphic?.type !== 'predictions' ? views.find((t) => repeats(line.text, [t])) : undefined;
+      if (!view) return;
+      checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'dropped', was: line.text, reason: `says again "${view.view}", already said ${SAID_ENOUGH}+ times` });
+      drop.add(`${si}.${li}`);
+    });
+  });
+  removeLines(bulletin, drop);
+  return checks;
 }
 
 /**
