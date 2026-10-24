@@ -7,7 +7,8 @@
     "transfers": "ross",
     "analyst": "kirsty",
     "debate": ["fraser", "ross"],
-    "pitchside": "gregor"
+    "pitchside": "gregor",
+    "history": "fraser"
   },
   "beats": [
     { "presenter": "fraser", "words": ["VAR"] },

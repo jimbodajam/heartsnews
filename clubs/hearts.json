@@ -20,6 +20,10 @@
     ],
     "cups": ["Scottish Cup", "League Cup", "Premier Sports Cup"]
   },
+  "legends": [
+    { "id": "h01330", "name": "Dave Mackay" },
+    { "id": "h01360", "name": "Gordon Smith" }
+  ],
   "sportsdb": { "teamId": "133643", "leagueId": "4330" },
   "bbc": { "team": "heart-of-midlothian", "league": "scottish-premiership" },
   "sources": [

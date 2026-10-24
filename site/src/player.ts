@@ -38,6 +38,7 @@ const LABEL: Record<SegmentKind, string> = {
   opponent: 'OPPOSITION FOCUS',
   adverts: 'AD BREAK',
   breaking: 'BREAKING',
+  history: 'ON THIS DAY',
 };
 
 /** The same graphic again (bulletin JSON has no shared objects): an advert by its id, anything else by content. */
@@ -57,6 +58,8 @@ export class Player {
   /** Optional painted studio background (from `npm run pixelate`); `classicStudio` switches back to the code-drawn set. */
   studioImage?: HTMLImageElement;
   classicStudio = false;
+  /** On This Day's set (art/Museum, pixelated): the front of the museum for the opening line, then the gallery. */
+  museum: { front?: HTMLImageElement; inside?: HTMLImageElement } = {};
   /** Today's match, if the live feed is on: its score comes round in the ticker. */
   live?: LiveScore;
   /** Forces the floodlights on or off at the ground (?night=1 or 0); otherwise it goes by the time of day. */
@@ -399,6 +402,24 @@ export class Player {
         drawPressDesk(g, deskY);
         if (p) drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
         if (graphic) drawGraphic(g, graphic, 168, 22, 142, 80, graphicAge, now);
+        return;
+      }
+
+      case 'museum': {
+        const p = onScreen[0];
+        const standY = 142 - STANDING_H * 2;
+        // The opening line outside, a small figure by the lamp post so the museum's sign shows; the rest in the
+        // gallery, laid out like the touchscreen.
+        if (this.seg && this.line === this.seg.lines[0] && this.museum.front) {
+          g.drawImage(this.museum.front, 0, 0, W, H);
+          if (p) drawPresenter(g, 292, 150 - STANDING_H, p.look, pose(p), 1, true);
+          return;
+        }
+        if (this.museum.inside) g.drawImage(this.museum.inside, 0, 0, W, H);
+        else drawTouchBackground(g);
+        if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
+        const glance = graphic && t % 5 < 1.6 ? -1 : 0;
+        if (p) drawPresenter(g, 266, standY, p.look, pose(p, glance), 2, true);
         return;
       }
 

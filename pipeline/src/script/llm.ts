@@ -485,6 +485,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
           lines: fanLines,
         }
       : base.fans,
+    history: base.history,
     outro: pick(ai.outro, base.outro),
   };
 }

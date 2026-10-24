@@ -203,6 +203,31 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'birthdays': {
+      // Like the table: a row each, and the player getting the package in our colours.
+      const top = panel(g, x, y, w, h, gr.title);
+      const nameX = x + 6;
+      const yearsR = x + w - 52;
+      const appsR = x + w - 26;
+      const goalsR = x + w - 6;
+      drawText(g, 'PLAYER', nameX, top, C.grey);
+      drawTextRight(g, 'APPS', appsR, top, C.grey);
+      drawTextRight(g, 'GLS', goalsR, top, C.grey);
+      const visible = Math.floor(age / 90);
+      const maxRows = Math.floor((y + h - top - 10) / 9);
+      const yearsW = Math.max(0, ...gr.rows.map((r) => measure(r.years)));
+      gr.rows.slice(0, Math.min(visible, maxRows)).forEach((r, i) => {
+        const ry = top + 9 + i * 9;
+        rect(g, x + 2, ry - 2, w - 4, 9, r.star ? C.maroon : i % 2 ? C.navyDark : C.navy);
+        const col = r.star ? C.gold : C.white;
+        drawText(g, fit(r.name, yearsR - yearsW - 6 - nameX), nameX, ry, col);
+        drawTextRight(g, r.years, yearsR, ry, r.star ? C.gold : C.light);
+        drawTextRight(g, String(r.apps), appsR, ry, col);
+        drawTextRight(g, String(r.goals), goalsR, ry, col);
+      });
+      break;
+    }
+
     case 'fixtures': {
       const top = panel(g, x, y, w, h, gr.title);
       // Only a couple of fixtures: make them big rather than leave the panel empty.

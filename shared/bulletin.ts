@@ -1,7 +1,7 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
-export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside';
-export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent' | 'adverts' | 'breaking';
+export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside' | 'museum';
+export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent' | 'adverts' | 'breaking' | 'history';
 /** The 16×16 pixel picture on an advert card. */
 export type AdArt = 'pig' | 'fish' | 'shirt' | 'pint' | 'ticket';
 export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat';
@@ -94,6 +94,8 @@ export type Graphic =
   | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }
   /** A starting XI on a pitch: rows from the goalkeeper forwards. */
   | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean }
+  /** On This Day: players born on this date, with the one getting the package picked out. */
+  | { type: 'birthdays'; title: string; rows: { name: string; years: string; apps: number; goals: number; star?: boolean }[] }
   /** A full-screen advert card in an ad break (adverts.json). */
   | {
       type: 'advert';

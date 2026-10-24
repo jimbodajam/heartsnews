@@ -449,7 +449,7 @@ async function inTurn<T>(jobs: (() => Promise<T>)[], limit: number): Promise<Pro
 /** Each segment in the running order with what it now opens and closes on, for the links writer. */
 function segmentGists(f: Facts, d: Draft): (Slot & { gist: string })[] {
   const featured = d.features.map((x) => f.features.find((s) => s.id === x.storyId)).filter((s): s is Story => Boolean(s));
-  const slots = runningOrder(f, { features: featured, debate: Boolean(d.debate), match: Boolean(d.result || d.table || d.next) });
+  const slots = runningOrder(f, { features: featured, debate: Boolean(d.debate), match: Boolean(d.result || d.table || d.next), history: Boolean(d.history) });
   const q = (s?: string) => (s ? `"${truncate(s, 160)}"` : '');
   return slots.map((slot) => {
     const feat = d.features.find((x) => `story-${x.storyId}` === slot.id);
@@ -468,7 +468,9 @@ function segmentGists(f: Facts, d: Draft): (Slot & { gist: string })[] {
                   ? `${q(d.transferIntro)}; ${d.transfers.length} transfer stories`
                   : slot.id === 'fans'
                     ? q(d.fans.text)
-                    : '';
+                    : slot.id === 'history' && d.history
+                      ? `opens ${q(d.history.intro)}; ends ${q(d.history.also.at(-1) ?? d.history.game ?? d.history.birthdays ?? d.history.star)}`
+                      : '';
     return { ...slot, gist };
   });
 }

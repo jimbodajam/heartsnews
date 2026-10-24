@@ -137,7 +137,7 @@ async function main() {
   console.log(`\nWeighted for this bulletin:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
-  const facts = buildFacts(club, channel, stories, items, match, now, memory);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory, history);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);

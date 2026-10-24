@@ -8,6 +8,8 @@ import { emptyMemory, type Memory } from '../memory.ts';
 import { beatFor, beatPresenters, strongestTake, type Beat } from './notebook.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
+import type { OnThisDay } from '../collectors/londonhearts.ts';
+import { pickHistory, type HistoryPicks } from '../history.ts';
 
 /**
  * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted of the top FEATURE_MAX_SCAN stories that
@@ -27,7 +29,7 @@ export interface Channel {
   spokenName: string;
   /** Where the live site is published. */
   siteUrl?: string;
-  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string };
+  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string; /** On This Day at the museum. */ history?: string };
   /** Who picks up which storyline, in order: the first that matches wins (notebook.ts). */
   beats?: Beat[];
   presenters: Presenter[];
@@ -62,6 +64,8 @@ export interface Facts {
   /** BBC's team stats for the game on now or just played, once they mean something (READ.fromMinute in). */
   matchStats?: { fixture: Fixture; stats: MatchStats; minute: number; final: boolean };
   window: { open: boolean; days: number };
+  /** On This Day: today's birthdays and a famous win from this date, from London Hearts. Not around a game. */
+  history?: HistoryPicks;
 }
 
 /** The stats for the game on now (from its minute; 45 at half-time) or just played. */
@@ -94,6 +98,7 @@ export function buildFacts(
   match: MatchData | undefined,
   now: Date,
   memory: Memory = emptyMemory(),
+  history?: OnThisDay,
 ): Facts {
   const phase = detectPhase(match, now);
   const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
@@ -127,6 +132,8 @@ export function buildFacts(
     competitionTable: match?.tables?.find((t) => t.competition === competition),
     matchStats: statsOf(phase),
     window: transferWindow(now),
+    // While a game is on or just finished, it's the story: the history waits.
+    history: history && !['live', 'reaction'].includes(phase.kind) ? pickHistory(history, club, now) : undefined,
   };
 }
 
@@ -139,10 +146,10 @@ export interface Slot {
 
 /**
  * The order segments air in, like a rolling news hour: headlines → story → Match Centre → opposition → story →
- * debate → story → Transfer Centre → stories → Fan Zone. The script prompt (for hand-overs) and the layout share it.
+ * debate → story → Transfer Centre → On This Day → stories → Fan Zone. The script prompt (for hand-overs) and the layout share it.
  */
-export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolean; match: boolean }): Slot[] {
-  const { anchors, analyst, transfers } = f.channel.cast;
+export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolean; match: boolean; history?: boolean }): Slot[] {
+  const { anchors, analyst, transfers, history } = f.channel.cast;
   const pundits = f.channel.cast.debate ?? [anchors[1], transfers];
   const story = (s?: Story): Slot | undefined => s && { id: `story-${s.id}`, what: `in-depth package: "${s.title}"`, presenters: [anchors[0], expertFor(f, s)] };
   const [f1, f2, f3, f4, f5] = opts.features;
@@ -155,6 +162,9 @@ export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolea
     opts.debate ? { id: 'debate', what: 'The Debate, ending with score predictions', presenters: [...pundits] } : undefined,
     story(f3),
     { id: 'transfers', what: 'the Transfer Centre', presenters: [transfers] },
+    opts.history
+      ? { id: 'history', what: 'On This Day at the Hearts museum: birthdays and a famous win from this date', presenters: [history ?? anchors[1]] }
+      : undefined,
     story(f4),
     story(f5),
     { id: 'fans', what: 'the Fan Zone: what supporters are saying', presenters: [...anchors] },

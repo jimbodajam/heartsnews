@@ -50,6 +50,12 @@ export interface ClubConfig {
   rivals?: string[];
   /** What makes a game a big one, and how it's billed on air (matchday.ts bigGame). */
   bigGames?: BigGames;
+  /**
+   * Legends the numbers miss (history.ts counts 300 appearances or 100 goals as a legend), by London Hearts player id
+   * ("h01330"; the name is only for whoever reads the config), so On This Day still features them although their era
+   * was long ago.
+   */
+  legends?: { id: string; name: string }[];
   sportsdb: { teamId: string; leagueId: string };
   /** BBC Sport slugs: the team page (bbc.co.uk/sport/football/teams/<team>) and the league table's tournament. */
   bbc?: { team: string; league: string };

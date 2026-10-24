@@ -80,6 +80,11 @@ async function boot(): Promise<void> {
   const studio = new Image();
   studio.onload = () => (player.studioImage = studio);
   studio.src = 'backgrounds/studio.png';
+  for (const [key, file] of [['front', 'museum-front'], ['inside', 'museum']] as const) {
+    const img = new Image();
+    img.onload = () => (player.museum[key] = img);
+    img.src = `backgrounds/${file}.png`;
+  }
 
   // Browsers only allow sound after a user gesture, hence the "click to tune in" splash.
   const start = async () => {

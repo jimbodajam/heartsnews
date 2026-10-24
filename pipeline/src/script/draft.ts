@@ -4,6 +4,7 @@ import { scorerLabels } from '../matchday.ts';
 import { howItsGone } from '../reading.ts';
 import { describeXI, formOf } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
+import { historyDraft, type HistoryDraft } from './history.ts';
 
 /** The words of a bulletin, before it is laid out into segments, speakers and graphics. */
 export interface Draft {
@@ -43,6 +44,8 @@ export interface Draft {
   opinions?: { speaker: string; topic: string; view: string; storyId?: string; strength?: number }[];
   /** The analyst on the next opponent's form and both XIs (build-up days). */
   opponent?: { form: string; theirXI?: string; ourXI?: string };
+  /** On This Day at the museum. Template only (script/history.ts), so the history is always as the records have it. */
+  history?: HistoryDraft;
   outro: string;
 }
 
@@ -208,6 +211,7 @@ export function templateDraft(f: Facts): Draft {
 
   return {
     opponent,
+    history: historyDraft(f),
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
     headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${headlineRead(s)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,
