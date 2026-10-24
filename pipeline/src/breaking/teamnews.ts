@@ -38,6 +38,11 @@ function faceOf(p: SheetPlayer, faces: Face[]): Face | undefined {
  * it's already a full one ("Cláudio Braga", "JJ Williams"). The first name is the club's if we have their portrait
  * (BBC's can be both of them: "Jamie Daniel").
  */
+const playerFace = (p: SheetPlayer, faces: Face[]) => {
+  const face = faceOf(p, faces);
+  return face ? { face: `faces/${face.file}` } : {};
+};
+
 export function playerName(p: SheetPlayer, faces: Face[] = []): { name: string; face?: string } {
   const face = faceOf(p, faces);
   const first = face && key(face.surname) === key(p.shirt) ? face.name.slice(0, -face.surname.length).trim() : p.first;
@@ -139,7 +144,10 @@ export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, pr
   );
   lines.push(say(shapeLine(sheet, previous), formation(sheet, true, 'EXPECTED', fresh.map((p) => p.shirt))));
   const bench = benchLine(sheet);
-  if (bench) lines.push(say(bench));
+  if (bench) {
+    const players = sheet.bench.map((p) => ({ name: p.shirt, ...(p.number !== undefined ? { number: p.number } : {}), ...playerFace(p, faces) }));
+    lines.push(say(bench, { type: 'bench', team: sheet.team, players }));
+  }
   if (theirs) lines.push(say(`${opponent} are expected to go with ${describeXI(toLineup(theirs))}.`, formation(theirs, false, 'EXPECTED')));
   const last = lines[lines.length - 1];
   last.text = `${last.text} ${SIGN_OFF}`;

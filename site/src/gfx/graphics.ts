@@ -77,10 +77,17 @@ function drawFace(g: Ctx, img: HTMLImageElement, x: number, y: number, scale: nu
   rect(g, x, y, size, size, C.navy);
   // Hand-drawn art is bigger than a photo's portrait: scaled down smoothly, rather than losing whole rows of pixels.
   g.imageSmoothingEnabled = img.naturalWidth > size;
+  g.imageSmoothingQuality = 'high';
   g.drawImage(img, x, y, size, size);
   g.imageSmoothingEnabled = false;
   return size;
 }
+
+/**
+ * How big a portrait goes on a story graphic: a hand-drawn one at least twice a photo's size even in a small panel,
+ * since a third of its size loses the face.
+ */
+const faceScale = (img: HTMLImageElement, big: boolean) => (big || img.naturalWidth > FACE_PX ? 2 : 1);
 
 /**
  * The Sky-style info panel beside a presenter in close-up when there's no story graphic: it rotates between
@@ -128,7 +135,7 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       const s = big ? 2 : 1;
       const iconS = big ? 3 : 2;
       const portrait = faceImage(gr.face);
-      const pictureW = portrait ? drawFace(g, portrait, x + 6, top + 1, big ? 2 : 1) : (drawIcon(g, gr.icon ?? 'ball', x + 6, top + 1, iconS), 8 * iconS);
+      const pictureW = portrait ? drawFace(g, portrait, x + 6, top + 1, faceScale(portrait, big)) : (drawIcon(g, gr.icon ?? 'ball', x + 6, top + 1, iconS), 8 * iconS);
       const tx = x + 12 + pictureW;
       const maxLines = Math.floor((y + h - 14 - top) / (LINE_H * s));
       wrap(gr.title, x + w - 6 - tx, s)
@@ -374,6 +381,34 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'bench': {
+      // Two columns of substitutes: a small portrait (or the number on a shirt colour), the number and the name.
+      const top = panel(g, x, y, w, h, `BENCH: ${gr.team}`);
+      const bottom = Math.min(y + h - 3, CAPTION_SAFE_BOTTOM);
+      const perCol = Math.ceil(gr.players.length / 2);
+      const rowH = Math.max(LINE_H + 1, Math.min(18, Math.floor((bottom - top) / Math.max(1, perCol))));
+      const colW = (w - 12) / 2;
+      const size = rowH - 3;
+      gr.players.forEach((p, i) => {
+        const px = x + 6 + Math.floor(i / perCol) * colW;
+        const py = top + (i % perCol) * rowH;
+        if (py + rowH > bottom + 2) return;
+        const portrait = faceImage(p.face);
+        rect(g, px, py, size, size, portrait ? C.navy : C.maroon);
+        if (portrait) {
+          g.imageSmoothingEnabled = portrait.naturalWidth > size;
+          g.imageSmoothingQuality = 'high';
+          g.drawImage(portrait, px, py, size, size);
+          g.imageSmoothingEnabled = false;
+        }
+        const ty = py + Math.round((size - 5) / 2);
+        const num = p.number !== undefined ? String(p.number) : '';
+        drawTextRight(g, num, px + size + 15, ty, C.gold);
+        drawText(g, fit(p.name.toUpperCase(), colW - size - 22), px + size + 19, ty, C.white);
+      });
+      break;
+    }
+
     case 'player': {
       // The team sheet one at a time: portrait (or a shirt with the number) on the left, the number, name and
       // position beside it, sliding in from the right as each player is read out.
@@ -437,7 +472,7 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       const top = panel(g, x, y, w, h, `IN QUOTES: ${gr.author}`);
       // The speaker's portrait if we have it, otherwise a big quote mark.
       const portrait = faceImage(gr.face);
-      const indent = portrait ? drawFace(g, portrait, x + 6, top + 1, big ? 2 : 1) + 12 : 22;
+      const indent = portrait ? drawFace(g, portrait, x + 6, top + 1, faceScale(portrait, big)) + 12 : 22;
       if (!portrait) drawText(g, '"', x + 6, top, C.gold, 3);
       const s = big ? 2 : 1;
       const lines = wrap(gr.text, w - indent - 8, s);

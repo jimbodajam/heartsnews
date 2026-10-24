@@ -110,6 +110,13 @@ test('the package: the anchor hands over, then the XI one by one at the video wa
   // BBC's shape before kick-off is only what it expects (Mato played left back in a 4-4-2, not up front).
   assert.equal(shape.graphic?.type === 'formation' && shape.graphic.label, 'EXPECTED');
   assert.match(wall.lines[13].text, /^On the bench: Clark, Fulton, .* and JJ Williams\.$/);
+  const bench = wall.lines[13].graphic;
+  assert.equal(bench?.type, 'bench');
+  if (bench?.type === 'bench') {
+    assert.equal(bench.players.length, 10);
+    assert.deepEqual(bench.players[0], { name: 'Clark', number: 28, face: 'faces/zander-clark.png' });
+    assert.equal(bench.players.find((p) => p.name === 'JJ Williams')?.face, 'faces/jj-williams.png');
+  }
   const theirs = wall.lines[14];
   assert.match(theirs.text, /^Trabzonspor are expected to go with a 4-3-3 with Onana in goal and .* up front\. Back to you in the studio\.$/);
   assert.equal(theirs.graphic?.type === 'formation' && theirs.graphic.ours, false);

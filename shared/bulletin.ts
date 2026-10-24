@@ -94,6 +94,8 @@ export type Graphic =
   | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }
   /** A starting XI on a pitch: rows from the goalkeeper forwards. `changes`: the names new to the side, picked out. */
   | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean; changes?: string[] }
+  /** The substitutes on a team sheet. */
+  | { type: 'bench'; team: string; players: { name: string; number?: number; /** faces/<slug>.png */ face?: string }[] }
   /** One player of a team sheet, big on the video wall as the team news is read out. */
   | {
       type: 'player';
