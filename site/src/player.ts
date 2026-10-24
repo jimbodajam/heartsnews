@@ -407,19 +407,18 @@ export class Player {
 
       case 'museum': {
         const p = onScreen[0];
-        const standY = 142 - STANDING_H * 2;
-        // The opening line outside, a small figure by the lamp post so the museum's sign shows; the rest in the
-        // gallery, laid out like the touchscreen.
+        // The opening line outside, a small figure on the pavement by the lamp post so the museum's sign shows; the
+        // rest in the gallery, close to camera in front of the display case. Feet go behind the strap in both.
         if (this.seg && this.line === this.seg.lines[0] && this.museum.front) {
           g.drawImage(this.museum.front, 0, 0, W, H);
-          if (p) drawPresenter(g, 292, 150 - STANDING_H, p.look, pose(p), 1, true);
+          if (p) drawPresenter(g, 292, 166 - STANDING_H, p.look, pose(p), 1, true);
           return;
         }
         if (this.museum.inside) g.drawImage(this.museum.inside, 0, 0, W, H);
         else drawTouchBackground(g);
         if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
         const glance = graphic && t % 5 < 1.6 ? -1 : 0;
-        if (p) drawPresenter(g, 266, standY, p.look, pose(p, glance), 2, true);
+        if (p) drawPresenter(g, 268, 34, p.look, pose(p, glance), 3, true);
         return;
       }
 
