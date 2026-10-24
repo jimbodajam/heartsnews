@@ -230,8 +230,8 @@ test("a presenter saying again a view they've made three times over loses the li
     line('Rogers Mato proved that tactical versatility can successfully compensate for a severe defensive injury crisis by playing at left-back for the first time in eleven years and keeping Salah quiet for most of the night.'),
     line('Mato already proved that tactical versatility can successfully compensate for a severe defensive injury crisis, so the data holds up.'),
   );
-  const checks = repeatedViews(buildFacts(club, channel, [], [], undefined, now, memory), news);
-  assert.deepEqual(checks.map((c) => [c.line, c.action]), [['0.0', 'fixed'], ['0.2', 'dropped']]);
+  const newsChecks = repeatedViews(buildFacts(club, channel, [], [], undefined, now, memory), news);
+  assert.deepEqual(newsChecks.map((c) => [c.line, c.action]), [['0.0', 'fixed'], ['0.2', 'dropped']]);
   assert.deepEqual(news.segments[0].lines.map((l) => l.text.slice(0, 20)), ['As we know, Borchgre', 'Rogers Mato proved t']);
   assert.equal(news.segments[0].lines[0].text, "As we know, Borchgrevink's hamstring injury forced him off before half time against Trabzonspor and leaves him out for several weeks.");
 });
