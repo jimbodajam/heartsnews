@@ -5,7 +5,7 @@ import { teamName, type Facts } from './facts.ts';
 
 /** What a bulletin adds to the channel's memory, for the store. */
 export interface Remembered {
-  aired: { title: string; inDepth: boolean }[];
+  aired: { title: string; storyline?: number; inDepth: boolean }[];
   takes: { presenter: string; topic: string; view: string }[];
   predictions: PresenterPrediction[];
 }

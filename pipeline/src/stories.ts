@@ -1,9 +1,11 @@
 import { CATEGORIES, categorise, type Category, type Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle, shortHash } from './text.ts';
+import type { OnAirStoryline } from './onair.ts';
 import type { ClubConfig, Item, SourceKind } from './types.ts';
 
 // Turns raw items into ranked stories: the same news from several outlets becomes one story,
-// scored by freshness, how many outlets carry it and how authoritative they are.
+// scored by freshness, how many outlets carry it and how authoritative they are. A bulletin's stories are mostly the
+// store's storylines (onair.ts); this groups what the ingest hasn't read yet, or everything when the store is down.
 
 export type StoryCategory = Category;
 
@@ -27,10 +29,12 @@ export interface Story {
   items: Item[];
   /** Players and staff the story is about, by entity id. */
   people: string[];
-  /** Up to three outlets' text, fetched only for stories covered in depth. */
+  /** Up to three outlets' text: stored articles for a storyline, otherwise a video transcript or feed summary. */
   articles?: Article[];
-  /** All of the articles' text together, for checking quotes and scores against. */
+  /** The brief, the claims and the articles' text together, for checking quotes and scores against. */
   body?: string;
+  /** The storyline this story is, when it comes from the store (onair.ts). */
+  storyline?: OnAirStoryline;
 }
 
 const STOP = new Set(
@@ -39,8 +43,8 @@ const STOP = new Set(
     .split(' '),
 );
 
-const KIND_RANK: Record<SourceKind, number> = { official: 0, press: 1, video: 2, podcast: 3, aggregator: 4, forum: 5 };
-const KIND_WEIGHT: Record<SourceKind, number> = { official: 1.2, press: 1, video: 0.8, aggregator: 0.8, podcast: 0.6, forum: 0 };
+export const KIND_RANK: Record<SourceKind, number> = { official: 0, press: 1, video: 2, podcast: 3, aggregator: 4, forum: 5 };
+export const KIND_WEIGHT: Record<SourceKind, number> = { official: 1.2, press: 1, video: 0.8, aggregator: 0.8, podcast: 0.6, forum: 0 };
 
 // Betting tips and "watch it here" listings aren't news, so they're dropped outright.
 const JUNK =
@@ -53,7 +57,7 @@ const MINOR = /\b(goals|highlights)\b|gossip/i;
  * "Hearts injury list grows" share no headline words but are one injury story. Not matches: a preview, the team news
  * and the report name the same players but are different stories.
  */
-const BY_PERSON = new Set<Category>(['injury', 'transfer', 'contract', 'discipline']);
+export const BY_PERSON = new Set<Category>(['injury', 'transfer', 'contract', 'discipline']);
 /** How far apart two items about the same person can be and still be one story. */
 const SAME_STORY_MS = 48 * 3.6e6;
 
@@ -82,7 +86,7 @@ export function sameStory(a: Set<string>, b: Set<string>): boolean {
   return shared >= 3 && shared / Math.min(a.size, b.size) >= 0.5;
 }
 
-const outlet = (it: Item) => it.publisher ?? it.sourceName;
+export const outlet = (it: Item) => it.publisher ?? it.sourceName;
 
 /**
  * Another club's take on us: one of their fan sites ("Celtic FC News", "The Celtic Way"), or a search hit whose
@@ -108,7 +112,7 @@ function rivalWeight(items: Item[], club: ClubConfig): number {
 }
 
 /** Signings and injuries are what fans most want to hear about. */
-const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, contract: 1.15, injury: 1.15, discipline: 1.1, match: 1.1, news: 1 };
+export const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, contract: 1.15, injury: 1.15, discipline: 1.1, match: 1.1, news: 1 };
 
 /**
  * Situational boosts on top of a story's own importance: stories about the next (or current) opponent on a
@@ -226,39 +230,26 @@ export function buildStories(items: Item[], club: ClubConfig, now = new Date(), 
 }
 
 /** How many outlets' articles a story is written from. */
-const MAX_ARTICLES = 3;
+export const MAX_ARTICLES = 3;
 
 /**
- * Fetch article text for the stories that get an in-depth package: up to three articles, each from a different
- * outlet, so the writer can combine them. Tries each outlet's page in turn (aggregator links are redirects, so
- * they're skipped) and falls back to a video transcript, then the longest feed summary.
+ * Text for stories that aren't storylines, from what was collected: a build fetches no article pages (the ingest has
+ * them, and its storylines carry them). A video's transcript (press conferences, fan shows), else the longest summary.
  */
-export async function addBodies(stories: Story[], fetchArticle: (url: string) => Promise<string>): Promise<void> {
-  await Promise.all(
-    stories.map(async (s) => {
-      const articles: Article[] = [];
-      for (const it of s.items.filter((i) => i.kind === 'press' || i.kind === 'official')) {
-        if (articles.length >= MAX_ARTICLES) break;
-        if (articles.some((a) => a.outlet === outlet(it))) continue;
-        try {
-          const text = await fetchArticle(it.url);
-          if (text.length > 300) articles.push({ outlet: outlet(it), text, item: it.id });
-        } catch {
-          // Some outlets refuse article pages; try the next one.
-        }
-      }
-      if (!articles.length) {
-        // No article? A video's transcript is the next best thing (press conferences, fan shows).
-        const video = s.items.find((i) => (i.transcript?.length ?? 0) > 300);
-        const longest = [...s.items].sort((a, b) => b.summary.length - a.summary.length)[0];
-        if (video?.transcript) articles.push({ outlet: outlet(video), text: video.transcript });
-        else if (longest?.summary) articles.push({ outlet: outlet(longest), text: longest.summary });
-      }
-      if (!articles.length) return;
-      s.articles = articles;
-      s.body = articles.map((a) => a.text).join('\n\n');
-    }),
-  );
+export function addOwnText(stories: Story[]): void {
+  for (const s of stories) {
+    if (s.storyline || s.articles) continue;
+    const video = s.items.find((i) => (i.transcript?.length ?? 0) > 300);
+    const longest = [...s.items].sort((a, b) => b.summary.length - a.summary.length)[0];
+    const article: Article | undefined = video?.transcript
+      ? { outlet: outlet(video), text: video.transcript }
+      : longest?.summary
+        ? { outlet: outlet(longest), text: longest.summary }
+        : undefined;
+    if (!article) continue;
+    s.articles = [article];
+    s.body = article.text;
+  }
 }
 
 /** The busiest fan threads, most replies first. */

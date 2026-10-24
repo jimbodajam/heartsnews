@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { seedEntities, type Entity } from '../src/entities.ts';
-import { addBodies, buildStories } from '../src/stories.ts';
+import { addOwnText, buildStories } from '../src/stories.ts';
 import { categorise, mood, tagItems } from '../src/tags.ts';
 import type { ClubConfig, Item } from '../src/types.ts';
 
@@ -103,24 +103,16 @@ test('the same person is a different story in another category, or days apart', 
   assert.deepEqual(stories.map((s) => s.items.map((it) => it.id).sort().join('')).sort(), ['ad', 'b', 'c']);
 });
 
-test('a story is written from up to three outlets, one article each', async () => {
-  const items = [
-    item('a', 'Milne ruled out', { publisher: 'BBC Sport' }),
-    item('b', 'Milne out for season', { publisher: 'BBC Sport' }),
-    item('c', 'Milne blow', { sourceName: 'Daily Record' }),
-    item('d', 'Milne injury', { sourceName: 'Evening News', url: 'https://example.com/refused' }),
-    item('e', 'Milne news', { sourceName: 'The Scotsman' }),
-    item('f', 'Milne fears', { sourceName: 'The Herald' }),
-  ];
-  const [story] = buildStories(items.map((it) => ({ ...it, title: 'Harry Milne ruled out with knee injury' })), club, NOW);
-  await addBodies([story], async (url) => {
-    if (url.endsWith('refused')) throw new Error('403');
-    return `Article at ${url}. ${'More detail. '.repeat(30)}`;
-  });
-  assert.deepEqual(story.articles?.map((a) => [a.outlet, a.item]), [
-    ['BBC Sport', 'a'],
-    ['Daily Record', 'c'],
-    ['The Scotsman', 'e'],
-  ]);
-  assert.ok(story.body?.includes('example.com/c'));
+test('a story from headlines alone is written from a transcript or its longest summary, never a fetched page', () => {
+  const title = 'Harry Milne ruled out with knee injury';
+  const [withVideo] = buildStories(
+    [item('a', title, { summary: 'Short.' }), item('b', title, { kind: 'video', sourceName: 'Hearts TV', transcript: `Vrancken: ${'He is out. '.repeat(40)}` })],
+    club,
+    NOW,
+  );
+  const [withSummaries] = buildStories([item('c', title, { summary: 'Short.' }), item('d', title, { sourceName: 'Daily Record', summary: 'A much longer summary of it.' })], club, NOW);
+  addOwnText([withVideo, withSummaries]);
+  assert.deepEqual(withVideo.articles?.map((a) => a.outlet), ['Hearts TV']);
+  assert.ok(withVideo.body?.startsWith('Vrancken'));
+  assert.deepEqual(withSummaries.articles, [{ outlet: 'Daily Record', text: 'A much longer summary of it.' }]);
 });

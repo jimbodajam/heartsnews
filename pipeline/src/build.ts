@@ -16,21 +16,21 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, FEATURE_CANDIDATES, FEATURE_COUNT, FEATURE_MAX_SCAN, isUs, MIN_BODY, teamName, type Channel } from './script/facts.ts';
+import { buildFacts, isUs, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, reportScorers } from './script/llm.ts';
 import { writeInPieces } from './script/pieces.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
-import { fetchArticleText } from './collectors/article.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { emptyMemory, freshness, settlePredictions, type Memory } from './memory.ts';
-import { addBodies, boostStories, buildStories, fanThreads } from './stories.ts';
+import { storylineStories, type OnAirDesk } from './onair.ts';
+import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { detectPhase } from './matchday.ts';
 import { collectPlayers } from './collectors/sportsdb.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
-import { loadMemory, saveBuild, storeFromEnv } from './store.ts';
+import { loadMemory, loadOnAir, saveBuild, storeFromEnv } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -77,28 +77,32 @@ async function main() {
   const tags = tagItems(items, entities);
   console.log(`Tagged ${tags.size} items against ${entities.length} people, clubs and competitions`);
 
-  const stories = buildStories(items, club, now, tags);
-  await writeFile(resolve(OUT, 'stories.json'), JSON.stringify(stories.map(({ items: _, ...s }) => s), null, 2));
-  console.log(`\nTop stories:`);
-  for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.sources.length} outlets]`);
-
-  // Memory: move on from stories already on air, and settle any predictions whose result is now in.
+  // The store: the storylines the stories come from (onair.ts), what's aired, and what the presenters have said.
   // A pretend time (HEARTSNEWS_NOW) or --fresh reads the store but never writes to it.
   const fresh = flags.has('--fresh');
   const store = storeFromEnv();
   const save = store && !fresh && !process.env.HEARTSNEWS_NOW ? store : undefined;
   let memory: Memory = emptyMemory();
+  let desk: OnAirDesk | undefined;
   if (store) {
     try {
-      memory = await loadMemory(store, now);
-      console.log(`\nMemory from the store: ${memory.aired.length} stories aired this week`);
+      [memory, desk] = await Promise.all([loadMemory(store, now), loadOnAir(store, items.map((it) => it.id), now)]);
+      console.log(`\nFrom the store: ${desk.storylines.length} storylines, ${desk.airings.size} of them aired; ${memory.aired.length} headline stories aired this week`);
     } catch (err) {
-      console.warn(`\nCouldn't read the store, building without memory: ${(err as Error).message}`);
+      console.warn(`\nCouldn't read the store, building from this collection's headlines: ${(err as Error).message}`);
     }
   } else {
-    console.log('\nNo STORE_TOKEN set: building without memory.');
+    console.log('\nNo STORE_TOKEN set: building from this collection\'s headlines, with no memory.');
   }
   if (fresh) memory.aired = [];
+
+  const played = (match?.last ?? []).filter((f) => f.homeScore != null);
+  const stories = desk ? storylineStories(desk, { club, items, tags, played, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
+  // No article pages are fetched: storylines carry the ingest's stored text, anything else a transcript or summary.
+  addOwnText(stories);
+  await writeFile(resolve(OUT, 'stories.json'), JSON.stringify(stories.map(({ items: _, ...s }) => s), null, 2));
+  console.log(`\nTop stories:`);
+  for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.category.padEnd(8)} ${s.title}  [${s.storyline ? `${s.storyline.isNew ? 'new' : 'nothing new'}, ` : 'headlines, '}${s.sources.length} outlets]`);
   if (!save) console.log(`Not writing to the store${fresh ? ' (--fresh: cooldowns cleared)' : process.env.HEARTSNEWS_NOW ? ' (HEARTSNEWS_NOW set)' : ''}.`);
   // A renamed presenter keeps their memory under the new id.
   const renames = channel.presenters.flatMap((p) => (p.formerIds ?? []).map((from) => ({ from, to: p.id })));
@@ -117,12 +121,6 @@ async function main() {
   console.log(`\nWeighted for this bulletin:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
-  await addBodies(stories.slice(0, FEATURE_CANDIDATES), (url) => fetchArticleText(url));
-  // Not enough readable articles yet? Keep going down the order, a few at a time, until there are.
-  const readable = () => stories.slice(0, FEATURE_MAX_SCAN).filter((s) => (s.body?.length ?? 0) >= MIN_BODY).length;
-  for (let i = FEATURE_CANDIDATES; i < FEATURE_MAX_SCAN && readable() < FEATURE_COUNT; i += 6) {
-    await addBodies(stories.slice(i, Math.min(i + 6, FEATURE_MAX_SCAN)), (url) => fetchArticleText(url));
-  }
   const facts = buildFacts(club, channel, stories, items, match, now, memory);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
@@ -177,14 +175,12 @@ async function main() {
 
   if (save) {
     try {
-      const bodies = new Map(stories.flatMap((s) => (s.articles ?? []).flatMap((a) => (a.item ? [[a.item, a.text] as const] : []))));
       const remembered = remember(facts, draft);
       await saveBuild(
         save,
         {
           bulletin: { id: bulletin.generatedAt, phase: facts.phase.kind, runner: process.env.GITHUB_ACTIONS === 'true' ? 'github' : 'home' },
           items,
-          bodies,
           entities,
           tags,
           remembered,

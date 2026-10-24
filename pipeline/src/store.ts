@@ -1,6 +1,7 @@
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
+import type { OnAirDesk } from './onair.ts';
 import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
@@ -83,8 +84,9 @@ const text = (s: string | undefined) => (s ? s.slice(0, MAX_TEXT) : null);
 export async function loadMemory(store: Store, now: Date): Promise<Memory> {
   const [aired, takes, predictions] = await store.batch([
     {
+      // Storylines' airings are read with the storylines (loadOnAir).
       sql: `SELECT story AS title, MIN(at) AS firstAired, MAX(at) AS lastAired, COUNT(*) AS times, SUM(in_depth) AS inDepth
-            FROM airings WHERE story IS NOT NULL AND at >= ? GROUP BY story ORDER BY lastAired DESC LIMIT 80`,
+            FROM airings WHERE story IS NOT NULL AND storyline_id IS NULL AND at >= ? GROUP BY story ORDER BY lastAired DESC LIMIT 80`,
       params: [new Date(now.getTime() - 7 * DAY_MS).toISOString()],
     },
     {
@@ -128,8 +130,8 @@ export async function loadMemory(store: Store, now: Date): Promise<Memory> {
 
 // ---- Writing ----
 
-const INSERT_AIRINGS = `INSERT INTO airings (bulletin_id, story, in_depth, at)
-  SELECT ?, value ->> 'title', value ->> 'inDepth', value ->> 'at' FROM json_each(?)`;
+const INSERT_AIRINGS = `INSERT INTO airings (bulletin_id, story, storyline_id, in_depth, at)
+  SELECT ?, value ->> 'title', value ->> 'storyline', value ->> 'inDepth', value ->> 'at' FROM json_each(?)`;
 
 const INSERT_TAKES = `INSERT INTO takes (bulletin_id, presenter_id, topic, view, at)
   SELECT ?, value ->> 'presenter', value ->> 'topic', value ->> 'view', value ->> 'at' FROM json_each(?)`;
@@ -147,8 +149,6 @@ export interface BuildRecord {
   bulletin: { id: string; phase: string; runner: 'home' | 'github' };
   /** Everything collected this build. */
   items: Item[];
-  /** Article text fetched this build, by item id. */
-  bodies: Map<string, string>;
   entities: Entity[];
   /** What each item is about (tags.ts), by item id. */
   tags: Map<string, Tags>;
@@ -174,11 +174,11 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
   }
 
   statements.push({ sql: 'INSERT INTO bulletins (id, generated_at, phase, runner) VALUES (?, ?, ?, ?)', params: [id, at, r.bulletin.phase, r.bulletin.runner] });
-  statements.push(...itemWrites(r.items, r.bodies, now), ...entityWrites(r.entities), ...tagWrites(r.items, r.tags, at));
+  statements.push(...itemWrites(r.items, now), ...entityWrites(r.entities), ...tagWrites(r.items, r.tags, at));
 
   const { aired, takes, predictions } = r.remembered;
   statements.push(
-    ...each(INSERT_AIRINGS, aired.map((a) => ({ title: a.title, inDepth: a.inDepth ? 1 : 0, at })), [id]),
+    ...each(INSERT_AIRINGS, aired.map((a) => ({ title: a.title, storyline: a.storyline ?? null, inDepth: a.inDepth ? 1 : 0, at })), [id]),
     ...each(INSERT_TAKES, takes.map((t) => ({ ...t, at })), [id]),
     ...each(UPSERT_PREDICTIONS, predictions.map((p) => ({ ...p, outcome: null, actual: null })), [id]),
     ...each(
@@ -192,10 +192,10 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
 }
 
 /**
- * Items: first_seen sticks; a newly fetched body or transcript fills in. A body the ingest fetched in full
- * (fetch_status 'ok') is never replaced by a bulletin's shorter cut of it. Old text is pruned.
+ * Items: first_seen sticks; a newly collected transcript fills in. Article bodies are the ingest's alone (fetchWrites):
+ * a build fetches no pages. Old text is pruned.
  */
-function itemWrites(list: Item[], bodies: Map<string, string>, now: Date): Statement[] {
+function itemWrites(list: Item[], now: Date): Statement[] {
   const at = now.toISOString();
   const items = list.map((it) => ({
     id: it.id,
@@ -206,18 +206,16 @@ function itemWrites(list: Item[], bodies: Map<string, string>, now: Date): State
     summary: it.summary,
     url: it.url,
     publishedAt: it.publishedAt,
-    body: text(bodies.get(it.id)),
     transcript: text(it.transcript),
   }));
   return [
     ...each(
-      `INSERT INTO items (id, source, kind, publisher, title, summary, url, published_at, first_seen, body, transcript)
+      `INSERT INTO items (id, source, kind, publisher, title, summary, url, published_at, first_seen, transcript)
         SELECT value ->> 'id', value ->> 'source', value ->> 'kind', value ->> 'publisher', value ->> 'title',
-          value ->> 'summary', value ->> 'url', value ->> 'publishedAt', ?, value ->> 'body', value ->> 'transcript'
+          value ->> 'summary', value ->> 'url', value ->> 'publishedAt', ?, value ->> 'transcript'
         FROM json_each(?) WHERE true
         ON CONFLICT (id) DO UPDATE SET title = excluded.title, summary = excluded.summary,
           publisher = COALESCE(excluded.publisher, items.publisher),
-          body = CASE WHEN items.fetch_status = 'ok' THEN items.body ELSE COALESCE(excluded.body, items.body) END,
           transcript = COALESCE(excluded.transcript, items.transcript)`,
       items,
       [at],
@@ -315,7 +313,7 @@ export interface Fetched {
  */
 export async function ingestItems(store: Store, items: Item[], entities: Entity[], tags: Map<string, Tags>, now: Date): Promise<ArticleToFetch[]> {
   const results = await store.batch([
-    ...itemWrites(items, new Map(), now),
+    ...itemWrites(items, now),
     ...entityWrites(entities),
     ...tagWrites(items, tags, now.toISOString()),
     {
@@ -541,6 +539,70 @@ export async function storylinesDueBriefs(store: Store, now: Date, limit: number
     { sql: CLAIMS_OF(`id IN (SELECT id FROM storylines WHERE ${due} ORDER BY updated_at DESC LIMIT ?)`), params: [limit] },
   ]);
   return toStorylines(storylines, claims);
+}
+
+/** Of each stored article a bulletin reads, this much (the writer sees at most 2,500 characters of one). */
+const ON_AIR_TEXT = 4_000;
+/** A storyline resolved this recently can still go on air ("Wilson signs"). */
+const RESOLVED_DAYS = 2;
+
+/**
+ * What a bulletin is built from (issue #31): the open storylines (and any resolved in the last two days) with their
+ * claims and briefs, the items the claims came from (with up to 4,000 characters of their stored text), each
+ * storyline's airings, and which of this build's collected items the ingest has already read (`collected`, by id).
+ */
+export async function loadOnAir(store: Store, collected: string[], now: Date): Promise<OnAirDesk> {
+  const where = `status = 'open' OR (close_reason = 'resolved' AND closed_at >= '${new Date(now.getTime() - RESOLVED_DAYS * DAY_MS).toISOString()}')`;
+  const lines = `SELECT id FROM storylines WHERE ${where}`;
+  const [storylines, claims, items, airings, sifted] = await store.batch([
+    { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE ${where} ORDER BY id` },
+    { sql: CLAIMS_OF(where) },
+    {
+      sql: `SELECT id, source, kind, publisher, title, summary, url, published_at, first_seen, substr(COALESCE(body, transcript), 1, ?) AS text
+            FROM items WHERE id IN (SELECT cs.item_id FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id WHERE c.storyline_id IN (${lines}))`,
+      params: [ON_AIR_TEXT],
+    },
+    {
+      sql: `SELECT storyline_id AS storyline, MAX(story) AS title, MIN(at) AS firstAired, MAX(at) AS lastAired, COUNT(*) AS times,
+              SUM(in_depth) AS inDepth, MAX(CASE WHEN in_depth = 1 THEN at END) AS lastInDepth
+            FROM airings WHERE storyline_id IN (${lines}) GROUP BY storyline_id`,
+    },
+    { sql: 'SELECT id FROM items WHERE sifted_at IS NOT NULL AND id IN (SELECT value FROM json_each(?))', params: [JSON.stringify(collected)] },
+  ]);
+  return {
+    storylines: toStorylines(storylines, claims),
+    items: new Map(
+      items.map((r) => [
+        String(r.id),
+        {
+          id: String(r.id),
+          sourceId: String(r.source),
+          sourceName: String(r.publisher ?? r.source),
+          kind: r.kind as SourceKind,
+          ...(r.publisher ? { publisher: String(r.publisher) } : {}),
+          title: String(r.title),
+          summary: String(r.summary ?? ''),
+          url: String(r.url ?? ''),
+          publishedAt: String(r.published_at || r.first_seen),
+          ...(r.text ? { text: String(r.text) } : {}),
+        },
+      ]),
+    ),
+    airings: new Map(
+      airings.map((r) => [
+        Number(r.storyline),
+        {
+          title: String(r.title ?? ''),
+          firstAired: String(r.firstAired),
+          lastAired: String(r.lastAired),
+          times: Number(r.times),
+          inDepth: Number(r.inDepth),
+          ...(r.lastInDepth ? { lastInDepth: String(r.lastInDepth) } : {}),
+        },
+      ]),
+    ),
+    sifted: new Set(sifted.map((r) => String(r.id))),
+  };
 }
 
 /** Adds this run's Workers AI use to today's count. */

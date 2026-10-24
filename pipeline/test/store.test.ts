@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { store as endpoint } from '../../worker/src/store.ts';
 import { freshness, settlePredictions } from '../src/memory.ts';
-import { buildWrites, connectStore, imported, importWrites, loadMemory, saveBuild, type BuildRecord, type Store } from '../src/store.ts';
+import { buildWrites, connectStore, imported, importWrites, loadMemory, saveBuild, saveFetches, type BuildRecord, type Store } from '../src/store.ts';
 import type { Story } from '../src/stories.ts';
 import { TAGGER_VERSION, type Tags } from '../src/tags.ts';
 import type { Item } from '../src/types.ts';
@@ -35,7 +35,6 @@ const item = (id: string, extra: Partial<Item> = {}): Item => ({
 const record = (at: Date, over: Partial<BuildRecord> = {}): BuildRecord => ({
   bulletin: { id: at.toISOString(), phase: 'normal', runner: 'home' },
   items: [item('a'), item('b', { transcript: 'What was said' })],
-  bodies: new Map([['a', 'The article about Milne']]),
   tags: new Map(),
   entities: [
     { id: 'hearts', type: 'club', name: 'Heart of Midlothian', aliases: ['Hearts', 'Jambos'] },
@@ -76,6 +75,7 @@ test('a build writes everything new, and the next build reads it back', async ()
   const t1 = new Date('2026-10-23T10:00:00Z');
   assert.deepEqual((await loadMemory(s.store, t1)).aired, []);
   await saveBuild(s.store, record(t1), t1);
+  await saveFetches(s.store, [{ id: 'a', text: 'The article about Milne' }], t1);
 
   const t2 = new Date('2026-10-23T10:30:00Z');
   const m = await loadMemory(s.store, t2);
@@ -102,6 +102,7 @@ test('a second build: first_seen and bodies stick, a new call replaces the old, 
   const s = setUp();
   const t1 = new Date('2026-10-23T10:00:00Z');
   await saveBuild(s.store, record(t1), t1);
+  await saveFetches(s.store, [{ id: 'a', text: 'The article about Milne' }], t1);
 
   const t2 = new Date('2026-10-26T10:00:00Z');
   const memory = await loadMemory(s.store, t2);
@@ -112,7 +113,6 @@ test('a second build: first_seen and bodies stick, a new call replaces the old, 
     record(t2, {
       bulletin: { id: t2.toISOString(), phase: 'reaction', runner: 'github' },
       items: [item('a', { title: 'Updated headline' }), item('c')],
-      bodies: new Map(),
       entities: [{ id: 'harry-milne', type: 'player', name: 'Harry Milne', aliases: [] }],
       remembered: {
         aired: [{ title: 'Milne signs new deal', inDepth: false }],
@@ -199,8 +199,9 @@ test('article text is pruned after 30 days; the item stays', async () => {
   const s = setUp();
   const t1 = new Date('2026-09-01T10:00:00Z');
   await saveBuild(s.store, record(t1), t1);
+  await saveFetches(s.store, [{ id: 'a', text: 'The article about Milne' }], t1);
   const t2 = new Date('2026-10-05T10:00:00Z');
-  await saveBuild(s.store, record(t2, { items: [], bodies: new Map() }), t2);
+  await saveBuild(s.store, record(t2, { items: [] }), t2);
   assert.deepEqual(rows(s, 'SELECT id, title, body, transcript FROM items ORDER BY id'), [
     { id: 'a', title: 'Story a', body: null, transcript: null },
     { id: 'b', title: 'Story b', body: null, transcript: null },

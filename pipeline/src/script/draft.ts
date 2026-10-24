@@ -3,7 +3,7 @@ import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { howItsGone } from '../reading.ts';
 import { describeXI, formOf } from './opponent.ts';
-import { firstName, isUs, presenter, teamName, type Facts } from './facts.ts';
+import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
 
 /** The words of a bulletin, before it is laid out into segments, speakers and graphics. */
 export interface Draft {
@@ -99,6 +99,9 @@ export function moodWord(score: number): string {
 }
 
 const sentence = (s: string) => (/[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`);
+
+/** A story as a headline read: a storyline's latest from its brief (its title is only a label), else the headline. */
+const headlineRead = (s: Story) => sentence(s.storyline?.brief?.latest || s.storyline?.brief?.known || s.title);
 
 function attribution(sources: string[]): string {
   const spoken = sources.slice(0, 2).map((s) => s.replace(/\s*\(.*?\)\s*/g, ' ').trim());
@@ -203,7 +206,7 @@ export function templateDraft(f: Facts): Draft {
   return {
     opponent,
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
-    headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
+    headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${headlineRead(s)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,
     result,
     table,
@@ -211,17 +214,19 @@ export function templateDraft(f: Facts): Draft {
     stats,
     next,
     transferIntro: f.transfers.length ? `${windowLine} Here's what's being talked about.` : `${windowLine} It's quiet on the transfer front at the moment.`,
-    transfers: f.transfers.map((s) => ({ storyId: s.id, text: `${sentence(s.title)} ${attribution(s.sources)}` })),
-    // Without AI there's no safe way to rewrite an article, so packages use the outlet's own feed summary.
+    transfers: f.transfers.map((s) => ({ storyId: s.id, text: `${headlineRead(s)} ${attribution(s.sources)}` })),
+    // Without AI there's no safe way to rewrite an article, so packages use a storyline's brief or the outlet's own
+    // feed summary.
     features: f.features
       .map((s): Feature | undefined => {
         // Video descriptions end in a run of hashtags, which mustn't be read out.
-        const standfirst = s.items.map((i) => i.summary.replace(/#\w+/g, '').replace(/\s*(?:…|\.{3})\s*$/, '').trim()).find((t) => t.length > 40);
+        const standfirst =
+          s.storyline?.brief?.known ?? s.items.map((i) => i.summary.replace(/#\w+/g, '').replace(/\s*(?:…|\.{3})\s*$/, '').trim()).find((t) => t.length > 40);
         if (!standfirst) return undefined;
         return {
           storyId: s.id,
           lines: [
-            { role: 'lead', text: `Let's take a closer look at one of today's main stories. ${sentence(s.title)}` },
+            { role: 'lead', text: `Let's take a closer look at one of today's main stories. ${s.storyline ? `${s.title}.` : sentence(s.title)}` },
             { role: 'expert', text: `${sentence(truncate(standfirst, 300))} ${attribution(s.sources)}` },
           ],
           result: scoreFromTitle(s.title),

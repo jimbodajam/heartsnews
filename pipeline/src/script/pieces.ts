@@ -147,8 +147,12 @@ Style rules:
 - Sky Sports News feel, British English. News reads (welcome, headlines, transfers, result/table/next) stay factual and
   professional. Personality comes out in conversation: the in-depth packages, the debate, the fan zone and light
   banter in hand-overs. Keep it good-natured; opinions are about football, never about real people's private lives.
-- Stories marked "aired" have been on recently. Prefer "new" ones; if an aired story is still big, treat it as an
-  update ("as we've been reporting…") rather than reading it fresh.
+- Stories marked "new" haven't been on yet. "aired …, update" ones have something new since they last aired: lead
+  with what's new (the claims marked NEW, any headlines just in), as an update ("an update on…", "there's been a
+  development in…"). "aired …, nothing new" ones are running stories: pick them up as such ("as we've been
+  reporting…"), never as fresh news. Other "aired" stories: if still big, treat as an update, not fresh.
+- A storyline's brief and claims are our newsroom's notes, checked across outlets: write from them, and use the
+  articles for detail. Headlines "just in" aren't confirmed yet: say so ("reports are coming in that…").
 - Every line is read aloud by a text-to-speech voice: short sentences, at most about 35 words per line, no emoji,
   no hashtags, no abbreviations like "v" or "vs" (say "against"). Write scores in words, e.g. "seven-one".
 - Use only the facts given below. Never invent quotes, scores, injuries, fees, dates or transfer details.
@@ -195,10 +199,11 @@ and what comes next. Make it a conversation (the lead can ask the expert a quest
 don't copy sentences from the articles. When there's more than one outlet, combine them into one account; when outlets
 disagree, say so and credit each. Otherwise credit the outlet once. The lead addresses ${expert} by name (and nobody else).
 ${place}
-A big story is meant to come round again during the day. If the article was "covered in depth before", viewers may have
-seen it, so take a fresh angle: different details from the article, what it means for tonight or the next game, or the
-expert's own take. Open by picking the story back up, in words like "${OPENERS[i % OPENERS.length]}", rather than
-introducing it from scratch.
+A big story is meant to come round again during the day. If it was "covered in depth before", viewers may have seen it:
+when there are claims marked NEW, lead with those ("there's been a development…"); when there's nothing new, take a
+fresh angle: different details from the articles, what it means for tonight or the next game, or the expert's own
+take. Open by picking the story back up, in words like "${OPENERS[i % OPENERS.length]}", rather than introducing it
+from scratch.
 quote is optional: only if the article contains a direct quote from a named person, copy at most 25 words of it exactly,
 word for word, with "by" being that person's name. Otherwise leave quote out.
 result: only for a match report (an article about a game that has been played, any team: men, women, academy). Home and
@@ -220,8 +225,9 @@ side should add up to its score. Leave out scorers the article doesn't name. Oth
 - welcome: ${firstName(a)} greets viewers ("Good ${partOfDay(now)}") and introduces the headlines.
 - headlines: the 3 or 4 most important stories, most important first, using their ids. Each is a self-contained read of
   2 or 3 sentences (about 40 to 70 words; this overrides the 35-word line limit): what happened, the key detail or
-  number from the article text, then why it matters for ${club.shortName} or what comes next. Use the article text
-  (opening or in-depth) where there is one, not just the title. Rewrite outlet headlines in your own words, never
+  number from the brief or article text, then why it matters for ${club.shortName} or what comes next. Use a
+  storyline's brief and claims and the article text where there are any, not just the title (a storyline's title is
+  only a label, like "Milne injury"). Rewrite outlet headlines in your own words, never
   read a title out as it is. Where a story has several outlets, combine them; when they disagree, say so and credit
   each. Otherwise mention the outlet once. Don't repeat the same story twice.`,
   });

@@ -2,7 +2,7 @@ import type { Story } from '../stories.ts';
 import { truncate } from '../text.ts';
 import { dayPhrase, daysUntil, timePhrase } from '../time.ts';
 import type { Fixture } from '../types.ts';
-import { findAired } from '../memory.ts';
+import { airedFor } from '../memory.ts';
 import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
@@ -122,12 +122,37 @@ export function whenSaid(at: string, now: Date): string {
   return `${days} days ago`;
 }
 
-/** "aired 3 times, last 14:17" for stories the channel has already covered. */
-function airedNote(f: Facts, title: string): string {
-  const a = findAired(f.memory, title);
+const clock = (iso: string) => new Intl.DateTimeFormat('en-GB', { timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(iso));
+
+/**
+ * "new" for a story not on yet; "aired 3x, last 14:17" for one that has been, and for a storyline whether there's an
+ * update since ("update") or it's still running with nothing new ("nothing new").
+ */
+function airedNote(f: Facts, s: Story): string {
+  const a = airedFor(f.memory, s);
   if (!a) return 'new';
-  const last = new Intl.DateTimeFormat('en-GB', { timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(a.lastAired));
-  return `aired ${a.times}x, last ${last}`;
+  const since = s.storyline ? (s.storyline.isNew ? ', update' : ', nothing new') : '';
+  return `aired ${a.times}x, last ${clock(a.lastAired)}${since}`;
+}
+
+/**
+ * What the newsroom knows about a storyline: its brief, what's disputed, and the claims, those since it last aired
+ * marked as new, plus any headlines just in that aren't in the brief yet.
+ */
+function storylineNotes(f: Facts, s: Story): string {
+  const sl = s.storyline;
+  if (!sl) return '';
+  const phase = sl.phase ? { preview: 'before the game', result: 'the result', fallout: 'the fallout from the game' }[sl.phase] : '';
+  const claims = sl.claims.map((c) => `- ${c.text}${c.status === 'reported' ? '' : ` (${c.status})`}${sl.aired && c.isNew ? ' NEW' : ''}`);
+  return [
+    `Brief${phase ? ` (${phase})` : ''}: ${sl.brief?.known ?? '(none yet)'}`,
+    sl.brief?.disputed ? `Disputed: ${sl.brief.disputed}` : '',
+    sl.aired && !sl.isNew ? `Nothing new since it last aired at ${clock(sl.aired.lastAired)}: a running story.` : '',
+    `Claims${sl.aired ? ' (NEW = since it last aired)' : ''}:\n${claims.join('\n')}`,
+    sl.justIn.length ? `Just in, headlines only (not yet confirmed by an article): ${sl.justIn.map((t) => `"${t}"`).join('; ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 /** The next opponent's results and both XIs, when there's a game coming up. */
@@ -154,7 +179,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
   const { club, now } = f;
   const name = (n: string) => teamName(club, n);
   const stories = f.pool
-    .map((s) => `${s.id} | ${s.category} | ${airedNote(f, s.title)} | ${s.sources.slice(0, 3).join(', ')} | ${s.latest.slice(0, 16)} | ${s.title} | ${truncate(s.summary, 280)}`)
+    .map((s) => `${s.id} | ${s.category} | ${airedNote(f, s)} | ${s.sources.slice(0, 3).join(', ')} | ${s.latest.slice(0, 16)} | ${s.title} | ${truncate(s.summary, 400)}`)
     .join('\n');
   const scoreLine = (x: Fixture) =>
     `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition}, ${whenSaid(x.date, now).replace('earlier ', '')})` +
@@ -173,18 +198,22 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
   const fanVideos = f.fanVideos
     .map((v, i) => `V${i + 1} "${v.title}" (${v.sourceName.replace(/\s*\(.*?\)/, '')}, ${whenSaid(v.publishedAt, now).replace('earlier ', '')}):\n${truncate(v.transcript ?? '', 2500)}`)
     .join('\n\n');
-  // Headlines need more than a title to be worth reading out. In-depth articles appear in full below, so skip those here.
+  // Headlines need more than a title to be worth reading out: a storyline's brief and claims, and the opening of the
+  // articles. In-depth articles appear in full below, so skip those here.
   const featureIds = new Set(f.features.map((s) => s.id));
   const headlineText = f.pool
-    .filter((s) => !featureIds.has(s.id) && (s.body?.length ?? 0) > s.summary.length + 100)
-    .map((s) => `[${s.id}] ${s.title}\n${byOutlet(s, 800, 500)}`)
+    .filter((s) => !featureIds.has(s.id) && (s.storyline || (s.body?.length ?? 0) > s.summary.length + 100))
+    .map((s) => [`[${s.id}] ${s.title}`, storylineNotes(f, s), byOutlet(s, 800, 500)].filter(Boolean).join('\n'))
     .join('\n\n');
   const articles = f.features
     .filter((s) => !articleIds || articleIds.includes(s.id))
     .map((s) => {
-      const a = findAired(f.memory, s.title);
-      const before = a?.inDepth ? `; covered in depth ${a.inDepth}x before, last ${airedNote(f, s.title).replace(/^.*last /, '')}` : '';
-      return `[${s.id}] ${s.title} (expert: ${firstName(presenter(f, expertFor(f, s)))}${before})\n${byOutlet(s, 2500, 1800)}`;
+      const a = airedFor(f.memory, s);
+      const last = a?.lastInDepth ?? a?.lastAired;
+      const before = a?.inDepth && last ? `; covered in depth ${a.inDepth}x before, last ${clock(last)}` : '';
+      return [`[${s.id}] ${s.title} (expert: ${firstName(presenter(f, expertFor(f, s)))}${before})`, storylineNotes(f, s), byOutlet(s, 2500, 1800)]
+        .filter(Boolean)
+        .join('\n');
     })
     .join('\n\n');
 
@@ -208,8 +237,8 @@ ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
     videos: `Supporters' YouTube channel, latest shows (ref, title; auto-generated captions, so expect mis-heard words; this is fan opinion):\n${fanVideos || '(none)'}`,
-    openings: `Opening of the articles for other top stories ([id] title, then the start of each outlet's article):\n${headlineText || '(none)'}`,
-    articles: `Articles for in-depth packages ([id] title (expert), then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
+    openings: `More on the other top stories ([id] title, then for a storyline our newsroom brief and claims, then the start of each outlet's article):\n${headlineText || '(none)'}`,
+    articles: `In-depth packages ([id] title (expert), then for a storyline our newsroom brief and claims, then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
     opponent: opponentData(f),
   };
   return `DATA\n${ALL_PARTS.filter((p) => parts.includes(p)).map((p) => blocks[p]).join('\n\n')}\nEND DATA`;

@@ -4,20 +4,22 @@ import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
 import { detectPhase, type Phase } from '../matchday.ts';
 import { minuteOf, READ } from '../reading.ts';
-import { emptyMemory, findAired, type Memory } from '../memory.ts';
+import { airedFor, emptyMemory, type Memory } from '../memory.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
 
 /**
- * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted stories that have enough article or
- * transcript text. The top FEATURE_CANDIDATES always get text (the headlines use it too); after that the build
- * keeps reading down the order, up to FEATURE_MAX_SCAN, because many stories are unreadable Google News links.
- * Repeats are fine (with a fresh angle).
+ * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted of the top FEATURE_MAX_SCAN stories that
+ * have enough text (a storyline's brief, claims and stored articles; otherwise a transcript or summary). Repeats are
+ * fine (with a fresh angle), but a storyline with nothing new since its last package comes round less often.
  */
 export const FEATURE_COUNT = 5;
-export const FEATURE_CANDIDATES = 12;
 export const FEATURE_MAX_SCAN = 30;
 export const MIN_BODY = 400;
+/** A storyline's package with nothing new since the last one counts for this much against the others. */
+const REPACKAGE = 0.5;
+
+const packageWeight = (s: Story) => s.score * (s.storyline && !s.storyline.newSinceInDepth ? REPACKAGE : 1);
 
 export interface Channel {
   name: string;
@@ -93,6 +95,7 @@ export function buildFacts(
     features: stories
       .slice(0, FEATURE_MAX_SCAN)
       .filter((s) => (s.body?.length ?? 0) >= MIN_BODY)
+      .sort((a, b) => packageWeight(b) - packageWeight(a))
       .slice(0, FEATURE_COUNT),
     transfers: stories.filter((s) => s.category === 'transfer').slice(0, 3),
     fans: fanThreads(items).slice(0, 5),
@@ -170,7 +173,7 @@ export function expertFor(f: Facts, s: Story): string {
   const { transfers, analyst, anchors } = f.channel.cast;
   const specialist =
     s.category === 'transfer' || s.category === 'contract' ? transfers : ['match', 'injury', 'discipline'].includes(s.category) ? analyst : anchors[1];
-  const times = findAired(f.memory, s.title)?.inDepth ?? 0;
+  const times = airedFor(f.memory, s)?.inDepth ?? 0;
   if (times % 2 === 0) return specialist;
   return specialist === anchors[1] ? analyst : anchors[1];
 }
