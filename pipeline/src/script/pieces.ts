@@ -1,11 +1,10 @@
 import { truncate } from '../text.ts';
 import { dayPhrase, partOfDay, timePhrase, ukHour } from '../time.ts';
-import type { Fixture } from '../types.ts';
 import { predictionRecord } from '../memory.ts';
 import type { Draft } from './draft.ts';
 import { dataSection, mergeDraft, whenSaid, type DataPart, type ScriptModel } from './llm.ts';
 import { notebookLines } from './notebook.ts';
-import { expertFor, firstName, focusFixture, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
+import { expertFor, firstName, focusFixture, ourResult, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
 
 // The script is written segment by segment: each piece is its own small request with only the data it needs, a few
 // run side by side, and a piece that fails is left to its template on its own. A last "links" request then writes
@@ -110,18 +109,18 @@ prediction showdown for this game, and the fan zone captures the pre-match mood.
     }
     case 'live': {
       const x = p.fixture;
-      const score = x.homeScore !== undefined ? `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)}${x.period ? ` (${x.period})` : ''}` : 'score not yet available';
-      const goals = x.scorers?.length ? ` Goals so far: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join('; ')}.` : '';
+      const score =
+        x.homeScore !== undefined ? `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)}${x.period ? ` (${x.period})` : ''}: ${ourResult(f.club, x, true)}` : 'score not yet available.';
       const asOf = new Intl.DateTimeFormat('en-GB', { timeStyle: 'short', timeZone: 'Europe/London' }).format(now);
       return `BULLETIN TYPE: MATCH IN PROGRESS. ${name(x.home)} against ${name(x.away)} (${x.competition}) is being played right now.
-At ${asOf} UK time it is ${score}.${goals}
+At ${asOf} UK time it is ${score}
 This bulletin is replayed for up to an hour, so always say "at the time of writing" or "as of ${asOf}" with the score;
 never claim a final result. The welcome says the match is under way. The Match Centre "result" line is the live score
 with that caveat; skip "table". Keep in-depth packages and fan zone brief. There is no debate during a match.`;
     }
     case 'reaction': {
       const x = p.result;
-      return `BULLETIN TYPE: FULL-TIME REACTION. ${scoreLineShort(f, x)}.
+      return `BULLETIN TYPE: FULL-TIME REACTION. Full time: ${ourResult(f.club, x)}
 Lead with it: the welcome gives the result, the first headline is the match, and the Match Centre "result" line covers
 the score and our scorers before the table. In the debate, first settle last time's predictions for this game (see the
 prediction records, which now say RIGHT, WRONG or EXACT: let the winner gloat), then argue the main talking point of
@@ -130,12 +129,6 @@ the match, then predict the next fixture. The fan zone is the supporters' reacti
     default:
       return 'BULLETIN TYPE: REGULAR NEWS (no match in the next 30 hours).';
   }
-}
-
-function scoreLineShort(f: Facts, x: Fixture): string {
-  const name = (n: string) => teamName(f.club, n);
-  const goals = x.scorers?.length ? `; goals: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join(', ')}` : '';
-  return `Full time: ${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition})${goals}`;
 }
 
 /** Each presenter's own notebook for a piece: leanings, past takes on these stories' people and storylines, and calls. */

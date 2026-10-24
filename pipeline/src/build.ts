@@ -31,7 +31,8 @@ import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
-import { loadMemory, loadOnAir, saveBuild, storeFromEnv } from './store.ts';
+import { buildLedger, checkBulletin, playedMatches, type LedgerMatch } from './script/ledger.ts';
+import { loadMatches, loadMemory, loadOnAir, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -107,6 +108,16 @@ async function main() {
     console.log('\nNo STORE_TOKEN set: building from this collection\'s headlines, with no memory.');
   }
   if (fresh) memory.aired = [];
+  // The fact ledger: the past year's results from the store, and this build's feed (issue #32).
+  const freshMatches = playedMatches(club, match?.last ?? [], now);
+  let storedMatches: LedgerMatch[] = [];
+  if (store) {
+    try {
+      storedMatches = await loadMatches(store, new Date(now.getTime() - 365 * 86_400_000));
+    } catch (err) {
+      console.warn(`Couldn't read the results from the store, checking against this build's only: ${(err as Error).message}`);
+    }
+  }
 
   const played = (match?.last ?? []).filter((f) => f.homeScore != null);
   const stories = desk ? storylineStories(desk, { club, items, tags, played, upcoming: match?.next, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
@@ -175,6 +186,7 @@ async function main() {
   const bulletin = assemble(facts, draft, writer);
 
   // Second pass: check every AI-written line against the sources, fixing or dropping what doesn't hold up.
+  const checks: CheckLog[] = [];
   const checker = writer === 'templates' || flags.has('--no-check') ? undefined : geminiFromEnv([150_000, 120_000]);
   if (checker) {
     try {
@@ -183,14 +195,27 @@ async function main() {
       console.log(`Checked ${fc.checked} lines: ${fc.fixed.length} fixed, ${fc.dropped.length} dropped`);
       for (const x of fc.fixed) console.log(`  FIXED ${x.line} (${x.reason})\n    was: ${x.was}\n    now: ${x.now}`);
       for (const x of fc.dropped) console.log(`  DROPPED ${x.line} (${x.reason})\n    was: ${x.was}`);
+      checks.push(...fc.fixed.map((x) => ({ checker: 'ai' as const, action: 'fixed' as const, ...x })), ...fc.dropped.map((x) => ({ checker: 'ai' as const, action: 'dropped' as const, ...x })));
       bulletin.generatedBy = `${bulletin.generatedBy}, checked by ${checker.name}`;
     } catch (err) {
       console.warn(`Fact-check failed, keeping the script unchecked: ${(err as Error).message}`);
     }
   }
+
+  // Third pass, in code (issue #32): scores, results and scorers against the ledger of every result we know.
+  const knownPlayers = [
+    ...entities.filter((e) => e.type === 'player').map((e) => e.name),
+    ...[match?.opponent?.ourXI, match?.opponent?.theirXI].flatMap((xi) => xi?.rows.flat() ?? []),
+  ];
+  const ledger = buildLedger(club, storedMatches, freshMatches, knownPlayers,facts.phase.kind === 'live' ? facts.phase.fixture : undefined);
+  const lc = checkBulletin(ledger, bulletin, now);
+  console.log(`\nLedger check against ${ledger.matches.length} results: ${lc.filter((x) => x.action === 'fixed').length} fixed, ${lc.filter((x) => x.action === 'dropped').length} dropped`);
+  for (const x of lc) console.log(`  ${x.action.toUpperCase()} ${x.line} ${x.kind} (${x.reason})\n    was: ${x.was}${x.now ? `\n    now: ${x.now}` : ''}`);
+  checks.push(...lc.map(({ line: _, ...x }) => ({ checker: 'ledger' as const, ...x })));
   await writeFile(BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
 
   if (save) {
+    let saved = false;
     try {
       const remembered = remember(facts, draft);
       await saveBuild(
@@ -207,8 +232,16 @@ async function main() {
         now,
       );
       console.log(`\nSaved to the store: ${items.length} items, ${remembered.aired.length} airings, ${remembered.takes.length} takes, ${remembered.predictions.length} predictions, ${settled.length} settled`);
+      saved = true;
     } catch (err) {
       console.warn(`\nCouldn't write to the store, so this bulletin isn't remembered: ${(err as Error).message}`);
+    }
+    try {
+      // The fact-check log hangs off the bulletin's row, so it goes only if that was saved.
+      await saveLedger(save, freshMatches, saved ? bulletin.generatedAt : undefined, checks, now);
+      console.log(`Saved to the ledger: ${freshMatches.length} results${saved ? `, ${checks.length} fact-check changes` : ''}`);
+    } catch (err) {
+      console.warn(`Couldn't write the results and fact checks to the store: ${(err as Error).message}`);
     }
   }
   console.log(`\nBulletin written (${writer}):`);

@@ -2,6 +2,7 @@ import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { OnAirDesk } from './onair.ts';
+import type { LedgerMatch } from './script/ledger.ts';
 import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
@@ -301,6 +302,98 @@ function tagWrites(items: Item[], tags: Map<string, Tags>, at: string): Statemen
 
 export async function saveBuild(store: Store, r: BuildRecord, now: Date): Promise<void> {
   await store.batch(buildWrites(r, now));
+}
+
+// ---- The fact ledger ----
+// Every result we've seen (issue #32), read at the start of a build and topped up from its feed at the end, and
+// what the fact checks changed, to learn from. Written in a batch of its own after saveBuild, so a store without
+// these tables yet (migration 0005 not applied) still remembers the bulletin.
+
+/** What a fact check fixed or dropped in a script. */
+export interface CheckLog {
+  checker: 'ai' | 'ledger';
+  kind?: string;
+  action: 'fixed' | 'dropped';
+  segment?: string;
+  was: string;
+  now?: string;
+  reason: string;
+}
+
+/** The results since `since`, newest first, each with its goals in order when we have them. */
+export async function loadMatches(store: Store, since: Date): Promise<LedgerMatch[]> {
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT m.id, m.date, m.home, m.away, m.competition, m.home_score, m.away_score, m.source,
+              (SELECT json_group_array(json_object('side', side, 'player', player, 'minute', COALESCE(minute, '')))
+                FROM (SELECT * FROM goals g WHERE g.match_id = m.id ORDER BY n)) AS scorers,
+              (SELECT COUNT(*) FROM goals g WHERE g.match_id = m.id) AS goals
+            FROM matches m WHERE m.date >= ? ORDER BY m.date DESC`,
+      params: [since.toISOString()],
+    },
+  ]);
+  return rows.map((r) => {
+    const goals = Number(r.goals);
+    const total = Number(r.home_score) + Number(r.away_score);
+    return {
+      id: String(r.id),
+      date: String(r.date),
+      home: String(r.home),
+      away: String(r.away),
+      ...(r.competition ? { competition: String(r.competition) } : {}),
+      homeScore: Number(r.home_score),
+      awayScore: Number(r.away_score),
+      ...(goals || total === 0 ? { scorers: JSON.parse(String(r.scorers)) as NonNullable<LedgerMatch['scorers']> } : {}),
+      source: r.source as LedgerMatch['source'],
+    };
+  });
+}
+
+/**
+ * Results upserted (a BBC row isn't replaced by TheSportsDB's), and the goals of each row that changed replaced by
+ * the feed's list when it has one. Plus this bulletin's fact-check log.
+ */
+export function ledgerWrites(matches: LedgerMatch[], bulletinId: string | undefined, checks: CheckLog[], now: Date): Statement[] {
+  const at = now.toISOString();
+  const goals = matches.flatMap((m) => (m.scorers ?? []).map((g, n) => ({ match: m.id, n, side: g.side, player: g.player, minute: g.minute || null })));
+  return [
+    ...each(
+      `INSERT INTO matches (id, date, home, away, competition, home_score, away_score, source, first_seen, updated_at)
+        SELECT value ->> 'id', value ->> 'date', value ->> 'home', value ->> 'away', value ->> 'competition', value ->> 'homeScore',
+          value ->> 'awayScore', value ->> 'source', ?, ? FROM json_each(?) WHERE true
+        ON CONFLICT (id) DO UPDATE SET date = excluded.date, competition = COALESCE(excluded.competition, matches.competition),
+          home_score = excluded.home_score, away_score = excluded.away_score, source = excluded.source, updated_at = excluded.updated_at
+        WHERE excluded.source = 'bbc' OR matches.source = 'sportsdb'`,
+      matches.map((m) => ({ id: m.id, date: m.date, home: m.home, away: m.away, competition: m.competition ?? null, homeScore: m.homeScore, awayScore: m.awayScore, source: m.source })),
+      [at, at],
+    ),
+    ...each(
+      `DELETE FROM goals WHERE match_id IN (SELECT id FROM matches WHERE updated_at = ?) AND match_id IN (SELECT value ->> 'match' FROM json_each(?))`,
+      goals,
+      [at],
+    ),
+    ...each(
+      `INSERT INTO goals (match_id, n, side, player, minute)
+        SELECT m.id, j.value ->> 'n', j.value ->> 'side', j.value ->> 'player', j.value ->> 'minute'
+        FROM (SELECT id FROM matches WHERE updated_at = ?) AS m JOIN json_each(?) AS j ON j.value ->> 'match' = m.id`,
+      goals,
+      [at],
+    ),
+    ...(bulletinId
+      ? each(
+          `INSERT INTO fact_checks (bulletin_id, at, checker, kind, action, segment, was, now, reason)
+            SELECT ?, ?, value ->> 'checker', value ->> 'kind', value ->> 'action', value ->> 'segment', value ->> 'was', value ->> 'now',
+              value ->> 'reason' FROM json_each(?)`,
+          checks.map((c) => ({ ...c, kind: c.kind ?? null, segment: c.segment ?? null, now: c.now ?? null })),
+          [bulletinId, at],
+        )
+      : []),
+  ];
+}
+
+export async function saveLedger(store: Store, matches: LedgerMatch[], bulletinId: string | undefined, checks: CheckLog[], now: Date): Promise<void> {
+  const statements = ledgerWrites(matches, bulletinId, checks, now);
+  if (statements.length) await store.batch(statements);
 }
 
 // ---- Ingesting ----

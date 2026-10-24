@@ -7,7 +7,7 @@ import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
 import { formOf, xiText } from './opponent.ts';
-import { expertFor, firstName, presenter, teamName, type Facts } from './facts.ts';
+import { expertFor, firstName, ourResult, presenter, teamName, type Facts } from './facts.ts';
 
 /** Any model that can answer a prompt with JSON matching a schema. Swap providers by adding another. */
 export interface ScriptModel {
@@ -181,10 +181,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
   const stories = f.pool
     .map((s) => `${s.id} | ${s.category} | ${airedNote(f, s)} | ${s.sources.slice(0, 3).join(', ')} | ${s.latest.slice(0, 16)} | ${s.title} | ${truncate(s.summary, 400)}`)
     .join('\n');
-  const scoreLine = (x: Fixture) =>
-    `${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition}, ${whenSaid(x.date, now).replace('earlier ', '')})` +
-    (x.scorers?.length ? `, goals: ${x.scorers.map((s) => `${s.player} ${s.minute} for ${name(x[s.side])}`).join('; ')}` : '');
-  const results = f.results.map(scoreLine).join('\n');
+  const results = f.results.map((x) => `RESULT, ${whenSaid(x.date, now).replace('earlier ', '')}: ${ourResult(club, x)}`).join('\n');
   const tableRows = (rows: Facts['table']) => rows.map((t) => `${t.pos}. ${name(t.team)} P${t.played} GD${t.gd} ${t.pts}pts${t.form ? ` form ${t.form}` : ''}`).join('; ');
   const table = tableRows(f.table);
   const ct = f.competitionTable;

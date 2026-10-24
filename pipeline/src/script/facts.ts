@@ -182,6 +182,27 @@ export function isUs(club: ClubConfig, name: string): boolean {
   return name === club.name || name === club.shortName;
 }
 
+/**
+ * A result said from our side, so the writer never has to work out who won from the home/away order (issue #32):
+ * "Hearts LOST 7-1 away to Celtic (Scottish Premiership). Hearts scorers: L. Mendy 41'. Celtic scorers: …". The
+ * winner's goals come first, as it's said on air. A game on now LEADS, TRAILS or is LEVEL.
+ */
+export function ourResult(club: ClubConfig, x: Fixture, live = false): string {
+  const home = isUs(club, x.home);
+  const [ours, theirs] = home ? [x.homeScore ?? 0, x.awayScore ?? 0] : [x.awayScore ?? 0, x.homeScore ?? 0];
+  const opponent = teamName(club, home ? x.away : x.home);
+  const word = live ? (ours > theirs ? 'LEAD' : ours < theirs ? 'TRAIL' : 'are LEVEL') : ours > theirs ? 'WON' : ours < theirs ? 'LOST' : 'DREW';
+  const score = `${Math.max(ours, theirs)}-${Math.min(ours, theirs)}`;
+  const scorers = (side: 'home' | 'away') => x.scorers?.filter((s) => s.side === side).map((s) => `${s.player} ${s.minute}`.trim()).join(', ') || 'none';
+  const ourSide = home ? 'home' : 'away';
+  // Scorers only when the feed gave them (or there were none to give): an empty list isn't "nobody scored".
+  const goals =
+    x.scorers?.length || ours + theirs === 0
+      ? ` ${club.shortName} scorers: ${scorers(ourSide)}. ${opponent} scorers: ${scorers(home ? 'away' : 'home')}.`
+      : '';
+  return `${club.shortName} ${word} ${score} ${home ? 'at home to' : 'away to'} ${opponent} (${x.competition}).${goals}`;
+}
+
 export function presenter(facts: Facts, id: string): Presenter {
   return facts.channel.presenters.find((p) => p.id === id) ?? facts.channel.presenters[0];
 }

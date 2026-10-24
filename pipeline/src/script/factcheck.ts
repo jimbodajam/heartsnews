@@ -7,8 +7,16 @@ import { dataSection, type ScriptModel } from './llm.ts';
 
 export interface FactCheckResult {
   checked: number;
-  fixed: { line: string; was: string; now: string; reason: string }[];
-  dropped: { line: string; was: string; reason: string }[];
+  fixed: { line: string; segment: string; was: string; now: string; reason: string }[];
+  dropped: { line: string; segment: string; was: string; reason: string }[];
+}
+
+/** Removes lines by "<segment>.<line>" id, but never empties a segment: it keeps its first line if everything went. */
+export function removeLines(bulletin: Bulletin, drop: Set<string>): void {
+  bulletin.segments.forEach((s, si) => {
+    const kept = s.lines.filter((_, li) => !drop.has(`${si}.${li}`));
+    s.lines = kept.length ? kept : s.lines.slice(0, 1);
+  });
 }
 
 const STR = { type: 'STRING' };
@@ -76,21 +84,17 @@ export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin
     const [si, li] = (c.lineId ?? '').split('.').map(Number);
     const line = bulletin.segments[si]?.lines[li];
     if (!line) continue;
+    const segment = bulletin.segments[si].id;
     // The model sometimes echoes the "id | speaker |" (or just "speaker |") prefix from the script listing; that mustn't be read out.
     const text = typeof c.text === 'string' ? c.text.replace(/^\s*(?:\d+\.\d+\s*\|\s*)?[\w-]+\s*\|\s*/, '').trim() : '';
     if (c.action === 'fix' && text && text.length <= 600) {
-      result.fixed.push({ line: c.lineId, was: line.text, now: text, reason: c.reason });
+      result.fixed.push({ line: c.lineId, segment, was: line.text, now: text, reason: c.reason });
       line.text = text;
     } else if (c.action === 'drop') {
-      result.dropped.push({ line: c.lineId, was: line.text, reason: c.reason });
+      result.dropped.push({ line: c.lineId, segment, was: line.text, reason: c.reason });
       drop.add(c.lineId);
     }
   }
-
-  // Remove dropped lines, but never empty a segment completely: keep its first line if everything went.
-  bulletin.segments.forEach((s, si) => {
-    const kept = s.lines.filter((_, li) => !drop.has(`${si}.${li}`));
-    s.lines = kept.length ? kept : s.lines.slice(0, 1);
-  });
+  removeLines(bulletin, drop);
   return result;
 }
