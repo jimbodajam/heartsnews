@@ -25,9 +25,9 @@ const OUT = resolve(ROOT, 'site/public/faces');
 export const PROMPT = `I've attached two images. The first is a pixel-art portrait in our house style. The second is a
 photo of a footballer.
 
-Draw the person in the photo as a pixel-art portrait in exactly the same style as the first image: framed like it,
-a close crop from the top of the head to just below the shoulders with the head filling the top half (not down to
-the waist), facing the camera, a dark outline, a few flat shades per colour with no
+Draw the person in the photo as a pixel-art portrait in exactly the same style as the first image: from the top of
+the head down to the chest, with true-to-life proportions (a normal-sized head, the neck showing, the shoulders as
+wide as in the photo), facing the camera, a dark outline, a few flat shades per colour with no
 gradients or blur, and big clean square pixels on a grid of about 100 by 100. Keep what makes them recognisable:
 face shape, skin tone, hair colour and style, facial hair, and the kit they're wearing in the photo. No text, no
 border. Put them on a plain flat magenta background (#FF00FF) with nothing else in it.`;
