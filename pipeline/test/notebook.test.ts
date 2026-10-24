@@ -185,3 +185,41 @@ test("a view that only says again what they've said isn't saved, but a change of
     "fraser: Now thinks Milne won't be back for the derby after the scan",
   ]);
 });
+
+test('"now thinks" in front of the same view isn\'t a change of mind; the opposite view is, even without it', () => {
+  // As Ross's takes went on 24 Oct: the same view with "now thinks" in front was saved every half hour.
+  const memory = withTakes({
+    ross: [take({ topic: 'Away win data', view: 'Advanced metrics and structured pressing fully compensate for missing players to guarantee an away win.' })],
+    fraser: [take({ topic: 'Milne', view: 'Milne will be back for the derby', storyline: 11 })],
+  });
+  const f = facts([milne], memory);
+  const draft: Draft = {
+    ...templateDraft(f),
+    opinions: [
+      { speaker: 'ross', topic: 'Motherwell match tactics', view: 'now thinks advanced metrics and structured pressing fully compensate for missing players to guarantee an away win' },
+      { speaker: 'fraser', storyId: 's1', topic: 'Milne', view: "Milne won't be back for the derby" },
+      { speaker: 'ross', topic: 'Kirsty', view: 'Admits he was wrong: advanced metrics and structured pressing fully compensate for nothing' },
+    ],
+  };
+  assert.deepEqual(remember(f, draft).takes.map((t) => `${t.presenter}: ${t.view}`), [
+    "fraser: Milne won't be back for the derby",
+    'ross: Admits he was wrong: advanced metrics and structured pressing fully compensate for nothing',
+  ]);
+});
+
+test('a view said again and again shows once in the notebook, with how often', () => {
+  const view = (n: number, v: string) => take({ topic: `Data ${n}`, view: v, at: `2026-10-24T0${n}:00:00.000Z` });
+  const memory = withTakes({
+    ross: [
+      view(1, 'Structured pressing triggers and data metrics are vital to cover for injured players.'),
+      view(2, 'Wilson is the best signing of the window.'),
+      view(3, 'Structured pressing triggers and data metrics remain essential to cover for injured players.'),
+      view(4, 'Advanced data metrics and structured pressing triggers are essential to cover for injured players.'),
+    ],
+  });
+  const lines = notebookLines(facts([], memory), 'ross', [], (at) => at.slice(11, 16));
+  assert.equal(
+    lines.find((l) => l.startsWith('other recent views')),
+    'other recent views: Data 4: "Advanced data metrics and structured pressing triggers are essential to cover for injured players." (04:00, said 3 times already); Data 2: "Wilson is the best signing of the window." (02:00)',
+  );
+});

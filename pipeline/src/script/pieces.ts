@@ -18,6 +18,7 @@ const OPINIONS = LINES({ speaker: STR, storyId: STR, topic: STR, view: STR, stre
 const OPINION_RULES = `Each is: speaker id; storyId when it's about one of the stories (else leave it out); topic, naming the
 person or storyline it's about (at most six words); the view in under 20 words; strength 1 (said in passing), 2 (firmly)
 or 3 (staked their name on it). Only views that are new, or changed from their notebook (say so in the view: "now thinks…").
+Saying a notebook view again isn't a change: leave it out of the list.
 Football only: never anything about anyone's private life.`;
 
 const FEATURE_SCHEMA = {
@@ -161,7 +162,9 @@ function header(f: Facts, n?: Piece['notebooks']): string {
 leanings, and what they've said before on the people and storylines here, with how strongly they held it. A presenter
 only knows their own notebook and what's been said on air. Keep their views consistent with it and let them refer back
 ("I said last week…"), so two presenters on one story can disagree naturally. When the facts have moved on since, they
-can change their mind and say so ("I said he'd be back for the derby; the scan says otherwise"). Leanings are attitudes,
+can change their mind and say so ("I said he'd be back for the derby; the scan says otherwise"). A notebook view has
+already been said on air: don't say it again in the same words, and don't bring the same view into more than one piece.
+Refer back to it in a few words at most and add something new from the DATA, or leave it out. Leanings are attitudes,
 not facts: they colour a view but never override the DATA, and never justify a number that isn't in it (no made-up
 xG, stats or percentages to back a hunch).
 ${notebooks(f, n)}\n`
