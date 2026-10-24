@@ -4,14 +4,15 @@
 // Usage: npm run faces:draw -- --photos   each club photo without art yet → pipeline/out/faces-photos/<slug>.png,
 //                                         with the prompt in PROMPT.txt beside them
 //        npm run faces:draw -- --import   each drawing saved as pipeline/out/faces-drawn/<slug>.png (or .jpg/.webp)
-//                                         → art/faces/<slug>.png: background cut out, sized and tidied
+//                                         → art/faces/<slug>.png: background cut out, sized and tidied, and on air
+//                                         for anyone already in site/public/faces/faces.json
 
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { ART_SIZE, PAGES, people } from './faces.ts';
+import { ART_SIZE, artPortrait, type Face, PAGES, people } from './faces.ts';
 import { fetchText } from './http.ts';
 import { slug } from './text.ts';
 
@@ -19,6 +20,7 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const ART = resolve(ROOT, 'art/faces');
 const PHOTOS = resolve(ROOT, 'pipeline/out/faces-photos');
 const DRAWN = resolve(ROOT, 'pipeline/out/faces-drawn');
+const OUT = resolve(ROOT, 'site/public/faces');
 
 export const PROMPT = `I've attached two images. The first is a pixel-art portrait in our house style. The second is a
 photo of a footballer.
@@ -116,7 +118,17 @@ async function importDrawings(): Promise<void> {
       console.log(`  ✘ ${name}: ${(err as Error).message}`);
     }
   }
-  console.log(`\n${files.length} drawings → art/faces/ (run npm run faces to put them on air)`);
+  // On air straight away for anyone already in the squad list (no need to read the club site again); someone new
+  // waits for `npm run faces`.
+  const listed = existsSync(resolve(OUT, 'faces.json')) ? (JSON.parse(await readFile(resolve(OUT, 'faces.json'), 'utf8')) as Face[]) : [];
+  let onAir = 0;
+  for (const f of listed) {
+    const art = resolve(ART, f.file);
+    if (!existsSync(art)) continue;
+    await writeFile(resolve(OUT, f.file), await artPortrait(await readFile(art)));
+    onAir++;
+  }
+  console.log(`\n${files.length} drawings → art/faces/; ${onAir} hand-drawn faces on air (anyone new: npm run faces)`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
