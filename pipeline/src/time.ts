@@ -3,7 +3,7 @@
 const TZ = 'Europe/London';
 const DAY_MS = 86_400_000;
 
-const dateKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d); // YYYY-MM-DD
+export const dateKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d); // YYYY-MM-DD
 
 export function ukHour(d: Date): number {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: TZ }).format(d));

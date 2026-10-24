@@ -27,6 +27,7 @@ import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectPlayers } from './collectors/sportsdb.ts';
+import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
@@ -73,6 +74,17 @@ async function main() {
     console.warn(`Couldn't read the squad from SportsDB: ${(err as Error).message}`);
     return [];
   });
+  // On this day in Hearts history (issue #8): today's birthdays and results from London Hearts, fetched once a day.
+  const history = await collectOnThisDay(now).catch((err) => {
+    console.warn(`Couldn't read London Hearts' page for today: ${(err as Error).message}`);
+    return undefined;
+  });
+  if (history) {
+    console.log(`On this day: ${history.birthdays.length} birthdays, ${history.results.length} results (London Hearts)`);
+    await mkdir(OUT, { recursive: true });
+    await writeFile(resolve(OUT, 'onthisday.json'), JSON.stringify(history, null, 2));
+  }
+
   const entities = seedEntities(club, match, [loadFaces(), players]);
   const tags = tagItems(items, entities);
   console.log(`Tagged ${tags.size} items against ${entities.length} people, clubs and competitions`);

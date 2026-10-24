@@ -70,6 +70,19 @@ jobs:
           fi
           if [ -x ~/ffmpeg/ffmpeg ]; then echo "$HOME/ffmpeg" >> "$GITHUB_PATH"; fi
 
+      # Today's page from London Hearts (pipeline/src/collectors/londonhearts.ts), fetched by the day's first programme
+      # and kept for the rest of the day: it's a fan-run site.
+      - name: UK date
+        id: today
+        run: echo "day=$(TZ=Europe/London date +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache London Hearts
+        if: inputs.kind != 'breaking'
+        uses: actions/cache@v4
+        with:
+          path: pipeline/out/londonhearts
+          key: londonhearts-${{ steps.today.outputs.day }}
+
       # Forum data collected at home by `npm run snapshot`, for sources that block GitHub's servers.
       - name: Fetch home snapshots
         if: inputs.kind != 'breaking'
