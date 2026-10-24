@@ -128,6 +128,8 @@ const FIXTURES_AHEAD = 2;
 const CATEGORIES = ['injury', 'transfer', 'contract', 'discipline', 'manager', 'finance', 'stadium', 'other'];
 /** The topics a person storyline can be about. */
 const PERSON_TOPICS = ['injury', 'transfer', 'contract', 'discipline'];
+/** The topics a club storyline about one person can be about; anything else they say or do is about a match. */
+const CLUB_TOPICS = ['manager', 'finance', 'stadium'];
 
 /** A ref the model gave back ("c12", "C12", "12" or 12) in the form we sent it ("c12"). */
 export const asRef = (prefix: string, ref: unknown) => {
@@ -262,6 +264,7 @@ Storylines:
 - person: a story about one player or member of staff that runs beyond a single match, on one topic: injury, transfer, contract or discipline (category). E.g. "Milne injury", "Wilson contract". entity: their id from the people list, e.g. "harry-milne".
 - match: one per fixture in the fixture list, running from the preview through the game to the report and the fallout. Everything about that game goes here: team news for it, the result, goals, substitutions, saves, refereeing, who said what about it, and reaction to the result ("Vrancken under pressure after the defeat") while it's about that result. A match report always gives the result as a claim. fixture: its ref.
 - club: the club when it's neither: the manager's job, finances, the stadium, the board, the academy, the women's team.
+Never open a storyline for one person's comments, form, position or availability ("Vrancken comments", "Kingsley availability"): that goes under the match it's about, reaction under the last game and team news under the next.
 File each claim under an open storyline when one fits. Open a new one (ref "n1", "n2", ...) only when none does, and never two for the same person and topic or the same fixture. Skip routine notices (ticket sales, travel and merchandise) and pundits' opinions.
 
 relation: how the claim stands against the claims we already have:
@@ -326,13 +329,46 @@ export function planSift(
   const ours = (f: Fixture) => fixtures.every((x) => x.f.home === f.home || x.f.away === f.home) && fixtures.length > 1;
   const fixtureNamed = (title: string) => fixtures.find(({ f }) => says(title, ours(f) ? f.away : f.home) || (fixtures.length === 1 && says(title, f.away)))?.f;
   const storylineIds = new Map<string, number>(open.map((s) => [`s${s.id}`, s.id]));
-  const known = [...open.map((s) => ({ id: s.id, kind: s.kind, entity: s.entity, category: s.category, fixture: s.fixture }))];
+  const known = [...open.map((s) => ({ id: s.id, kind: s.kind, entity: s.entity, category: s.category, fixture: s.fixture, title: s.title }))];
   let nextStoryline = nextIds.storyline;
   let nextClaim = nextIds.claim;
   let dropped = 0;
 
+  /** The open storyline that already covers this one, or a new one. */
+  const storylineFor = (kind: StorylineKind, title: string, entity?: string, category?: string, fixture?: Fixture): number => {
+    const key = fixture ? fixtureKey(fixture) : undefined;
+    const same = known.find((s) =>
+      kind === 'match'
+        ? s.fixture === key
+        : kind === 'person'
+          ? s.kind === 'person' && s.entity === entity && s.category === category
+          : s.kind === 'club' && plainLower(s.title) === plainLower(title),
+    );
+    if (same) return same.id;
+    const id = nextStoryline++;
+    // A match is named after its fixture: the model's own title for one can be odd ("F1 result").
+    const named = fixture ? `${fixture.home} v ${fixture.away}` : truncate(title.trim(), 80);
+    plan.storylines.push({
+      id,
+      kind,
+      ...(entity && kind !== 'match' ? { entity } : {}),
+      ...(category ? { category } : {}),
+      title: named,
+      ...(key ? { fixture: key, kickOff: fixture!.date } : {}),
+      openedAt: now.toISOString(),
+    });
+    known.push({ id, kind, entity, category, fixture: key, title: named });
+    return id;
+  };
+  // Someone's comments, form or availability, which the model sometimes makes a club storyline of ("Vrancken
+  // comments"), are filed under a match once we see the claim: the fixture it names, or the one nearest its date.
+  const aboutMatch = new Set<string>();
+  const nearestFixture = (at: string) =>
+    [...fixtures].sort((a, b) => Math.abs(new Date(a.f.date).getTime() - new Date(at).getTime()) - Math.abs(new Date(b.f.date).getTime() - new Date(at).getTime()))[0]?.f;
+
   for (const n of reply.storylines ?? []) {
     if (!n.ref || !n.title) continue;
+    const ref = n.ref.trim().toLowerCase();
     let kind = (['person', 'match', 'club'] as const).find((k) => k === n.kind) ?? 'club';
     // The model often leaves the category out; the title says it ("Milne injury").
     const given = CATEGORIES.includes(n.category ?? '') ? n.category : categorise(n.title);
@@ -344,27 +380,11 @@ export function planSift(
     // A person storyline needs a person and one of the topics; anything else about them is the club's.
     if ((kind === 'person' && (!entity || !PERSON_TOPICS.includes(given ?? ''))) || (kind === 'match' && !fixture)) kind = 'club';
     const category = kind === 'match' ? 'match' : CATEGORIES.includes(given ?? '') ? given : undefined;
-    const key = fixture ? fixtureKey(fixture) : undefined;
-    const same = known.find((s) =>
-      kind === 'match' ? s.fixture === key : kind === 'person' ? s.kind === 'person' && s.entity === entity && s.category === category : false,
-    );
-    if (same) {
-      storylineIds.set(n.ref.trim().toLowerCase(), same.id);
+    if (kind === 'club' && !CLUB_TOPICS.includes(category ?? '') && (entity ?? personNamed(n.title)) && fixtures.length) {
+      aboutMatch.add(ref);
       continue;
     }
-    const id = nextStoryline++;
-    plan.storylines.push({
-      id,
-      kind,
-      ...(entity && kind !== 'match' ? { entity } : {}),
-      ...(category ? { category } : {}),
-      // A match is named after its fixture: the model's own title for one can be odd ("F1 result").
-      title: fixture ? `${fixture.home} v ${fixture.away}` : truncate(n.title.trim(), 80),
-      ...(key ? { fixture: key, kickOff: fixture!.date } : {}),
-      openedAt: now.toISOString(),
-    });
-    known.push({ id, kind, entity, category, fixture: key });
-    storylineIds.set(n.ref.trim().toLowerCase(), id);
+    storylineIds.set(ref, storylineFor(kind, n.title, entity, category, fixture));
   }
 
   const articleByRef = new Map(articles.map((a, i) => [`a${i + 1}`, a]));
@@ -382,13 +402,15 @@ export function planSift(
 
   for (const c of reply.claims ?? []) {
     const text = c.text?.trim();
-    const storylineId = storylineIds.get(/^\s*n\d+\s*$/i.test(c.storyline ?? '') ? c.storyline!.trim().toLowerCase() : (asRef('s', c.storyline) ?? ''));
+    const ref = /^\s*n\d+\s*$/i.test(c.storyline ?? '') ? c.storyline!.trim().toLowerCase() : (asRef('s', c.storyline) ?? '');
     const sources = [...new Set((c.sources ?? []).map((r) => articleByRef.get(asRef('a', r) ?? '')).filter((a): a is SiftItem => !!a))];
+    const firstSeen = sources.map((a) => a.publishedAt).sort()[0];
+    const fixture = text && firstSeen && aboutMatch.has(ref) ? (fixtureNamed(text) ?? nearestFixture(firstSeen)) : undefined;
+    const storylineId = fixture ? storylineFor('match', '', undefined, 'match', fixture) : storylineIds.get(ref);
     if (!text || storylineId == null || !sources.length) {
       dropped++;
       continue;
     }
-    const firstSeen = sources.map((a) => a.publishedAt).sort()[0];
     const targetId = Number(asRef('c', c.target)?.slice(1));
     const target = claimById.get(targetId);
     const relation = target && target.claim.status !== 'replaced' ? (c.relation ?? 'new') : 'new';

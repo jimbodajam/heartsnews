@@ -347,12 +347,69 @@ test('refs come back in any form, a missing category comes from the title, and m
     plan.storylines.map((s) => [s.kind, s.entity, s.category, s.fixture]),
     [
       ['person', 'harry-milne', 'injury', undefined],
-      ['club', 'harry-milne', undefined, undefined], // no topic: not a person storyline
       ['match', undefined, 'match', '2026-10-22|Trabzonspor|Heart of Midlothian'],
     ],
   );
-  assert.equal(plan.claims.length, 3);
+  // No topic, so not a person storyline: the substitution goes with the match.
+  assert.deepEqual(
+    plan.claims.map((c) => [c.text, c.storylineId]),
+    [
+      ['Milne: ACL', 1],
+      ['Milne: replaced at half-time', 2],
+      ['Trabzonspor 2-0 Hearts', 2],
+    ],
+  );
   assert.equal(plan.dropped, 0);
+});
+
+test("one person's comments or availability go under a match, and a club storyline isn't opened twice", () => {
+  const article = (id: string, publishedAt: string) => ({ id, source: 'bbc', kind: 'press' as const, title: 't', publishedAt, text: 'x' });
+  const articles = [article('after', '2026-10-23T10:00:00.000Z'), article('before', '2026-10-24T18:00:00.000Z')];
+  const fixtures = [{ ref: 'f1', f: TRABZONSPOR }, { ref: 'f2', f: HIBS }];
+  const people = entities.filter((e) => e.type === 'player' || e.type === 'staff');
+  const finances: Storyline = { id: 7, kind: 'club', category: 'finance', title: 'Conference League earnings', status: 'open', openedAt: '2026-10-21T12:00:00.000Z', updatedAt: '2026-10-21T12:00:00.000Z', claims: [] };
+  const plan = planSift(
+    {
+      storylines: [
+        { ref: 'n1', kind: 'club', title: 'Vrancken comments', category: 'other' },
+        { ref: 'n2', kind: 'club', title: 'Vrancken comments' },
+        { ref: 'n3', kind: 'club', title: 'Milne availability', entity: 'harry-milne' },
+        { ref: 'n4', kind: 'club', title: 'Vrancken under pressure', category: 'manager' },
+        { ref: 'n5', kind: 'club', title: 'Conference League earnings', category: 'finance' },
+      ],
+      claims: [
+        { text: 'Vrancken: proud of the team in defeat', storyline: 'n1', sources: ['a1'], relation: 'new' },
+        { text: 'Vrancken: urges the squad to dig deep', storyline: 'n2', sources: ['a2'], relation: 'new' },
+        { text: 'Milne: missed the defeat in Trabzonspor', storyline: 'n3', sources: ['a2'], relation: 'new' },
+        { text: 'Vrancken: board backs him', storyline: 'n4', sources: ['a2'], relation: 'new' },
+        { text: 'Hearts: £3m from the group stage', storyline: 'n5', sources: ['a2'], relation: 'new' },
+      ],
+    },
+    articles,
+    [finances],
+    fixtures,
+    people,
+    { storyline: 8, claim: 1 },
+    new Date('2026-10-24T19:00:00Z'),
+  );
+  assert.deepEqual(
+    plan.storylines.map((s) => [s.id, s.kind, s.title]),
+    [
+      [8, 'club', 'Vrancken under pressure'], // the manager's job is the club's
+      [9, 'match', 'Trabzonspor v Heart of Midlothian'],
+      [10, 'match', 'Heart of Midlothian v Hibernian'],
+    ],
+  );
+  assert.deepEqual(
+    plan.claims.map((c) => c.storylineId),
+    [
+      9, // the day after Trabzonspor: reaction to it
+      10, // the day before the derby: team news for it
+      9, // names Trabzonspor
+      8,
+      7, // the same club storyline, not a second one
+    ],
+  );
 });
 
 test('a storyline with no usable person or fixture ref is placed by the names in its title', () => {
