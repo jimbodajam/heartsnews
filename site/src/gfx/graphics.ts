@@ -75,7 +75,10 @@ function drawFace(g: Ctx, img: HTMLImageElement, x: number, y: number, scale: nu
   const size = FACE_PX * scale;
   rect(g, x - 1, y - 1, size + 2, size + 2, C.gold);
   rect(g, x, y, size, size, C.navy);
+  // Hand-drawn art is bigger than a photo's portrait: scaled down smoothly, rather than losing whole rows of pixels.
+  g.imageSmoothingEnabled = img.naturalWidth > size;
   g.drawImage(img, x, y, size, size);
+  g.imageSmoothingEnabled = false;
   return size;
 }
 

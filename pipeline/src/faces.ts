@@ -1,7 +1,8 @@
 // Builds small pixel-art portraits of the squad and coaching staff from the club's website photos, so
 // stories about a person can show their face. Re-run when the squad changes.
 // Usage: npm run faces   → site/public/faces/<slug>.png + faces.json
-// A hand-made portrait at art/faces/<slug>.png (transparent background) is used instead of the club photo.
+// A hand-made portrait at art/faces/<slug>.png (transparent background; `npm run faces:draw`) is used instead of the
+// club photo, at ART_SIZE rather than shrunk to a photo's size.
 
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -14,8 +15,10 @@ import { decodeEntities, slug } from './text.ts';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'site/public/faces');
 const ART = resolve(ROOT, 'art/faces');
-const PAGES = { 'first-team-squad': 'player', 'first-team-coaching-staff': 'staff' } as const;
+export const PAGES = { 'first-team-squad': 'player', 'first-team-coaching-staff': 'staff' } as const;
 export const FACE_SIZE = 24;
+/** Hand-drawn art keeps its detail: three times a photo's size, so it's pixel for pixel on the biggest graphics. */
+export const ART_SIZE = FACE_SIZE * 3;
 
 export interface Face {
   name: string;
@@ -28,7 +31,7 @@ export interface Face {
 const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 
 /** People on a club page: name from the card heading (first + last name spans) and the cut-out photo. */
-function people(html: string): { name: string; img: string }[] {
+export function people(html: string): { name: string; img: string }[] {
   return html
     .split('featured-card')
     .slice(1)
@@ -58,6 +61,11 @@ export async function portrait(png: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
+/** A hand-drawn portrait (art/faces/) at ART_SIZE, on the nearest pixel so its edges stay clean. */
+export async function artPortrait(png: Buffer): Promise<Buffer> {
+  return sharp(png).resize(ART_SIZE, ART_SIZE, { kernel: 'nearest', fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const faces: Face[] = [];
@@ -67,7 +75,7 @@ async function main() {
         const file = `${slug(p.name)}.png`;
         const art = resolve(ART, file);
         if (existsSync(art)) {
-          await writeFile(resolve(OUT, file), await portrait(await readFile(art)));
+          await writeFile(resolve(OUT, file), await artPortrait(await readFile(art)));
           faces.push({ name: p.name, surname: p.name.split(' ').pop() ?? p.name, file, role });
           console.log(`  ✔ ${p.name} (art/faces)`);
           continue;

@@ -15,6 +15,7 @@
     "pronounce": "npm -w pipeline run pronounce --",
     "pixelate": "npm -w pipeline run pixelate --",
     "faces": "npm -w pipeline run faces",
+    "faces:draw": "npm -w pipeline run faces:draw --",
     "adverts": "npm -w pipeline run adverts",
     "gpu:setup": "bash tools/gpu/setup.sh",
     "publish-site": "npm -w pipeline run publish-site",
