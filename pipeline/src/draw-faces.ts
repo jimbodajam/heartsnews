@@ -38,6 +38,28 @@ border. Put them on a plain flat magenta background (#FF00FF) with nothing else 
  */
 const isKey = (r: number, g: number, b: number) => r - g > 60 && b - g > 60 && Math.abs(r - b) < 80;
 
+/**
+ * Clears a frame the model sometimes draws round the picture: edge rows and columns that are almost all solid, from
+ * each side inwards (up to 8% of the way). The person never fills a whole row or column.
+ */
+function peelBorder(data: Buffer, width: number, height: number): void {
+  const solid = (x: number, y: number) => data[(y * width + x) * 4 + 3] >= 128;
+  const clear = (x: number, y: number) => {
+    data[(y * width + x) * 4 + 3] = 0;
+  };
+  const full = (n: number, at: (i: number) => boolean) => {
+    let count = 0;
+    for (let i = 0; i < n; i++) if (at(i)) count++;
+    return count > n * 0.9;
+  };
+  for (let k = 0; k < Math.round(height * 0.08); k++) {
+    for (const y of [k, height - 1 - k]) if (full(width, (x) => solid(x, y))) for (let x = 0; x < width; x++) clear(x, y);
+  }
+  for (let k = 0; k < Math.round(width * 0.08); k++) {
+    for (const x of [k, width - 1 - k]) if (full(height, (y) => solid(x, y))) for (let y = 0; y < height; y++) clear(x, y);
+  }
+}
+
 /** Head and shoulders are this many head-widths across, as in Vrancken's portrait. */
 const FRAME_HEADS = 2.4;
 
@@ -50,17 +72,23 @@ export async function toArt(drawn: Buffer): Promise<Buffer> {
   const { data, info } = await sharp(drawn).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
   for (let i = 0; i < data.length; i += 4) if (isKey(data[i], data[i + 1], data[i + 2])) data[i + 3] = 0;
-  // Where the person is: each row's leftmost and rightmost solid pixel.
+  peelBorder(data, width, height);
+  // Where the person is: each row's longest unbroken run of solid pixels, so specks left over from the background or
+  // a frame don't count. A row with only specks has none.
+  const speck = Math.round(width * 0.01);
   const rows: { left: number; right: number }[] = [];
   for (let y = 0; y < height; y++) {
-    let left = -1;
-    let right = -1;
-    for (let x = 0; x < width; x++) {
-      if (data[(y * width + x) * 4 + 3] < 128) continue;
-      if (left < 0) left = x;
-      right = x;
+    let best = { left: -1, right: -1 };
+    let start = -1;
+    for (let x = 0; x <= width; x++) {
+      const solid = x < width && data[(y * width + x) * 4 + 3] >= 128;
+      if (solid && start < 0) start = x;
+      if (!solid && start >= 0) {
+        if (x - 1 - start > best.right - best.left) best = { left: start, right: x - 1 };
+        start = -1;
+      }
     }
-    rows.push({ left, right });
+    rows.push(best.right - best.left >= speck ? best : { left: -1, right: -1 });
   }
   const top = rows.findIndex((r) => r.left >= 0);
   if (top < 0) throw new Error('nothing but background');
