@@ -166,7 +166,7 @@ test('a bulletin: scores fixed in place, contradicted lines dropped, predictions
 
 test("a presenter saying again a view they've made three times over loses the line; others and new views stay", () => {
   const channel = JSON.parse(readFileSync(new URL('../../channel.json', import.meta.url), 'utf8')) as Channel;
-  const view = (h: number, v: string) => ({ topic: 'Data', view: v, at: `2026-10-24T0${h}:00:00.000Z` });
+  const view = (d: number, v: string) => ({ topic: 'Data', view: v, at: `2026-10-1${d}T09:00:00.000Z` });
   const memory: Memory = {
     ...emptyMemory(),
     presenters: {
@@ -194,8 +194,23 @@ test("a presenter saying again a view they've made three times over loses the li
   } as unknown as Bulletin;
   const checks = repeatedViews(f, bulletin);
   assert.deepEqual(checks.map((c) => [c.line, c.kind, c.action]), [['0.0', 'repeat', 'dropped']]);
-  // Said only once: still his view, and he can stand by it. Fraser has never said it.
+  // Said only once, ten days ago: still his view, and he can stand by it. Fraser has never said it.
   assert.equal(bulletin.segments[0].lines.length, 3);
+
+  // Said once, but on air half an hour ago: that's a repeat too.
+  memory.presenters.ross.opinions.push({ topic: 'Wilson', view: 'Wilson is the best signing of the window.', at: '2026-10-24T11:30:00.000Z' });
+  // But a leaning restated on the way to news keeps its place (Kirsty's Halkett line, 24 Oct).
+  memory.presenters.kirsty = { predictions: [], opinions: [{ topic: 'Injuries', view: 'remains cautious about rushing players back into the side', at: '2026-10-24T10:00:00.000Z' }] };
+  const again = {
+    segments: [
+      segment('debate', 'debate', [line('Wilson is the best signing of the window, I said it and I stand by it.'), line('Kingsley at left-back is a worry.')]),
+      segment('story-l18', 'story', [
+        line('Halkett is back in the gym.'),
+        line("As we've been reporting, Halkett remains sidelined as he recovers from his Achilles injury, and we must remain cautious about rushing players back into the side during this congested fixture schedule.", { speaker: 'kirsty' }),
+      ]),
+    ],
+  } as unknown as Bulletin;
+  assert.deepEqual(repeatedViews(buildFacts(club, channel, [], [], undefined, now, memory), again).map((c) => c.line), ['0.0']);
 });
 
 test('the store keeps the results and goals, BBC over TheSportsDB, and the fact-check log', async () => {

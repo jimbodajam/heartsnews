@@ -4,6 +4,7 @@ import type { Opinion } from '../memory.ts';
 import { removeLines } from './factcheck.ts';
 import { isUs, teamName, type Facts } from './facts.ts';
 import { distinct, repeats } from './notebook.ts';
+import { tokens } from '../stories.ts';
 
 // The fact ledger (issue #32): every result we know, from the store's matches table and this build's fixtures feed,
 // and a check in code on each script line after the AI fact-checker has been over it. The AI checker can make the
@@ -346,26 +347,42 @@ function rightScore(m: LedgerMatch, x: Mention, before: string, opponents: Map<s
 
 /** A view said this many times is made: a line saying it again is dropped. */
 export const SAID_ENOUGH = 3;
+/** So is one said this recently: on a channel with a bulletin every half hour, it was on air a moment ago. */
+const RECENT_MS = 12 * 3_600_000;
+/** A repeating line with at least this share of words not in the view it repeats is saying something new too. */
+const MOSTLY_NEW = 0.6;
 
 /**
- * Lines where a presenter only says again a view they've already made SAID_ENOUGH times or more (Ross's "advanced
- * metrics cover for missing players" on 24 Oct, in the debate and two packages of one bulletin). The prompt asks the
- * writer not to; this makes sure. Dropped, as the ledger drops a contradicted line.
+ * Lines where a presenter only says again a view they've already made: said SAID_ENOUGH times or more, or in the
+ * last 12 hours (Ross's "advanced metrics cover for missing players" and Fraser's "grit over laptop statistics" went
+ * out every half hour on 24 Oct, Ross's three times in one bulletin). Repeats aren't saved as takes any more, so the
+ * count alone wouldn't catch the next one. The prompt asks the writer not to; this makes sure. Dropped, as the ledger
+ * drops a contradicted line.
  */
 export function repeatedViews(f: Facts, bulletin: Bulletin): LedgerCheck[] {
   const made = new Map<string, Opinion[]>();
   for (const [id, pm] of Object.entries(f.memory.presenters)) {
-    made.set(id, distinct([...pm.opinions].reverse()).filter((d) => d.times >= SAID_ENOUGH).map((d) => d.take));
+    const recent = (t: Opinion) => f.now.getTime() - Date.parse(t.at) < RECENT_MS;
+    made.set(id, distinct([...pm.opinions].reverse()).filter((d) => d.times >= SAID_ENOUGH || recent(d.take)).map((d) => d.take));
   }
+  // The words of a line that aren't in the view it repeats. A line that's mostly the view has nothing new in it; one
+  // that restates a leaning on the way to news ("Halkett remains sidelined… we must stay cautious") keeps its place.
+  const newWords = (text: string, view: string) => {
+    const said = tokens(view);
+    const words = [...tokens(text)];
+    return words.filter((w) => !said.has(w)).length / Math.max(1, words.length);
+  };
   const checks: LedgerCheck[] = [];
   const drop = new Set<string>();
   bulletin.segments.forEach((seg, si) => {
     if (seg.kind === 'adverts' || seg.kind === 'history') return;
     seg.lines.forEach((line, li) => {
       const views = made.get(line.speaker);
-      const view = views?.length && line.graphic?.type !== 'predictions' ? views.find((t) => repeats(line.text, [t])) : undefined;
+      if (!views?.length || line.graphic?.type === 'predictions') return;
+      const closest = views.filter((t) => repeats(line.text, [t])).sort((a, b) => newWords(line.text, a.view) - newWords(line.text, b.view))[0];
+      const view = closest && newWords(line.text, closest.view) < MOSTLY_NEW ? closest : undefined;
       if (!view) return;
-      checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'dropped', was: line.text, reason: `says again "${view.view}", already said ${SAID_ENOUGH}+ times` });
+      checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'dropped', was: line.text, reason: `says again "${view.view}" (said ${view.at})` });
       drop.add(`${si}.${li}`);
     });
   });
