@@ -71,10 +71,10 @@ test('changes from the last game, from the team sheets alone', () => {
   assert.deepEqual(changes(hearts, before).in.map((p) => p.shirt), ['Wilson', 'Mato']);
   assert.equal(
     shapeLine(hearts, { sheet: before, against: 'Motherwell' }),
-    "That's a 4-3-3, with two changes from the side that started against Motherwell: Wilson and Mato come in for Spittal and Kerjota.",
+    "They're expected to line up in a 4-3-3, with two changes from the side that started against Motherwell: Wilson and Mato come in for Spittal and Kerjota.",
   );
-  assert.equal(shapeLine(hearts, { sheet: hearts, against: 'Motherwell' }), "That's a 4-3-3, and it's unchanged from the side that started against Motherwell.");
-  assert.equal(shapeLine(hearts), "That's a 4-3-3.");
+  assert.equal(shapeLine(hearts, { sheet: hearts, against: 'Motherwell' }), "They're expected to line up in a 4-3-3, and it's unchanged from the side that started against Motherwell.");
+  assert.equal(shapeLine(hearts), "They're expected to line up in a 4-3-3.");
 });
 
 test('the package: the anchor hands over, then the XI one by one at the video wall, the shape, the bench and the opposition', () => {
@@ -92,7 +92,7 @@ test('the package: the anchor hands over, then the XI one by one at the video wa
   assert.equal(wall.scene, 'videowall');
   assert.deepEqual(wall.presenters, ['ross']);
   const texts = wall.lines.map((l) => l.text);
-  assert.equal(texts[0], "Here's the Hearts team to face Trabzonspor.");
+  assert.equal(texts[0], "Here's the Hearts team to face Trabzonspor, and how they're expected to line up.");
   assert.equal(texts[1], 'In goal, number 1, Beau Reus.');
   assert.match(texts[2], /^At the back, number \d+, /);
   assert.ok(texts.includes('Number 5, the captain, Jamie McCart.'));
@@ -107,9 +107,11 @@ test('the package: the anchor hands over, then the XI one by one at the video wa
   // Then the whole team, the bench, and a line on theirs, handing back.
   const shape = wall.lines[12];
   assert.equal(shape.graphic?.type === 'formation' && shape.graphic.changes?.join(), 'Wilson,Mato');
+  // BBC's shape before kick-off is only what it expects (Mato played left back in a 4-4-2, not up front).
+  assert.equal(shape.graphic?.type === 'formation' && shape.graphic.label, 'EXPECTED');
   assert.match(wall.lines[13].text, /^On the bench: Clark, Fulton, .* and JJ Williams\.$/);
   const theirs = wall.lines[14];
-  assert.match(theirs.text, /^Trabzonspor go with a 4-3-3 with Onana in goal and .* up front\. Back to you in the studio\.$/);
+  assert.match(theirs.text, /^Trabzonspor are expected to go with a 4-3-3 with Onana in goal and .* up front\. Back to you in the studio\.$/);
   assert.equal(theirs.graphic?.type === 'formation' && theirs.graphic.ours, false);
   assert.equal(wall.lines.length, 15);
 });

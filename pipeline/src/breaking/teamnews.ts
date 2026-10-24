@@ -2,7 +2,8 @@
 // at a time, announcer style, each one's card up on the wall ("In goal, number 1, Beau Reus"). Then the whole team in
 // formation with any changes from the last game picked out, the bench, and a line on the opposition's team. Plain
 // lines only: it's names and numbers, and every word comes from BBC's team sheets (no reasons for changes, no
-// injuries, nothing we don't have).
+// injuries, nothing we don't have). The shape is only BBC's expectation before kick-off (they had Mato up front in a
+// 4-3-3 against Trabzonspor; he played left back in a 4-4-2), so it's said and shown as the expected one.
 
 import type { BreakingPackage } from '../../../shared/breaking.ts';
 import type { Graphic, Line, Presenter, Segment } from '../../../shared/bulletin.ts';
@@ -69,9 +70,9 @@ export function changes(sheet: TeamSheet, previous: TeamSheet): { in: SheetPlaye
   return { in: now.filter((p) => !before.some((b) => b.urn === p.urn)), out: before.filter((b) => !now.some((p) => p.urn === b.urn)) };
 }
 
-/** "That's a 4-3-3, with two changes from the side that started against Motherwell: Mato and Wilson come in for…" */
+/** "They're expected to line up in a 4-3-3, with two changes from the side that started against Motherwell: …" */
 export function shapeLine(sheet: TeamSheet, previous?: { sheet: TeamSheet; against: string }): string {
-  const shape = sheet.formation ? `That's a ${sheet.formation}` : "That's the team";
+  const shape = sheet.formation ? `They're expected to line up in a ${sheet.formation}` : "That's the team";
   if (!previous) return `${shape}.`;
   const c = changes(sheet, previous.sheet);
   const side = `the side that started against ${previous.against}`;
@@ -118,7 +119,7 @@ export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, pr
   const fresh = previous ? changes(sheet, previous.sheet).in : [];
 
   const say = (text: string, graphic?: Graphic): Line => ({ speaker: wall.id, text, ...(graphic ? { graphic } : {}) });
-  const lines: Line[] = [say(`Here's the ${sheet.team} team to face ${opponent}.`)];
+  const lines: Line[] = [say(`Here's the ${sheet.team} team to face ${opponent}, and how they're expected to line up.`)];
   sheet.rows.forEach((row, i) =>
     row.forEach((p, j) => {
       const { name, face } = playerName(p, faces);
@@ -136,10 +137,10 @@ export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, pr
       );
     }),
   );
-  lines.push(say(shapeLine(sheet, previous), formation(sheet, true, 'TEAM NEWS', fresh.map((p) => p.shirt))));
+  lines.push(say(shapeLine(sheet, previous), formation(sheet, true, 'EXPECTED', fresh.map((p) => p.shirt))));
   const bench = benchLine(sheet);
   if (bench) lines.push(say(bench));
-  if (theirs) lines.push(say(`${opponent} go with ${describeXI(toLineup(theirs))}.`, formation(theirs, false, 'OPPOSITION')));
+  if (theirs) lines.push(say(`${opponent} are expected to go with ${describeXI(toLineup(theirs))}.`, formation(theirs, false, 'EXPECTED')));
   const last = lines[lines.length - 1];
   last.text = `${last.text} ${SIGN_OFF}`;
 
