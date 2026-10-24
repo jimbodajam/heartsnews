@@ -4,13 +4,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { parseDayPage, type HistoryBirthday, type HistoryResult } from '../src/collectors/londonhearts.ts';
-import { competitive, pickHistory, rankBirthday } from '../src/history.ts';
+import { parseDayPage, type HibsResult, type HistoryBirthday, type HistoryResult } from '../src/collectors/londonhearts.ts';
+import { competitive, hibsDefeat, pickHistory, rankBirthday, remembered } from '../src/history.ts';
 import { emptyMemory } from '../src/memory.ts';
 import { assemble } from '../src/script/assemble.ts';
 import { templateDraft } from '../src/script/draft.ts';
 import { buildFacts, type Channel } from '../src/script/facts.ts';
-import { historyDraft, occasion, scorersSentence } from '../src/script/history.ts';
+import { historyDraft, historySegment, occasion, scorersSentence } from '../src/script/history.ts';
 import type { ClubConfig } from '../src/types.ts';
 
 const json = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
@@ -82,6 +82,48 @@ test('scorers: braces, hat-tricks, own goals, and nothing when the records are m
   assert.equal(scorersSentence([g('John Robertson'), g('Brian Martin', true), g('Ian Ferguson')]), 'The goals came from John Robertson, an own goal and Ian Ferguson.');
   assert.equal(scorersSentence([g('Brian Martin', true)]), 'It came from an own goal.');
   assert.equal(scorersSentence([g('Unknown'), g('Unknown')]), undefined);
+});
+
+const hibsGame = (date: string, home: string, away: string, homeScore: number, awayScore: number, competition = 'SPL', round = ''): HibsResult => ({
+  date, home, away, homeScore, awayScore, competition, round,
+});
+
+test('across the city: a heavy Hibs defeat from the last 50 years, or a lost final from any time; never the derby', () => {
+  const pick = (games: HibsResult[]) => hibsDefeat(games, club, now);
+  assert.equal(pick([hibsGame('2002-10-24', 'Hibernian', 'Rangers', 2, 3)]), undefined, 'one goal is not enough');
+  assert.equal(pick([hibsGame('1914-10-24', 'Kilmarnock', 'Hibernian', 5, 1, 'L1')]), undefined, 'too long ago');
+  assert.equal(pick([hibsGame('2017-10-24', 'Heart of Midlothian', 'Hibernian', 4, 0)]), undefined, 'the derby is in our own results');
+  assert.equal(pick([hibsGame('2011-10-24', 'Hibernian', 'Partick Thistle', 1, 1)]), undefined);
+  const thumping = pick([hibsGame('2002-10-24', 'Hibernian', 'Rangers', 2, 3), hibsGame('1999-10-24', 'Celtic', 'Hibernian', 5, 0)]);
+  assert.deepEqual([thumping?.opponent, thumping?.score], ['Celtic', [0, 5]]);
+  const final = pick([hibsGame('1999-10-24', 'Celtic', 'Hibernian', 5, 0), hibsGame('1923-10-24', 'Hibernian', 'Celtic', 0, 1, 'Scottish Cup', 'Final')]);
+  assert.equal(final?.date, '1923-10-24');
+});
+
+test("a great who died on this day, on a round anniversary only, and Fraser's lines for him and for Hibs", () => {
+  const death = (died: number, apps?: number, goals?: number, id = 'h01290') => ({ id, name: 'Willie Bauld', died, place: '', first: '1946-08-10', last: '1962-02-24', apps, goals });
+  assert.equal(remembered([death(1977, 413, 278)], club, now), undefined, '49 years: not a round number');
+  assert.equal(remembered([{ ...death(1976, 45, 5), name: 'Neil Murray' }], club, now), undefined, 'not a legend');
+  assert.equal(remembered([death(1976)], club, now), undefined, 'no record to go on');
+  assert.equal(remembered([death(1976, undefined, undefined, 'h01330')], club, now)?.years, 50, 'on the legends list');
+
+  const f = buildFacts(club, channel, [], [], undefined, now, emptyMemory(), {
+    ...day('1024'),
+    deaths: [death(1976, 413, 278)],
+    hibs: [hibsGame('1999-10-24', 'Celtic', 'Hibernian', 5, 0)],
+  });
+  const d = historyDraft(f)!;
+  assert.equal(
+    d.remember,
+    'First, we remember Willie Bauld, who died on this day in 1976, 50 years ago. He played for Hearts from 1946 to 1962, making 413 appearances and scoring 278 goals.',
+  );
+  assert.equal(d.hibs, 'And across the city, on this day in 1999, Hibs lost five-nil to Celtic. Not that anyone here is counting.');
+  const seg = historySegment(f, d)!;
+  assert.equal(seg.lines[1].text, d.remember);
+  assert.equal(seg.lines[1].graphic, undefined);
+  const last = seg.lines.at(-1)!;
+  assert.equal(last.text, d.hibs);
+  assert.deepEqual(last.graphic, { type: 'result', home: 'Celtic', away: 'Hibernian', homeScore: 5, awayScore: 0, competition: 'League', status: '24 OCT 1999' });
 });
 
 test('the segment goes after the Transfer Centre, at the museum, with the cards; and not while a game is on', () => {

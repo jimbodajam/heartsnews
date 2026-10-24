@@ -1,13 +1,14 @@
 import type { Graphic, Line, Segment } from '../../../shared/bulletin.ts';
 import type { HistoryGoal, HistoryResult } from '../collectors/londonhearts.ts';
-import { isEurope, type HistoryPicks, type RankedBirthday } from '../history.ts';
+import { isEurope, type HibsDefeat, type HistoryPicks, type RankedBirthday } from '../history.ts';
 import { spokenList } from '../time.ts';
 import type { ClubConfig } from '../types.ts';
 import { firstName, presenter, type Facts } from './facts.ts';
 
-// On This Day (#8): Fraser at the museum with today's Hearts birthdays and a famous win from this date. Written from
-// London Hearts' records by template, not the AI: every name, score and year is read straight from them, so nothing
-// about the club's history can be made up. The first line is the shot outside the museum; the rest are inside.
+// On This Day (#8): Fraser at the museum with today's Hearts birthdays and a famous win from this date, and, when the
+// day has them, a great who died on it and a Hibs defeat to enjoy. Written from London Hearts' records by template,
+// not the AI: every name, score and year is read straight from them, so nothing about the club's history can be made
+// up. The first line is the shot outside the museum; the rest are inside.
 
 export interface HistoryDraft {
   intro: string;
@@ -18,6 +19,10 @@ export interface HistoryDraft {
   game?: string;
   /** One line for each of the other wins on this date. */
   also: string[];
+  /** A great who died on this day, on a round anniversary: straight after the intro, with no card. */
+  remember?: string;
+  /** "And across the city…": a heavy Hibs defeat on this date, to finish. */
+  hibs?: string;
 }
 
 const NUMBERS = ['nil', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
@@ -73,6 +78,23 @@ export function scorersSentence(goals: HistoryGoal[]): string | undefined {
   return `${said[0].toUpperCase()}${said.slice(1)}.`;
 }
 
+/** "24 OCT 1959", where a result card says "FULL TIME". */
+const cardDate = (date: string) => `${date.slice(8, 10)} ${MONTHS[Number(date.slice(5, 7)) - 1].slice(0, 3).toUpperCase()} ${date.slice(0, 4)}`;
+
+/** A Hibs defeat's card. London Hearts gives their league as a code ("L1", "SPL"), so it says "League". */
+export function hibsCard(r: HibsDefeat): Graphic {
+  const league = /^(L1|L2|P|SPR|SPL|SCH)$/i.test(r.competition);
+  return {
+    type: 'result',
+    home: r.home,
+    away: r.away,
+    homeScore: r.homeScore,
+    awayScore: r.awayScore,
+    competition: league ? 'League' : [r.competition, r.round].filter(Boolean).join(' '),
+    status: cardDate(r.date),
+  };
+}
+
 /** The card for an old game: the result card, with the year where "FULL TIME" would be. */
 export function historyResultCard(r: HistoryResult, club: ClubConfig): Graphic {
   const label = (goals: HistoryGoal[]) => {
@@ -93,7 +115,7 @@ export function historyResultCard(r: HistoryResult, club: ClubConfig): Graphic {
     homeScore: home.score,
     awayScore: away.score,
     competition: [r.competition, /\bof\b/.test(r.round) ? '' : r.round].filter(Boolean).join(' '),
-    status: `${r.date.slice(8, 10)} ${MONTHS[Number(r.date.slice(5, 7)) - 1].slice(0, 3).toUpperCase()} ${r.date.slice(0, 4)}`,
+    status: cardDate(r.date),
     homeScorers: home.scorers,
     awayScorers: away.scorers,
   };
@@ -143,7 +165,29 @@ export function historyDraft(f: Facts): HistoryDraft | undefined {
   const also = p.also.map(
     (r, i) => `${i === 0 ? 'On this date in' : 'And in'} ${r.date.slice(0, 4)}, ${us} beat ${r.opponent} ${scoreWords(r.score)}${isEurope(r) || occasion(r) !== 'the league' ? ` in ${occasion(r)}` : ''}.`,
   );
-  return { intro, star, birthdays, game, also };
+
+  let remember: string | undefined;
+  const r = p.remember;
+  if (r) {
+    const record = r.apps ? `, making ${r.apps} appearances and scoring ${r.goals === 1 ? 'one goal' : `${r.goals ?? 0} goals`}` : '';
+    remember =
+      `First, we remember ${r.name}, who died on this day in ${r.died}, ${r.years} years ago. ` +
+      `He played for ${us} from ${r.first.slice(0, 4)} to ${r.last.slice(0, 4)}${record}.`;
+  }
+
+  let hibs: string | undefined;
+  const h = p.hibs;
+  if (h) {
+    const occ = /^final$/i.test(h.round)
+      ? ` in the ${h.competition} final`
+      : /semi|^sf/i.test(h.round)
+        ? ` in the ${h.competition} semi-final`
+        : /uefa|europ|champions|fairs|winners/i.test(h.competition)
+          ? ` in the ${h.competition}`
+          : '';
+    hibs = `And across the city, on this day in ${h.date.slice(0, 4)}, Hibs lost ${scoreWords([h.score[1], h.score[0]])} to ${h.opponent}${occ}. Not that anyone here is counting.`;
+  }
+  return { intro, remember, star, birthdays, game, also, hibs };
 }
 
 /** The segment: the intro outside the museum, then the birthdays and the games inside, each with its card. */
@@ -153,10 +197,12 @@ export function historySegment(f: Facts, d: HistoryDraft): Segment | undefined {
   const host = f.channel.cast.history ?? f.channel.cast.anchors[1];
   const card = birthdaysCard(p);
   const lines: Line[] = [{ speaker: host, text: d.intro }];
+  if (d.remember) lines.push({ speaker: host, text: d.remember });
   if (d.star) lines.push({ speaker: host, text: d.star, graphic: card });
   if (d.birthdays) lines.push({ speaker: host, text: d.birthdays, graphic: card });
   if (d.game && p.game) lines.push({ speaker: host, text: d.game, graphic: historyResultCard(p.game, f.club) });
   d.also.forEach((text, i) => p.also[i] && lines.push({ speaker: host, text, graphic: historyResultCard(p.also[i], f.club) }));
+  if (d.hibs && p.hibs) lines.push({ speaker: host, text: d.hibs, graphic: hibsCard(p.hibs) });
   if (lines.length < 2) return undefined;
   return {
     id: 'history',

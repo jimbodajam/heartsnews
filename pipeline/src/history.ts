@@ -7,8 +7,11 @@
 //
 // Games: competitive wins only, the biggest first: finals, then Europe, then derbies and big clubs, then the margin and
 // the goals. Round anniversaries and games with known scorers count for more.
+//
+// And two extras when the day has them: a great who died on this day, on a round anniversary, and a heavy Hibs defeat
+// for Fraser to enjoy.
 
-import type { HistoryBirthday, HistoryResult, OnThisDay } from './collectors/londonhearts.ts';
+import { roundYears, type HibsResult, type HistoryBirthday, type HistoryDeath, type HistoryResult, type OnThisDay } from './collectors/londonhearts.ts';
 import type { ClubConfig } from './types.ts';
 
 export const PEAK_ERA = 1990;
@@ -21,6 +24,10 @@ export const PACKAGE_SCORE = 50;
 export const LIST_MAX = 6;
 /** Games mentioned after the featured one. */
 export const ALSO_MAX = 2;
+/** A Hibs league defeat by this many goals is worth a dig; any defeat in a cup semi-final, final or Europe is. */
+export const HIBS_MARGIN = 3;
+/** How far back a Hibs defeat can come from, cup finals aside. */
+export const HIBS_YEARS = 50;
 
 export interface RankedBirthday extends HistoryBirthday {
   age: number;
@@ -39,6 +46,16 @@ export interface HistoryPicks {
   /** The game to look back on, and a couple more from the same date. */
   game?: HistoryResult;
   also: HistoryResult[];
+  /** A great who died on this day, on a round anniversary. */
+  remember?: HistoryDeath & { years: number };
+  /** A Hibs defeat on this date worth a dig: "and across the city…". */
+  hibs?: HibsDefeat;
+}
+
+export interface HibsDefeat extends HibsResult {
+  opponent: string;
+  /** Hibs' score first. */
+  score: [number, number];
 }
 
 const year = (date: string) => Number(date.slice(0, 4));
@@ -82,6 +99,47 @@ export function gameScore(r: HistoryResult, club: ClubConfig, now: Date): number
   );
 }
 
+const HIBS = 'Hibernian';
+
+/** Hibs' league (their codes: L1, L2, P, SPR, SPL, SCH), the cups and Europe. */
+const hibsCompetitive = (c: string) => /^(L1|L2|P|SPR|SPL|SCH)$|^scottish cup$|^league cup$|uefa|europ|champions league|cup winners|fairs/i.test(c);
+
+/**
+ * The Hibs defeat to mention, if any: not against us (that's in our own results), and only a heavy one (by
+ * HIBS_MARGIN or more) or one in a cup semi-final, final or Europe, from the last HIBS_YEARS (a lost final from any
+ * time). Finals first, then the margin, recent ones ahead.
+ */
+export function hibsDefeat(results: HibsResult[], club: ClubConfig, now: Date): HibsDefeat | undefined {
+  return results
+    .flatMap((r): HibsDefeat[] => {
+      const home = r.home === HIBS;
+      if (!home && r.away !== HIBS) return [];
+      const opponent = home ? r.away : r.home;
+      const score: [number, number] = home ? [r.homeScore, r.awayScore] : [r.awayScore, r.homeScore];
+      if (opponent === club.name || score[0] >= score[1] || !hibsCompetitive(r.competition)) return [];
+      return [{ ...r, opponent, score }];
+    })
+    .map((r) => {
+      const big = /^final$/i.test(r.round) ? 100 : /semi|^sf/i.test(r.round) ? 40 : /uefa|europ|champions|fairs|winners/i.test(r.competition) ? 30 : 0;
+      const margin = r.score[1] - r.score[0];
+      const ago = now.getUTCFullYear() - year(r.date);
+      // Like the birthdays, nobody remembers a league defeat from a century ago; a lost final is another matter.
+      const ok = big >= 100 || (ago <= HIBS_YEARS && (big > 0 || margin >= HIBS_MARGIN));
+      return { r, ok, score: big + 5 * Math.min(margin, 5) + (ago <= 40 ? 20 : 0) };
+    })
+    .filter((x) => x.ok)
+    .sort((a, b) => b.score - a.score)[0]?.r;
+}
+
+/** A legend (as for birthdays) who died on this day, on a round anniversary: 10, 20, 25, 30… years. */
+export function remembered(deaths: HistoryDeath[], club: ClubConfig, now: Date): (HistoryDeath & { years: number }) | undefined {
+  const legends = club.legends?.map((l) => l.id) ?? [];
+  return deaths
+    .map((d) => ({ ...d, years: now.getUTCFullYear() - d.died }))
+    .filter((d) => roundYears(d.years) && ((d.apps ?? 0) >= LEGEND_APPS || (d.goals ?? 0) >= LEGEND_GOALS || legends.includes(d.id)))
+    .sort((a, b) => (b.apps ?? 0) + 2 * (b.goals ?? 0) - ((a.apps ?? 0) + 2 * (a.goals ?? 0)))[0];
+}
+
 export function pickHistory(day: OnThisDay, club: ClubConfig, now: Date): HistoryPicks {
   const birthdays = day.birthdays
     .map((b) => rankBirthday(b, now, club.legends?.map((l) => l.id)))
@@ -93,5 +151,13 @@ export function pickHistory(day: OnThisDay, club: ClubConfig, now: Date): Histor
     .map((r) => ({ r, score: gameScore(r, club, now) }))
     .sort((a, b) => b.score - a.score)
     .map((x) => x.r);
-  return { day: day.day, star, birthdays, game: wins[0], also: wins.slice(1, 1 + ALSO_MAX) };
+  return {
+    day: day.day,
+    star,
+    birthdays,
+    game: wins[0],
+    also: wins.slice(1, 1 + ALSO_MAX),
+    remember: remembered(day.deaths, club, now),
+    hibs: hibsDefeat(day.hibs ?? [], club, now),
+  };
 }

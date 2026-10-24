@@ -6,7 +6,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { collectOnThisDay, parseDayPage, parseGoals } from '../src/collectors/londonhearts.ts';
+import { collectOnThisDay, parseDayPage, parseGoals, parsePlayerTotals } from '../src/collectors/londonhearts.ts';
 
 const page = (day: string) => readFileSync(new URL(`./fixtures/londonhearts-${day}.html`, import.meta.url), 'utf8');
 
@@ -71,6 +71,23 @@ test('16 May: the 1998 Scottish Cup Final, with clock times as minutes, and a de
   ]);
   assert.deepEqual(final.oppScorers, [{ player: 'Ally McCoist', minute: '82' }]);
   assert.deepEqual(d.deaths.map((p) => [p.name, p.died]), [['Jimmy Dykes', 1974]]);
+});
+
+test("Hibs' results on the date, for \"across the city\"", () => {
+  const hibs = parseDayPage(page('1024'), '10-24').hibs!;
+  assert.equal(hibs.length, 20);
+  assert.deepEqual(hibs[0], { date: '1885-10-24', home: 'Hibernian', away: 'Boness', homeScore: 6, awayScore: 0, competition: 'Scottish Cup', round: 'R3' });
+  const { home, away, homeScore, awayScore } = hibs.find((r) => r.date === '2002-10-24')!;
+  assert.deepEqual([home, homeScore, away, awayScore], ['Hibernian', 2, 'Rangers', 3]);
+});
+
+test("every player's apps and goals, from their list by birthday", () => {
+  const row = (id: string, name: string, apps: number, goals: number) =>
+    `<tr><td><a href="../newplayers/${id}.html">${name}</a></td><td>16</td><td>11</td><td>1927</td><td>Larkhall</td><td>Scotland</td>` +
+    `<td>1946 to 1962</td><td class="t1"></td><td class="t2"></td><td class="w"></td><td class="c">${apps}</td><td class="u">${goals}</td></tr>`;
+  const totals = parsePlayerTotals(`<table><tr><th>Player</th></tr>${row('h01290', 'Willie Bauld', 413, 278)}${row('h01422', 'Roy Kay', 207, 3)}</table>`);
+  assert.deepEqual(totals.get('h01290'), { apps: 413, goals: 278 });
+  assert.deepEqual(totals.get('h01422'), { apps: 207, goals: 3 });
 });
 
 test('scorers: penalties, own goals, stoppage time, a name with a number, and nothing scored', () => {

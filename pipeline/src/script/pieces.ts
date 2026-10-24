@@ -469,7 +469,7 @@ function segmentGists(f: Facts, d: Draft): (Slot & { gist: string })[] {
                   : slot.id === 'fans'
                     ? q(d.fans.text)
                     : slot.id === 'history' && d.history
-                      ? `opens ${q(d.history.intro)}; ends ${q(d.history.also.at(-1) ?? d.history.game ?? d.history.birthdays ?? d.history.star)}`
+                      ? `opens ${q(d.history.intro)}; ends ${q(d.history.hibs ?? d.history.also.at(-1) ?? d.history.game ?? d.history.birthdays ?? d.history.star)}`
                       : '';
     return { ...slot, gist };
   });

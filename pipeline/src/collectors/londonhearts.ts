@@ -33,6 +33,24 @@ export interface HistoryDeath {
   place: string;
   first: string;
   last: string;
+  /**
+   * His Hearts appearances and goals. The day's page doesn't give them, so they're looked up in the list of every
+   * player only when it's a round anniversary (roundYears) and might go on air.
+   */
+  apps?: number;
+  goals?: number;
+}
+
+/** A Hibs game on this date in some year, as London Hearts lists them (for "and across the city…"). */
+export interface HibsResult {
+  date: string;
+  home: string;
+  away: string;
+  homeScore: number;
+  awayScore: number;
+  /** Their own short codes for the league ("L1", "P", "SPL"); cups and Europe by name. */
+  competition: string;
+  round: string;
 }
 
 export interface HistoryGoal {
@@ -74,7 +92,12 @@ export interface OnThisDay {
   deaths: HistoryDeath[];
   /** Oldest first. */
   results: HistoryResult[];
+  /** Oldest first. Missing from pages kept before they were read. */
+  hibs?: HibsResult[];
 }
+
+/** 10, 20, 25, 30… years: an anniversary worth marking. */
+export const roundYears = (years: number) => years > 0 && (years % 10 === 0 || years % 25 === 0);
 
 const text = (html: string) =>
   html
@@ -97,8 +120,11 @@ function section(html: string, anchor: string): string {
 const playerId = (cell: string) => cell.match(/newplayers\/(h\d+)\.html/)?.[1] ?? '';
 const gameDate = (cell: string) => text(cell).slice(0, 10);
 
+/** Every row's cells, header rows left out. */
+const rows = (html: string) => [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => cells(m[1])).filter((c) => c.length);
+
 /** People rows (birthdays, deaths) that link to a player page. */
-const people = (html: string) => [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => cells(m[1])).filter((c) => playerId(c[0] ?? ''));
+const people = (html: string) => rows(html).filter((c) => playerId(c[0] ?? ''));
 
 /** "Colin Cameron pen 1:22", "John McNeil [2] 8", "[Billy Davies 46]", "Brian Martin og 51", "-----". */
 export function parseGoals(cell: string): HistoryGoal[] {
@@ -166,7 +192,31 @@ export function parseDayPage(html: string, day: string): OnThisDay {
     },
   );
 
-  return { day, birthdays, deaths, results };
+  const hibs = rows(section(html, 'HibsResults')).flatMap((c): HibsResult[] => {
+    // Rank, how long ago, report, date, "Sat 24 Oct 1885 Hibernian 6 Boness 0", competition, round, replay, venue, crowd.
+    const date = c[3]?.match(/(\d{4})(\d{2})(\d{2})\.html/);
+    const m = text(c[4] ?? '').match(/^\w{3} \d{1,2} \w{3} \d{4} (.+?) (\d+) (.+?) (\d+)$/);
+    if (!date || !m) return [];
+    return [
+      {
+        date: `${date[1]}-${date[2]}-${date[3]}`,
+        home: m[1],
+        away: m[3],
+        homeScore: Number(m[2]),
+        awayScore: Number(m[4]),
+        competition: text(c[5]),
+        round: text(c[6]),
+      },
+    ];
+  });
+
+  return { day, birthdays, deaths, results, hibs };
+}
+
+/** Every player's Hearts appearances and goals by id, from their list of players by birthday. */
+export function parsePlayerTotals(html: string): Map<string, { apps: number; goals: number }> {
+  // Name, day, month, year, birthplace, nationality, years, first, last, career length, apps, goals.
+  return new Map(people(html).filter((c) => c.length >= 12).map((c) => [playerId(c[0]), { apps: Number(text(c[10])) || 0, goals: Number(text(c[11])) || 0 }]));
 }
 
 /** Today's page (UK date), from the cache if it was already fetched today. */
@@ -179,6 +229,16 @@ export async function collectOnThisDay(now: Date, cacheDir = LONDON_HEARTS_CACHE
   const page = parseDayPage(await fetchText(`${BASE}/datesall/${day.replace('-', '')}.html`, 30_000), day);
   // A page that parses to nothing means their layout has changed: fail rather than go on air with no history.
   if (!page.results.length) throw new Error(`London Hearts: no results found on the ${day} page`);
+  // A round anniversary of someone's death might be marked on air, if he was a great: look up what he did for us.
+  const year = Number(today.slice(0, 4));
+  if (page.deaths.some((d) => roundYears(year - d.died))) {
+    try {
+      const totals = parsePlayerTotals(await fetchText(`${BASE}/newplayers/aaplayersbirth.html`, 30_000));
+      for (const d of page.deaths) Object.assign(d, totals.get(d.id));
+    } catch {
+      // Then only the club's own list of legends can be marked.
+    }
+  }
   await mkdir(cacheDir, { recursive: true });
   await writeFile(cached, JSON.stringify(page));
   return page;
