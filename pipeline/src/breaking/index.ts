@@ -1,5 +1,6 @@
 // Breaking news from the ground: for each goal or red card, both kick-offs, half-time and full time, a short package
-// (the anchor hands over, our reporter gives the score and a line from BBC's description), voiced with Kokoro and
+// (the anchor hands over, our reporter gives the score and a line from BBC's description), and the team news when
+// it's out (read at the video wall, teamnews.ts), voiced with Kokoro and
 // added to breaking/breaking.json. On air, the Worker's clock spots each one and queues it as a job (worker/src/clock.ts),
 // which the home PC or GitHub builds and publishes (jobs.ts). The watcher here does the same against a replay, writing
 // to site/public/breaking for `npm run dev`.
@@ -20,8 +21,11 @@ import { openFixture, replay } from '../recording.ts';
 import type { Channel } from '../script/facts.ts';
 import { geminiFromEnv, type ScriptModel } from '../script/llm.ts';
 import { dropUnusedClips, voiceLines } from '../voice.ts';
-import { EventTracker, type ReadyEvent, type ReadyPeriod } from './detect.ts';
+import { previousSheet } from '../collectors/bbc.ts';
+import { loadFaces } from '../script/faces.ts';
+import { EventTracker, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
 import { buildPackage, buildPeriodPackage } from './script.ts';
+import { buildTeamNewsPackage } from './teamnews.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 /** The breaking news for `npm run dev` (and the programme builds, which copy it into the site). */
@@ -64,16 +68,29 @@ function interval(feed?: LiveFeed): number {
 
 const PERIOD: Record<Period, string> = { ko1: 'KICK-OFF', ko2: 'SECOND HALF UNDER WAY', ht: 'HALF TIME', ft: 'FULL TIME' };
 
-/** What a package is built from: a goal or red card, or a period. The clock queues these as breaking jobs. */
-export type Ready = ReadyEvent | ReadyPeriod;
+/** What a package is built from: the team news, a goal or red card, or a period. The clock queues these as breaking jobs. */
+export type Ready = ReadyLineup | ReadyEvent | ReadyPeriod;
 
 /** A line for the log saying what happened. */
 export const describe = (r: Ready) =>
-  'period' in r ? PERIOD[r.period] : `${r.event.kind === 'goal' ? 'GOAL' : 'RED CARD'}: ${r.event.player} ${r.event.minute}`;
+  'lineup' in r
+    ? `TEAM NEWS: ${r.lineup.team}`
+    : 'period' in r
+      ? PERIOD[r.period]
+      : `${r.event.kind === 'goal' ? 'GOAL' : 'RED CARD'}: ${r.event.player} ${r.event.minute}`;
+
+/** Whether BBC's description is missing from what a package is built from (the team news never has one). */
+export const undescribed = (r: Ready) => !('lineup' in r) && !r.text.length;
 
 /** Writes the package (no voices yet). Flash-Lite only: Flash's 20 free requests a day are for the bulletins. */
 export async function writePackage(r: Ready, model?: ScriptModel): Promise<BreakingPackage> {
   const channel = JSON.parse(await readFile(resolve(ROOT, 'channel.json'), 'utf8')) as Channel;
+  if ('lineup' in r) {
+    const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
+    const previous = await previousSheet(club.bbc.team, r.match.kickOff).catch(() => undefined);
+    if (!previous) console.log("[breaking] Couldn't read our last team from BBC: no changes line");
+    return buildTeamNewsPackage({ ...r, channel, previous, faces: loadFaces() });
+  }
   return 'period' in r ? buildPeriodPackage({ ...r, channel, model }) : buildPackage({ ...r, channel, model });
 }
 
@@ -115,7 +132,7 @@ export async function watchBreaking({ source, pace = 1, templates, stop }: Watch
   const model = breakingModel(templates);
   const tracker = new EventTracker();
   await mkdir(LOCAL_DIR, { recursive: true });
-  console.log(`[breaking] Watching for goals, red cards, kick-offs, half-time and full time${model ? '' : ' (plain lines, no AI)'}`);
+  console.log(`[breaking] Watching for the team news, goals, red cards, kick-offs, half-time and full time${model ? '' : ' (plain lines, no AI)'}`);
 
   while (!stop?.()) {
     let feed: LiveFeed | undefined;
@@ -123,13 +140,14 @@ export async function watchBreaking({ source, pace = 1, templates, stop }: Watch
       feed = await source();
       const m = feed.match;
       const now = Date.parse(feed.updated);
+      const lineup = m && tracker.lineup(m);
       const events = m ? tracker.update(m, now) : [];
       const period = m && tracker.period(m, now);
-      const ready: Ready[] = [...events, ...(period ? [period] : [])];
+      const ready: Ready[] = [...(lineup ? [lineup] : []), ...events, ...(period ? [period] : [])];
       for (const r of ready) {
         const started = Date.now();
         try {
-          console.log(`[breaking] ${describe(r)}${r.text.length ? '' : ' (no description from BBC)'}`);
+          console.log(`[breaking] ${describe(r)}${undescribed(r) ? ' (no description from BBC)' : ''}`);
           const pkg = await writePackage(r, model);
           for (const line of pkg.segments.flatMap((s) => s.lines)) console.log(`  ${line.speaker}: ${line.text}`);
           await voicePackage(pkg, LOCAL_DIR);

@@ -1,6 +1,6 @@
 // Trims a match recording (from `npm run record`) to what live.json is built from, small enough to commit as a test
 // fixture: the team page's event for the match, and each change to the match page's live-header, the key posts in
-// its live text stream and the team stats.
+// its live text stream, the team stats and the teams.
 // Usage: npm run trim-recording -- <recording dir name> [out file]
 //   e.g. npm run trim-recording -- 2026-10-22-trabzonspor-hearts
 // Writes shared/test/fixtures/<name>.json by default.
@@ -12,10 +12,24 @@ import { type BbcData, type BbcEvent, block, eventsIn } from '../../shared/bbc.t
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
-/** A trimmed recording: the match's team page event and the match page data over time. */
+/**
+ * A trimmed recording: the match's team page event and the match page data over time. The teams change only a few
+ * times a match, so they're kept apart from the snapshots rather than repeated in each.
+ */
 export interface Recording {
   teamEvent: BbcEvent;
   snapshots: { at: string; page: BbcData }[];
+  lineups?: { at: string; data: unknown }[];
+}
+
+/** The latest of some time-stamped items at or before `t`, or the first if `t` is before them all. */
+const latestAt = <T extends { at: string }>(items: T[], t: number) => items.filter((i) => Date.parse(i.at) <= t).pop() ?? items[0];
+
+/** The match page's data at `t` (ms), the teams included. */
+export function pageAt(rec: Recording, t: number): BbcData {
+  const page = latestAt(rec.snapshots, t).page;
+  const lineups = rec.lineups?.length ? latestAt(rec.lineups, t) : undefined;
+  return lineups ? { ...page, 'match-lineups?': { data: lineups.data } } : page;
 }
 
 async function main() {
@@ -35,7 +49,9 @@ async function main() {
   if (!teamEvent) throw new Error('match not found on the recorded team page');
 
   const snapshots: Recording['snapshots'] = [];
+  const teamSheets: NonNullable<Recording['lineups']> = [];
   let last = '';
+  let lastTeams = '';
   for (const f of pages) {
     const data = await load(f);
     const results = block<{ results: Record<string, unknown>[] }>(data, 'stream?')?.results ?? [];
@@ -45,6 +61,27 @@ async function main() {
     const stats = block<Record<'homeTeam' | 'awayTeam', { stats?: Record<string, unknown> } | undefined>>(data, 'match-stats?');
     const topStats = (t?: { stats?: Record<string, unknown> }) =>
       t?.stats && { stats: Object.fromEntries(Object.entries(t.stats).filter(([, v]) => typeof (v as { total?: unknown })?.total === 'number')) };
+    // The teams: only what a team sheet is read from (no player stats or substitutions, which change all game).
+    const lineups = block<Record<'homeTeam' | 'awayTeam', Record<string, unknown> | undefined>>(data, 'match-lineups?');
+    type Player = { urn: string; name?: { first?: string; shirt?: string }; position?: string; shirtNumber?: unknown; isCaptain?: boolean };
+    const sheetPlayer = ({ urn, name, position, shirtNumber, isCaptain }: Player) => ({ urn, name: { first: name?.first, shirt: name?.shirt }, position, shirtNumber, isCaptain });
+    const sheet = (t?: Record<string, unknown>) => {
+      if (!t) return undefined;
+      const players = t.players as { starters?: Player[]; substitutes?: Player[] } | undefined;
+      const pitch = t.pitchLayout as { urn: string; name: string; shirtNumber?: string }[][] | undefined;
+      return {
+        name: { shortName: (t.name as { shortName: string }).shortName },
+        formation: { layout: (t.formation as { layout?: string } | undefined)?.layout },
+        pitchLayout: pitch?.map((row) => row.map(({ urn, name, shirtNumber }) => ({ urn, name, shirtNumber }))),
+        manager: { name: { full: (t.manager as { name?: { full?: string } } | undefined)?.name?.full } },
+        players: { starters: players?.starters?.map(sheetPlayer), substitutes: players?.substitutes?.map(sheetPlayer) },
+      };
+    };
+    if (lineups) {
+      const teams = JSON.stringify({ homeTeam: sheet(lineups.homeTeam), awayTeam: sheet(lineups.awayTeam) });
+      if (teams !== lastTeams) teamSheets.push({ at: at(f), data: JSON.parse(teams) });
+      lastTeams = teams;
+    }
     const page: BbcData = {
       'live-header?': {
         data: { sportDataEvent: e && { home: side(e.home), away: side(e.away), status: e.status, periodLabel: e.periodLabel, tournament: e.tournament, venue: e.venue } },
@@ -65,8 +102,8 @@ async function main() {
     snapshots.push({ at: at(f), page });
   }
   await mkdir(dirname(out), { recursive: true });
-  await writeFile(out, JSON.stringify({ teamEvent, snapshots } satisfies Recording));
-  console.log(`${snapshots.length} snapshots of ${pages.length} → ${out}`);
+  await writeFile(out, JSON.stringify({ teamEvent, snapshots, lineups: teamSheets } satisfies Recording));
+  console.log(`${snapshots.length} snapshots and ${teamSheets.length} line-ups of ${pages.length} → ${out}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

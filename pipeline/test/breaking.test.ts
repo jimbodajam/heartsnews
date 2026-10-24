@@ -15,15 +15,12 @@ import {
 import { Cadence, stillWanted } from '../src/cadence.ts';
 import type { Channel } from '../src/script/facts.ts';
 import type { ScriptModel } from '../src/script/llm.ts';
+import { pageAt, type Recording } from '../src/trim-recording.ts';
 
-const rec = JSON.parse(readFileSync(new URL('../../shared/test/fixtures/2026-10-22-trabzonspor-hearts.json', import.meta.url), 'utf8')) as {
-  teamEvent: BbcEvent;
-  snapshots: { at: string; page: BbcData }[];
-};
+const rec = JSON.parse(readFileSync(new URL('../../shared/test/fixtures/2026-10-22-trabzonspor-hearts.json', import.meta.url), 'utf8')) as Recording;
 const channel = JSON.parse(readFileSync(new URL('../../channel.json', import.meta.url), 'utf8')) as Channel;
 const matchAt = (t: number): LiveMatch => {
-  const snap = rec.snapshots.filter((s) => Date.parse(s.at) <= t).pop()!;
-  return liveMatch(rec.teamEvent, 'heart-of-midlothian', snap.page);
+  return liveMatch(rec.teamEvent, 'heart-of-midlothian', pageAt(rec, t));
 };
 
 /**

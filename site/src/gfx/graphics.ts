@@ -360,12 +360,72 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
         const cx = px + (pw * (i + 0.5)) / cols;
         row.forEach((name, j) => {
           const cy = Math.round(py + (ph * (j + 0.5)) / row.length - 5);
+          // New to the side: picked out in gold.
+          const fresh = gr.changes?.includes(name);
           rect(g, cx - 3, cy, 6, 6, C.ink);
-          rect(g, cx - 2, cy + 1, 4, 4, kit);
+          rect(g, cx - 2, cy + 1, 4, 4, fresh ? C.gold : kit);
           const surname = name.split(' ').pop() ?? name;
-          drawTextCentred(g, fit(surname, pw / cols - 2), cx, cy + 7, C.white);
+          drawTextCentred(g, fit(surname, pw / cols - 2), cx, cy + 7, fresh ? C.gold : C.white);
         });
       });
+      break;
+    }
+
+    case 'player': {
+      // The team sheet one at a time: portrait (or a shirt with the number) on the left, the number, name and
+      // position beside it, sliding in from the right as each player is read out.
+      const slide = Math.round((1 - easeOut(clamp01(age / 420))) * 40);
+      rect(g, x, y, w, h, C.navyDark);
+      frame(g, x, y, w, h, C.gold);
+      rect(g, x + 1, y + 1, 4, h - 2, C.maroon);
+      drawTextRight(g, fit(gr.team.toUpperCase(), w / 2), x + w - 6, y + 5, C.goldDark);
+      const s = big ? 3 : 2;
+      const size = 24 * s;
+      const px = x + 10 + slide;
+      const py = y + Math.max(4, Math.round((Math.min(h, CAPTION_SAFE_BOTTOM - y) - size) / 2));
+      const portrait = faceImage(gr.face);
+      if (portrait) {
+        drawFace(g, portrait, px, py, s);
+      } else {
+        // A shirt: body, sleeves and collar, with the number on it.
+        rect(g, px - 1, py - 1, size + 2, size + 2, C.gold);
+        rect(g, px, py, size, size, C.navy);
+        const u = size / 12;
+        rect(g, px + 3 * u, py + 2 * u, 6 * u, 9 * u, C.maroonLight);
+        rect(g, px + u, py + 2 * u, 2 * u, 4 * u, C.maroonLight);
+        rect(g, px + 9 * u, py + 2 * u, 2 * u, 4 * u, C.maroonLight);
+        rect(g, px + 5 * u, py + 2 * u, 2 * u, u, C.navy);
+        if (gr.number !== undefined) drawTextCentred(g, String(gr.number), px + size / 2, py + 5 * u, C.white, s - 1);
+      }
+      const tx = px + size + 10;
+      const tw = x + w - 6 - tx;
+      const parts = gr.name.split(' ');
+      const surname = parts.length > 1 ? parts.slice(1).join(' ') : gr.name;
+      const first = parts.length > 1 ? parts[0] : '';
+      let ty = py + 2;
+      if (gr.number !== undefined) {
+        drawText(g, String(gr.number), tx, ty, C.gold, s + 1);
+        ty += 5 * (s + 1) + 6;
+      }
+      if (first) {
+        drawText(g, fit(first.toUpperCase(), tw), tx, ty, C.light);
+        ty += LINE_H + 1;
+      }
+      const ns = measure(surname.toUpperCase(), 2) <= tw ? 2 : 1;
+      drawText(g, fit(surname.toUpperCase(), tw, ns), tx, ty, C.white, ns);
+      ty += 5 * ns + 5;
+      if (gr.position) drawText(g, fit(gr.position.toUpperCase(), tw), tx, ty, C.grey);
+      // Badges: the armband, and NEW for a player who wasn't in the last game's XI.
+      let bx = tx;
+      const by = ty + LINE_H + 2;
+      const badge = (label: string, bg: string) => {
+        const bw = measure(label) + 6;
+        rect(g, bx, by, bw, 9, bg);
+        drawText(g, label, bx + 3, by + 2, C.ink);
+        bx += bw + 3;
+      };
+      if (gr.captain) badge('CAPTAIN', C.gold);
+      if (gr.isNew) badge('NEW', Math.floor(now / 500) % 2 ? C.white : C.green);
       break;
     }
 

@@ -16,7 +16,7 @@ import type { Ctx } from './gfx/screen';
 import { H, rect, W } from './gfx/screen';
 import {
   drawDesk, drawDeskBackground, drawGraphicBackground, drawImageStudio, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
-  drawTransferBackground, drawWallClock,
+  drawTransferBackground, drawWallBackground, drawWallClock, drawWallSeams, sweep, WALL,
 } from './gfx/studio';
 import { drawPressDesk, drawStadium, type Ground, isDark } from './gfx/stadium';
 import { kitColours } from '../../shared/kits';
@@ -234,7 +234,7 @@ export class Player {
       if (this.strap?.name !== p.name) this.strap = { name: p.name, role: venue ? `LIVE: ${venue}` : 'LIVE FROM THE GROUND', at: performance.now(), hold: true };
     } else if (!this.strapped.has(p.id)) {
       this.strapped.add(p.id);
-      this.strap = { name: p.name, role: p.role, at: performance.now() };
+      this.strap = { name: p.name, role: seg.scene === 'videowall' ? 'TEAM NEWS' : p.role, at: performance.now() };
     } else if (this.strap?.name !== p.name) {
       this.strap = undefined;
     }
@@ -419,6 +419,21 @@ export class Player {
         if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
         const glance = graphic && t % 5 < 1.6 ? -1 : 0;
         if (p) drawPresenter(g, 268, 34, p.look, pose(p, glance), 3, true);
+        return;
+      }
+
+      case 'videowall': {
+        // The team news: each player's card in turn, then the team in formation, which stays up for the bench.
+        drawWallBackground(g);
+        const shown = graphic ?? this.segGraphic;
+        if (shown) drawGraphic(g, shown, WALL.x, WALL.y, WALL.w, WALL.h, graphic ? graphicAge : Infinity, now);
+        else drawIdleScreen(g, WALL.x, WALL.y, WALL.w, WALL.h, seg.title);
+        drawWallSeams(g);
+        sweep(g, WALL.x, WALL.y, WALL.w, WALL.h, t);
+        const p = onScreen[0];
+        // Turns to the wall as each new card comes up, and every few seconds while talking.
+        const glance = graphicAge < 1100 || t % 5 < 1.2 ? -1 : 0;
+        if (p) drawPresenter(g, 276, 142 - STANDING_H * 2, p.look, pose(p, glance), 2, true);
         return;
       }
 

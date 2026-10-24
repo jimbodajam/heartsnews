@@ -8,18 +8,16 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { BbcData, BbcEvent } from '../../shared/bbc.ts';
 import { type LiveFeed, liveMatch } from '../../shared/live.ts';
+import { pageAt, type Recording } from '../src/trim-recording.ts';
 import { type Dispatch, tick } from '../../worker/src/clock.ts';
 import { store as endpoint } from '../../worker/src/store.ts';
 import { checkIn, claimJob, connectStore, dropLock, finishJob, jobsLike, releaseJobs, signOff, storeAsD1, takeLock } from '../src/store.ts';
 import { memoryD1 } from './d1.ts';
 
-const rec = JSON.parse(readFileSync(new URL('../../shared/test/fixtures/2026-10-22-trabzonspor-hearts.json', import.meta.url), 'utf8')) as {
-  teamEvent: BbcEvent;
-  snapshots: { at: string; page: BbcData }[];
-};
+const rec = JSON.parse(readFileSync(new URL('../../shared/test/fixtures/2026-10-22-trabzonspor-hearts.json', import.meta.url), 'utf8')) as Recording;
 const feedAt = (t: number): LiveFeed => {
-  const snap = rec.snapshots.filter((s) => Date.parse(s.at) <= t).pop() ?? rec.snapshots[0];
-  return { updated: new Date(t).toISOString(), match: liveMatch(rec.teamEvent, 'heart-of-midlothian', snap.page) };
+  const page = pageAt(rec, t);
+  return { updated: new Date(t).toISOString(), match: liveMatch(rec.teamEvent, 'heart-of-midlothian', page) };
 };
 const at = (hm: string) => Date.parse(`2026-10-22T${hm}:00Z`);
 const KICK_OFF = feedAt(at('16:30')).match!.kickOff;
@@ -35,6 +33,7 @@ const jobRows = (d1: ReturnType<typeof memoryD1>) =>
   d1.db.prepare('SELECT id, status, runner, dispatches FROM jobs ORDER BY queued_at, id').all() as { id: string; status: string; runner: string | null; dispatches: number }[];
 
 const BREAKING = [
+  'lineup',
   'period:ko1',
   'goal:home:Mohamed Salah:1',
   'period:ht',
@@ -137,7 +136,8 @@ test('a newer programme replaces one nobody took, and old breaking news is dropp
   for (let t = at('16:30'); t <= at('17:30'); t += 60_000) await tick(d1, feedAt(t), { dispatch, now: t });
   const jobs = jobRows(d1);
   assert.equal(jobs.find((j) => j.id === PROGRAMMES[0])?.status, 'queued');
-  assert.equal(jobs.find((j) => j.id === BREAKING[0])?.status, 'dropped'); // kick-off, 16:47
+  assert.equal(jobs.find((j) => j.id === BREAKING[0])?.status, 'dropped'); // the team news, 16:30
+  assert.equal(jobs.find((j) => j.id === BREAKING[1])?.status, 'dropped'); // kick-off, 16:47
   // Asked again after ten minutes, at most three times.
   assert.equal(jobs.find((j) => j.id === PROGRAMMES[0])?.dispatches, 3);
   for (let t = at('17:31'); t <= at('17:40'); t += 60_000) await tick(d1, feedAt(t), { dispatch, now: t });

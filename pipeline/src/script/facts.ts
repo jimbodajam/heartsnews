@@ -29,7 +29,7 @@ export interface Channel {
   spokenName: string;
   /** Where the live site is published. */
   siteUrl?: string;
-  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string; /** On This Day at the museum. */ history?: string };
+  cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string; /** On This Day at the museum. */ history?: string; /** Reads the team news at the video wall. */ teamNews?: string };
   /** Who picks up which storyline, in order: the first that matches wins (notebook.ts). */
   beats?: Beat[];
   presenters: Presenter[];

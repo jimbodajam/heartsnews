@@ -1,7 +1,7 @@
 // The live.json format the Worker (worker/) serves during a match and the player polls, and the code that builds it
 // from BBC Sport. The score, clock, goals and red cards come from the match page's live-header (the team page has
-// goals but not cards, so it's only the fallback); the commentary comes from the match page's live text stream, and
-// the team stats from its match-stats block.
+// goals but not cards, so it's only the fallback); the commentary comes from the match page's live text stream, the
+// team stats from its match-stats block, and the teams from its match-lineups block.
 
 import { type BbcAction, type BbcData, type BbcEvent, block } from './bbc.ts';
 import type { Graphic } from './bulletin.ts';
@@ -51,6 +51,28 @@ export interface MatchStats {
   away: TeamStats;
 }
 
+/** A player on a team sheet, as BBC lists them. */
+export interface SheetPlayer {
+  urn: string;
+  /** The name on the shirt: "Reus", "Cláudio Braga", "JJ Williams". */
+  shirt: string;
+  first?: string;
+  number?: number;
+  /** For starters: Goalkeeper, Defender, Midfielder or Striker. */
+  position?: string;
+  captain?: true;
+}
+
+/** One side's team, from about an hour before kick-off. */
+export interface TeamSheet {
+  team: string;
+  formation: string; // "4-3-3"
+  /** The starting XI in formation: rows from the goalkeeper forwards. */
+  rows: SheetPlayer[][];
+  bench: SheetPlayer[];
+  manager?: string;
+}
+
 export interface LiveMatch {
   status: LiveStatus;
   /** While live: the minute, e.g. "32'" or "45'+2". */
@@ -67,6 +89,8 @@ export interface LiveMatch {
   posts: LivePost[];
   /** Live team stats, from about five minutes in. Noisy early on. */
   stats?: MatchStats;
+  /** Each side's team, once announced (about an hour before kick-off). */
+  lineups?: { home?: TeamSheet; away?: TeamSheet };
   link?: string;
 }
 
@@ -203,6 +227,50 @@ export function matchStats(page: BbcData): MatchStats | undefined {
   return home && away ? { home, away } : undefined;
 }
 
+interface BbcSheetPlayer {
+  urn: string;
+  name?: { first?: string; shirt?: string };
+  position?: string;
+  shirtNumber?: number | string;
+  isCaptain?: boolean;
+}
+
+interface BbcSheet {
+  name: { shortName: string };
+  formation?: { layout?: string };
+  pitchLayout?: { urn: string; name: string; shirtNumber?: string }[][];
+  manager?: { name?: { full?: string } };
+  players?: { starters?: BbcSheetPlayer[]; substitutes?: BbcSheetPlayer[] };
+}
+
+/** Both teams from a BBC match page's line-ups, each once it has a full XI (BBC has them about an hour before kick-off). */
+export function teamSheets(page: BbcData): { home?: TeamSheet; away?: TeamSheet } {
+  const d = block<{ homeTeam?: BbcSheet; awayTeam?: BbcSheet }>(page, 'match-lineups?');
+  const player = (p: BbcSheetPlayer, shirt = p.name?.shirt ?? ''): SheetPlayer => ({
+    urn: p.urn,
+    shirt,
+    ...(p.name?.first ? { first: p.name.first } : {}),
+    ...(p.shirtNumber !== undefined && p.shirtNumber !== '' ? { number: Number(p.shirtNumber) } : {}),
+    ...(p.position && p.position !== 'Substitute' ? { position: p.position } : {}),
+    ...(p.isCaptain ? { captain: true as const } : {}),
+  });
+  const sheet = (t?: BbcSheet): TeamSheet | undefined => {
+    const starters = new Map((t?.players?.starters ?? []).map((p) => [p.urn, p]));
+    const rows = (t?.pitchLayout ?? []).map((row) => row.map((p) => player(starters.get(p.urn) ?? { urn: p.urn, shirtNumber: p.shirtNumber }, p.name)));
+    if (!t || rows.flat().length < 11) return undefined;
+    return {
+      team: t.name.shortName,
+      formation: (t.formation?.layout ?? '').split('').join('-'),
+      rows,
+      bench: (t.players?.substitutes ?? []).map((p) => player(p)),
+      ...(t.manager?.name?.full ? { manager: t.manager.name.full } : {}),
+    };
+  };
+  const home = sheet(d?.homeTeam);
+  const away = sheet(d?.awayTeam);
+  return { ...(home ? { home } : {}), ...(away ? { away } : {}) };
+}
+
 /** Possession as whole numbers that add up to 100: 60.7 / 39.3 → 61 / 39. */
 export function possession(stats: MatchStats): { home: number; away: number } {
   const home = Math.round(stats.home.possession);
@@ -247,6 +315,7 @@ export function liveMatch(teamEvent: BbcEvent, team: string, page?: BbcData): Li
   const events = [...sideEvents(e.home.actions, 'home'), ...sideEvents(e.away.actions, 'away')].sort((a, b) => minuteValue(a.minute) - minuteValue(b.minute));
   const posts = page ? keyPosts(page, e.home.shortName, e.away.shortName) : [];
   attachPosts(events, [...posts].reverse());
+  const lineups = page && teamSheets(page);
   return {
     status,
     clock: status === 'live' ? label : undefined,
@@ -259,6 +328,7 @@ export function liveMatch(teamEvent: BbcEvent, team: string, page?: BbcData): Li
     events,
     posts,
     stats: page && status !== 'pre' ? matchStats(page) : undefined,
+    lineups: lineups && (lineups.home || lineups.away) ? lineups : undefined,
     link: teamEvent.onwardJourneyLink,
   };
 }

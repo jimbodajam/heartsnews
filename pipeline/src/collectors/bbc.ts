@@ -1,5 +1,5 @@
 import { type BbcEvent, type BbcSide, eventsIn, initialData } from '../../../shared/bbc.ts';
-import { matchStats } from '../../../shared/live.ts';
+import { matchStats, type TeamSheet, teamSheets } from '../../../shared/live.ts';
 import { fetchText } from '../http.ts';
 import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } from '../types.ts';
 
@@ -8,12 +8,6 @@ import type { ClubConfig, Fixture, Lineup, MatchData, OpponentFocus, Standing } 
 
 export const BASE = 'https://www.bbc.co.uk/sport/football/teams';
 export { eventsIn, initialData };
-
-interface BbcLineupTeam {
-  name: { shortName: string };
-  formation?: { layout: string };
-  pitchLayout?: { name: string }[][];
-}
 
 interface BbcStanding {
   rank: number;
@@ -62,17 +56,35 @@ export function toFixture(e: BbcEvent): Fixture {
 
 const slugOf = (urn?: string) => urn?.split(':').pop();
 
-/** Both starting XIs from a BBC match page, if it has them yet (confirmed about an hour before kick-off). */
+/** Both teams from a BBC match page, if it has them yet (confirmed about an hour before kick-off). */
+async function matchSheets(link: string): Promise<{ home?: TeamSheet; away?: TeamSheet }> {
+  return teamSheets(initialData(await fetchText(`https://www.bbc.co.uk${link}`)));
+}
+
+/** A team sheet as a plain XI, players by the name on their shirt. */
+export const toLineup = (t: TeamSheet): Lineup => ({ team: t.team, formation: t.formation, rows: t.rows.map((row) => row.map((p) => p.shirt)) });
+
+/** Both starting XIs from a BBC match page, if it has them yet. */
 async function matchLineups(link: string): Promise<{ home?: Lineup; away?: Lineup }> {
-  const data = initialData(await fetchText(`https://www.bbc.co.uk${link}`));
-  const key = Object.keys(data).find((k) => k.startsWith('match-lineups'));
-  const d = data[key ?? '']?.data as { homeTeam?: BbcLineupTeam; awayTeam?: BbcLineupTeam } | undefined;
-  const toLineup = (t?: BbcLineupTeam): Lineup | undefined => {
-    const rows = (t?.pitchLayout ?? []).map((row) => row.map((p) => p.name));
-    if (!t || rows.flat().length < 11) return undefined;
-    return { team: t.name.shortName, formation: (t.formation?.layout ?? '').split('').join('-'), rows };
-  };
-  return { home: toLineup(d?.homeTeam), away: toLineup(d?.awayTeam) };
+  const { home, away } = await matchSheets(link);
+  return { home: home && toLineup(home), away: away && toLineup(away) };
+}
+
+/**
+ * Our team sheet from the last match before `before` (ISO) that has one, with who it was against: for the changes in
+ * a new line-up. Undefined if BBC can't be read.
+ */
+export async function previousSheet(team: string, before: string): Promise<{ sheet: TeamSheet; against: string } | undefined> {
+  const results = (await pageEvents(`${team}/scores-fixtures?filter=results`).catch(() => []))
+    .map(toFixture)
+    .filter((f) => f.status === 'done' && f.date < before && f.link)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  for (const r of results.slice(0, 2)) {
+    const sheets = await matchSheets(r.link!).catch(() => ({}) as { home?: TeamSheet; away?: TeamSheet });
+    const sheet = r.homeSlug === team ? sheets.home : r.awaySlug === team ? sheets.away : undefined;
+    if (sheet) return { sheet, against: r.homeSlug === team ? r.away : r.home };
+  }
+  return undefined;
 }
 
 /** A team's XI from the most recent match that has line-ups. */

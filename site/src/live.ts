@@ -71,6 +71,12 @@ export class LiveScore {
     return m;
   }
 
+  /** Today's match whenever the Worker has one, even hours before kick-off (for the team news). */
+  today(): LiveMatch | undefined {
+    const m = this.feed?.match;
+    return m && Date.now() - this.lastOk <= STALE_MS / this.pace ? m : undefined;
+  }
+
   private async poll(): Promise<void> {
     let wait = 60_000;
     try {

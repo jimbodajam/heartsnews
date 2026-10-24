@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type BbcData, type BbcEvent, block, eventsIn } from '../../shared/bbc.ts';
 import { liveFeed } from '../../worker/src/feed.ts';
-import type { Recording } from './trim-recording.ts';
+import { pageAt, type Recording } from './trim-recording.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -45,7 +45,7 @@ export function openFixture(name = FIXTURE): RecordedMatch {
     end: snapshots[snapshots.length - 1].at,
     async page(path, t) {
       if (teamPage(path)) return team;
-      if (path === rec.teamEvent.onwardJourneyLink) return latest(snapshots, t).page;
+      if (path === rec.teamEvent.onwardJourneyLink) return pageAt(rec, t);
       throw notRecorded(path);
     },
   };

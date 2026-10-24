@@ -1,6 +1,6 @@
 // The channel's clock (issue #29). The Worker's cron runs tick() every minute: it reads live.json, decides what's due
 // (a programme in each :00 and :30 slot and straight after half-time and full time, pipeline/src/cadence.ts; a breaking
-// package for each goal, red card, kick-off, half-time and full time, pipeline/src/breaking/detect.ts) and queues each
+// package for the team news and each goal, red card, kick-off, half-time and full time, pipeline/src/breaking/detect.ts) and queues each
 // as a job in D1. Then it hands the jobs out. The home PC gets first refusal: when it has checked in lately it claims
 // jobs itself through /store (pipeline/src/agent.ts). Otherwise, or if it hasn't claimed one within a minute or two,
 // GitHub Actions is asked to build it (workflow_dispatch). A job is claimed once, so only one runner publishes it.
@@ -86,6 +86,8 @@ export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatc
     const t = Date.parse(feed.updated);
     const breaking = (key: string, payload: object) =>
       jobs.push({ id: `${test ? `test:${test}:` : ''}breaking:${m.kickOff}:${key}`, kind: 'breaking', payload: { ...payload, ...(test ? { templates: true } : {}) } });
+    const lineup = tracker.lineup(m);
+    if (lineup) breaking(lineup.key, lineup);
     for (const r of tracker.update(m, t)) breaking(r.key, r);
     const p = tracker.period(m, t);
     if (p) breaking(p.key, p);

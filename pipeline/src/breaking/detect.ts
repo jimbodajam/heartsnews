@@ -1,9 +1,9 @@
-// Spots new goals and red cards, kick-offs, half-time and full time in successive reads of live.json, and says when
-// each is ready to build a package for: once BBC's live text describes it, or after DESCRIPTION_WAIT_MS without (then
-// the line stays plain).
+// Spots the team news, new goals and red cards, kick-offs, half-time and full time in successive reads of live.json,
+// and says when each is ready to build a package for: the team news as soon as it's out; the rest once BBC's live text
+// describes it, or after DESCRIPTION_WAIT_MS without (then the line stays plain).
 
 import type { Period } from '../../../shared/breaking.ts';
-import type { LiveEvent, LiveMatch, LivePost } from '../../../shared/live.ts';
+import type { LiveEvent, LiveMatch, LivePost, TeamSheet } from '../../../shared/live.ts';
 import { minuteOf } from '../reading.ts';
 
 /** How long to wait for BBC's description of an event before going with a plain line. */
@@ -21,6 +21,17 @@ export interface ReadyEvent {
   /** BBC's description: empty if it never came. */
   text: string[];
 }
+
+/** Our team is out before kick-off: the team news break-in. */
+export interface ReadyLineup {
+  key: typeof LINEUP_KEY;
+  lineup: TeamSheet;
+  match: LiveMatch;
+  /** No description to wait for: the team sheet is the news. */
+  text: string[];
+}
+
+export const LINEUP_KEY = 'lineup';
 
 export interface ReadyPeriod {
   key: string;
@@ -129,6 +140,18 @@ export class EventTracker {
     // A goal that's gone (ruled out after all) is no longer waiting.
     for (const key of Object.keys(this.pending)) if (!events.some((e) => e.key === key)) delete this.pending[key];
     return out;
+  }
+
+  /**
+   * The team news break-in, once our team is out on BBC's match page: only before kick-off, and once a match. A
+   * match first seen after kick-off counts its team news as old.
+   */
+  lineup(m: LiveMatch): ReadyLineup | undefined {
+    this.see(m);
+    const ours = m.lineups?.[m.us];
+    if (m.status !== 'pre' || !ours || this.state.done.includes(LINEUP_KEY)) return undefined;
+    this.state.done.push(LINEUP_KEY);
+    return { key: LINEUP_KEY, lineup: ours, match: m, text: [] };
   }
 
   /**

@@ -1,6 +1,6 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
-export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside' | 'museum';
+export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside' | 'museum' | 'videowall';
 export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent' | 'adverts' | 'breaking' | 'history';
 /** The 16×16 pixel picture on an advert card. */
 export type AdArt = 'pig' | 'fish' | 'shirt' | 'pint' | 'ticket';
@@ -92,8 +92,21 @@ export type Graphic =
   | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] }
   /** A team's recent results with W/D/L. */
   | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }
-  /** A starting XI on a pitch: rows from the goalkeeper forwards. */
-  | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean }
+  /** A starting XI on a pitch: rows from the goalkeeper forwards. `changes`: the names new to the side, picked out. */
+  | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean; changes?: string[] }
+  /** One player of a team sheet, big on the video wall as the team news is read out. */
+  | {
+      type: 'player';
+      team: string;
+      name: string;
+      number?: number;
+      position?: string;
+      /** Pixel portrait (faces/<slug>.png). */
+      face?: string;
+      captain?: boolean;
+      /** Not in the last game's starting XI. */
+      isNew?: boolean;
+    }
   /** On This Day: players born on this date, with the one getting the package picked out. */
   | { type: 'birthdays'; title: string; rows: { name: string; years: string; apps: number; goals: number; star?: boolean }[] }
   /** A full-screen advert card in an ad break (adverts.json). */

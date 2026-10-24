@@ -1,4 +1,4 @@
-// Breaking news: polls breaking.json (published by the home PC) while there's a match on, and hands each new package
+// Breaking news: polls breaking.json (published by the home PC) from the team news until the match is over, and hands each new package
 // to the player, which breaks in with it after the current line.
 
 import type { BreakingFeed, BreakingPackage } from '../../shared/breaking';
@@ -7,6 +7,8 @@ import type { LiveScore } from './live';
 /** Don't break in with a package older than this: it's no longer news. */
 export const BREAKING_FRESH_MS = 10 * 60_000;
 const SEEN_KEY = 'heartsnews:breaking-seen';
+/** Look for the team news from this long before kick-off (BBC usually has it about an hour before). */
+const TEAM_NEWS_MS = 2 * 3_600_000;
 
 /** A package as seen once: a replay that rebuilds the same goal counts as new. */
 const seenId = (p: BreakingPackage) => `${p.id}@${p.publishedAt}`;
@@ -43,10 +45,12 @@ export class BreakingNews {
   }
 
   private async poll(): Promise<void> {
-    // Only while today's match is on or just finished.
-    const m = this.live.match();
-    const on = m && m.status !== 'pre' && m.status !== 'postponed';
-    if (on) {
+    // Only on matchday: from the team news, about an hour before kick-off, until just after the game.
+    const m = this.live.today();
+    const live = m && m.status !== 'pre' && m.status !== 'postponed';
+    const teamNews = m?.status === 'pre' && Date.parse(m.kickOff) - Date.now() < TEAM_NEWS_MS;
+    const on = live || teamNews;
+    if (m && on) {
       try {
         const res = await fetch(`${this.url}?t=${Date.now()}`, { cache: 'no-store' });
         // Before the first goal of a match there's no file yet.
@@ -65,6 +69,6 @@ export class BreakingNews {
         console.warn('[breaking]', (err as Error).message);
       }
     }
-    setTimeout(() => void this.poll(), (on ? 20_000 : 60_000) / this.pace);
+    setTimeout(() => void this.poll(), (live ? 20_000 : 60_000) / this.pace);
   }
 }

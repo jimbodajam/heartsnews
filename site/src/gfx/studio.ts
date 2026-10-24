@@ -100,7 +100,7 @@ export function drawImageStudio(g: Ctx, img: HTMLImageElement, shot: 'wide' | 'c
 }
 
 /** Every few seconds a diagonal band of light sweeps across a screen area. */
-function sweep(g: Ctx, x: number, y: number, w: number, h: number, t: number): void {
+export function sweep(g: Ctx, x: number, y: number, w: number, h: number, t: number): void {
   const cycle = 7;
   const p = (t % cycle) / cycle;
   if (p >= 0.45) return;
@@ -243,6 +243,47 @@ export function drawTouchBackground(g: Ctx): void {
     0,
     0,
   );
+}
+
+/** Where the picture sits on the video wall, inside its bezel. */
+export const WALL = { x: 10, y: 14, w: 224, h: 94 };
+
+/** The video wall set: a huge 3×3 wall of screens on the left, standing room on the right, a shiny floor. */
+export function drawWallBackground(g: Ctx): void {
+  g.drawImage(
+    cached('wall', (o) => {
+      ditherV(o, 0, 0, W, 130, [C.navyDark, C.navy, C.navyLight]);
+      // The floor, with the wall's glow in it.
+      ditherV(o, 0, 130, W, H - 130, ['#191c34', C.navyDark]);
+      for (let x = 2; x < W; x += 22) rect(o, x, 133, 12, 1, C.navyLight);
+      ditherV(o, WALL.x, 132, WALL.w, 8, [shade(C.maroon, -0.4), '#191c34']);
+      // Downlights along the top.
+      for (let x = 14; x < W; x += 30) {
+        rect(o, x, 2, 6, 1, C.white);
+        rect(o, x - 1, 3, 8, 1, shade(C.white, -0.5));
+      }
+      // The wall on its stand.
+      rect(o, WALL.x - 4, WALL.y - 4, WALL.w + 8, WALL.h + 8, C.black);
+      frame(o, WALL.x - 4, WALL.y - 4, WALL.w + 8, WALL.h + 8, C.dark);
+      rect(o, WALL.x + 20, WALL.y + WALL.h + 4, 6, 130 - WALL.y - WALL.h - 4, C.dark);
+      rect(o, WALL.x + WALL.w - 26, WALL.y + WALL.h + 4, 6, 130 - WALL.y - WALL.h - 4, C.dark);
+      // A light pillar on the far right.
+      rect(o, 304, 12, 8, 116, C.navyLight);
+      for (let y = 16; y < 124; y += 6) rect(o, 307, y, 2, 2, C.blue);
+    }),
+    0,
+    0,
+  );
+}
+
+/** The seams between the wall's screens, over whatever's on it, so it reads as a wall of panels. */
+export function drawWallSeams(g: Ctx): void {
+  g.globalAlpha = 0.55;
+  for (let i = 1; i < 3; i++) {
+    rect(g, WALL.x + Math.round((WALL.w * i) / 3), WALL.y, 1, WALL.h, C.black);
+    rect(g, WALL.x, WALL.y + Math.round((WALL.h * i) / 3), WALL.w, 1, C.black);
+  }
+  g.globalAlpha = 1;
 }
 
 export function drawGraphicBackground(g: Ctx): void {

@@ -12,9 +12,9 @@ A rolling 24-hour pixel-art sports news channel for Heart of Midlothian. See [PL
 | `pipeline/` | Node/TS: collects news (`npm run collect`) → `pipeline/out/items.json` + `match.json` |
 | `shared/bulletin.ts` | The `bulletin.json` format the pipeline writes and the player reads |
 | `shared/live.ts` | The `live.json` match feed format, built from BBC Sport (tested against a recording in `shared/test/`) |
-| `shared/breaking.ts` | The `breaking.json` format: goal and red card break-ins, written by `pipeline/src/breaking/` |
+| `shared/breaking.ts` | The `breaking.json` format: team news, goal and red card break-ins, written by `pipeline/src/breaking/` |
 | `site/` | Vite + Canvas player. Plays `site/public/bulletins/latest.json` |
-| `worker/` | Cloudflare Worker serving `live.json` during a match: score, clock, goals, red cards, BBC live text. Also `/store`, the channel's memory in D1 |
+| `worker/` | Cloudflare Worker serving `live.json` during a match: score, clock, goals, red cards, BBC live text, both teams. Also `/store`, the channel's memory in D1 |
 
 ## Commands (run inside WSL)
 
@@ -66,7 +66,7 @@ D1's Time Travel restores the database to any minute in the last 7 days on the f
 
 GitHub runs the channel and the home PC helps when it's on. The live Worker is the clock: a cron trigger every minute
 (`worker/src/clock.ts`) queues a job in D1 for each programme that's due (on :00 and :30, none while our match is on,
-one straight after half-time and full time) and each breaking package (goals, red cards, kick-offs, half-time, full
+one straight after half-time and full time) and each breaking package (the team news, goals, red cards, kick-offs, half-time, full
 time). When the PC has checked in within the last 90 seconds it gets first refusal: `npm run agent` claims jobs every
 30 seconds and builds them with GPU voices. Otherwise, or if it hasn't claimed a job within a minute (breaking) or two
 (programme), the Worker runs the `Bulletin` workflow with the job's id, and GitHub builds it with Kokoro on the CPU.

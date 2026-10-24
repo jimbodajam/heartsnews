@@ -1,4 +1,4 @@
-// The breaking.json format: short break-in packages for goals, red cards, both kick-offs, half-time and full time,
+// The breaking.json format: short break-in packages for the team news, goals, red cards, both kick-offs, half-time and full time,
 // written by whichever runner takes the job (the home PC or GitHub, pipeline/src/jobs.ts)
 // and published to gh-pages beside the site. The player polls it during a match and breaks in after the current line.
 
@@ -13,11 +13,11 @@ export type Period = 'ko1' | 'ht' | 'ko2' | 'ft';
 export interface BreakingPackage {
   /** One per event: the same goal rebuilt keeps its id. */
   id: string;
-  kind: 'goal' | 'red' | Period;
+  kind: 'lineup' | 'goal' | 'red' | Period;
   publishedAt: string; // ISO
   /** The match it belongs to. */
   kickOff: string; // ISO
-  /** The big word on the break-in flash: "GOAL", "RED CARD", "KICK-OFF", "HALF TIME"… */
+  /** The big word on the break-in flash: "TEAM NEWS", "GOAL", "RED CARD", "KICK-OFF", "HALF TIME"… */
   flash: string;
   presenters: Presenter[];
   /** The anchor's hand-over at the desk, then the reporter at the ground. */

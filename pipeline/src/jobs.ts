@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { BreakingPackage } from '../../shared/breaking.ts';
-import { addToFeed, breakingModel, describe, LOCAL_DIR, type Ready, voicePackage, workerSource, writePackage } from './breaking/index.ts';
+import { addToFeed, breakingModel, describe, LOCAL_DIR, type Ready, undescribed, voicePackage, workerSource, writePackage } from './breaking/index.ts';
 import { type Reason, stillWanted } from './cadence.ts';
 import { pagesTree, publishSite } from './publish.ts';
 import { claimJob, dropLock, finishJob, type Job, type Runner, type Store, storeFromEnv, takeLock } from './store.ts';
@@ -100,7 +100,7 @@ async function programme(store: Store | undefined, reason: Reason, test: boolean
 
 /** Builds and voices a breaking package, then adds it to what's on air and publishes. */
 async function breaking(store: Store | undefined, ready: Ready & { templates?: boolean }, test: boolean, o: RunOptions): Promise<Outcome> {
-  console.log(`[job] ${describe(ready)}${ready.text.length ? '' : ' (no description from BBC)'}`);
+  console.log(`[job] ${describe(ready)}${undescribed(ready) ? ' (no description from BBC)' : ''}`);
   const pkg: BreakingPackage = await writePackage(ready, breakingModel(o.templates || ready.templates));
   for (const line of pkg.segments.flatMap((s) => s.lines)) console.log(`  ${line.speaker}: ${line.text}`);
   const voiced = await mkdtemp(join(tmpdir(), 'heartsnews-voiced-'));
