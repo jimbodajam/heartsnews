@@ -18,6 +18,11 @@ export interface Opinion {
   topic: string;
   view: string;
   at: string;
+  /** The storyline and the person it's about, when it was saved against them (script/notebook.ts). */
+  storyline?: number;
+  entity?: string;
+  /** 1 in passing, 2 firmly, 3 staked their name on it. */
+  strength?: number;
 }
 
 export interface Prediction {

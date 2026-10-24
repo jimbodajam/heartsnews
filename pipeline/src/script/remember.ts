@@ -2,11 +2,12 @@ import { airings, type PresenterPrediction } from '../memory.ts';
 import type { Story } from '../stories.ts';
 import type { Draft } from './draft.ts';
 import { teamName, type Facts } from './facts.ts';
+import { personIn } from './notebook.ts';
 
 /** What a bulletin adds to the channel's memory, for the store. */
 export interface Remembered {
   aired: { title: string; storyline?: number; inDepth: boolean }[];
-  takes: { presenter: string; topic: string; view: string }[];
+  takes: { presenter: string; topic: string; view: string; storyline?: number; entity?: string; strength?: number }[];
   predictions: PresenterPrediction[];
 }
 
@@ -34,7 +35,19 @@ export function remember(f: Facts, draft: Draft): Remembered {
 
   return {
     aired: airings(f.memory, [...aired.values()], new Set(draft.features.map((x) => x.storyId))),
-    takes: (draft.opinions ?? []).map((o) => ({ presenter: o.speaker, topic: o.topic, view: o.view })),
+    // Each take is saved against its storyline and the person it's about, so it's in their notebook next time.
+    takes: (draft.opinions ?? []).map((o) => {
+      const story = o.storyId ? byId(o.storyId) : undefined;
+      const entity = personIn(`${o.topic} ${o.view}`, story, all);
+      return {
+        presenter: o.speaker,
+        topic: o.topic,
+        view: o.view,
+        ...(story?.storyline ? { storyline: story.storyline.id } : {}),
+        ...(entity ? { entity } : {}),
+        ...(o.strength ? { strength: o.strength } : {}),
+      };
+    }),
     predictions,
   };
 }

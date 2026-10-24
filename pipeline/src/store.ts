@@ -90,9 +90,16 @@ export async function loadMemory(store: Store, now: Date): Promise<Memory> {
       params: [new Date(now.getTime() - 7 * DAY_MS).toISOString()],
     },
     {
-      sql: `SELECT presenter_id AS presenter, topic, view, at FROM (
-              SELECT *, ROW_NUMBER() OVER (PARTITION BY presenter_id ORDER BY at DESC, id DESC) AS n FROM takes
-            ) WHERE n <= 15 ORDER BY at, id`,
+      // The notebooks: the latest three takes on each storyline or person from the past 90 days, and each presenter's
+      // latest 15 on anything else.
+      sql: `SELECT presenter_id AS presenter, topic, view, at, storyline_id AS storyline, entity_id AS entity, strength FROM (
+              SELECT *,
+                ROW_NUMBER() OVER (PARTITION BY presenter_id, COALESCE('s' || storyline_id, 'e' || entity_id) ORDER BY at DESC, id DESC) AS n,
+                ROW_NUMBER() OVER (PARTITION BY presenter_id, storyline_id IS NULL AND entity_id IS NULL ORDER BY at DESC, id DESC) AS recent
+              FROM takes
+            ) WHERE CASE WHEN storyline_id IS NULL AND entity_id IS NULL THEN recent <= 15 ELSE n <= 3 AND at >= ? END
+            ORDER BY at, id`,
+      params: [new Date(now.getTime() - 90 * DAY_MS).toISOString()],
     },
     {
       sql: `SELECT presenter_id AS presenter, home, away, date, home_goals AS homeGoals, away_goals AS awayGoals,
@@ -113,7 +120,16 @@ export async function loadMemory(store: Store, now: Date): Promise<Memory> {
       inDepth: Number(r.inDepth),
     });
   }
-  for (const r of takes) presenter(String(r.presenter)).opinions.push({ topic: String(r.topic), view: String(r.view), at: String(r.at) });
+  for (const r of takes) {
+    presenter(String(r.presenter)).opinions.push({
+      topic: String(r.topic),
+      view: String(r.view),
+      at: String(r.at),
+      ...(r.storyline != null ? { storyline: Number(r.storyline) } : {}),
+      ...(r.entity != null ? { entity: String(r.entity) } : {}),
+      ...(r.strength != null ? { strength: Number(r.strength) } : {}),
+    });
+  }
   for (const r of predictions) {
     presenter(String(r.presenter)).predictions.push({
       home: String(r.home),
@@ -133,8 +149,11 @@ export async function loadMemory(store: Store, now: Date): Promise<Memory> {
 const INSERT_AIRINGS = `INSERT INTO airings (bulletin_id, story, storyline_id, in_depth, at)
   SELECT ?, value ->> 'title', value ->> 'storyline', value ->> 'inDepth', value ->> 'at' FROM json_each(?)`;
 
-const INSERT_TAKES = `INSERT INTO takes (bulletin_id, presenter_id, topic, view, at)
-  SELECT ?, value ->> 'presenter', value ->> 'topic', value ->> 'view', value ->> 'at' FROM json_each(?)`;
+// A take's storyline and person are kept only if the store has them.
+const INSERT_TAKES = `INSERT INTO takes (bulletin_id, presenter_id, topic, view, at, storyline_id, entity_id, strength)
+  SELECT ?, value ->> 'presenter', value ->> 'topic', value ->> 'view', value ->> 'at',
+    (SELECT id FROM storylines WHERE id = value ->> 'storyline'), (SELECT id FROM entities WHERE id = value ->> 'entity'),
+    value ->> 'strength' FROM json_each(?)`;
 
 // A later call on the same match replaces the earlier one.
 const UPSERT_PREDICTIONS = `INSERT INTO predictions

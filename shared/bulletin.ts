@@ -36,6 +36,8 @@ export interface Presenter {
   tts?: { voice: string; speed?: number };
   /** Character notes the script writer plays to. */
   persona?: string;
+  /** Lasting views that keep their opinions consistent, e.g. "always backs academy players" (pipeline/src/script/notebook.ts). */
+  leanings?: string[];
   /** Old ids after a rename, so their memory (opinions, predictions) carries over. */
   formerIds?: string[];
   look: PresenterLook;

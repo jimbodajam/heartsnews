@@ -4,7 +4,8 @@ import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
 import { detectPhase, type Phase } from '../matchday.ts';
 import { minuteOf, READ } from '../reading.ts';
-import { airedFor, emptyMemory, type Memory } from '../memory.ts';
+import { emptyMemory, type Memory } from '../memory.ts';
+import { beatFor, beatPresenters, strongestTake, type Beat } from './notebook.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
 
@@ -27,6 +28,8 @@ export interface Channel {
   /** Where the live site is published. */
   siteUrl?: string;
   cast: { anchors: [string, string]; transfers: string; analyst: string; debate?: [string, string]; /** Live from the ground on matchdays. */ pitchside?: string };
+  /** Who picks up which storyline, in order: the first that matches wins (notebook.ts). */
+  beats?: Beat[];
   presenters: Presenter[];
 }
 
@@ -166,14 +169,16 @@ export function presenter(facts: Facts, id: string): Presenter {
 export const firstName = (p: Presenter) => p.name.split(' ')[0];
 
 /**
- * Who joins the lead anchor to discuss a story: the Transfer Centre reporter, the analyst, or the other anchor.
- * When a story comes round again, the other anchor and the specialist take turns, so a repeat sounds different.
+ * Who joins the lead anchor to discuss a story, the same person each time it comes round: whoever's beat it is; with
+ * no beat, whoever has held the strongest view on it before; failing that, the Transfer Centre reporter, the analyst
+ * or the other anchor by category.
  */
 export function expertFor(f: Facts, s: Story): string {
   const { transfers, analyst, anchors } = f.channel.cast;
-  const specialist =
-    s.category === 'transfer' || s.category === 'contract' ? transfers : ['match', 'injury', 'discipline'].includes(s.category) ? analyst : anchors[1];
-  const times = airedFor(f.memory, s)?.inDepth ?? 0;
-  if (times % 2 === 0) return specialist;
-  return specialist === anchors[1] ? analyst : anchors[1];
+  const beat = beatFor(f.channel, s);
+  if (beat && beat !== anchors[0]) return beat;
+  return (
+    strongestTake(f, s, beatPresenters(f.channel)) ??
+    (s.category === 'transfer' || s.category === 'contract' ? transfers : ['match', 'injury', 'discipline'].includes(s.category) ? analyst : anchors[1])
+  );
 }

@@ -36,8 +36,11 @@ export interface Draft {
   fans: { text: string; score: number; topics: string[]; lines?: { speaker: string; text: string; ref?: string }[] };
   /** Two pundits arguing a talking point in character, ending with score predictions. AI only. */
   debate?: Debate;
-  /** New opinions voiced in this bulletin, so presenters stay consistent next time. AI only. */
-  opinions?: { speaker: string; topic: string; view: string }[];
+  /**
+   * New opinions voiced in this bulletin, so presenters stay consistent next time: on a story when it's about one, and
+   * how strongly held (1 in passing, 2 firmly, 3 staked their name on it). AI only.
+   */
+  opinions?: { speaker: string; topic: string; view: string; storyId?: string; strength?: number }[];
   /** The analyst on the next opponent's form and both XIs (build-up days). */
   opponent?: { form: string; theirXI?: string; ourXI?: string };
   outro: string;

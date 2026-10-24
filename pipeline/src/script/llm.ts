@@ -416,11 +416,22 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
     if (lines.length >= 4) debate = { topic: truncate(d.topic.trim(), 50), lines: lines.slice(0, 10), predictions };
   }
 
-  const ids = new Set(f.channel.presenters.map((p) => p.id));
+  // The lead anchor gives no opinions. A take keeps its story only if it's one on this bulletin.
+  const ids = new Set(f.channel.presenters.map((p) => p.id).filter((id) => id !== f.channel.cast.anchors[0]));
+  const storyIds = new Set([...f.pool, ...f.features, ...f.transfers].map((s) => s.id));
   const opinions = (Array.isArray(ai.opinions) ? ai.opinions : [])
     .filter((o) => o && ids.has(o.speaker) && usable(o.topic) && usable(o.view))
-    .map((o) => ({ speaker: o.speaker, topic: truncate(o.topic.trim(), 60), view: truncate(o.view.trim(), 160) }))
-    .slice(0, 4);
+    .map((o) => {
+      const storyId = typeof o.storyId === 'string' ? o.storyId.split('|')[0].trim() : '';
+      return {
+        speaker: o.speaker,
+        topic: truncate(o.topic.trim(), 60),
+        view: truncate(o.view.trim(), 160),
+        ...(storyIds.has(storyId) ? { storyId } : {}),
+        ...(Number.isInteger(o.strength) ? { strength: Math.max(1, Math.min(3, o.strength!)) } : {}),
+      };
+    })
+    .slice(0, 8);
 
   const fans = ai.fans;
   const fansOk = fans && usable(fans.text) && typeof fans.score === 'number' && Array.isArray(fans.topics);

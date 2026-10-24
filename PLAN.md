@@ -64,6 +64,9 @@ collector. Don't try to get around a site's block.
 - **Checks:** `mergeDraft` keeps only well-formed parts that refer to real stories, genuine quotes and scorers that add up.
 - **Presenter brains:** personas and leanings in `channel.json`; memory (what aired, takes, predictions, every
   collected item) in the D1 store behind the live Worker (`pipeline/src/store.ts`, schema in `worker/migrations/`).
+  Each presenter has a notebook (`pipeline/src/script/notebook.ts`): takes saved against storylines and people, dated
+  and with how strongly held, briefed alongside the shared facts. Beats in `channel.json` say who picks up which
+  storyline, so the same presenter covers it each time.
 - **Gemini quota:** `gemini-flash-latest` (3.8 Flash) allows only 20 free requests a day and a bulletin makes about 13,
   so most bulletins are written by Flash-Lite. Once Flash is out for the day, a run skips it.
 - **Club config:** `clubs/hearts.json`. Covering the SPFL later means adding config files, not new code.

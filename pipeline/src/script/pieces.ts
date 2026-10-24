@@ -4,6 +4,7 @@ import type { Fixture } from '../types.ts';
 import { predictionRecord } from '../memory.ts';
 import type { Draft } from './draft.ts';
 import { dataSection, mergeDraft, whenSaid, type DataPart, type ScriptModel } from './llm.ts';
+import { notebookLines } from './notebook.ts';
 import { expertFor, firstName, focusFixture, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
 
 // The script is written segment by segment: each piece is its own small request with only the data it needs, a few
@@ -12,7 +13,13 @@ import { expertFor, firstName, focusFixture, presenter, runningOrder, teamName, 
 
 const STR = { type: 'STRING' };
 const LINES = (props: object, required: string[]) => ({ type: 'ARRAY', items: { type: 'OBJECT', properties: props, required } });
-const OPINIONS = LINES({ speaker: STR, topic: STR, view: STR }, ['speaker', 'topic', 'view']);
+const OPINIONS = LINES({ speaker: STR, storyId: STR, topic: STR, view: STR, strength: { type: 'INTEGER' } }, ['speaker', 'topic', 'view', 'strength']);
+
+/** How a piece asks for the opinions to remember. */
+const OPINION_RULES = `Each is: speaker id; storyId when it's about one of the stories (else leave it out); topic, naming the
+person or storyline it's about (at most six words); the view in under 20 words; strength 1 (said in passing), 2 (firmly)
+or 3 (staked their name on it). Only views that are new, or changed from their notebook (say so in the view: "now thinks…").
+Football only: never anything about anyone's private life.`;
 
 const FEATURE_SCHEMA = {
   type: 'OBJECT',
@@ -44,8 +51,11 @@ interface Piece {
   id: string;
   parts: DataPart[];
   articleIds?: string[];
-  /** Include what the presenters have said before: for the conversations, not the news reads. */
-  memory?: boolean;
+  /**
+   * The notebooks of the presenters giving opinions, on the people and storylines in these stories: for the
+   * conversations, not the news reads. `predictions` adds their calls and record.
+   */
+  notebooks?: { who: string[]; stories: Story[]; predictions?: boolean };
   brief: string;
   schema: object;
   toDraft?: (answer: Record<string, unknown>) => Partial<Draft>;
@@ -103,36 +113,39 @@ function scoreLineShort(f: Facts, x: Fixture): string {
   return `Full time: ${name(x.home)} ${x.homeScore}-${x.awayScore} ${name(x.away)} (${x.competition})${goals}`;
 }
 
-/** What each presenter has said and predicted before, for the prompt. */
-function memoryNotes(f: Facts): string {
-  return f.channel.presenters
-    .map((p) => {
-      const pm = f.memory.presenters[p.id];
-      if (!pm) return '';
-      const views = pm.opinions.slice(-6).map((o) => `"${o.topic}": ${o.view} (${whenSaid(o.at, f.now)})`);
-      const calls = pm.predictions.slice(-4).map((x) =>
-        `${x.home} ${x.homeGoals}-${x.awayGoals} ${x.away}, called ${whenSaid(x.madeAt, f.now)}` +
-        (x.outcome ? ` → ${x.outcome.toUpperCase()} (finished ${x.actual})` : ' (not played yet)'),
-      );
-      const record = predictionRecord(pm);
-      const parts = [
-        views.length ? `  said before: ${views.join('; ')}` : '',
-        calls.length ? `  predictions: ${calls.join('; ')}${record ? `; record ${record}` : ''}` : '',
-      ].filter(Boolean);
-      return parts.length ? `${p.name}:\n${parts.join('\n')}` : '';
+/** Each presenter's own notebook for a piece: leanings, past takes on these stories' people and storylines, and calls. */
+function notebooks(f: Facts, n: NonNullable<Piece['notebooks']>): string {
+  return n.who
+    .map((id) => {
+      const p = presenter(f, id);
+      const lines = notebookLines(f, id, n.stories, (at) => whenSaid(at, f.now));
+      const pm = f.memory.presenters[id];
+      if (n.predictions && pm?.predictions.length) {
+        const calls = pm.predictions.slice(-4).map((x) =>
+          `${x.home} ${x.homeGoals}-${x.awayGoals} ${x.away}, called ${whenSaid(x.madeAt, f.now)}` +
+          (x.outcome ? ` → ${x.outcome.toUpperCase()} (finished ${x.actual})` : ' (not played yet)'),
+        );
+        const record = predictionRecord(pm);
+        lines.push(`predictions: ${calls.join('; ')}${record ? `; record ${record}` : ''}`);
+      }
+      return `${firstName(p)}'s notebook (id "${id}"):\n${lines.map((l) => `  - ${l}`).join('\n') || '  (empty: no views on these yet)'}`;
     })
-    .filter(Boolean)
     .join('\n');
 }
 
 /** What every piece is told: who the channel is, when it is, the cast and the house style. */
-function header(f: Facts, memory: boolean): string {
+function header(f: Facts, n?: Piece['notebooks']): string {
   const { club, channel, now } = f;
   const uk = new Intl.DateTimeFormat('en-GB', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Europe/London' }).format(now);
   const cast = channel.presenters.map((p) => `- ${p.name} (id "${p.id}"), ${p.role}: ${p.persona ?? ''}`).join('\n');
-  const memories = memory
-    ? `\nWhat the presenters have said before (keep them consistent, and let them refer back, e.g. "I said last week…"):
-${memoryNotes(f) || '(nothing yet: this is their first show together)'}\n`
+  const memories = n?.who.length
+    ? `\nPRESENTERS' NOTEBOOKS. Everyone works from the same facts in the DATA, but each presenter has their own notebook: lasting
+leanings, and what they've said before on the people and storylines here, with how strongly they held it. A presenter
+only knows their own notebook and what's been said on air. Keep their views consistent with it and let them refer back
+("I said last week…"), so two presenters on one story can disagree naturally. When the facts have moved on since, they
+can change their mind and say so ("I said he'd be back for the derby; the scan says otherwise"). Leanings colour their
+view; they never override the facts.
+${notebooks(f, n)}\n`
     : '';
   return `You are a scriptwriter for "${channel.spokenName}", a 24-hour TV sports news channel about ${club.name} (${club.shortName}).
 You are writing ONE part of the next bulletin; other writers are doing the rest. It is ${uk} (UK time), so it is ${partOfDay(now)}.
@@ -179,7 +192,8 @@ function pieces(f: Facts): Piece[] {
   const list: Piece[] = [];
 
   f.features.forEach((s, i) => {
-    const expert = firstName(presenter(f, expertFor(f, s)));
+    const expertId = expertFor(f, s);
+    const expert = firstName(presenter(f, expertId));
     // Each package is written separately, so tell it where it sits: only the first is "our top story".
     const place =
       i === 0
@@ -189,13 +203,19 @@ function pieces(f: Facts): Piece[] {
       id: `story-${s.id}`,
       parts: ['articles', 'match'],
       articleIds: [s.id],
-      memory: true,
-      schema: FEATURE_SCHEMA,
-      toDraft: (x) => ({ features: [{ ...x, storyId: s.id } as Draft['features'][number]] }),
+      notebooks: { who: [expertId], stories: [s] },
+      schema: { ...FEATURE_SCHEMA, properties: { ...FEATURE_SCHEMA.properties, opinions: OPINIONS } },
+      // Only the expert's views are kept, and they're about this story.
+      toDraft: ({ opinions, ...x }) => ({
+        features: [{ ...x, storyId: s.id } as Draft['features'][number]],
+        opinions: (Array.isArray(opinions) ? (opinions as Draft['opinions'] & object) : []).filter((o) => o?.speaker === expertId).map((o) => ({ ...o, storyId: s.id })),
+      }),
       brief: `Write the in-depth package on "${s.title}": ${firstName(a)} (role "lead") at the desk with ${expert} (role "expert").
 This is where viewers get the real substance behind a headline. 4 to 6 lines: "lead" lines are ${firstName(a)} introducing
 and steering, "expert" lines are ${expert} explaining. Cover what happened, the key details, why it matters for ${club.shortName}
-and what comes next. Make it a conversation (the lead can ask the expert a question). Explain in your own words;
+and what comes next. Make it a conversation (the lead can ask the expert a question). This is ${expert}'s story: the
+facts come from the brief and claims, but ${expert} puts their own spin on it from their notebook, while ${firstName(a)}
+stays neutral and gives no opinion. Explain in your own words;
 don't copy sentences from the articles. When there's more than one outlet, combine them into one account; when outlets
 disagree, say so and credit each. Otherwise credit the outlet once. The lead addresses ${expert} by name (and nobody else).
 ${place}
@@ -209,7 +229,8 @@ word for word, with "by" being that person's name. Otherwise leave quote out.
 result: only for a match report (an article about a game that has been played, any team: men, women, academy). Home and
 away team names, the final score, and EVERY goalscorer for BOTH sides exactly as the article names them (surname, plus
 the minutes if the article gives them, e.g. "Dolan 32' 50'"; one entry per player). The number of goals listed for each
-side should add up to its score. Leave out scorers the article doesn't name. Otherwise leave result out.`,
+side should add up to its score. Leave out scorers the article doesn't name. Otherwise leave result out.
+opinions: 0 or 1 view ${expert} (speaker "${expertId}") voiced here that they should remember next time. ${OPINION_RULES}`,
     });
   });
 
@@ -314,7 +335,7 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
   list.push({
     id: 'fans',
     parts: ['fans', 'videos', 'stories'],
-    memory: true,
+    notebooks: { who: [b.id], stories: f.pool },
     schema: {
       type: 'OBJECT',
       properties: {
@@ -337,15 +358,15 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
   thread or show it is about, or no ref for a reaction. The ref is only for the on-screen card: never say "T1" or "V1"
   aloud; describe the thread in words instead ("the thread on the manager", "the injury update thread"). Summarise
   opinion only: never name, quote or identify posters. Don't sign off: the bulletin's outro follows.
-- opinions: 0 to 2 new, specific views ${firstName(a)} or ${firstName(b)} voiced here that they should remember next time
-  (speaker id, short topic, the view in under 20 words).`,
+- opinions: 0 to 2 specific views ${firstName(b)} (speaker "${b.id}") voiced here that they should remember next time.
+  ${OPINION_RULES}`,
   });
 
   if (f.phase.kind !== 'live') {
     list.push({
       id: 'debate',
       parts: ['stories', 'match', 'fans', 'videos', 'opponent'],
-      memory: true,
+      notebooks: { who: [p1.id, p2.id], stories: f.pool, predictions: true },
       schema: {
         type: 'OBJECT',
         properties: {
@@ -364,12 +385,12 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
       },
       brief: `Write "The Debate": ${firstName(p1)} (id "${p1.id}") against ${firstName(p2)} (id "${p2.id}"), fully in character. Pick the
 liveliest talking point from the stories or fan threads (topic: at most six words). 6 to 8 lines alternating between them,
-speaker = their id. They should genuinely disagree, needle each other, and bring up their past opinions or prediction
-record when it fits. Facts they mention must still come from the DATA.
+speaker = their id. They should genuinely disagree, needle each other, and argue from their own notebooks: their
+leanings, their past takes (holding to them, or owning up when the facts have proved them wrong) and their prediction
+record. Facts they mention must still come from the DATA.
 ${next ? `Finish with each predicting ${name(next.home)} against ${name(next.away)}: say the score in their line AND put it in predictions
 (homeGoals = ${name(next.home)}, awayGoals = ${name(next.away)}). The two predictions must differ.` : 'There is no fixture to predict, so predictions is an empty list.'}
-opinions: 1 or 2 new, specific views either of them voiced here that they should remember next time (speaker id, short
-topic, the view in under 20 words).`,
+opinions: 1 or 2 specific views either of them voiced here that they should remember next time. ${OPINION_RULES}`,
     });
   }
   return list;
@@ -426,7 +447,7 @@ function linksPrompt(f: Facts, d: Draft): string {
   const order = segmentGists(f, d)
     .map((s) => `- ${s.id}: ${s.what}. On screen: ${who(s.presenters)}.\n  ${s.gist}`)
     .join('\n');
-  return `${header(f, false)}
+  return `${header(f)}
 
 The rest of the bulletin is written. RUNNING ORDER (segment id: what it is; who is on screen; how it opens or ends):
 ${order}
@@ -489,7 +510,7 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
   };
 
   const job = (p: Piece, lastGo: boolean) => () =>
-    run(p.id, `${header(f, Boolean(p.memory))}\n\n${dataSection(f, p.parts, p.articleIds)}\n\n${p.brief}`, p.schema, lastGo);
+    run(p.id, `${header(f, p.notebooks)}\n\n${dataSection(f, p.parts, p.articleIds)}\n\n${p.brief}`, p.schema, lastGo);
   const answers = await inTurn(list.map((p) => job(p, false)), limit);
   // The free tier is often busy for a minute at a time: pieces that failed get one more go once the rest are in.
   const retry = list.map((_, i) => i).filter((i) => answers[i].status === 'rejected');
@@ -508,7 +529,7 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
     const { features, opinions, ...rest } = part;
     Object.assign(ai, rest);
     ai.features!.push(...(features ?? []));
-    // The debate's opinions go first: they're the strongest views, and only four are kept.
+    // The debate's opinions go first: they're the strongest views, and only eight are kept.
     if (list[i].id === 'debate') ai.opinions!.unshift(...(opinions ?? []));
     else ai.opinions!.push(...(opinions ?? []));
   });

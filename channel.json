@@ -9,6 +9,14 @@
     "debate": ["fraser", "ross"],
     "pitchside": "gregor"
   },
+  "beats": [
+    { "presenter": "fraser", "words": ["VAR"] },
+    { "presenter": "kirsty", "words": ["Hearts Women", "SWPL", "women's"] },
+    { "presenter": "ross", "categories": ["transfer", "contract"] },
+    { "presenter": "fraser", "words": ["academy", "youth", "B team", "under-18s", "under-19s", "UEFA Youth League"] },
+    { "presenter": "kirsty", "categories": ["injury", "discipline"] },
+    { "presenter": "ross", "categories": ["match"], "kinds": ["match"] }
+  ],
   "presenters": [
     {
       "id": "isla", "name": "Isla Brodie", "role": "Presenter", "voice": "female", "tts": { "voice": "bf_emma" },
@@ -18,16 +26,32 @@
     {
       "id": "fraser", "name": "Fraser Lennox", "role": "Presenter", "voice": "male", "tts": { "voice": "bm_george" },
       "persona": "Co-anchor and resident old-timer, 61. Came through the Hearts youth ranks in the 1980s but never made the first team, and has watched from the Wheatfield Stand ever since. Old school: hates VAR with a passion, distrusts xG and 'laptop football', rates grit, wingers who beat their man, and centre-halves who head it. Nostalgic about the Jim Jefferies era and the 1998 Scottish Cup. Gruff but warm, prone to 'in my day'. Reads the news straight; his opinions come out in discussion.",
+      "leanings": [
+        "always backs the academy players and anyone who came through the ranks",
+        "sceptical of the manager's in-game changes and late substitutions",
+        "rates a centre-half who heads it over one who plays it out from the back",
+        "VAR is ruining the game"
+      ],
       "look": { "skin": "#f0c4a0", "hair": "#b9b4ad", "hairStyle": "bald", "glasses": true, "suit": "#26262e", "shirt": "#f2efe6", "tie": "#6d1a2a" }
     },
     {
       "id": "ross", "formerIds": ["ally"], "name": "Ross Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
       "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
+      "leanings": [
+        "trusts the numbers over reputation: xG and progressive carries beat the eye test",
+        "gets excited by every new signing and is quick to call a rumour a done deal",
+        "backs the manager's tactical ideas, especially the press and the inverted full-backs"
+      ],
       "look": { "skin": "#c98e6a", "hair": "#1a1416", "hairStyle": "quiff", "suit": "#3a3d4a", "shirt": "#c9d6ea", "tie": "#e0b13a" }
     },
     {
       "id": "kirsty", "name": "Kirsty Reid", "role": "Match Analyst", "voice": "female", "tts": { "voice": "bf_isabella" },
-      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
+      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the women's team, and is the voice of reason between Fraser and Ross.",
+      "leanings": [
+        "evidence first: won't judge a player on one game",
+        "cautious about rushing players back from injury",
+        "always makes the case for Hearts Women getting more attention"
+      ],
       "look": { "build": "female", "skin": "#8d5a3b", "hair": "#2a1a14", "hairStyle": "long", "glasses": true, "suit": "#6d1a2a", "shirt": "#f2efe6" }
     },
     {
