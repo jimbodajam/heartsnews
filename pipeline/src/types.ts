@@ -30,6 +30,15 @@ export interface SourceConfig {
   note?: string;
 }
 
+export interface BigGames {
+  /** Opponents that always make it a big game: their names as the fixture feeds give them, and the billing. */
+  opponents: { names: string[]; billing: string }[];
+  /** Competitions where every game is big (Europe), matched as part of the fixture's competition. */
+  competitions: { name: string; billing: string }[];
+  /** Cups whose semi-final and final are big. Fixtures don't say the round, so it comes from the news. */
+  cups: string[];
+}
+
 export interface ClubConfig {
   id: string;
   name: string;
@@ -39,6 +48,8 @@ export interface ClubConfig {
   keywords: string[];
   /** Other clubs' names and nicknames, to spot their fan sites and their angle on our news. */
   rivals?: string[];
+  /** What makes a game a big one, and how it's billed on air (matchday.ts bigGame). */
+  bigGames?: BigGames;
   sportsdb: { teamId: string; leagueId: string };
   /** BBC Sport slugs: the team page (bbc.co.uk/sport/football/teams/<team>) and the league table's tournament. */
   bbc?: { team: string; league: string };

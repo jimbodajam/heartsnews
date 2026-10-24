@@ -1,5 +1,6 @@
 import type { AiredStory } from './memory.ts';
 import { buildStories, BY_PERSON, CATEGORY_WEIGHT, KIND_RANK, KIND_WEIGHT, MAX_ARTICLES, outlet, type Article, type Story, type StoryCategory } from './stories.ts';
+import { BIG_LEAD_H, bigGame } from './matchday.ts';
 import { matchPhase, type Brief, type ClaimStatus, type Storyline, type StorylineKind } from './storylines.ts';
 import type { Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle } from './text.ts';
@@ -59,6 +60,11 @@ const MATCH_LEAD = 1.6;
 const MATCH_EARLY = 0.4;
 const MATCH_QUIET = 0.08;
 const MATCH_GONE = 0.03;
+/**
+ * A big game (matchday.ts bigGame): leads from BIG_LEAD_H (72 hours) before kick-off and for a day and a half after,
+ * weighs more while it does, is talked about further out, and its fallout lasts twice as long.
+ */
+const BIG = { lead: 2.2, early: 0.8, afterH: 36, falloutH: 48 };
 /** Hours for a storyline's weight to halve with no new claim: someone's injury or transfer, the club, a match's fallout. */
 const HALF_LIFE_H = { person: 48, club: 30, fallout: 24 };
 /** A headline just in is this close to a match's kick-off to be about it. */
@@ -77,16 +83,17 @@ const latestOf = (times: string[]) => times.reduce((m, t) => (t > m ? t : m), ''
  * How alive a storyline is now, before its importance. A match: leading around the game, then only while new claims
  * come in, and gone once the next match is played. Anything else halves for every two days (a person) or 30 hours
  * (the club) since its newest claim. `newestNew` is when the newest claim since it last aired was first published.
+ * A big game has a longer, stronger build-up and fallout.
  */
-export function liveness(s: Storyline, newest: string, newestNew: string | undefined, played: Fixture[], now: Date): number {
+export function liveness(s: Storyline, newest: string, newestNew: string | undefined, played: Fixture[], now: Date, big = false): number {
   const t = now.getTime();
   const hoursSince = (iso: string) => Math.max(0, (t - Date.parse(iso)) / HOUR_MS);
   if (s.kind === 'match' && s.kickOff) {
     const kick = Date.parse(s.kickOff);
     if (played.some((f) => Date.parse(f.date) > kick + HOUR_MS && Date.parse(f.date) <= t)) return MATCH_GONE;
-    if (t < kick - LEAD_BEFORE_H * HOUR_MS) return MATCH_EARLY;
-    if (t < kick + LEAD_AFTER_H * HOUR_MS) return MATCH_LEAD;
-    return newestNew ? Math.max(MATCH_QUIET, 0.5 ** (hoursSince(newestNew) / HALF_LIFE_H.fallout)) : MATCH_QUIET;
+    if (t < kick - (big ? BIG_LEAD_H : LEAD_BEFORE_H) * HOUR_MS) return big ? BIG.early : MATCH_EARLY;
+    if (t < kick + (big ? BIG.afterH : LEAD_AFTER_H) * HOUR_MS) return big ? BIG.lead : MATCH_LEAD;
+    return newestNew ? Math.max(MATCH_QUIET, 0.5 ** (hoursSince(newestNew) / (big ? BIG.falloutH : HALF_LIFE_H.fallout))) : MATCH_QUIET;
   }
   return 0.5 ** (hoursSince(newest) / (s.kind === 'person' ? HALF_LIFE_H.person : HALF_LIFE_H.club));
 }
@@ -119,6 +126,16 @@ function belongsTo(story: Story, lines: Storyline[], club: ClubConfig): Storylin
   });
 }
 
+/** Whether a match storyline is a big game: its fixture (competition from the fixture list), and its news for a cup's round. */
+function isBig(s: Storyline, claims: Storyline['claims'], o: OnAirOptions): boolean {
+  if (s.kind !== 'match' || !s.fixture || !s.kickOff) return false;
+  const [, home, away] = s.fixture.split('|');
+  const kick = Date.parse(s.kickOff);
+  const listed = [...o.played, ...(o.upcoming ?? [])].find((f) => Math.abs(Date.parse(f.date) - kick) < 3 * HOUR_MS);
+  const text = [s.title, s.brief?.known, ...claims.map((c) => c.text)].filter(Boolean).join(' ');
+  return Boolean(bigGame(o.club, { home, away, competition: listed?.competition }, text));
+}
+
 export interface OnAirOptions {
   club: ClubConfig;
   /** Everything this build collected. */
@@ -126,6 +143,8 @@ export interface OnAirOptions {
   tags: Map<string, Tags>;
   /** Our results so far (a match storyline drops away once the next one's played). */
   played: Fixture[];
+  /** Our fixtures to come, for a match storyline's competition (whether it's a big game). */
+  upcoming?: Fixture[];
   now: Date;
   /** Weigh as if nothing had aired (--fresh). */
   ignoreAirings?: boolean;
@@ -183,7 +202,7 @@ export function storylineStories(desk: OnAirDesk, o: OnAirOptions): Story[] {
     const latest = latestOf([s.updatedAt, ...standing.map((c) => c.firstSeen), latestFresh]);
     const newestNew = latestOf([...newClaims.map((c) => c.firstSeen), latestFresh]) || undefined;
     const category = categoryOf(s);
-    const score = liveness(s, latest, newestNew, o.played, o.now) * importance(category, read, backing, ranked);
+    const score = liveness(s, latest, newestNew, o.played, o.now, isBig(s, standing, o)) * importance(category, read, backing, ranked);
     const brief = s.brief;
     return {
       id: `l${s.id}`,

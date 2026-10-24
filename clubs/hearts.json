@@ -7,6 +7,19 @@
   "keywords": ["hearts", "heart of midlothian", "tynecastle", "jambos", "jambo"],
   "rivals": ["celtic", "hoops", "rangers", "gers", "hibs", "hibernian", "aberdeen", "dons", "dundee", "dundee united",
     "motherwell", "kilmarnock", "st mirren", "st johnstone", "livingston", "falkirk", "ross county"],
+  "bigGames": {
+    "opponents": [
+      { "names": ["Hibernian", "Hibs"], "billing": "the Edinburgh derby" },
+      { "names": ["Celtic"], "billing": "a big one against Celtic" },
+      { "names": ["Rangers"], "billing": "a big one against Rangers" }
+    ],
+    "competitions": [
+      { "name": "Champions League", "billing": "a European night" },
+      { "name": "Europa League", "billing": "a European night" },
+      { "name": "Conference League", "billing": "a European night" }
+    ],
+    "cups": ["Scottish Cup", "League Cup", "Premier Sports Cup"]
+  },
   "sportsdb": { "teamId": "133643", "leagueId": "4330" },
   "bbc": { "team": "heart-of-midlothian", "league": "scottish-premiership" },
   "sources": [

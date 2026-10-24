@@ -69,8 +69,33 @@ function toneForHour(now: Date): string {
   return 'Tone: normal daytime energy.';
 }
 
-/** What kind of bulletin this is around the match calendar, and how that changes each part of the script. */
+/** What kind of bulletin this is around the match calendar, and whether there's a big game in it. */
 function phaseBrief(f: Facts): string {
+  return [phaseKindBrief(f), bigGameBrief(f)].filter(Boolean).join('\n');
+}
+
+/** A big game gets more edge: on the day, straight after, and from three days out (before the bulletin's own preview). */
+function bigGameBrief(f: Facts): string {
+  const big = f.bigGame;
+  if (!big) return '';
+  const name = (n: string) => teamName(f.club, n);
+  const game = `${name(big.fixture.home)} against ${name(big.fixture.away)}`;
+  const p = f.phase;
+  if (p.kind === 'reaction' && p.result === big.fixture) {
+    return `BIG GAME: that was ${big.billing}, so the result matters more than usual. Give the reaction its weight: the
+bragging rights, or the pain of losing it.`;
+  }
+  if (p.kind === 'live' && p.fixture === big.fixture) return `BIG GAME: this is ${big.billing}.`;
+  if (p.kind === 'preview' && p.fixture === big.fixture) {
+    return `BIG GAME: this is ${big.billing}, the biggest game of the week. More edge and anticipation in the welcome,
+the headlines and the debate, but no hype the facts don't back up.`;
+  }
+  return `COMING UP: ${big.billing}, ${game}, ${dayPhrase(new Date(big.fixture.date), f.now)} at ${timePhrase(new Date(big.fixture.date))}.
+It's a big one, so the build-up starts early: the welcome can flag it, and stories about it matter more than usual.`;
+}
+
+/** What kind of bulletin this is around the match calendar, and how that changes each part of the script. */
+function phaseKindBrief(f: Facts): string {
   const { club, now } = f;
   const name = (n: string) => teamName(club, n);
   const p = f.phase;
@@ -364,6 +389,8 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
   });
 
   if (f.phase.kind !== 'live') {
+    // A big game on this bulletin, or the next one up, is what the debate is about (after a game, only that one).
+    const big = f.bigGame && (f.bigGame.fixture === focus || (f.phase.kind !== 'reaction' && f.bigGame.fixture === next)) ? f.bigGame : undefined;
     list.push({
       id: 'debate',
       parts: ['stories', 'match', 'fans', 'videos', 'opponent'],
@@ -384,8 +411,12 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
         },
         required: ['debate', 'opinions'],
       },
-      brief: `Write "The Debate": ${firstName(p1)} (id "${p1.id}") against ${firstName(p2)} (id "${p2.id}"), fully in character. Pick the
-liveliest talking point from the stories or fan threads (topic: at most six words). 6 to 8 lines alternating between them,
+      brief: `Write "The Debate": ${firstName(p1)} (id "${p1.id}") against ${firstName(p2)} (id "${p2.id}"), fully in character. ${
+        big
+          ? `It's ${big.billing}, so the debate is about it: pick the liveliest talking point about that game (topic: at most
+six words), and let them feel what's riding on it.`
+          : 'Pick the\nliveliest talking point from the stories or fan threads (topic: at most six words).'
+      } 6 to 8 lines alternating between them,
 speaker = their id. They should genuinely disagree, needle each other, and argue from their own notebooks: their
 leanings, their past takes (holding to them, or owning up when the facts have proved them wrong) and their prediction
 record. Facts they mention must still come from the DATA.

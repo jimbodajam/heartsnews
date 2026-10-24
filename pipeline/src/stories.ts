@@ -116,14 +116,14 @@ export const CATEGORY_WEIGHT: Record<StoryCategory, number> = { transfer: 1.25, 
 
 /**
  * Situational boosts on top of a story's own importance: stories about the next (or current) opponent on a
- * matchday, and stories the Kickback is busy talking about.
+ * matchday (by any of its names), more so before a big game, and stories the Kickback is busy talking about.
  */
-export function boostStories(stories: Story[], opts: { opponent?: string; fanThreads: Item[] }): void {
-  const opponent = opts.opponent && normaliseTitle(opts.opponent);
+export function boostStories(stories: Story[], opts: { opponent?: string[]; big?: boolean; fanThreads: Item[] }): void {
+  const opponent = (opts.opponent ?? []).map((n) => ` ${normaliseTitle(n)} `);
   const buzz = tokens(opts.fanThreads.map((t) => `${t.title} ${t.summary}`).join(' '));
   for (const s of stories) {
     let boost = 1;
-    if (opponent && normaliseTitle(s.title).includes(opponent)) boost *= 1.3;
+    if (opponent.some((n) => ` ${normaliseTitle(s.title)} `.includes(n))) boost *= opts.big ? 1.5 : 1.3;
     const own = tokens(s.title);
     const overlap = [...own].filter((w) => buzz.has(w)).length;
     if (overlap >= 3) boost *= 1.2;

@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
 import { assemble } from './script/assemble.ts';
-import { buildFacts, isUs, teamName, type Channel } from './script/facts.ts';
+import { buildFacts, isUs, matchNews, teamName, type Channel } from './script/facts.ts';
 import { geminiFromEnv, reportScorers } from './script/llm.ts';
 import { writeInPieces } from './script/pieces.ts';
 import { remember } from './script/remember.ts';
@@ -25,7 +25,7 @@ import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collecto
 import { emptyMemory, freshness, settlePredictions, type Memory } from './memory.ts';
 import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
-import { detectPhase } from './matchday.ts';
+import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectPlayers } from './collectors/sportsdb.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
@@ -97,7 +97,7 @@ async function main() {
   if (fresh) memory.aired = [];
 
   const played = (match?.last ?? []).filter((f) => f.homeScore != null);
-  const stories = desk ? storylineStories(desk, { club, items, tags, played, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
+  const stories = desk ? storylineStories(desk, { club, items, tags, played, upcoming: match?.next, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
   // No article pages are fetched: storylines carry the ingest's stored text, anything else a transcript or summary.
   addOwnText(stories);
   await writeFile(resolve(OUT, 'stories.json'), JSON.stringify(stories.map(({ items: _, ...s }) => s), null, 2));
@@ -111,11 +111,15 @@ async function main() {
     delete memory.presenters[from];
   }
   const settled = settlePredictions(memory, (match?.last ?? []).map((f) => ({ ...f, home: teamName(club, f.home), away: teamName(club, f.away) })));
-  // Weighting: matchday opponent and Kickback buzz boost a story; a recent airing cools it down for a while.
+  // Weighting: matchday opponent and Kickback buzz boost a story; a recent airing cools it down for a while. A big
+  // game's opponent is boosted more, and from three days out.
   const phase = detectPhase(match, now);
-  const fixture = phase.kind === 'preview' || phase.kind === 'live' ? phase.fixture : phase.kind === 'reaction' ? phase.result : undefined;
+  const big = bigGameFor(club, phase, match?.next ?? [], now, matchNews(stories));
+  const fixture = big?.fixture ?? (phase.kind === 'preview' || phase.kind === 'live' ? phase.fixture : phase.kind === 'reaction' ? phase.result : undefined);
   const opponent = fixture && (isUs(club, fixture.home) ? fixture.away : fixture.home);
-  boostStories(stories, { opponent, fanThreads: fanThreads(items) });
+  const names = opponent ? (club.bigGames?.opponents.find((o) => o.names.includes(opponent))?.names ?? [opponent]) : [];
+  if (big) console.log(`\nBig game: ${big.billing} (${teamName(club, big.fixture.home)} against ${teamName(club, big.fixture.away)})`);
+  boostStories(stories, { opponent: names, big: Boolean(big), fanThreads: fanThreads(items) });
   for (const s of stories) s.score = Math.round(s.score * freshness(memory, s, now) * 1000) / 1000;
   stories.sort((a, b) => b.score - a.score);
   console.log(`\nWeighted for this bulletin:`);

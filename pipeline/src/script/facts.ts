@@ -2,7 +2,7 @@ import type { Presenter } from '../../../shared/bulletin.ts';
 import type { MatchStats } from '../../../shared/live.ts';
 import { fanThreads, type Story } from '../stories.ts';
 export type { Story };
-import { detectPhase, type Phase } from '../matchday.ts';
+import { bigGameFor, detectPhase, type Phase } from '../matchday.ts';
 import { minuteOf, READ } from '../reading.ts';
 import { emptyMemory, type Memory } from '../memory.ts';
 import { beatFor, beatPresenters, strongestTake, type Beat } from './notebook.ts';
@@ -52,6 +52,8 @@ export interface Facts {
   results: Fixture[];
   nextFixtures: Fixture[];
   phase: Phase;
+  /** The big game this bulletin builds towards or reacts to, and how it's billed ("the Edinburgh derby"). */
+  bigGame?: { fixture: Fixture; billing: string };
   /** Next opponent's form and both XIs, on build-up days. */
   opponent?: OpponentFocus;
   table: MatchData['table'];
@@ -70,6 +72,13 @@ function statsOf(phase: Phase): Facts['matchStats'] {
   const minute = final ? 90 : fixture.period === 'HT' ? 45 : minuteOf(fixture.period ?? '');
   return minute >= READ.fromMinute ? { fixture, stats: fixture.stats, minute, final } : undefined;
 }
+
+/** What the match stories say, for spotting a cup semi-final or final (the fixture feeds don't give the round). */
+export const matchNews = (stories: Story[]) =>
+  stories
+    .filter((s) => s.category === 'match')
+    .map((s) => `${s.title} ${s.summary}`)
+    .join(' ');
 
 /** The game the bulletin is built around: the one coming up, on now, or just played; otherwise the next one. */
 export function focusFixture(f: Pick<Facts, 'phase' | 'nextFixtures'>): Fixture | undefined {
@@ -111,6 +120,7 @@ export function buildFacts(
     results: (match?.last ?? []).filter((f) => f.homeScore !== undefined).slice(0, 5),
     nextFixtures,
     phase,
+    bigGame: bigGameFor(club, phase, nextFixtures, now, matchNews(stories)),
     // Not during or straight after a game: then the match itself is the story.
     opponent: ['preview', 'normal'].includes(phase.kind) ? match?.opponent : undefined,
     table: match?.table ?? [],
