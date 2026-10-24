@@ -1,0 +1,1259 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-24T12:01:00.800Z",
+  "generatedBy": "Gemini (gemini-flash-lite-latest), checked by Gemini (gemini-flash-lite-latest)",
+  "channel": {
+    "name": "HEARTS NEWS 24",
+    "club": "Heart of Midlothian",
+    "colours": {
+      "primary": "#6d1a2a",
+      "secondary": "#f2efe6",
+      "accent": "#e0b13a"
+    }
+  },
+  "presenters": [
+    {
+      "id": "isla",
+      "name": "Isla Brodie",
+      "role": "Presenter",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_emma"
+      },
+      "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+      "look": {
+        "build": "female",
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "fraser",
+      "name": "Fraser Lennox",
+      "role": "Presenter",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_george"
+      },
+      "persona": "Co-anchor and resident old-timer, 61. Came through the Hearts youth ranks in the 1980s but never made the first team, and has watched from the Wheatfield Stand ever since. Old school: hates VAR with a passion, distrusts xG and 'laptop football', rates grit, wingers who beat their man, and centre-halves who head it. Nostalgic about the Jim Jefferies era and the 1998 Scottish Cup. Gruff but warm, prone to 'in my day'. Reads the news straight; his opinions come out in discussion.",
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#b9b4ad",
+        "hairStyle": "bald",
+        "glasses": true,
+        "suit": "#26262e",
+        "shirt": "#f2efe6",
+        "tie": "#6d1a2a"
+      }
+    },
+    {
+      "id": "ross",
+      "formerIds": [
+        "ally"
+      ],
+      "name": "Ross Dunbar",
+      "role": "Transfer Centre",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_lewis"
+      },
+      "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
+      "look": {
+        "skin": "#c98e6a",
+        "hair": "#1a1416",
+        "hairStyle": "quiff",
+        "suit": "#3a3d4a",
+        "shirt": "#c9d6ea",
+        "tie": "#e0b13a"
+      }
+    },
+    {
+      "id": "kirsty",
+      "name": "Kirsty Reid",
+      "role": "Match Analyst",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_isabella"
+      },
+      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the academy and the women's team, and is the voice of reason between Fraser and Ally.",
+      "look": {
+        "build": "female",
+        "skin": "#8d5a3b",
+        "hair": "#2a1a14",
+        "hairStyle": "long",
+        "glasses": true,
+        "suit": "#6d1a2a",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "gregor",
+      "name": "Gregor Moffat",
+      "role": "At the ground",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel",
+        "speed": 1.1
+      },
+      "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+      "look": {
+        "skin": "#e6ad8c",
+        "hair": "#a39d94",
+        "hairStyle": "short",
+        "suit": "#3c5068",
+        "shirt": "#c9d6ea",
+        "tie": "#26262e",
+        "coat": true,
+        "scarf": "#6d1a2a",
+        "headset": true
+      }
+    },
+    {
+      "id": "vo-lily",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_lily"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "long",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-alice",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_alice"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#2a1a14",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-daniel",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-fable",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_fable"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    }
+  ],
+  "ticker": [
+    "Hearts predicted team v Motherwell: Patch-up team, new right-back, striker change - Edinburgh Evening News",
+    "Salah and Dju Fire Trabzonspor Past Hearts to Preserve Flawless Conference League Start - turkish football",
+    "Motherwell vs. Hearts (25 Oct, 2026) Live Score - ESPN Singapore",
+    "Wouter Vrancken urges Hearts to dig deep as Belgian only has one response to injury crisis - Daily Record",
+    "Mo Salah's message to Rogers Mato as he reveals which Hearts pal secured his top - The Scottish Sun",
+    "Hearts coach: I resorted to this invention to stop Salah - Goal.com",
+    "Hearts fan views on 2-0 loss to Trabzonspor - BBC",
+    "Reis announces it after brace against Hearts: this is our real target in Europe - Goal.com",
+    "Next: Motherwell v Hearts - Sunday"
+  ],
+  "segments": [
+    {
+      "id": "headlines",
+      "kind": "headlines",
+      "title": "The Headlines",
+      "strap": "Hearts predicted team v Motherwell: Patch-up team, new right-back,…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Good afternoon and welcome to Hearts News 24. We are live on Saturday afternoon as the build-up continues ahead of tomorrow's Scottish Premiership clash at Fir Park. Let us take a look at today's main stories.",
+          "audio": "audio/04b0198dfb82.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Wouter Vrancken faces a selection headache as Hearts prepare to resume Scottish Premiership action at Motherwell tomorrow. With an overflowing treatment room following the trip to Turkey, the manager is running thin in several key positions and must rely on his squad to dig deep.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts predicted team v Motherwell: Patch-up team, new right-back, striker change",
+            "source": "Edinburgh Evening News",
+            "icon": "ball"
+          },
+          "audio": "audio/ee1a461219de.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "The Jambos head to Fir Park with very little recovery time after suffering a two-nil defeat away to Trabzonspor in the Conference League. Vrancken admits that his threadbare squad has no choice but to cope with the mounting injuries as they look to bounce back domestically.",
+          "graphic": {
+            "type": "headline",
+            "title": "Wouter Vrancken urges Hearts to dig deep as Belgian only has one response to injury crisis",
+            "source": "Daily Record",
+            "icon": "medical",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/6d830a2d7f97.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Scottish FA refereeing chief Willie Collum has addressed recent controversy surrounding Hearts. Collum insisted that the decision to rule out Laurent Mendy's goal against Kilmarnock for handball was fully correct under the laws of the game.",
+          "graphic": {
+            "type": "headline",
+            "title": "'Without question' - Willie Collum admits Rangers and Celtic VAR errors as Hearts gripes addressed",
+            "source": "The Scotsman",
+            "icon": "mic"
+          },
+          "audio": "audio/54d8faafb541.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Later, Fraser and Ross go head to head with their score predictions for tomorrow, and we'll hear what the fans are saying in the Fan Zone.",
+          "audio": "audio/b5e31f0804b8.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let us take a closer look at that selection headache now.",
+          "audio": "audio/51ce0211a40d.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-s7729cf",
+      "kind": "story",
+      "title": "Wouter Vrancken urges Hearts to dig deep as Belgian only has one response to injury crisis",
+      "strap": "Wouter Vrancken urges Hearts to dig deep as Belgian only has one…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Back to our top story, Fraser. Wouter Vrancken says the squad must keep digging deep at Fir Park tomorrow after those injuries in Turkey.",
+          "graphic": {
+            "type": "headline",
+            "title": "Wouter Vrancken urges Hearts to dig deep as Belgian only has one response to injury crisis",
+            "source": "Daily Record",
+            "icon": "medical",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/b5efd241e733.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Well Isla, when you look at the mounting injuries with Harry Milne and Christian Borchgrevink joining the list, you need old fashioned grit. Laptops will not help you run on fumes.",
+          "audio": "audio/bd3028d42b51.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "The manager admits he barely has a choice in some positions now, with players filling in out of position.",
+          "audio": "audio/040691b2244d.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Exactly. Mato and Jordi are having to shift roles, but as Vrancken said, we just have to cope. As he put it himself, you can laugh at it, but of course it is not so funny.",
+          "audio": "audio/23459e1c6125.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Let's cross to Kirsty in the Match Centre for the latest numbers and tables ahead of tomorrow.",
+          "audio": "audio/909c89e18563.mp3"
+        }
+      ]
+    },
+    {
+      "id": "match",
+      "kind": "match",
+      "title": "Match Centre",
+      "strap": "Motherwell v Hearts - Sunday",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Hearts are looking to bounce back from their two-nil defeat away to Trabzonspor in the UEFA Conference League earlier this week.",
+          "graphic": {
+            "type": "result",
+            "home": "Trabzonspor",
+            "away": "Hearts",
+            "homeScore": 2,
+            "awayScore": 0,
+            "competition": "UEFA Conference League",
+            "status": "FULL TIME",
+            "homeScorers": [
+              "Mohamed Salah 32'",
+              "Franculino Djú 58'"
+            ],
+            "awayScorers": []
+          },
+          "audio": "audio/5e2ca196ddef.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts sit third in the Scottish Premiership with sixteen points from nine games, four points behind Rangers in second and two points ahead of Dundee.",
+          "graphic": {
+            "type": "table",
+            "title": "League Table",
+            "highlight": "Hearts",
+            "rows": [
+              {
+                "pos": 1,
+                "team": "Celtic",
+                "played": 9,
+                "gd": 18,
+                "pts": 24
+              },
+              {
+                "pos": 2,
+                "team": "Rangers",
+                "played": 9,
+                "gd": 6,
+                "pts": 20
+              },
+              {
+                "pos": 3,
+                "team": "Hearts",
+                "played": 9,
+                "gd": 5,
+                "pts": 16
+              },
+              {
+                "pos": 4,
+                "team": "Dundee",
+                "played": 9,
+                "gd": 3,
+                "pts": 14
+              },
+              {
+                "pos": 5,
+                "team": "St. Johnstone",
+                "played": 9,
+                "gd": 0,
+                "pts": 12
+              },
+              {
+                "pos": 6,
+                "team": "Dundee Utd",
+                "played": 9,
+                "gd": -1,
+                "pts": 12
+              }
+            ]
+          },
+          "audio": "audio/68df47bdafde.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Scottish Premiership action resumes tomorrow as Motherwell take on Hearts at Fir Park with kick-off at two in the afternoon.",
+          "graphic": {
+            "type": "fixtures",
+            "title": "Next Match",
+            "fixtures": [
+              {
+                "date": "2026-10-25T14:00:00.000Z",
+                "home": "Motherwell",
+                "away": "Hearts",
+                "competition": "Scottish Premiership"
+              }
+            ]
+          },
+          "audio": "audio/934c9c8c50ac.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Staying in the Match Centre, let us take a closer look at our opponents.",
+          "audio": "audio/c04753b02789.mp3"
+        }
+      ]
+    },
+    {
+      "id": "opponent",
+      "kind": "opponent",
+      "title": "Focus on Motherwell",
+      "strap": "Motherwell v Hearts: the opposition",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Motherwell sit tenth in the table on eight points and are searching for a response following consecutive league defeats against Kilmarnock and Celtic.",
+          "graphic": {
+            "type": "form",
+            "team": "Motherwell",
+            "results": [
+              {
+                "against": "Kilmarnock",
+                "score": "2-3",
+                "outcome": "L",
+                "venue": "A"
+              },
+              {
+                "against": "Celtic",
+                "score": "0-2",
+                "outcome": "L",
+                "venue": "H"
+              }
+            ]
+          },
+          "audio": "audio/769f1dc47c30.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Motherwell lined up in a four-two-three-one formation in their last match, featuring Paulsen in goal, with Sparrow, O'Donnell, Moormann and Longelo across the back, and Palmer-Houlden leading the line up front.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Motherwell",
+            "formation": "4-2-3-1",
+            "rows": [
+              [
+                "Paulsen"
+              ],
+              [
+                "Sparrow",
+                "O'Donnell",
+                "Moormann",
+                "Longelo"
+              ],
+              [
+                "Fadinger",
+                "Hodge"
+              ],
+              [
+                "Maswanhise",
+                "Lowry",
+                "Said"
+              ],
+              [
+                "Palmer-Houlden"
+              ]
+            ],
+            "ours": false
+          },
+          "audio": "audio/e97eefff86b3.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts went with a 4-4-2 with Reus in goal and Cláudio Braga and Wilson up front.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Hearts",
+            "formation": "4-4-2",
+            "rows": [
+              [
+                "Reus"
+              ],
+              [
+                "Borchgrevink",
+                "Fagan-Walcott",
+                "McCart",
+                "Mato"
+              ],
+              [
+                "Miller",
+                "Magnússon",
+                "Altena",
+                "Guendouz"
+              ],
+              [
+                "Cláudio Braga",
+                "Wilson"
+              ]
+            ],
+            "ours": true
+          },
+          "audio": "audio/ead81e6c2925.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Let us go back to the desk with Isla to examine our defensive options.",
+          "audio": "audio/9080a938c988.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-s81849a",
+      "kind": "story",
+      "title": "Craig Halkett can mend broken Hearts backline and I know unseen side of his game that Wouter Vrancken will love",
+      "strap": "Craig Halkett can mend broken Hearts backline and I know unseen side…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "More now on our defensive frailties, Kirsty, and looking ahead to Fir Park, how much are we missing Craig Halkett at the back?",
+          "graphic": {
+            "type": "headline",
+            "title": "Craig Halkett can mend broken Hearts backline and I know unseen side of his game that Wouter Vrancken will love",
+            "source": "Daily Record",
+            "icon": "mic",
+            "face": "faces/craig-halkett.png"
+          },
+          "audio": "audio/c34906489570.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Conor Washington has been speaking to the Daily Record about what Halkett brings. He is a proper defender who loves to head it, and his calm presence is exactly what we need right now.",
+          "graphic": {
+            "type": "quote",
+            "text": "Craig's a big miss for Hearts, especially in a game like that against Celtic",
+            "author": "Conor Washington"
+          },
+          "audio": "audio/a2f59ba2151f.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And there are questions over whether he fits Wouter Vrancken's style of playing out from the back, aren't there?",
+          "audio": "audio/fb0fe8220a98.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "That is right, but Washington points out that he is intelligent and makes good decisions. He might not go on long runs, but he knows when to move the ball on safely.",
+          "audio": "audio/173c64540b59.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Fraser and Ross are standing by to debate whether data can fix our injury crisis.",
+          "audio": "audio/6fc18aa02ba1.mp3"
+        }
+      ]
+    },
+    {
+      "id": "debate",
+      "kind": "debate",
+      "title": "Can data fix our injury crisis?",
+      "strap": "Can data fix our injury crisis?",
+      "scene": "desk",
+      "presenters": [
+        "fraser",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "ross",
+          "text": "Fraser, as I said earlier today, advanced data metrics and structured pressing triggers are vital to cover for our injured players and get us the win at Fir Park.",
+          "graphic": {
+            "type": "headline",
+            "title": "Can data fix our injury crisis?",
+            "icon": "mic"
+          },
+          "audio": "audio/e3918b80f9a8.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Rubbish, Ross. As I said today, traditional leadership and sheer grit entirely outweigh laptop football during an injury crisis. You cannot simulate spirit on a spreadsheet.",
+          "audio": "audio/e078e9da5c5b.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "My prediction record speaks for itself, Fraser. I got the Trabzonspor score right, and my away win data proves we will comfortably beat Motherwell away from home.",
+          "audio": "audio/037dacafc0a6.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "You got lucky, and your record is one right from one, exactly like mine. Traditional grit and a narrow one-nil win is all we need at Fir Park.",
+          "audio": "audio/7eccaa9a4e1f.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Well, my data says we score two. Motherwell zero, Hearts two.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Motherwell v Hearts",
+            "picks": [
+              {
+                "name": "Ross",
+                "pick": "0-2",
+                "record": "1 right from 1"
+              },
+              {
+                "name": "Fraser",
+                "pick": "0-1",
+                "record": "0 right from 1"
+              }
+            ]
+          },
+          "audio": "audio/2b971d56be4e.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And my gut says Motherwell zero, Hearts one.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Motherwell v Hearts",
+            "picks": [
+              {
+                "name": "Ross",
+                "pick": "0-2",
+                "record": "1 right from 1"
+              },
+              {
+                "name": "Fraser",
+                "pick": "0-1",
+                "record": "0 right from 1"
+              }
+            ]
+          },
+          "audio": "audio/795e25cb859e.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "We'll take a short break now. Stay with us.",
+          "audio": "audio/fb7b5591f16b.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-1",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-lily",
+          "text": "Fancy a day out in Gorgie that doesn't involve a forty-minute queue for a pie?",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/d9cbb1c00301.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Come and meet the pigs, the goats and the rest of the gang at Gorgie Farm, a proper community farm right here in the city.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-1.png"
+          },
+          "audio": "audio/60081b798db6.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Gorgie Farm. The only kids in Gorgie who are happy on a Monday.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/6e0a309a65e2.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Ninety minutes of shouting at the referee builds up an appetite.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/4a6f35de793d.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Whether it's a fish supper after the final whistle or a chippy on a cold Tuesday night, Gorgie Fish Bar has got you covered.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/dbd330f5a1cf.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Salt and sauce? Of course. This is Edinburgh.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/97bba4694c68.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Gorgie Fish Bar. Battered, never beaten.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/89f1ec84edc6.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-s1c0a55",
+      "kind": "story",
+      "title": "Willie Collum dismisses Celtic and Hearts handball comparisons as Rangers get away with St Mirren penalty call",
+      "strap": "Willie Collum dismisses Celtic and Hearts handball comparisons as…",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let's return to the ongoing fallout over refereeing decisions as Willie Collum addresses that controversial disallowed goal against Kilmarnock, Fraser.",
+          "graphic": {
+            "type": "headline",
+            "title": "Willie Collum dismisses Celtic and Hearts handball comparisons as Rangers get away with St Mirren penalty call",
+            "source": "Daily Record",
+            "icon": "mic"
+          },
+          "audio": "audio/99a4aad6bc16.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Willie Collum has been defending the decision to rule out Laurent Mendy's goal at Rugby Park. He insists the handball rule was applied correctly regardless of whether the shot was on target.",
+          "graphic": {
+            "type": "quote",
+            "text": "This decision is fully correct and I'll explain why.",
+            "author": "Willie Collum"
+          },
+          "audio": "audio/ef0e3c721c22.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And the Scottish FA's referee chief maintains the defender's attempt to clear was merely a saving action, drawing comparisons to a goalkeeper.",
+          "audio": "audio/de936e63a49d.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "It is frustrating when every little detail gets pored over by referees while our lads just need to get on with it. We cannot let decisions distract us with Motherwell tomorrow.",
+          "audio": "audio/5b5ebfad37b3.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "That is all for the refereeing debate. Over to Ross in the Transfer Centre.",
+          "audio": "audio/68f1c100eb70.mp3"
+        }
+      ]
+    },
+    {
+      "id": "transfers",
+      "kind": "transfers",
+      "title": "Transfer Centre",
+      "strap": "Transfer window opens in 69 days",
+      "scene": "transfer",
+      "presenters": [
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "ross",
+          "text": "Welcome back to the Transfer Centre. The window is currently closed, and we are counting down the days until it reopens in sixty-nine days.",
+          "graphic": {
+            "type": "headline",
+            "title": "Transfer window opens in 69 days",
+            "icon": "contract"
+          },
+          "audio": "audio/432c3ff39f7a.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That is the Transfer Centre for now. Let us turn to the travel and safety information for fans heading through to Fir Park.",
+          "audio": "audio/0a54adee37e5.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-s06f4aa",
+      "kind": "story",
+      "title": "Supporter Information: Motherwell (A)",
+      "strap": "Supporter Information: Motherwell (A)",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Staying with the build-up to tomorrow, Fraser, we need to talk travel and safety for the fans heading through to Fir Park.",
+          "graphic": {
+            "type": "headline",
+            "title": "Supporter Information: Motherwell (A)",
+            "source": "heartsfc.co.uk",
+            "icon": "mic"
+          },
+          "audio": "audio/2b2578f7d82b.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Well Isla, supporters need to take extra care on the approach because Storm Boelo is bringing high winds with an amber weather warning in place.",
+          "audio": "audio/65c9dcae8e24.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And what do fans need to know about getting into the stadium itself?",
+          "audio": "audio/cc782df6f5be.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Kick-off is at the earlier time of two o'clock with turnstiles open from a quarter to one. Tickets are available at the away end ticketing pod, but remember kiosks take cash and card.",
+          "audio": "audio/a2a1a3e082e6.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Any warnings on entry requirements we should highlight?",
+          "audio": "audio/3d62be4986bd.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Searching is a condition of entry, no face coverings are allowed, and anyone deemed to have consumed excess alcohol will be refused entry. Leave the pyrotechnics at home.",
+          "audio": "audio/579136f9a4d5.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Time for a quick break. Don't go anywhere.",
+          "audio": "audio/c7bef062bb81.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-2",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-alice",
+          "text": "From the Wheatfield to the Roseburn, look the part on matchday.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/5794e725d5ef.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "Shirts, scarves, hats and gifts for every Jambo, young and old. Find them at the Hearts Club Store at Tynecastle Park, or online any time.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/a16a662cd46b.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "The Hearts Club Store. Wear your heart on your sleeve.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/40edbf8660ce.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "Between two cemeteries on Angle Park Terrace, there's a pub that's been pouring pints since Victorian times.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/877e22afb2f9.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The sign says the Athletic Arms. But nobody in Gorgie calls it that. It's the Diggers, after the gravediggers who used to stop in for one after a shift.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/2d0d8bc78c3e.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The Diggers. Dead good pints.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-1.png"
+          },
+          "audio": "audio/f3aba3cd2cd6.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "One city. Two clubs. One place in the final.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/7717098c3dbd.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Hearts against Hibs in the League Cup semi-final at Hampden Park. Sunday the first of November, three o'clock.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/7e2f050e43c2.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Be there. Be loud. Turn Hampden maroon. For tickets, visit the Hearts website.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/5197537acc2e.mp3"
+        }
+      ]
+    },
+    {
+      "id": "fans",
+      "kind": "fans",
+      "title": "Fan Zone",
+      "strap": "What the supporters are saying",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Fans are feeling anxious about the mounting injuries and lack of physical presence, but hoping for a bounce back at Fir Park tomorrow.",
+          "graphic": {
+            "type": "sentiment",
+            "score": -0.2,
+            "topics": [
+              "injury crisis",
+              "Fir Park trip",
+              "lack of physicality",
+              "squad depth"
+            ]
+          },
+          "audio": "audio/888e59659037.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Looking at the forums, supporters are proper worried about the lack of physicality in the side after that European defeat.",
+          "graphic": {
+            "type": "headline",
+            "title": "*** Other Scottish football match thread, for anyone who gives a ****",
+            "source": "Jambos Kickback: 131000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/e3287c952afb.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And the Hearts Standard lads on YouTube reckon it is a real headache for Wouter Vrancken with players dropping like flies.",
+          "graphic": {
+            "type": "headline",
+            "title": "REACTION | A respectable result under the circumstances | Trabzonspor 2-0 Hearts",
+            "source": "Hearts Standard",
+            "icon": "mic"
+          },
+          "audio": "audio/0d05aa10f8cf.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "In my day you played through the knocks, but when you are down to fourteen fit players, even I have to admit it is a proper crisis.",
+          "graphic": {
+            "type": "headline",
+            "title": "The Wouter Vrancken Judgement Thread",
+            "source": "Jambos Kickback: 4000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/9158ee05b48f.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "At least you are not down in the treatment room yourself, Fraser. Though the injury update thread shows supporters are counting down the hours.",
+          "graphic": {
+            "type": "headline",
+            "title": "Injuries/ Ready to play (update thread)",
+            "source": "Jambos Kickback: 2800 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/6a6d1bb5ab2f.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "They are right to be anxious. But as the boys on the channel said, the performance in Turkey had some grit to it, and we will need every ounce of that tomorrow.",
+          "graphic": {
+            "type": "headline",
+            "title": "REACTION | A respectable result under the circumstances | Trabzonspor 2-0 Hearts",
+            "source": "Hearts Standard",
+            "icon": "mic"
+          },
+          "audio": "audio/27fa0a1c9389.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Well, we will find out soon enough if grit alone can beat Motherwell on their own patch.",
+          "graphic": {
+            "type": "headline",
+            "title": "*** Other Scottish football match thread, for anyone who gives a ****",
+            "source": "Jambos Kickback: 131000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/cf95830de9ba.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Our coverage of the build-up to Motherwell against Hearts continues right here on Hearts News 24.",
+          "audio": "audio/bdd91b1f88ee.mp3"
+        }
+      ]
+    }
+  ],
+  "sidebar": {
+    "highlight": "Hearts",
+    "next": {
+      "date": "2026-10-25T14:00:00.000Z",
+      "home": "Motherwell",
+      "away": "Hearts",
+      "competition": "Scottish Premiership"
+    },
+    "last": {
+      "home": "Trabzonspor",
+      "away": "Hearts",
+      "homeScore": 2,
+      "awayScore": 0,
+      "competition": "UEFA Conference League"
+    },
+    "table": [
+      {
+        "pos": 1,
+        "team": "Celtic",
+        "played": 9,
+        "gd": 18,
+        "pts": 24
+      },
+      {
+        "pos": 2,
+        "team": "Rangers",
+        "played": 9,
+        "gd": 6,
+        "pts": 20
+      },
+      {
+        "pos": 3,
+        "team": "Hearts",
+        "played": 9,
+        "gd": 5,
+        "pts": 16
+      },
+      {
+        "pos": 4,
+        "team": "Dundee",
+        "played": 9,
+        "gd": 3,
+        "pts": 14
+      },
+      {
+        "pos": 5,
+        "team": "St. Johnstone",
+        "played": 9,
+        "gd": 0,
+        "pts": 12
+      }
+    ]
+  }
+}
