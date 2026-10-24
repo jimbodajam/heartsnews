@@ -379,11 +379,24 @@ export function repeatedViews(f: Facts, bulletin: Bulletin): LedgerCheck[] {
     seg.lines.forEach((line, li) => {
       const views = made.get(line.speaker);
       if (!views?.length || line.graphic?.type === 'predictions') return;
-      const closest = views.filter((t) => repeats(line.text, [t])).sort((a, b) => newWords(line.text, a.view) - newWords(line.text, b.view))[0];
-      const view = closest && newWords(line.text, closest.view) < MOSTLY_NEW ? closest : undefined;
-      if (!view) return;
-      checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'dropped', was: line.text, reason: `says again "${view.view}" (said ${view.at})` });
-      drop.add(`${si}.${li}`);
+      const repeated = (s: string) => {
+        const closest = views.filter((t) => repeats(s, [t])).sort((a, b) => newWords(s, a.view) - newWords(s, b.view))[0];
+        return closest && newWords(s, closest.view) < MOSTLY_NEW ? closest : undefined;
+      };
+      // Sentence by sentence: "Borchgrevink is out for weeks. That shows we must manage the load." keeps the news.
+      const sentences = line.text.match(/[^.!?]+[.!?]*\s*/g) ?? [line.text];
+      const found = sentences.map(repeated);
+      const said = found.filter((v): v is Opinion => Boolean(v));
+      if (!said.length) return;
+      const reason = said.map((v) => `says again "${v.view}" (said ${v.at})`).join('; ');
+      const kept = sentences.filter((_, i) => !found[i]).join('').trim();
+      if (kept) {
+        checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'fixed', was: line.text, now: kept, reason });
+        line.text = kept;
+      } else {
+        checks.push({ line: `${si}.${li}`, segment: seg.id, kind: 'repeat', action: 'dropped', was: line.text, reason });
+        drop.add(`${si}.${li}`);
+      }
     });
   });
   removeLines(bulletin, drop);

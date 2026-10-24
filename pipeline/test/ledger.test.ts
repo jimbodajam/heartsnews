@@ -211,6 +211,22 @@ test("a presenter saying again a view they've made three times over loses the li
     ],
   } as unknown as Bulletin;
   assert.deepEqual(repeatedViews(buildFacts(club, channel, [], [], undefined, now, memory), again).map((c) => c.line), ['0.0']);
+
+  // A repeated sentence goes, and the news around it stays (Kirsty on Borchgrevink, 24 Oct).
+  memory.presenters.kirsty.opinions.push({ topic: 'Load', view: "Borchgrevink's hamstring injury highlights the urgent need to manage squad load properly.", at: '2026-10-24T09:00:00.000Z' });
+  const news = {
+    segments: [
+      segment('story-l15', 'story', [
+        line(
+          "As we know, Borchgrevink's hamstring injury forced him off before half time against Trabzonspor and leaves him out for several weeks. Borchgrevink's hamstring injury highlights the urgent need to manage squad load properly.",
+          { speaker: 'kirsty' },
+        ),
+      ]),
+    ],
+  } as unknown as Bulletin;
+  const [fixed] = repeatedViews(buildFacts(club, channel, [], [], undefined, now, memory), news);
+  assert.equal(fixed.action, 'fixed');
+  assert.equal(news.segments[0].lines[0].text, "As we know, Borchgrevink's hamstring injury forced him off before half time against Trabzonspor and leaves him out for several weeks.");
 });
 
 test('the store keeps the results and goals, BBC over TheSportsDB, and the fact-check log', async () => {
