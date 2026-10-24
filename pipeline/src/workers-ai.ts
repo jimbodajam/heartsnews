@@ -89,7 +89,8 @@ export function workersAi(o: WorkersAiOptions): MeteredModel {
     else if (u) neurons += ((u.prompt_tokens ?? 0) * model.inputRate + (u.completion_tokens ?? 0) * model.outputRate) / 1e6;
     const said = body.errors?.map((e) => e.message).join('; ') ?? '';
     // Over the free allowance: every model is refused alike, so the run stops here.
-    if (res.status === 429 && /free allocation/i.test(said)) throw new OutOfBudget('Workers AI: Cloudflare says the free allowance is used up; leaving the rest for later');
+    // Cloudflare's own words go in the log: its refusals don't always match the usage its analytics show.
+    if (res.status === 429 && /free allocation/i.test(said)) throw new OutOfBudget(`Workers AI: Cloudflare says the free allowance is used up ("${said.replace(/^(AiError: )+/, '').slice(0, 160)}"); leaving the rest for later`);
     if (!res.ok) throw new Error(`${model.id} HTTP ${res.status}: ${said}`);
     const text = body.choices?.[0]?.message?.content ?? '';
     if (!text.trim()) throw new Error(`${model.id} returned an empty response`);
