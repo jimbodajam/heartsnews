@@ -349,8 +349,12 @@ function rightScore(m: LedgerMatch, x: Mention, before: string, opponents: Map<s
 export const SAID_ENOUGH = 3;
 /** So is one said this recently: on a channel with a bulletin every half hour, it was on air a moment ago. */
 const RECENT_MS = 12 * 3_600_000;
-/** A repeating line with at least this share of words not in the view it repeats is saying something new too. */
-const MOSTLY_NEW = 0.6;
+/**
+ * A repeating sentence with at least this share of words not in the view it repeats is saying something new too
+ * (Ross on Mato "at left-back for the first time in eleven years, keeping Salah quiet": 55% new). Losing news is
+ * worse than an opinion said twice, and the AI fact-checker catches some repeats as well.
+ */
+const MOSTLY_NEW = 0.5;
 
 /**
  * Lines where a presenter only says again a view they've already made: said SAID_ENOUGH times or more, or in the
