@@ -2,7 +2,7 @@ import { airings, type PresenterPrediction } from '../memory.ts';
 import type { Story } from '../stories.ts';
 import type { Draft } from './draft.ts';
 import { teamName, type Facts } from './facts.ts';
-import { personIn } from './notebook.ts';
+import { personIn, repeats } from './notebook.ts';
 
 /** What a bulletin adds to the channel's memory, for the store. */
 export interface Remembered {
@@ -35,8 +35,11 @@ export function remember(f: Facts, draft: Draft): Remembered {
 
   return {
     aired: airings(f.memory, [...aired.values()], new Set(draft.features.map((x) => x.storyId))),
-    // Each take is saved against its storyline and the person it's about, so it's in their notebook next time.
-    takes: (draft.opinions ?? []).map((o) => {
+    // Each take is saved against its storyline and the person it's about, so it's in their notebook next time. One
+    // that only says again what they've said before (this bulletin or earlier) isn't saved.
+    takes: (draft.opinions ?? [])
+      .filter((o, i, list) => !repeats(o.view, [...(f.memory.presenters[o.speaker]?.opinions ?? []), ...list.slice(0, i).filter((x) => x.speaker === o.speaker)]))
+      .map((o) => {
       const story = o.storyId ? byId(o.storyId) : undefined;
       const entity = personIn(`${o.topic} ${o.view}`, story, all);
       return {

@@ -143,8 +143,9 @@ function header(f: Facts, n?: Piece['notebooks']): string {
 leanings, and what they've said before on the people and storylines here, with how strongly they held it. A presenter
 only knows their own notebook and what's been said on air. Keep their views consistent with it and let them refer back
 ("I said last week…"), so two presenters on one story can disagree naturally. When the facts have moved on since, they
-can change their mind and say so ("I said he'd be back for the derby; the scan says otherwise"). Leanings colour their
-view; they never override the facts.
+can change their mind and say so ("I said he'd be back for the derby; the scan says otherwise"). Leanings are attitudes,
+not facts: they colour a view but never override the DATA, and never justify a number that isn't in it (no made-up
+xG, stats or percentages to back a hunch).
 ${notebooks(f, n)}\n`
     : '';
   return `You are a scriptwriter for "${channel.spokenName}", a 24-hour TV sports news channel about ${club.name} (${club.shortName}).
@@ -478,6 +479,8 @@ export interface PiecesResult {
   draft: Draft;
   /** Every piece's raw answer, by piece id, to see what the writer gave before the checks kept or dropped it. */
   raw: Record<string, unknown>;
+  /** Every piece's prompt, by piece id, to see what each was briefed with (notebooks included). */
+  prompts: Record<string, string>;
   written: string[];
   failed: { id: string; error: string }[];
 }
@@ -490,11 +493,13 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
   const limit = Math.max(1, Number(process.env.SCRIPT_CONCURRENCY) || 3);
   const list = pieces(f);
   const raw: Record<string, unknown> = {};
+  const prompts: Record<string, string> = {};
   const written: string[] = [];
   const failed: PiecesResult['failed'] = [];
 
   const run = async (id: string, prompt: string, schema: object, lastGo = true) => {
     const started = Date.now();
+    prompts[id] = prompt;
     try {
       const answer = (await model.generateJson(prompt, schema)) as Record<string, unknown>;
       raw[id] = answer;
@@ -542,5 +547,5 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
   } catch {
     // The layout has plain hand-overs and a "still to come" of its own.
   }
-  return { draft, raw, written, failed };
+  return { draft, raw, prompts, written, failed };
 }

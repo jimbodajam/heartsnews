@@ -134,6 +134,7 @@ async function main() {
       const pieces = await writeInPieces(model, facts, draft);
       // The raw replies, to see what the writer gave before the checks in mergeDraft kept or dropped it.
       await writeFile(resolve(OUT, 'ai-draft.json'), JSON.stringify(pieces.raw, null, 2));
+      await writeFile(resolve(OUT, 'ai-prompts.json'), JSON.stringify(pieces.prompts, null, 2));
       draft = pieces.draft;
       writer = pieces.failed.length ? `${model.name}, ${pieces.failed.length} parts from templates` : model.name;
       // Match reports whose card has the score but no scorers: ask for the goals on their own.

@@ -38,7 +38,7 @@
       "id": "ross", "formerIds": ["ally"], "name": "Ross Dunbar", "role": "Transfer Centre", "voice": "male", "tts": { "voice": "bm_lewis" },
       "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
       "leanings": [
-        "trusts the numbers over reputation: xG and progressive carries beat the eye test",
+        "trusts the numbers over reputation, when there are numbers to go on",
         "gets excited by every new signing and is quick to call a rumour a done deal",
         "backs the manager's tactical ideas, especially the press and the inverted full-backs"
       ],

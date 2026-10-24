@@ -164,3 +164,24 @@ test('the store keeps the latest three takes on each storyline or person, and fi
   assert.ok(ross.some((t) => t.view === 'Who?'));
   assert.ok(!ross.some((t) => t.view === 'Long ago'));
 });
+
+test("a view that only says again what they've said isn't saved, but a change of mind is", () => {
+  const memory = withTakes({
+    ross: [take({ topic: 'Away win data', view: 'Advanced metrics and structured pressing fully compensate for missing players to guarantee an away win.' })],
+    fraser: [take({ topic: 'Milne', view: "Milne will be back for the derby", storyline: 11 })],
+  });
+  const f = facts([milne], memory);
+  const draft: Draft = {
+    ...templateDraft(f),
+    opinions: [
+      { speaker: 'ross', topic: 'Data metrics', view: 'Advanced metrics and structured pressing fully cover for missing players and guarantee an away win.' },
+      { speaker: 'fraser', topic: 'Fir Park approach', view: 'Traditional grit and a narrow one-nil win is all we need at Fir Park.' },
+      { speaker: 'fraser', topic: 'Fir Park approach', view: 'Maintains that traditional grit and a narrow one-nil win is all we need at Fir Park.' },
+      { speaker: 'fraser', storyId: 's1', topic: 'Milne', view: "Now thinks Milne won't be back for the derby after the scan" },
+    ],
+  };
+  assert.deepEqual(remember(f, draft).takes.map((t) => `${t.presenter}: ${t.view}`), [
+    'fraser: Traditional grit and a narrow one-nil win is all we need at Fir Park.',
+    "fraser: Now thinks Milne won't be back for the derby after the scan",
+  ]);
+});

@@ -1,4 +1,5 @@
 import type { Opinion } from '../memory.ts';
+import { sameStory, tokens } from '../stories.ts';
 import { normaliseTitle } from '../text.ts';
 import type { Channel, Facts, Story } from './facts.ts';
 
@@ -64,7 +65,20 @@ export function personIn(text: string, story: Story | undefined, all: Story[]): 
   return story && !named.length && people.length === 1 ? people[0] : undefined;
 }
 
-const STRENGTH = ['', 'in passing', 'firmly', 'staked their name on it'];
+/** A change of mind is worth keeping even when it's in the same words as before ("now thinks he won't be back"). */
+const CHANGED = /\b(now|no longer|changed|admits|was wrong|u-turn)\b/i;
+
+/**
+ * Whether a view only says again what the presenter has already said: much the same words as one of their earlier
+ * takes. A bulletin every half hour would otherwise fill a notebook with the same view.
+ */
+export function repeats(view: string, earlier: { view: string }[]): boolean {
+  if (CHANGED.test(view)) return false;
+  const words = tokens(view);
+  return earlier.some((t) => sameStory(words, tokens(t.view)));
+}
+
+const STRENGTH =['', 'in passing', 'firmly', 'staked their name on it'];
 
 /** A subject's key, so a presenter's takes on one storyline or person are listed together. */
 const subject = (t: Opinion) => (t.storyline !== undefined ? `s${t.storyline}` : t.entity !== undefined ? `e${t.entity}` : `t${t.topic.toLowerCase()}`);
