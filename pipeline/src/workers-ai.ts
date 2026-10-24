@@ -6,7 +6,10 @@ import type { ScriptModel } from './script/llm.ts';
 // Needs CLOUDFLARE_ACCOUNT_ID and an API token with the Workers AI permission: CLOUDFLARE_AI_TOKEN, or else the
 // CLOUDFLARE_API_TOKEN wrangler uses.
 
-/** Workers AI's free allowance, reset at 00:00 UTC. */
+/**
+ * Workers AI's free allowance. Cloudflare counts it over a rolling 24 hours, not from midnight (seen 24 Oct 2026:
+ * refused at 3,184 for the day, with 7,060 used the evening before), so the budget goes by its own analytics.
+ */
 export const DAILY_NEURONS = 10_000;
 
 export interface WorkersModel {
@@ -19,9 +22,9 @@ export interface WorkersModel {
 export const GPT_OSS_120B: WorkersModel = { id: '@cf/openai/gpt-oss-120b', inputRate: 31_818, outputRate: 68_182 };
 export const QWEN3_30B: WorkersModel = { id: '@cf/qwen/qwen3-30b-a3b-fp8', inputRate: 4_625, outputRate: 30_475 };
 
-/** The main model until the day's use reaches `lightAt`, then the light one; nothing at all past `stopAt`. */
+/** The main model until the 24 hours' use reaches `lightAt`, then the light one; nothing at all past `stopAt`. */
 export interface Budget {
-  /** Neurons already used today (kept in the store between runs). */
+  /** Neurons already used in the last 24 hours. */
   used: number;
   lightAt: number;
   stopAt: number;
@@ -84,7 +87,10 @@ export function workersAi(o: WorkersAiOptions): MeteredModel {
     // Cloudflare says what a request cost; failing that, work it out from the tokens.
     if (u?.neurons != null) neurons += u.neurons;
     else if (u) neurons += ((u.prompt_tokens ?? 0) * model.inputRate + (u.completion_tokens ?? 0) * model.outputRate) / 1e6;
-    if (!res.ok) throw new Error(`${model.id} HTTP ${res.status}: ${body.errors?.map((e) => e.message).join('; ') ?? ''}`);
+    const said = body.errors?.map((e) => e.message).join('; ') ?? '';
+    // Over the free allowance: every model is refused alike, so the run stops here.
+    if (res.status === 429 && /free allocation/i.test(said)) throw new OutOfBudget('Workers AI: Cloudflare says the free allowance is used up; leaving the rest for later');
+    if (!res.ok) throw new Error(`${model.id} HTTP ${res.status}: ${said}`);
     const text = body.choices?.[0]?.message?.content ?? '';
     if (!text.trim()) throw new Error(`${model.id} returned an empty response`);
     used.add(model.id);
@@ -99,13 +105,13 @@ export function workersAi(o: WorkersAiOptions): MeteredModel {
       return neurons;
     },
     async generateJson(prompt, schema) {
-      const today = o.budget.used + neurons;
-      if (today >= o.budget.stopAt) throw new OutOfBudget(`Workers AI: ${Math.round(today)} neurons used today; leaving the rest for tomorrow`);
-      const model = today >= o.budget.lightAt ? light : main;
+      const spent = o.budget.used + neurons;
+      if (spent >= o.budget.stopAt) throw new OutOfBudget(`Workers AI: ${Math.round(spent)} neurons used in the last 24 hours; leaving the rest for later`);
+      const model = spent >= o.budget.lightAt ? light : main;
       try {
         return await call(model, prompt, schema);
       } catch (err) {
-        if (model === light) throw err;
+        if (model === light || err instanceof OutOfBudget) throw err;
         // One more go on the light model: the big one being busy or garbled shouldn't hold up the run.
         console.log(`  ${(err as Error).message.slice(0, 120)}; trying ${light.id}`);
         return call(light, prompt, schema);
@@ -114,8 +120,39 @@ export function workersAi(o: WorkersAiOptions): MeteredModel {
   };
 }
 
-export function workersAiFromEnv(budget: Budget, env = process.env): MeteredModel | undefined {
+const credentials = (env: NodeJS.ProcessEnv) => {
   const accountId = env.CLOUDFLARE_ACCOUNT_ID;
   const token = env.CLOUDFLARE_AI_TOKEN || env.CLOUDFLARE_API_TOKEN;
-  return accountId && token ? workersAi({ accountId, token, budget }) : undefined;
+  return accountId && token ? { accountId, token } : undefined;
+};
+
+export function workersAiFromEnv(budget: Budget, env = process.env): MeteredModel | undefined {
+  const c = credentials(env);
+  return c && workersAi({ ...c, budget });
+}
+
+/**
+ * Neurons Cloudflare counts as used in the 24 hours to `now`, from its GraphQL analytics (which the Workers AI token
+ * can read). Undefined when there are no credentials or it can't be read.
+ */
+export async function neuronsLast24h(now: Date, env = process.env, fetchFn: typeof fetch = fetch): Promise<number | undefined> {
+  const c = credentials(env);
+  if (!c) return undefined;
+  const since = new Date(now.getTime() - 86_400_000).toISOString();
+  const query = `{ viewer { accounts(filter: { accountTag: "${c.accountId}" }) {
+    aiInferenceAdaptiveGroups(limit: 1, filter: { datetime_geq: "${since}" }) { sum { totalNeurons } } } } }`;
+  try {
+    const res = await fetchFn('https://api.cloudflare.com/client/v4/graphql', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${c.token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const body = (await res.json()) as { data?: { viewer?: { accounts?: { aiInferenceAdaptiveGroups?: { sum?: { totalNeurons?: number } }[] }[] } } };
+    const groups = body.data?.viewer?.accounts?.[0]?.aiInferenceAdaptiveGroups;
+    if (!res.ok || !groups) return undefined;
+    return groups[0]?.sum?.totalNeurons ?? 0;
+  } catch {
+    return undefined;
+  }
 }

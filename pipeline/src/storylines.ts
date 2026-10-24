@@ -135,6 +135,9 @@ export const asRef = (prefix: string, ref: unknown) => {
   return m && (!m[1] || m[1].toLowerCase() === prefix) ? `${prefix}${m[2]}` : undefined;
 };
 
+/** Lower case, no accents, words split by single spaces: for spotting a name in a title. */
+const plainLower = (s: string) => slug(s).replaceAll('-', ' ');
+
 /** Display names for outlets the store knows by source id. */
 export type OutletNames = Map<string, string>;
 
@@ -311,6 +314,17 @@ export function planSift(
   const personOf = (ref: string | undefined) =>
     ref ? people.find((e) => e.id === ref || e.id === slug(ref) || [e.name, ...e.aliases].some((n) => n.toLowerCase() === ref.toLowerCase()))?.id : undefined;
   const fixtureByRef = new Map(fixtures.map((x) => [x.ref, x.f]));
+  const words = (title: string) => ` ${plainLower(title)} `;
+  const says = (title: string, name: string) => name.length > 2 && words(title).includes(` ${plainLower(name)} `);
+  // Who a title is about, when the model gave no usable id ("Harry Milne injury"): exactly one person named in it.
+  const personNamed = (title: string) => {
+    const named = people.filter((e) => [e.name, ...e.aliases].some((n) => says(title, n)));
+    return named.length === 1 ? named[0].id : undefined;
+  };
+  // Which fixture a title is about, when the model's ref doesn't fit: the opponent named in it. We're the team in
+  // every fixture, so the opponent is the other one.
+  const ours = (f: Fixture) => fixtures.every((x) => x.f.home === f.home || x.f.away === f.home) && fixtures.length > 1;
+  const fixtureNamed = (title: string) => fixtures.find(({ f }) => says(title, ours(f) ? f.away : f.home) || (fixtures.length === 1 && says(title, f.away)))?.f;
   const storylineIds = new Map<string, number>(open.map((s) => [`s${s.id}`, s.id]));
   const known = [...open.map((s) => ({ id: s.id, kind: s.kind, entity: s.entity, category: s.category, fixture: s.fixture }))];
   let nextStoryline = nextIds.storyline;
@@ -320,10 +334,13 @@ export function planSift(
   for (const n of reply.storylines ?? []) {
     if (!n.ref || !n.title) continue;
     let kind = (['person', 'match', 'club'] as const).find((k) => k === n.kind) ?? 'club';
-    const fixture = kind === 'match' ? fixtureByRef.get(asRef('f', n.fixture) ?? '') : undefined;
-    const entity = personOf(n.entity);
     // The model often leaves the category out; the title says it ("Milne injury").
     const given = CATEGORIES.includes(n.category ?? '') ? n.category : categorise(n.title);
+    const looksLikeMatch = kind === 'match' || categorise(n.title) === 'match';
+    const fixture = looksLikeMatch ? (fixtureByRef.get(asRef('f', n.fixture) ?? '') ?? fixtureNamed(n.title)) : undefined;
+    if (fixture) kind = 'match';
+    const entity = personOf(n.entity) ?? (kind !== 'match' && PERSON_TOPICS.includes(given ?? '') ? personNamed(n.title) : undefined);
+    if (entity && kind === 'club' && PERSON_TOPICS.includes(given ?? '')) kind = 'person';
     // A person storyline needs a person and one of the topics; anything else about them is the club's.
     if ((kind === 'person' && (!entity || !PERSON_TOPICS.includes(given ?? ''))) || (kind === 'match' && !fixture)) kind = 'club';
     const category = kind === 'match' ? 'match' : CATEGORIES.includes(given ?? '') ? given : undefined;
@@ -515,7 +532,9 @@ export function parseBriefs(reply: { briefs?: { storyline?: string; title?: stri
       byTitle.get((b.storyline ?? '').trim().toLowerCase()) ??
       (briefs.length === storylines.length ? storylines[i] : undefined);
     if (!s || !b.known?.trim() || out.some((o) => o.id === s.id)) continue;
-    out.push({ id: s.id, title: truncate((b.title || s.title).trim(), 80), brief: { known: b.known.trim(), disputed: (b.disputed ?? '').trim(), latest: (b.latest ?? '').trim() } });
+    // A match keeps its fixture's name; a brief's title for one is often a headline ("Vrancken warning").
+    const title = s.kind === 'match' ? s.title : truncate((b.title || s.title).trim(), 80);
+    out.push({ id: s.id, title, brief: { known: b.known.trim(), disputed: (b.disputed ?? '').trim(), latest: (b.latest ?? '').trim() } });
   }
   return out;
 }

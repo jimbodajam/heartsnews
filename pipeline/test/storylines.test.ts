@@ -135,7 +135,7 @@ test('the Milne news from several outlets is one storyline, its claims sourced t
 
   assert.deepEqual(rows(s, 'SELECT id, kind, entity_id, category, title, fixture, status, opened_at FROM storylines ORDER BY id'), [
     { id: 1, kind: 'person', entity_id: 'harry-milne', category: 'injury', title: 'Milne injury', fixture: null, status: 'open', opened_at: '2026-10-22T16:46:00.000Z' },
-    { id: 2, kind: 'match', entity_id: null, category: 'match', title: 'Trabzonspor 2-0 Hearts', fixture: '2026-10-22|Trabzonspor|Heart of Midlothian', status: 'open', opened_at: '2026-10-22T20:03:00.000Z' },
+    { id: 2, kind: 'match', entity_id: null, category: 'match', title: 'Trabzonspor v Heart of Midlothian', fixture: '2026-10-22|Trabzonspor|Heart of Midlothian', status: 'open', opened_at: '2026-10-22T20:03:00.000Z' },
   ]);
   assert.deepEqual(rows(s, 'SELECT id, storyline_id, text, status, first_seen FROM claims ORDER BY id'), [
     { id: 1, storyline_id: 1, text: 'Milne: ACL injury, out for months', status: 'reported', first_seen: '2026-10-22T16:46:00.000Z' },
@@ -353,4 +353,52 @@ test('refs come back in any form, a missing category comes from the title, and m
   );
   assert.equal(plan.claims.length, 3);
   assert.equal(plan.dropped, 0);
+});
+
+test('a storyline with no usable person or fixture ref is placed by the names in its title', () => {
+  const articles = [{ id: 'x', source: 'bbc', kind: 'press' as const, title: 't', publishedAt: '2026-10-23T08:00:00.000Z', text: 'x' }];
+  const fixtures = [{ ref: 'f1', f: TRABZONSPOR }, { ref: 'f2', f: HIBS }];
+  const people = entities.filter((e) => e.type === 'player' || e.type === 'staff');
+  const plan = planSift(
+    {
+      storylines: [
+        { ref: 'n1', kind: 'club', title: 'Harry Milne injury', category: 'injury' },
+        { ref: 'n2', kind: 'person', title: 'Borchgrevink injury' },
+        { ref: 'n3', kind: 'club', title: 'Trabzonspor v Hearts' },
+        { ref: 'n4', kind: 'match', title: 'Hibs derby preview', fixture: 'f9' },
+        { ref: 'n5', kind: 'club', title: 'Hearts injury list', category: 'injury' },
+      ],
+      claims: ['n1', 'n2', 'n3', 'n4', 'n5'].map((storyline) => ({ text: storyline, storyline, sources: ['a1'], relation: 'new' })),
+    },
+    articles,
+    [],
+    fixtures,
+    people,
+    { storyline: 1, claim: 1 },
+    new Date('2026-10-23T09:00:00Z'),
+  );
+  assert.deepEqual(
+    plan.storylines.map((s) => [s.kind, s.entity ?? s.fixture ?? null, s.title]),
+    [
+      ['person', 'harry-milne', 'Harry Milne injury'],
+      ['person', 'christian-borchgrevink', 'Borchgrevink injury'],
+      ['match', '2026-10-22|Trabzonspor|Heart of Midlothian', 'Trabzonspor v Heart of Midlothian'],
+      ['club', null, 'Hibs derby preview'], // "Hibs" isn't "Hibernian", and the ref is wrong: left as the club's
+      ['club', null, 'Hearts injury list'],
+    ],
+  );
+});
+
+test('the free allowance running out stops the run, without trying the light model', async () => {
+  const asked: string[] = [];
+  const fetchFn = (async (_url: string | URL | Request, init?: RequestInit) => {
+    asked.push(JSON.parse(String(init?.body)).model);
+    return Response.json(
+      { errors: [{ message: 'AiError: you have used up your daily free allocation of 10,000 neurons' }] },
+      { status: 429 },
+    );
+  }) as typeof fetch;
+  const model = workersAi({ accountId: 'x', token: 'y', budget: { used: 0, lightAt: 7_000, stopAt: 9_500 }, fetchFn });
+  await assert.rejects(model.generateJson('p', {}), OutOfBudget);
+  assert.deepEqual(asked, ['@cf/openai/gpt-oss-120b']);
 });

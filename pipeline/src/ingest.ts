@@ -20,7 +20,7 @@ import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, unt
 import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
 import type { ClubConfig } from './types.ts';
-import { DEFAULT_BUDGET, workersAiFromEnv } from './workers-ai.ts';
+import { DEFAULT_BUDGET, neuronsLast24h, workersAiFromEnv } from './workers-ai.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -105,7 +105,10 @@ async function main() {
   // What the articles say, filed under storylines with a brief on each (issue #25).
   console.log('\nStorylines…');
   const at = new Date();
-  const model = workersAiFromEnv({ used: await neuronsToday(store, at), ...DEFAULT_BUDGET });
+  // Cloudflare's own count over its rolling 24 hours; failing that, ours since midnight.
+  const cloudflare = await neuronsLast24h(at);
+  if (cloudflare != null) console.log(`Workers AI: ${Math.round(cloudflare)} neurons used in the last 24 hours.`);
+  const model = workersAiFromEnv({ used: cloudflare ?? (await neuronsToday(store, at)), ...DEFAULT_BUDGET });
   await updateStorylines({
     store,
     model,
