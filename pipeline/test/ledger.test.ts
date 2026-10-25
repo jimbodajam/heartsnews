@@ -121,6 +121,9 @@ test('correct lines and lines the ledger can\'t speak for are left alone', () =>
     'Hearts won a corner against Celtic straight away.',
     'Hearts fell to fifth after the defeat to Celtic.',
     'Hearts beat Aberdeen 3-0 last month.',
+    // Another Hearts side (01:30 on 25 Oct): the ledger only has the men's first team.
+    'Now to Hearts Women, who picked up an outstanding four-two victory away against Celtic Women.',
+    "Hearts B beat Celtic B 2-0, and the under-18s drew with Celtic's youth side.",
   ]) {
     const r = check(text);
     assert.equal(r.drop, undefined, text);

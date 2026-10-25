@@ -111,6 +111,11 @@ const HYPOTHETICAL = /\b(will|won't|going to|gonna|predict\w*|reckon\w*|expect\w
 /** Another time, or a score that isn't the result. */
 const ELSEWHEN =
   /\b(ago|back in|previous(ly)?|earlier (this|in the) (season|campaign|year)|last (time|meeting|season|year|month|campaign)|first meeting|aggregate|penalt\w*|shoot-?out|half[- ]time|the break|the interval|(18|19|20)\d\d)\b/i;
+/**
+ * Another Hearts side: the ledger only has the men's first team. On 25 Oct "Hearts Women… a four-two victory away
+ * against Celtic Women" was "corrected" to the men's 7-1.
+ */
+const OTHER_SIDE = /\b(women(?:'s)?|ladies|girls|swpl|b team|reserves|colts|youth|u-?\d{2}s?|under-?\d{2}s?)\b/i;
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 const MONTH = new RegExp(`\\b(${MONTHS.join('|')})\\b`, 'gi');
 
@@ -262,7 +267,7 @@ export function checkLine(ledger: Ledger, text: string, now: Date): LineResult {
   for (const sm of text.matchAll(/[^.!?]+[.!?]*/g)) {
     const s = sm[0];
     // Only a sentence about us and one team we've played: "Celtic won 5-0 at Aberdeen" is someone else's result.
-    if (HYPOTHETICAL.test(s) || ELSEWHEN.test(s) || !new RegExp(`\\b(?:${us}|us|our)\\b`, 'i').test(s)) continue;
+    if (HYPOTHETICAL.test(s) || ELSEWHEN.test(s) || OTHER_SIDE.test(s) || !new RegExp(`\\b(?:${us}|us|our)\\b`, 'i').test(s)) continue;
     const named = namedOpponents(s, opponents);
     if (named.length !== 1) continue;
     const opp = named[0];
