@@ -265,6 +265,7 @@ Storylines:
 - match: one per fixture in the fixture list, running from the preview through the game to the report and the fallout. Everything about that game goes here: team news for it, the result, goals, substitutions, saves, refereeing, who said what about it, and reaction to the result ("Vrancken under pressure after the defeat") while it's about that result. A match report always gives the result as a claim. fixture: its ref.
 - club: the club when it's neither: the manager's job, finances, the stadium, the board, the academy, the women's team.
 Never open a storyline for one person's comments, form, position or availability ("Vrancken comments", "Kingsley availability"): that goes under the match it's about, reaction under the last game and team news under the next.
+An article reacting to a result often looks ahead to the next game too: what's said about the result goes under the game just played, and only what's about the next game goes under that one.
 File each claim under an open storyline when one fits. Open a new one (ref "n1", "n2", ...) only when none does, and never two for the same person and topic or the same fixture. Skip routine notices (ticket sales, travel and merchandise) and pundits' opinions.
 
 relation: how the claim stands against the claims we already have:
@@ -365,6 +366,22 @@ export function planSift(
   const aboutMatch = new Set<string>();
   const nearestFixture = (at: string) =>
     [...fixtures].sort((a, b) => Math.abs(new Date(a.f.date).getTime() - new Date(at).getTime()) - Math.abs(new Date(b.f.date).getTime() - new Date(at).getTime()))[0]?.f;
+  // Reaction to the game just played, in an article looking ahead to the next one, can come back filed under the next
+  // ("Vrancken: no excuses after the win over Motherwell" under Hearts v Rangers). Before the next kick-off, a claim
+  // that names the last opponent and not the next one is about the last game.
+  const fixtureOfKey = new Map(fixtures.map(({ f }) => [fixtureKey(f), f]));
+  const opponent = (f: Fixture) => (ours(f) ? f.away : f.home);
+  const reactionHome = (storylineId: number | undefined, text: string, at: string): number | undefined => {
+    const s = known.find((k) => k.id === storylineId);
+    const next = s?.kind === 'match' && s.fixture ? fixtureOfKey.get(s.fixture) : undefined;
+    if (!next || fixtures.length < 2 || Date.parse(next.date) <= Date.parse(at)) return storylineId;
+    const last = fixtures
+      .map(({ f }) => f)
+      .filter((f) => Date.parse(f.date) <= Date.parse(at))
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!last || !says(text, opponent(last)) || says(text, opponent(next))) return storylineId;
+    return storylineFor('match', '', undefined, 'match', last);
+  };
 
   for (const n of reply.storylines ?? []) {
     if (!n.ref || !n.title) continue;
@@ -406,7 +423,8 @@ export function planSift(
     const sources = [...new Set((c.sources ?? []).map((r) => articleByRef.get(asRef('a', r) ?? '')).filter((a): a is SiftItem => !!a))];
     const firstSeen = sources.map((a) => a.publishedAt).sort()[0];
     const fixture = text && firstSeen && aboutMatch.has(ref) ? (fixtureNamed(text) ?? nearestFixture(firstSeen)) : undefined;
-    const storylineId = fixture ? storylineFor('match', '', undefined, 'match', fixture) : storylineIds.get(ref);
+    const filed = fixture ? storylineFor('match', '', undefined, 'match', fixture) : storylineIds.get(ref);
+    const storylineId = text && firstSeen ? reactionHome(filed, text, firstSeen) : filed;
     if (!text || storylineId == null || !sources.length) {
       dropped++;
       continue;

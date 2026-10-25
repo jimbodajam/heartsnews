@@ -159,6 +159,17 @@ test("what the ingest hasn't read goes in from headlines, joining its storyline 
   assert.deepEqual(loose.map((s) => s.items.map((it) => it.id)), [['n2']]);
 });
 
+test("a headline naming the match's opponent joins it, tagged as match news or not", () => {
+  const now = at('2026-10-18T19:00:00Z');
+  const fresh: Item[] = [
+    { ...item('v1', 'REACTION | Points over performance | Celtic 7-1 Hearts', { publishedAt: '2026-10-18T18:30:00.000Z', sourceId: 'hearts-standard', kind: 'video' }) },
+  ];
+  assert.equal(tagItems(fresh, entities).get('v1')?.category, 'news', 'the tagger calls it news');
+  const stories = onAir(desk(), now, { items: fresh });
+  assert.deepEqual(stories.find((s) => s.id === 'l1')?.storyline?.justIn, ['REACTION: Points over performance, Celtic 7-1 Hearts']);
+  assert.deepEqual(stories.filter((s) => !s.storyline), []);
+});
+
 test('a storyline with nothing new since it aired is cooled for longer, and its package comes round less often', () => {
   const now = at('2026-10-23T12:00:00Z');
   const aired = new Map([[2, { title: 'Harry Milne injury', firstAired: '2026-10-22T18:00:00.000Z', lastAired: '2026-10-23T09:00:00.000Z', times: 4, inDepth: 2, lastInDepth: '2026-10-23T09:00:00.000Z' }]]);

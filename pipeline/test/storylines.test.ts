@@ -13,6 +13,7 @@ import {
   BRIEF_SCHEMA,
   closingDue,
   CORROBORATE_SCHEMA,
+  fixtureKey,
   matchPhase,
   planSift,
   SIFT_SCHEMA,
@@ -410,6 +411,67 @@ test("one person's comments or availability go under a match, and a club storyli
       7, // the same club storyline, not a second one
     ],
   );
+});
+
+test('reaction to the game just played stays with it when the model files it under the next one', () => {
+  // 25 Oct: Motherwell 0-2 Hearts, then the Daily Record's "Vrancken clamps excuses" at 18:10, looking ahead to Rangers.
+  const MOTHERWELL: Fixture = { date: '2026-10-25T14:00:00.000Z', home: 'Motherwell', away: 'Heart of Midlothian', competition: 'Scottish Premiership', homeScore: 0, awayScore: 2, status: 'done' };
+  const RANGERS: Fixture = { date: '2026-10-28T20:00:00.000Z', home: 'Heart of Midlothian', away: 'Rangers', competition: 'Scottish Premiership' };
+  const fixtures = [{ ref: 'f1', f: MOTHERWELL }, { ref: 'f2', f: TRABZONSPOR }, { ref: 'f3', f: RANGERS }];
+  const people = entities.filter((e) => e.type === 'player' || e.type === 'staff');
+  const motherwell: Storyline = {
+    id: 24,
+    kind: 'match',
+    category: 'match',
+    title: 'Motherwell v Heart of Midlothian',
+    fixture: fixtureKey(MOTHERWELL),
+    kickOff: MOTHERWELL.date,
+    status: 'open',
+    openedAt: '2026-10-23T17:00:00.000Z',
+    updatedAt: '2026-10-25T17:13:03.000Z',
+    claims: [{ id: 37, text: 'Motherwell 0-2 Hearts', status: 'reported', firstSeen: '2026-10-25T15:53:18.000Z', sources: [] }],
+  };
+  const articles = [{ id: 'dr', source: 'daily-record', kind: 'press' as const, title: 'Wouter Vrancken clamps excuses', publishedAt: '2026-10-25T18:10:00.000Z', text: 'x' }];
+  const plan = planSift(
+    {
+      storylines: [{ ref: 'n1', kind: 'match', title: 'Hearts v Rangers', fixture: 'f3' }],
+      claims: [
+        { text: 'Vrancken: no excuses, praised unity after win over Motherwell', storyline: 'n1', sources: ['a1'], relation: 'new' },
+        { text: 'Jordi Altena: poor back-pass to Beau Reus led to a chance for Motherwell', storyline: 'n1', sources: ['a1'], relation: 'new' },
+        { text: 'Vrancken: Rangers will be a different test on Wednesday', storyline: 'n1', sources: ['a1'], relation: 'new' },
+        { text: 'Vrancken: Motherwell win gives momentum for Rangers', storyline: 'n1', sources: ['a1'], relation: 'new' },
+      ],
+    },
+    articles,
+    [motherwell],
+    fixtures,
+    people,
+    { storyline: 26, claim: 43 },
+    new Date('2026-10-25T19:37:00Z'),
+  );
+  assert.deepEqual(
+    plan.claims.map((c) => c.storylineId),
+    [
+      24, // names Motherwell, not Rangers: reaction to the win
+      24,
+      26, // about Wednesday
+      26, // names both: looking ahead
+    ],
+  );
+  assert.deepEqual(plan.storylines.map((s) => s.title), ['Heart of Midlothian v Rangers']);
+
+  // With only the reaction, the Rangers storyline isn't opened at all.
+  const reactionOnly = planSift(
+    { storylines: [{ ref: 'n1', kind: 'match', title: 'Hearts v Rangers', fixture: 'f3' }], claims: [{ text: 'Vrancken: no excuses after the win over Motherwell', storyline: 'n1', sources: ['a1'], relation: 'new' }] },
+    articles,
+    [motherwell],
+    fixtures,
+    people,
+    { storyline: 26, claim: 43 },
+    new Date('2026-10-25T19:37:00Z'),
+  );
+  assert.deepEqual(reactionOnly.storylines, []);
+  assert.deepEqual(reactionOnly.claims.map((c) => c.storylineId), [24]);
 });
 
 test('a storyline with no usable person or fixture ref is placed by the names in its title', () => {

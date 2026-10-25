@@ -111,12 +111,15 @@ function importance(category: StoryCategory, read: Set<string>, backing: Set<str
   );
 }
 
-/** The storyline a story from fresh headlines belongs to: the same person and topic, or a match against the side it names. */
+/**
+ * The storyline a story from fresh headlines belongs to: the same person and topic, or a match against the side it
+ * names. A match's news isn't always tagged as one ("REACTION | Points over performance | Motherwell 0-2 Hearts").
+ */
 function belongsTo(story: Story, lines: Storyline[], club: ClubConfig): Storyline | undefined {
   if (BY_PERSON.has(story.category)) {
     return lines.find((l) => l.kind === 'person' && l.category === story.category && l.entity && story.people.includes(l.entity));
   }
-  if (story.category !== 'match') return undefined;
+  if (story.category !== 'match' && story.category !== 'news') return undefined;
   const title = ` ${normaliseTitle(story.title)} `;
   return lines.find((l) => {
     if (l.kind !== 'match' || !l.fixture || !l.kickOff || Math.abs(Date.parse(story.latest) - Date.parse(l.kickOff)) > MATCH_NEWS_MS) return false;
