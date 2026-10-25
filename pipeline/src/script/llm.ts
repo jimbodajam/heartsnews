@@ -107,7 +107,9 @@ export function geminiFromEnv(
           }
         }
       }
-      throw last;
+      // Every model already out of quota for today, so none was tried: say so, rather than throw nothing (on
+      // 25 Oct that crashed the error handling and took the whole build down instead of falling back to templates).
+      throw last ?? new Error(`Gemini: ${models.join(' and ')} out of quota for today`);
     },
   };
 }
