@@ -28,6 +28,26 @@ export const TRANSCRIPT_CACHE = fileURLToPath(new URL('../../out/transcripts', i
 
 /** Keeps the published file and prompts a sensible size; a 30-minute show is ~25k characters. */
 const MAX_CHARS = 15_000;
+/** Shorter than this is no transcript (a goal clip's "[music]"). */
+const MIN_CHARS = 300;
+
+/** YouTube's auto-captions can take hours to appear, so a new video with none is tried again this often... */
+const RETRY_MS = 60 * 60_000;
+/** ...until it's this old (the store stops waiting for its transcript at two days). */
+const RETRY_FOR_MS = 2 * 24 * 60 * 60_000;
+
+/** What the cache keeps for a video; `triedAt` marks a fetch that found no usable captions. */
+interface Cached {
+  text: string;
+  triedAt?: string;
+}
+
+/** Whether a cached video without captions is worth fetching again: still new, and not tried in the last hour. */
+export function retryDue(cached: Cached, publishedAt: string, now: Date): boolean {
+  if (cached.text.length >= MIN_CHARS) return false;
+  if (now.getTime() - Date.parse(publishedAt) > RETRY_FOR_MS) return false;
+  return !cached.triedAt || now.getTime() - Date.parse(cached.triedAt) >= RETRY_MS;
+}
 
 export function videoId(url: string): string | undefined {
   return /[?&]v=([\w-]{11})/.exec(url)?.[1] ?? /youtu\.be\/([\w-]{11})/.exec(url)?.[1];
@@ -43,10 +63,14 @@ function clean(segments: { text: string }[]): string {
 }
 
 /**
- * Transcripts for the given videos, using a local cache so each video is only fetched once.
- * Videos without usable captions (e.g. goal clips with only music) are skipped.
+ * Transcripts for the given videos, using a local cache so each video is only fetched once it has captions.
+ * Videos without usable captions (e.g. goal clips with only music) are skipped, and tried again while new.
  */
-export async function fetchTranscripts(videos: Item[], cacheDir: string): Promise<{ transcripts: Transcript[]; fetched: number; failed: number }> {
+export async function fetchTranscripts(
+  videos: Item[],
+  cacheDir: string,
+  now = new Date(),
+): Promise<{ transcripts: Transcript[]; fetched: number; failed: number }> {
   await mkdir(cacheDir, { recursive: true });
   const transcripts: Transcript[] = [];
   let fetched = 0;
@@ -54,22 +78,21 @@ export async function fetchTranscripts(videos: Item[], cacheDir: string): Promis
   for (const v of videos) {
     const id = videoId(v.url);
     if (!id) continue;
-    const cached = resolve(cacheDir, `${id}.json`);
-    let text: string | undefined;
-    if (existsSync(cached)) {
-      text = (JSON.parse(await readFile(cached, 'utf8')) as { text: string }).text;
-    } else {
+    const file = resolve(cacheDir, `${id}.json`);
+    const cached = existsSync(file) ? (JSON.parse(await readFile(file, 'utf8')) as Cached) : undefined;
+    let text = cached?.text ?? '';
+    if (!cached || retryDue(cached, v.publishedAt, now)) {
       try {
         text = clean(await YoutubeTranscript.fetchTranscript(id, { lang: 'en' }));
-        fetched++;
       } catch {
         text = '';
-        failed++;
       }
-      await writeFile(cached, JSON.stringify({ text }));
+      if (text.length >= MIN_CHARS) fetched++;
+      else failed++;
+      await writeFile(file, JSON.stringify(text.length >= MIN_CHARS ? { text } : { text, triedAt: now.toISOString() }));
       await new Promise((r) => setTimeout(r, 500));
     }
-    if (text.length < 300) continue;
+    if (text.length < MIN_CHARS) continue;
     transcripts.push({
       videoId: id,
       url: v.url,
