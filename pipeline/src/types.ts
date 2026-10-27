@@ -156,3 +156,13 @@ export interface VideoSummary {
   /** Opinions and predictions. */
   takes: { text: string; speaker?: string }[];
 }
+
+/** A long article read once at ingest (article-summary.ts, issue #52): its news, its quotes and its background, kept apart. */
+export interface ArticleSummary {
+  /** What happened and the key details, as the article reports them, one line each. */
+  news: string[];
+  /** Direct quotes, word for word as printed (checked against the text), with who said them. */
+  quotes: { text: string; speaker: string }[];
+  /** History, numbers and context: not news. */
+  background: string[];
+}

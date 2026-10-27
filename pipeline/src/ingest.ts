@@ -18,6 +18,7 @@ import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
 import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
 import { summariseVideos } from './summarise.ts';
+import { summariseArticles } from './article-summary.ts';
 import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
 import type { ClubConfig } from './types.ts';
@@ -110,7 +111,8 @@ async function main() {
   // Cloudflare's own count over its rolling 24 hours; failing that, ours since midnight.
   const cloudflare = await neuronsLast24h(at);
   if (cloudflare != null) console.log(`Workers AI: ${Math.round(cloudflare)} neurons used in the last 24 hours.`);
-  const model = workersAiFromEnv({ used: cloudflare ?? (await neuronsToday(store, at)), ...DEFAULT_BUDGET });
+  const used = cloudflare ?? (await neuronsToday(store, at));
+  const model = workersAiFromEnv({ used, ...DEFAULT_BUDGET });
   // Long shows are summarised first (issue #49), so the reading below works from the whole show.
   await summariseVideos({ store, model, now: at });
   const fan = club.sources.filter((s) => s.fan);
@@ -125,6 +127,8 @@ async function main() {
     shows: new Set(fan.map((s) => s.id)),
     opinionOnly: new Set(fan.filter((s) => !s.claimSource).map((s) => s.id)),
   });
+  // Then long articles are summarised for the bulletins (issue #52), with whatever the reading left of the budget.
+  await summariseArticles({ store, model, used, now: new Date() });
 }
 
 main().catch((err) => {

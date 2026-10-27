@@ -105,6 +105,16 @@ test('a storyline is a story written from its brief, its claims and the stored t
   assert.equal(celtic.storyline?.isNew, true, 'never aired, so all of it is new');
 });
 
+test("a summarised article reaches the writer as its summary, and quotes are still checked against its whole text", () => {
+  const d = desk();
+  const c1 = d.items.get('c1')!;
+  d.items.set('c1', { ...c1, digest: '(Summary of the whole article.)\nWhat it reports:\n- Celtic won 7-1' });
+  const celtic = onAir(d, at('2026-10-23T12:00:00Z')).find((s) => s.id === 'l1')!;
+  assert.equal(celtic.articles?.find((a) => a.item === 'c1')?.text, d.items.get('c1')!.digest);
+  assert.equal(celtic.articles?.find((a) => a.item === 'c2')?.text, d.items.get('c2')!.text, 'no summary: the text as before');
+  assert.ok(celtic.body?.includes('Celtic thrashed Hearts 7-1'));
+});
+
 test('a match leads around the game, and five days on it does not lead unless something new has happened', () => {
   // The night of the game: it leads (Milne's injury hasn't happened yet, so its claim is in the future; ignore it).
   const night = scores(onAir(desk(), at('2026-10-18T19:00:00Z')));

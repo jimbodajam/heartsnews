@@ -1,5 +1,5 @@
 import { truncate } from './text.ts';
-import type { VideoSummary } from './types.ts';
+import type { ArticleSummary, VideoSummary } from './types.ts';
 
 // A video summary as text for a prompt (issue #49), kept apart from summarise.ts so the store can use it.
 
@@ -18,6 +18,15 @@ export function renderSummary(s: VideoSummary, use: 'claims' | 'full' | 'fan'): 
   if (use !== 'fan' && s.claims.length) out.push('Presented as news on the show (not confirmed by anyone else):', ...s.claims.map((c) => `- ${by(c)}${c.text}`));
   if (use !== 'claims' && s.takes.length) out.push('Opinions and predictions (opinion, not fact):', ...s.takes.map((t) => `- ${by(t)}${t.text}`));
   if (use === 'fan' && s.claims.length) out.push('Things they said they had heard (talk, not reported fact):', ...s.claims.map((c) => `- ${by(c)}${c.text}`));
+  return out.join('\n');
+}
+
+/** An article summary (issue #52) as text for an in-depth package or the headlines' "more on" block: news first. */
+export function renderArticleSummary(s: ArticleSummary): string {
+  const out: string[] = ['(Summary of the whole article.)'];
+  if (s.news.length) out.push('What it reports:', ...s.news.map((n) => `- ${n}`));
+  if (s.quotes.length) out.push('Quotes, word for word:', ...s.quotes.map((q) => `- ${q.speaker}: "${q.text}"`));
+  if (s.background.length) out.push('Background (context, not news):', ...s.background.map((b) => `- ${b}`));
   return out.join('\n');
 }
 

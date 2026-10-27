@@ -17,6 +17,8 @@ import type { ClubConfig, Fixture, Item } from './types.ts';
 /** A claim's source as the build reads it from the store, with up to 4,000 characters of its text. */
 export interface StoredItem extends Item {
   text?: string;
+  /** A long article's summary (issue #52), for the writer in place of its opening; `text` stays for checking quotes. */
+  digest?: string;
 }
 
 /** What the build reads from the store (loadOnAir in store.ts). */
@@ -198,7 +200,7 @@ export function storylineStories(desk: OnAirDesk, o: OnAirOptions): Story[] {
       .filter((it) => readIds.has(it.id) && (it.text?.length ?? 0) > 300)
       .sort((a, b) => Number(newIds.has(b.id)) - Number(newIds.has(a.id)) || b.publishedAt.localeCompare(a.publishedAt))) {
       if (articles.length >= MAX_ARTICLES) break;
-      if (!articles.some((a) => a.outlet === outlet(it))) articles.push({ outlet: outlet(it), text: it.text!, item: it.id });
+      if (!articles.some((a) => a.outlet === outlet(it))) articles.push({ outlet: outlet(it), text: it.digest ?? it.text!, item: it.id });
     }
 
     const latestFresh = latestOf(fresh.map((st) => st.latest));

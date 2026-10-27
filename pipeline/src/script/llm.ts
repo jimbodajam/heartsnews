@@ -190,7 +190,8 @@ export interface DataScope {
  */
 export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, scope: DataScope = {}): string {
   const { club, now } = f;
-  const { articleIds, articleChars = [2500, 1800] } = scope;
+  // A long article arrives as its summary (issue #52), which fits in these whole; a short one fits as it is.
+  const { articleIds, articleChars = [4000, 2800] } = scope;
   const name = (n: string) => teamName(club, n);
   const pool = scope.stories ?? f.pool;
   const stories = pool

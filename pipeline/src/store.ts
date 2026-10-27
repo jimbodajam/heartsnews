@@ -6,8 +6,8 @@ import type { LedgerMatch } from './script/ledger.ts';
 import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
-import { renderSummary } from './summary-text.ts';
-import type { Item, SourceKind, VideoSummary } from './types.ts';
+import { renderArticleSummary, renderSummary } from './summary-text.ts';
+import type { ArticleSummary, Item, SourceKind, VideoSummary } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
 // Every query the pipeline makes is here, so nothing else talks SQL. The schema is in worker/migrations/.
@@ -685,8 +685,11 @@ export async function storylinesDueBriefs(store: Store, now: Date, limit: number
   return toStorylines(storylines, claims);
 }
 
-/** Of each stored article a bulletin reads, this much (the writer sees at most 2,500 characters of one). */
-const ON_AIR_TEXT = 4_000;
+/**
+ * Of each stored article a bulletin reads, this much: all of any article so far (the longest is ~7,500), since quotes and
+ * scores are checked against it. The writer sees its summary (issue #52) or its opening.
+ */
+const ON_AIR_TEXT = 20_000;
 /** A storyline resolved this recently can still go on air ("Wilson signs"). */
 const RESOLVED_DAYS = 2;
 
@@ -729,6 +732,7 @@ export async function loadOnAir(store: Store, collected: string[], now: Date): P
           url: String(r.url ?? ''),
           publishedAt: String(r.published_at || r.first_seen),
           ...(r.text ? { text: itemText(r, 'full') } : {}),
+          ...(r.kind !== 'video' && r.summary_json ? { digest: renderArticleSummary(JSON.parse(String(r.summary_json)) as ArticleSummary) } : {}),
         },
       ]),
     ),
@@ -1030,7 +1034,7 @@ export async function loadVideosToSummarise(store: Store, now: Date, limit: numb
   }));
 }
 
-export function summaryWrites(summaries: { id: string; summary: VideoSummary }[], now: Date): Statement[] {
+export function summaryWrites(summaries: { id: string; summary: VideoSummary | ArticleSummary }[], now: Date): Statement[] {
   return each(
     `UPDATE items SET summary_json = j.value ->> 'summary', summarised_at = ? FROM json_each(?) AS j WHERE items.id = j.value ->> 'id'`,
     summaries.map((s) => ({ id: s.id, summary: JSON.stringify(s.summary) })),
@@ -1038,7 +1042,7 @@ export function summaryWrites(summaries: { id: string; summary: VideoSummary }[]
   );
 }
 
-export async function saveSummaries(store: Store, summaries: { id: string; summary: VideoSummary }[], now: Date): Promise<void> {
+export async function saveSummaries(store: Store, summaries: { id: string; summary: VideoSummary | ArticleSummary }[], now: Date): Promise<void> {
   if (summaries.length) await store.batch(summaryWrites(summaries, now));
 }
 
@@ -1046,7 +1050,47 @@ export async function saveSummaries(store: Store, summaries: { id: string; summa
 export async function loadVideoSummaries(store: Store, ids: string[]): Promise<Map<string, VideoSummary>> {
   if (!ids.length) return new Map();
   const [rows] = await store.batch([
-    { sql: 'SELECT id, summary_json FROM items WHERE summary_json IS NOT NULL AND id IN (SELECT value FROM json_each(?))', params: [JSON.stringify(ids)] },
+    { sql: "SELECT id, summary_json FROM items WHERE kind = 'video' AND summary_json IS NOT NULL AND id IN (SELECT value FROM json_each(?))", params: [JSON.stringify(ids)] },
   ]);
   return new Map(rows.map((r) => [String(r.id), JSON.parse(String(r.summary_json)) as VideoSummary]));
+}
+
+// ---- Article summaries (issue #52) ----
+// A long article is read once (article-summary.ts) and the result kept with it, like a show's.
+
+/** An article shorter than this fits the writer's slice as it is, so it's never summarised. */
+export const SUMMARISE_ARTICLE_OVER = 2_500;
+
+export interface ArticleToSummarise {
+  id: string;
+  source: string;
+  publisher?: string;
+  title: string;
+  body: string;
+}
+
+/**
+ * Long articles with no summary yet, newest first. With `recentDays`, only those first seen that recently or behind an
+ * open storyline (what can still go on air); without, every one whose text is still kept (the backfill).
+ */
+export async function loadArticlesToSummarise(store: Store, now: Date, limit: number, recentDays?: number): Promise<ArticleToSummarise[]> {
+  const since = (days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
+  const onAir = `AND (first_seen >= ? OR id IN (SELECT cs.item_id FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id
+      JOIN storylines s ON s.id = c.storyline_id WHERE s.status = 'open'))`;
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT id, source, publisher, title, body FROM items
+            WHERE kind IN ('press', 'official') AND fetch_status = 'ok' AND summary_json IS NULL AND length(body) >= ? AND first_seen >= ?
+              ${recentDays != null ? onAir : ''}
+            ORDER BY COALESCE(published_at, first_seen) DESC, id LIMIT ?`,
+      params: [SUMMARISE_ARTICLE_OVER, since(KEEP_TEXT_DAYS), ...(recentDays != null ? [since(recentDays)] : []), limit],
+    },
+  ]);
+  return rows.map((r) => ({
+    id: String(r.id),
+    source: String(r.source),
+    ...(r.publisher ? { publisher: String(r.publisher) } : {}),
+    title: String(r.title),
+    body: String(r.body),
+  }));
 }
