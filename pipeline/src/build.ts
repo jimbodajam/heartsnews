@@ -36,7 +36,7 @@ import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
-import { loadMatches, loadMemory, loadOnAir, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
+import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -107,6 +107,10 @@ async function main() {
     try {
       [memory, desk] = await Promise.all([loadMemory(store, now), loadOnAir(store, items.map((it) => it.id), now)]);
       console.log(`\nFrom the store: ${desk.storylines.length} storylines, ${desk.airings.size} of them aired; ${memory.aired.length} headline stories aired this week`);
+      // A show the ingest has read whole carries its summary, which stands in for the start of its transcript (issue #49).
+      const summaries = await loadVideoSummaries(store, items.filter((it) => it.transcript).map((it) => it.id));
+      for (const it of items) it.transcriptSummary = summaries.get(it.id);
+      if (summaries.size) console.log(`Video summaries: ${summaries.size} from the store`);
     } catch (err) {
       console.warn(`\nCouldn't read the store, building from this collection's headlines: ${(err as Error).message}`);
     }
@@ -175,6 +179,7 @@ async function main() {
       // The raw replies, to see what the writer gave before the checks in mergeDraft kept or dropped it.
       await writeFile(resolve(OUT, 'ai-draft.json'), JSON.stringify(pieces.raw, null, 2));
       await writeFile(resolve(OUT, 'ai-prompts.json'), JSON.stringify(pieces.prompts, null, 2));
+      await writeFile(resolve(OUT, 'ai-schemas.json'), JSON.stringify(pieces.schemas, null, 2));
       draft = pieces.draft;
       writer = pieces.failed.length ? `${model.name}, ${pieces.failed.length} parts from templates` : model.name;
       // Match reports whose card has the score but no scorers: ask for the goals on their own.

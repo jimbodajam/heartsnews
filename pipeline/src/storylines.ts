@@ -267,6 +267,7 @@ Storylines:
 Never open a storyline for one person's comments, form, position or availability ("Vrancken comments", "Kingsley availability"): that goes under the match it's about, reaction under the last game and team news under the next.
 An article reacting to a result often looks ahead to the next game too: what's said about the result goes under the game just played, and only what's about the next game goes under that one.
 File each claim under an open storyline when one fits. Open a new one (ref "n1", "n2", ...) only when none does, and never two for the same person and topic or the same fixture. Skip routine notices (ticket sales, travel and merchandise) and pundits' opinions.
+Some "articles" are video shows, given as a summary of the whole show. Take their claims section the way you take a reporter's: what the show presented as news (an injury update, a transfer link), credited to the show. A show saying something is not the club confirming it. Ignore their opinions and predictions.
 
 relation: how the claim stands against the claims we already have:
 - new: nothing like it yet.
@@ -312,6 +313,7 @@ export function planSift(
   people: Entity[],
   nextIds: StoryDesk['nextIds'],
   now: Date,
+  shows: ReadonlySet<string> = new Set(),
 ): SiftPlan {
   const plan: SiftPlan = { storylines: [], claims: [], sources: [], statuses: [], touched: [], resolved: [], sifted: articles.map((a) => a.id) };
   // The model sometimes names a person rather than giving their id.
@@ -441,6 +443,11 @@ export function planSift(
     };
 
     if (relation === 'same' && target) {
+      addSources(targetId);
+      continue;
+    }
+    // A show can say a thing is confirmed, but only the club or another outlet makes it so: a claim sourced from shows alone stays reported.
+    if (relation === 'confirms' && target && sources.every((a) => shows.has(a.source))) {
       addSources(targetId);
       continue;
     }
@@ -591,6 +598,10 @@ export interface StorylineRun {
   names: OutletNames;
   club: string;
   now: Date;
+  /** Sources (shows) whose claims can't confirm one on their own. */
+  shows?: ReadonlySet<string>;
+  /** Fan channels with no claims to file: their videos are marked read without being sifted. */
+  opinionOnly?: ReadonlySet<string>;
   log?: (line: string) => void;
 }
 
@@ -620,7 +631,7 @@ export async function updateStorylines(r: StorylineRun): Promise<void> {
   }
 
   const metered = 'neurons' in model ? model : undefined;
-  let counted = 0;
+  let counted = metered?.neurons ?? 0; // the video summaries before this are already recorded
   const spent = () => {
     const n = (metered?.neurons ?? 0) - counted;
     counted += n;
@@ -632,10 +643,16 @@ export async function updateStorylines(r: StorylineRun): Promise<void> {
 
   try {
     let claims = 0;
-    for (const batch of chunks(desk.articles, ARTICLES_PER_REQUEST)) {
+    // A supporters' channel that only gives opinion has no claims to file; it is marked read, not sifted.
+    const skipped = desk.articles.filter((a) => r.opinionOnly?.has(a.source));
+    if (skipped.length) {
+      await saveSift(store, { storylines: [], claims: [], sources: [], statuses: [], touched: [], resolved: [], sifted: skipped.map((a) => a.id) }, 0, now);
+      log(`  Left  opinion-only videos out of the storylines.`);
+    }
+    for (const batch of chunks(desk.articles.filter((a) => !skipped.includes(a)), ARTICLES_PER_REQUEST)) {
       try {
         const reply = (await model.generateJson(siftPrompt(batch, open, fixtures, people, r.names, r.club), SIFT_SCHEMA)) as SiftReply;
-        const plan = planSift(reply, batch, open, fixtures, people, nextIds, now);
+        const plan = planSift(reply, batch, open, fixtures, people, nextIds, now, r.shows);
         await saveSift(store, plan, spent(), now);
         claims += plan.claims.length;
         log(`  Read ${batch.length} articles: ${plan.claims.length} new claims, ${plan.sources.length} sources, ${plan.storylines.length} new storylines.${plan.dropped ? ` (${plan.dropped} claims dropped)` : ''}`);

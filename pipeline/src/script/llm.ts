@@ -1,5 +1,6 @@
 import type { Story } from '../stories.ts';
 import { truncate } from '../text.ts';
+import { videoText } from '../summary-text.ts';
 import { dayPhrase, daysUntil, timePhrase } from '../time.ts';
 import type { Fixture } from '../types.ts';
 import { airedFor } from '../memory.ts';
@@ -195,7 +196,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
     .map((t, i) => `T${i + 1} | "${t.title}" | ${t.engagement ?? 0} replies | recent posts: ${truncate(t.summary, 900)}`)
     .join('\n');
   const fanVideos = f.fanVideos
-    .map((v, i) => `V${i + 1} "${v.title}" (${v.sourceName.replace(/\s*\(.*?\)/, '')}, ${whenSaid(v.publishedAt, now).replace('earlier ', '')}):\n${truncate(v.transcript ?? '', 2500)}`)
+    .map((v, i) => `V${i + 1} "${v.title}" (${v.sourceName.replace(/\s*\(.*?\)/, '')}, ${whenSaid(v.publishedAt, now).replace('earlier ', '')}):\n${videoText(v.transcriptSummary, v.transcript, 'fan', 2500)}`)
     .join('\n\n');
   // Headlines need more than a title to be worth reading out: a storyline's brief and claims, and the opening of the
   // articles. In-depth articles appear in full below, so skip those here.
@@ -235,7 +236,7 @@ ${stats}League table: ${table || '(none)'}
 ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}\n` : ''}Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}`,
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
-    videos: `Supporters' YouTube channel, latest shows (ref, title; auto-generated captions, so expect mis-heard words; this is fan opinion):\n${fanVideos || '(none)'}`,
+    videos: `Supporters' YouTube shows, latest (ref, title; each a summary of the whole show from auto-generated captions, so expect mis-heard words; opinion and talk, not reported fact):\n${fanVideos || '(none)'}`,
     openings: `More on the other top stories ([id] title, then for a storyline our newsroom brief and claims, then the start of each outlet's article):\n${headlineText || '(none)'}`,
     articles: `In-depth packages ([id] title (expert), then for a storyline our newsroom brief and claims, then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
     opponent: opponentData(f),

@@ -17,6 +17,7 @@ import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collecto
 import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
 import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { summariseVideos } from './summarise.ts';
 import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
 import type { ClubConfig } from './types.ts';
@@ -109,6 +110,9 @@ async function main() {
   const cloudflare = await neuronsLast24h(at);
   if (cloudflare != null) console.log(`Workers AI: ${Math.round(cloudflare)} neurons used in the last 24 hours.`);
   const model = workersAiFromEnv({ used: cloudflare ?? (await neuronsToday(store, at)), ...DEFAULT_BUDGET });
+  // Long shows are summarised first (issue #49), so the reading below works from the whole show.
+  await summariseVideos({ store, model, now: at });
+  const fan = club.sources.filter((s) => s.fan);
   await updateStorylines({
     store,
     model,
@@ -117,6 +121,8 @@ async function main() {
     names: new Map(club.sources.map((s) => [s.id, s.name.replace(/ \(.*\)$/, '')])),
     club: club.name,
     now: at,
+    shows: new Set(fan.map((s) => s.id)),
+    opinionOnly: new Set(fan.filter((s) => !s.claimSource).map((s) => s.id)),
   });
 }
 

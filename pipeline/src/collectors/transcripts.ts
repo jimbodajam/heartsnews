@@ -26,8 +26,8 @@ export interface TranscriptSnapshot {
 /** Each video's transcript is fetched once and kept here (shared by `npm run snapshot` and local builds). */
 export const TRANSCRIPT_CACHE = fileURLToPath(new URL('../../out/transcripts', import.meta.url));
 
-/** Keeps the published file and prompts a sensible size; a 30-minute show is ~25k characters. */
-const MAX_CHARS = 15_000;
+/** A safety ceiling for a very long show, not a trim: a 30-minute show is ~25k characters and is read whole (summarise.ts). */
+const MAX_CHARS = 60_000;
 /** Shorter than this is no transcript (a goal clip's "[music]"). */
 const MIN_CHARS = 300;
 

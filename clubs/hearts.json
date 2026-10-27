@@ -41,7 +41,7 @@
       "url": "https://news.google.com/rss/search?q=%22Heart+of+Midlothian%22+OR+%22Hearts+FC%22+when:3d&hl=en-GB&gl=GB&ceid=GB:en" },
     { "id": "hearts-tv", "name": "Hearts TV (YouTube)", "kind": "video", "type": "youtube", "transcripts": true,
       "url": "UCUMDz4A44VglneE3z1cBpAA" },
-    { "id": "hearts-standard", "name": "Hearts Standard (YouTube)", "kind": "video", "type": "youtube", "transcripts": true, "fan": true,
+    { "id": "hearts-standard", "name": "Hearts Standard (YouTube)", "kind": "video", "type": "youtube", "transcripts": true, "fan": true, "claimSource": true,
       "url": "UC1e4TEbHmHCf5W7DqMjQS6Q" },
     { "id": "hearts-digest", "name": "The Hearts Digest (podcast)", "kind": "podcast", "type": "rss", "maxAgeDays": 30,
       "url": "https://feeds.acast.com/public/shows/66ba267a3889f01ccfc8e858" },

@@ -194,8 +194,10 @@ Style rules:
   no hashtags, no abbreviations like "v" or "vs" (say "against"). Write scores in words, e.g. "seven-one".
 - Use only the facts given below. Never invent quotes, scores, injuries, fees, dates or transfer details.
   If something is unclear, leave it out.
-- The supporters' channel shows are opinion. The debate and fan zone can pick up their arguments and credit the
-  channel by name ("the Hearts Standard lads reckon…"), but never state their claims as fact. Transcripts come from
+- Hearts Standard is a Newsquest (Edinburgh Evening News) show with opinion segments, not a supporters' group. The debate
+  and fan zone can pick up its opinions and credit the show by name ("the Hearts Standard lads reckon…"), but its
+  opinions and predictions are never fact. Any news it carries reaches you through the stories as "reported by Hearts
+  Standard" and is not confirmed unless another source backs it. Transcripts come from
   automatic captions: ignore obvious mis-hearings and never quote garbled phrases.
 - Fan forum posts are opinions, not facts. Summarise the general mood only; never name, quote or identify individual posters,
   and never repeat a forum claim as fact.
@@ -401,7 +403,11 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
             properties: {
               topic: STR,
               lines: LINES({ speaker: STR, text: STR }, ['speaker', 'text']),
-              predictions: LINES({ speaker: STR, homeGoals: { type: 'INTEGER' }, awayGoals: { type: 'INTEGER' } }, ['speaker', 'homeGoals', 'awayGoals']),
+              // One each at most: held to a schema, a small model otherwise repeats the pair until it runs out of tokens.
+              predictions: {
+                ...LINES({ speaker: STR, homeGoals: { type: 'INTEGER' }, awayGoals: { type: 'INTEGER' } }, ['speaker', 'homeGoals', 'awayGoals']),
+                maxItems: 2,
+              },
             },
             required: ['topic', 'lines', 'predictions'],
           },
@@ -557,6 +563,8 @@ export interface PiecesResult {
   raw: Record<string, unknown>;
   /** Every piece's prompt, by piece id, to see what each was briefed with (notebooks included). */
   prompts: Record<string, string>;
+  /** Every piece's response schema, by piece id, so the same requests can be replayed against another model. */
+  schemas: Record<string, object>;
   written: string[];
   failed: { id: string; error: string }[];
 }
@@ -570,12 +578,14 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
   const list = pieces(f);
   const raw: Record<string, unknown> = {};
   const prompts: Record<string, string> = {};
+  const schemas: Record<string, object> = {};
   const written: string[] = [];
   const failed: PiecesResult['failed'] = [];
 
   const run = async (id: string, prompt: string, schema: object, lastGo = true) => {
     const started = Date.now();
     prompts[id] = prompt;
+    schemas[id] = schema;
     try {
       const answer = (await model.generateJson(prompt, schema)) as Record<string, unknown>;
       raw[id] = answer;
@@ -623,5 +633,5 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
   } catch {
     // The layout has plain hand-overs and a "still to come" of its own.
   }
-  return { draft, raw, prompts, written, failed };
+  return { draft, raw, prompts, schemas, written, failed };
 }

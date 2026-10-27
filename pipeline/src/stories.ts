@@ -1,5 +1,6 @@
 import { CATEGORIES, categorise, type Category, type Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle, shortHash } from './text.ts';
+import { videoText } from './summary-text.ts';
 import type { OnAirStoryline } from './onair.ts';
 import type { ClubConfig, Item, SourceKind } from './types.ts';
 
@@ -242,7 +243,7 @@ export function addOwnText(stories: Story[]): void {
     const video = s.items.find((i) => (i.transcript?.length ?? 0) > 300);
     const longest = [...s.items].sort((a, b) => b.summary.length - a.summary.length)[0];
     const article: Article | undefined = video?.transcript
-      ? { outlet: outlet(video), text: video.transcript }
+      ? { outlet: outlet(video), text: videoText(video.transcriptSummary, video.transcript, 'full', 15_000) }
       : longest?.summary
         ? { outlet: outlet(longest), text: longest.summary }
         : undefined;

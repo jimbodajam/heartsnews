@@ -6,7 +6,8 @@ import type { LedgerMatch } from './script/ledger.ts';
 import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
-import type { Item, SourceKind } from './types.ts';
+import { renderSummary } from './summary-text.ts';
+import type { Item, SourceKind, VideoSummary } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
 // Every query the pipeline makes is here, so nothing else talks SQL. The schema is in worker/migrations/.
@@ -524,10 +525,22 @@ const HEADLINE_DAYS = 7;
 /** A video's transcript comes from the home PC's snapshot; one with none after this long counts as a headline. */
 const TRANSCRIPT_WAIT_MS = 2 * DAY_MS;
 
+/** A video is read once it has a summary (summarise.ts), is short enough not to need one, or has waited this long for it. */
+const SUMMARY_WAIT_MS = 12 * 3_600_000;
+/** A transcript shorter than this is used whole, never summarised. */
+export const SUMMARISE_OVER = 2_500;
+
 const ARTICLE_WHERE = `sifted_at IS NULL AND first_seen >= ? AND (
-    (kind IN ('press', 'official') AND fetch_status = 'ok' AND body IS NOT NULL) OR (kind = 'video' AND transcript IS NOT NULL))`;
+    (kind IN ('press', 'official') AND fetch_status = 'ok' AND body IS NOT NULL)
+    OR (kind = 'video' AND transcript IS NOT NULL AND (summary_json IS NOT NULL OR length(transcript) < ${SUMMARISE_OVER} OR first_seen < ?)))`;
 const HEADLINE_WHERE = `i.sifted_at IS NULL AND i.first_seen >= ? AND (i.kind = 'aggregator'
     OR (i.kind IN ('press', 'official') AND i.fetch_status = 'gave_up') OR (i.kind = 'video' AND i.transcript IS NULL AND i.first_seen < ?))`;
+
+/** A row's text for a prompt: a summarised video's summary (its whole show), else the stored text. */
+function itemText(r: Row, use: 'claims' | 'full'): string {
+  const summary = r.kind === 'video' && r.summary_json ? (JSON.parse(String(r.summary_json)) as VideoSummary) : undefined;
+  return summary ? renderSummary(summary, use) : String(r.text);
+}
 
 const neuronsKey = (now: Date) => `workers_ai:${now.toISOString().slice(0, 10)}`;
 
@@ -587,6 +600,7 @@ export async function loadStoryDesk(store: Store, now: Date, limits: { articles:
   const textSince = new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString();
   const headlineSince = new Date(now.getTime() - HEADLINE_DAYS * DAY_MS).toISOString();
   const transcriptBy = new Date(now.getTime() - TRANSCRIPT_WAIT_MS).toISOString();
+  const summaryBy = new Date(now.getTime() - SUMMARY_WAIT_MS).toISOString();
   const [storylines, claims, ids, neurons, waiting, articles, headlines] = await store.batch([
     { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE status = 'open' ORDER BY id` },
     { sql: CLAIMS_OF(`status = 'open'`) },
@@ -596,12 +610,12 @@ export async function loadStoryDesk(store: Store, now: Date, limits: { articles:
       sql: `SELECT (SELECT COUNT(*) FROM items WHERE ${ARTICLE_WHERE}) AS articles,
               (SELECT MIN(first_seen) FROM (SELECT first_seen FROM items WHERE ${ARTICLE_WHERE}
                 UNION ALL SELECT i.first_seen FROM items i WHERE ${HEADLINE_WHERE})) AS oldest`,
-      params: [textSince, textSince, headlineSince, transcriptBy],
+      params: [textSince, summaryBy, textSince, summaryBy, headlineSince, transcriptBy],
     },
     {
-      sql: `SELECT id, source, publisher, kind, title, published_at, first_seen, COALESCE(body, transcript) AS text FROM items
+      sql: `SELECT id, source, publisher, kind, title, published_at, first_seen, COALESCE(body, transcript) AS text, summary_json FROM items
             WHERE ${ARTICLE_WHERE} ORDER BY COALESCE(published_at, first_seen), id LIMIT ?`,
-      params: [textSince, limits.articles],
+      params: [textSince, summaryBy, limits.articles],
     },
     {
       sql: `SELECT i.id, i.source, i.publisher, i.kind, i.title, i.published_at, i.first_seen,
@@ -619,7 +633,7 @@ export async function loadStoryDesk(store: Store, now: Date, limits: { articles:
     kind: r.kind as SourceKind,
     title: String(r.title),
     publishedAt: String(r.published_at || r.first_seen),
-    ...(r.text != null ? { text: String(r.text) } : {}),
+    ...(r.text != null ? { text: itemText(r, 'claims') } : {}),
     ...(r.tagged != null ? { tagged: Number(r.tagged) === 1 } : {}),
   });
   return {
@@ -674,7 +688,7 @@ export async function loadOnAir(store: Store, collected: string[], now: Date): P
     { sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE ${where} ORDER BY id` },
     { sql: CLAIMS_OF(where) },
     {
-      sql: `SELECT id, source, kind, publisher, title, summary, url, published_at, first_seen, substr(COALESCE(body, transcript), 1, ?) AS text
+      sql: `SELECT id, source, kind, publisher, title, summary, url, published_at, first_seen, substr(COALESCE(body, transcript), 1, ?) AS text, summary_json
             FROM items WHERE id IN (SELECT cs.item_id FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id WHERE c.storyline_id IN (${lines}))`,
       params: [ON_AIR_TEXT],
     },
@@ -700,7 +714,7 @@ export async function loadOnAir(store: Store, collected: string[], now: Date): P
           summary: String(r.summary ?? ''),
           url: String(r.url ?? ''),
           publishedAt: String(r.published_at || r.first_seen),
-          ...(r.text ? { text: String(r.text) } : {}),
+          ...(r.text ? { text: itemText(r, 'full') } : {}),
         },
       ]),
     ),
@@ -970,4 +984,55 @@ export function importWrites(memory: Memory): Statement[] {
     pm.predictions.map((p) => ({ presenter, ...p, outcome: p.outcome ?? null, actual: p.actual ?? null })),
   );
   return [...each(INSERT_AIRINGS, aired, [null]), ...each(INSERT_TAKES, takes, [null]), ...each(UPSERT_PREDICTIONS, predictions, [null])];
+}
+
+// ---- Video summaries (issue #49) ----
+// A long show's transcript is read once by the ingest (summarise.ts) and the result kept with the item.
+
+export interface VideoToSummarise {
+  id: string;
+  source: string;
+  publisher?: string;
+  title: string;
+  transcript: string;
+}
+
+/** Videos with a long transcript and no summary yet, newest first. */
+export async function loadVideosToSummarise(store: Store, now: Date, limit: number): Promise<VideoToSummarise[]> {
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT id, source, publisher, title, transcript FROM items
+            WHERE kind = 'video' AND summary_json IS NULL AND transcript IS NOT NULL AND length(transcript) >= ? AND first_seen >= ?
+            ORDER BY COALESCE(published_at, first_seen) DESC, id LIMIT ?`,
+      params: [SUMMARISE_OVER, new Date(now.getTime() - KEEP_TEXT_DAYS * DAY_MS).toISOString(), limit],
+    },
+  ]);
+  return rows.map((r) => ({
+    id: String(r.id),
+    source: String(r.source),
+    ...(r.publisher ? { publisher: String(r.publisher) } : {}),
+    title: String(r.title),
+    transcript: String(r.transcript),
+  }));
+}
+
+export function summaryWrites(summaries: { id: string; summary: VideoSummary }[], now: Date): Statement[] {
+  return each(
+    `UPDATE items SET summary_json = j.value ->> 'summary', summarised_at = ? FROM json_each(?) AS j WHERE items.id = j.value ->> 'id'`,
+    summaries.map((s) => ({ id: s.id, summary: JSON.stringify(s.summary) })),
+    [now.toISOString()],
+  );
+}
+
+export async function saveSummaries(store: Store, summaries: { id: string; summary: VideoSummary }[], now: Date): Promise<void> {
+  if (summaries.length) await store.batch(summaryWrites(summaries, now));
+}
+
+/** The summaries the store holds for these items, by item id. */
+export async function loadVideoSummaries(store: Store, ids: string[]): Promise<Map<string, VideoSummary>> {
+  if (!ids.length) return new Map();
+  const [rows] = await store.batch([
+    { sql: 'SELECT id, summary_json FROM items WHERE summary_json IS NOT NULL AND id IN (SELECT value FROM json_each(?))', params: [JSON.stringify(ids)] },
+  ]);
+  return new Map(rows.map((r) => [String(r.id), JSON.parse(String(r.summary_json)) as VideoSummary]));
 }

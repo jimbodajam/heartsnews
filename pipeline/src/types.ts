@@ -23,6 +23,8 @@ export interface SourceConfig {
   transcripts?: boolean;
   /** A supporters' channel: its videos are fan opinion for the debate and Fan Zone, credited to the channel. */
   fan?: boolean;
+  /** With `fan`: its shows also report things that happened, so their claims may source storylines (credited to the show, never confirmed on their own). Without it a fan channel is opinion only. */
+  claimSource?: boolean;
   /** Keep only items that mention one of the club's keywords (for general feeds). */
   filter?: boolean;
   maxAgeDays?: number;
@@ -78,6 +80,8 @@ export interface Item {
   engagement?: number;
   /** What was said in a video, from its captions. */
   transcript?: string;
+  /** That transcript read once by the ingest (summarise.ts), when it has been; it covers the whole show. */
+  transcriptSummary?: VideoSummary;
 }
 
 export interface Fixture {
@@ -139,4 +143,14 @@ export interface MatchData {
   /** Tables for the other competitions we're in (e.g. a European league phase), named as fixtures name them. */
   tables?: { competition: string; rows: Standing[] }[];
   opponent?: OpponentFocus;
+}
+
+/** A show read once at ingest (summarise.ts): what it covered, what it presented as news, and what it only argued. */
+export interface VideoSummary {
+  /** The topics covered, in order, one line each. */
+  points: string[];
+  /** Things presented as news (an injury update, a transfer link), with who said them where the captions show it. */
+  claims: { text: string; speaker?: string; kind?: string }[];
+  /** Opinions and predictions. */
+  takes: { text: string; speaker?: string }[];
 }
