@@ -25,6 +25,8 @@ export interface SourceConfig {
   fan?: boolean;
   /** With `fan`: its shows also report things that happened, so their claims may source storylines (credited to the show, never confirmed on their own). Without it a fan channel is opinion only. */
   claimSource?: boolean;
+  /** false: the publisher refuses automated reading of its pages, so its items stay headline-only (title and feed summary) and are never fetched. */
+  pages?: boolean;
   /** Keep only items that mention one of the club's keywords (for general feeds). */
   filter?: boolean;
   maxAgeDays?: number;

@@ -132,6 +132,21 @@ test('a page that keeps failing is tried a few times, an hour apart, then given 
   assert.deepEqual(await ingestItems(s.store, items, entities, new Map(), at), []);
 });
 
+test('a headline-only source is never fetched: its articles are given up on at once, failed ones too', async () => {
+  const s = setUp();
+  const at = new Date('2026-10-23T10:00:00Z');
+  const items = [item('a', 'Milne ruled out'), item('b', 'Halkett back', { sourceId: 'evening-news' }), item('c', 'Referee named', { sourceId: 'evening-news' })];
+  // Before the flag: an earlier try at one of them was refused.
+  await ingestItems(s.store, items, entities, new Map(), at);
+  await saveFetches(s.store, [{ id: 'c', error: 'HTTP 403' }], at);
+  const queue = await ingestItems(s.store, items, entities, new Map(), new Date(at.getTime() + 2 * 3_600_000), ['evening-news']);
+  assert.deepEqual(queue.map((q) => q.id), ['a']);
+  assert.deepEqual(rows(s, "SELECT id, fetch_status, attempts FROM items WHERE source = 'evening-news' ORDER BY id"), [
+    { id: 'b', fetch_status: 'gave_up', attempts: 0 },
+    { id: 'c', fetch_status: 'gave_up', attempts: 1 },
+  ]);
+});
+
 test('fetched articles are tagged from their text once, and a bulletin’s headline tags never replace them', async () => {
   const s = setUp();
   const t1 = new Date('2026-10-23T10:00:00Z');

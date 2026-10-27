@@ -427,12 +427,26 @@ export interface Fetched {
 /**
  * Writes what was collected (tagged from headlines) and the entity list, then returns every article from the last
  * 30 days the store has no text for that's due a try: never fetched, or failed an hour or more ago. Newest first.
+ * Articles from `headlineOnly` sources (whose publishers refuse automated reading) are never fetched: they're given up
+ * on at once, so the reading takes them as headlines.
  */
-export async function ingestItems(store: Store, items: Item[], entities: Entity[], tags: Map<string, Tags>, now: Date): Promise<ArticleToFetch[]> {
+export async function ingestItems(
+  store: Store,
+  items: Item[],
+  entities: Entity[],
+  tags: Map<string, Tags>,
+  now: Date,
+  headlineOnly: string[] = [],
+): Promise<ArticleToFetch[]> {
   const results = await store.batch([
     ...itemWrites(items, now),
     ...entityWrites(entities),
     ...tagWrites(items, tags, now.toISOString()),
+    {
+      sql: `UPDATE items SET fetch_status = 'gave_up', fetch_error = 'headline only: the publisher refuses automated reading', fetched_at = ?
+            WHERE source IN (SELECT value FROM json_each(?)) AND body IS NULL AND (fetch_status IS NULL OR fetch_status = 'failed')`,
+      params: [now.toISOString(), JSON.stringify(headlineOnly)],
+    },
     {
       sql: `SELECT id, url FROM items
             WHERE kind IN (SELECT value FROM json_each(?)) AND url IS NOT NULL AND url != '' AND first_seen >= ?

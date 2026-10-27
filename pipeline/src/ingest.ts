@@ -62,7 +62,8 @@ async function main() {
   });
   const entities = seedEntities(club, match, [loadFaces(), players]);
 
-  const queue = await ingestItems(store, items, entities, tagItems(items, entities), now);
+  const headlineOnly = club.sources.filter((s) => s.pages === false).map((s) => s.id);
+  const queue = await ingestItems(store, items, entities, tagItems(items, entities), now, headlineOnly);
   console.log(`\nStored ${items.length} items. ${queue.length} articles to fetch.`);
 
   // Fetch the lot, a few at a time, saving as we go.

@@ -29,9 +29,11 @@
   "sources": [
     { "id": "bbc", "name": "BBC Sport", "kind": "press", "type": "rss",
       "url": "https://feeds.bbci.co.uk/sport/football/teams/heart-of-midlothian/rss.xml" },
-    { "id": "evening-news", "name": "Edinburgh Evening News", "kind": "press", "type": "rss",
+    { "id": "evening-news", "name": "Edinburgh Evening News", "kind": "press", "type": "rss", "pages": false,
+      "note": "Iconic Media Group: pages behind a Cloudflare bot challenge since 24 Oct 2026, and robots.txt forbids automated extraction",
       "url": "https://www.edinburghnews.scotsman.com/sport/football/hearts/rss" },
-    { "id": "scotsman", "name": "The Scotsman", "kind": "press", "type": "rss",
+    { "id": "scotsman", "name": "The Scotsman", "kind": "press", "type": "rss", "pages": false,
+      "note": "Iconic Media Group: as the Evening News",
       "url": "https://www.scotsman.com/sport/football/hearts/rss" },
     { "id": "daily-record", "name": "Daily Record", "kind": "press", "type": "rss",
       "url": "https://www.dailyrecord.co.uk/all-about/hearts-fc?service=rss" },
