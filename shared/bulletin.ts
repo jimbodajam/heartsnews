@@ -130,6 +130,11 @@ export interface Line {
   graphic?: Graphic;
   /** Pre-rendered voice clip, relative to the bulletin file. Written by `npm run voice`. */
   audio?: string;
+  /**
+   * A line that links segments together rather than reporting news: the welcome, "still to come", a hand-over into
+   * the next segment, the sign-off. A quiet slot rewrites just these (pipeline/src/script/quiet.ts).
+   */
+  link?: 'welcome' | 'comingUp' | 'handover' | 'outro';
 }
 
 export interface Segment {
@@ -158,6 +163,27 @@ export interface Bulletin {
   segments: Segment[];
   /** Always-useful info for the side panel beside a presenter in close-up (Sky style). */
   sidebar?: Sidebar;
+  /** What this bulletin was built from, so the next slot can tell whether anything has changed (quiet.ts). */
+  desk?: DeskSignature;
+}
+
+/** The running order and match phase a bulletin was written from. */
+export interface DeskSignature {
+  /** In-depth package story ids, in order. */
+  features: string[];
+  /** The top four stories in the pool. */
+  top: string[];
+  /** The lead story. */
+  lead?: string;
+  transfers: string[];
+  /** Every story the script aired (headlines, packages, transfers). */
+  aired: string[];
+  /** The match phase: kind, then the fixture's date and teams, and the score for a reaction. */
+  phase: string;
+  /** The UK date, YYYY-MM-DD. */
+  day: string;
+  /** A full rewrite, or only the links (a quiet slot). */
+  kind: 'full' | 'partial';
 }
 
 export interface Sidebar {

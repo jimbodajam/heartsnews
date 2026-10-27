@@ -1,7 +1,9 @@
 import { truncate } from '../text.ts';
 import { dayPhrase, partOfDay, timePhrase, ukHour } from '../time.ts';
 import { predictionRecord } from '../memory.ts';
+import type { Bulletin } from '../../../shared/bulletin.ts';
 import type { Draft } from './draft.ts';
+import type { NewLinks } from './quiet.ts';
 import { dataSection, mergeDraft, whenSaid, type DataPart, type ScriptModel } from './llm.ts';
 import { notebookLines } from './notebook.ts';
 import { expertFor, firstName, focusFixture, ourResult, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
@@ -472,9 +474,14 @@ function segmentGists(f: Facts, d: Draft): (Slot & { gist: string })[] {
 }
 
 function linksPrompt(f: Facts, d: Draft): string {
+  return linksPromptFor(f, segmentGists(f, d));
+}
+
+/** The links request for a running order; `welcome` also asks for the greeting, when a quiet slot rewrites it. */
+function linksPromptFor(f: Facts, slots: (Slot & { gist: string })[], welcome = false): string {
   const [a] = f.channel.cast.anchors.map((id) => presenter(f, id));
   const who = (ids: string[]) => ids.map((id) => `${firstName(presenter(f, id))} ("${id}")`).join(' and ');
-  const order = segmentGists(f, d)
+  const order = slots
     .map((s) => `- ${s.id}: ${s.what}. On screen: ${who(s.presenters)}.\n  ${s.gist}`)
     .join('\n');
   return `${header(f)}
@@ -482,7 +489,13 @@ function linksPrompt(f: Facts, d: Draft): string {
 The rest of the bulletin is written. RUNNING ORDER (segment id: what it is; who is on screen; how it opens or ends):
 ${order}
 
-Write the links that hold it together, using only what is in the running order above:
+Write the links that hold it together, using only what is in the running order above:${
+    welcome
+      ? `
+- welcome: ${firstName(a)} greets viewers ("Good ${partOfDay(f.now)}") and introduces the headlines, which are the first
+  segment above. One or two sentences; a news read, so factual rather than chatty.`
+      : ''
+  }
 - comingUp: ${firstName(a)}, straight after the headlines, tells viewers what's still to come, naming two or three later
   segments and who is presenting them (e.g. "Later, Fraser and Ross go head to head with their predictions for tonight,
   and we'll hear what the fans are saying in the Fan Zone"). One or two sentences.
@@ -503,6 +516,40 @@ const LINKS_SCHEMA = {
   properties: { comingUp: STR, transitions: LINES({ to: STR, speaker: STR, text: STR }, ['to', 'speaker', 'text']), outro: STR },
   required: ['comingUp', 'transitions', 'outro'],
 };
+
+const QUIET_LINKS_SCHEMA = {
+  ...LINKS_SCHEMA,
+  properties: { welcome: STR, ...LINKS_SCHEMA.properties },
+  required: ['welcome', ...LINKS_SCHEMA.required],
+};
+
+/** The running order of an existing bulletin, each segment with how it opens and ends, for the links writer. */
+function bulletinGists(prev: Bulletin): (Slot & { gist: string })[] {
+  const q = (s?: string) => (s ? `"${truncate(s, 160)}"` : '');
+  return prev.segments
+    .filter((seg) => seg.kind !== 'adverts')
+    .map((seg) => {
+      const news = seg.lines.filter((l) => !l.link && !/^Welcome back to /.test(l.text));
+      const gist = seg.kind === 'headlines' ? news.map((l) => q(l.text)).join(' / ') : `opens ${q(news[0]?.text)}; ends ${q(news.at(-1)?.text)}`;
+      const what = seg.kind === 'story' ? `in-depth package: "${seg.title}"` : seg.title;
+      return { id: seg.id, what, presenters: seg.presenters, gist };
+    });
+}
+
+/**
+ * A quiet slot's rewrite (issue #50): one request for the welcome, "still to come", every hand-over and the sign-off,
+ * from what the last bulletin's segments say. Nothing else is written. Returns the new links to put in with swapLinks.
+ */
+export async function writeLinks(model: ScriptModel, f: Facts, prev: Bulletin): Promise<NewLinks> {
+  const slots = bulletinGists(prev);
+  const answer = (await model.generateJson(linksPromptFor(f, slots, true), QUIET_LINKS_SCHEMA)) as Record<string, unknown>;
+  const ids = new Set(f.channel.presenters.map((p) => p.id));
+  const text = (v: unknown) => (typeof v === 'string' && v.trim().length > 3 ? v.trim() : undefined);
+  const handovers = (Array.isArray(answer.transitions) ? answer.transitions : [])
+    .filter((t): t is { to: string; speaker: string; text: string } => Boolean(t) && typeof t.to === 'string' && Boolean(text(t.text)))
+    .map((t) => ({ to: t.to.trim(), text: t.text.trim(), speaker: ids.has(t.speaker) ? t.speaker : undefined }));
+  return { welcome: text(answer.welcome), comingUp: text(answer.comingUp), handovers, outro: text(answer.outro) };
+}
 
 export interface PiecesResult {
   draft: Draft;

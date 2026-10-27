@@ -73,6 +73,30 @@ async function syncBreaking(): Promise<void> {
   }
 }
 
+/**
+ * Brings the programme on air into pipeline/out/onair, and its voice clips into site/public/bulletins/audio, before a
+ * build. A quiet slot rewrites only the links of that programme (script/quiet.ts), and any build then re-voices only
+ * the lines that changed, because the runner starts with no clips of its own.
+ */
+async function syncOnAir(): Promise<void> {
+  const tmp = await mkdtemp(join(tmpdir(), 'heartsnews-onair-'));
+  const here = join(ROOT, 'pipeline/out/onair');
+  try {
+    await rm(here, { recursive: true, force: true });
+    if (!pagesTree(tmp, 'bulletins')) return;
+    await mkdir(here, { recursive: true });
+    await cp(join(tmp, 'bulletins/latest.json'), join(here, 'latest.json'));
+    const audio = join(tmp, 'bulletins/audio');
+    if (existsSync(audio)) await cp(audio, join(ROOT, 'site/public/bulletins/audio'), { recursive: true });
+  } catch (err) {
+    // No programme to start from means a full build.
+    await rm(here, { recursive: true, force: true });
+    console.warn(`[job] Couldn't read the programme on air, so this is a full build: ${said(err)}`);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
 export interface RunOptions {
   runner: Runner;
   templates?: boolean;
@@ -84,6 +108,7 @@ type Outcome = 'done' | 'dropped';
 
 /** Makes a programme and puts it on air, unless it's been overtaken by the time it's ready. */
 async function programme(store: Store | undefined, reason: Reason, test: boolean, o: RunOptions): Promise<Outcome> {
+  await syncOnAir();
   if (!(await run('bulletin', ...(o.templates ? ['--templates'] : [])))) throw new Error('bulletin build failed');
   if (test) return 'done';
   if (!stillWanted(reason, await workerSource()().catch(() => undefined))) {

@@ -11,6 +11,7 @@ import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
 import { spokenList } from '../time.ts';
 import { historyHost, historySegment } from './history.ts';
+import { deskSignature } from './quiet.ts';
 
 const ICON: Record<StoryCategory, IconId> = { transfer: 'contract', contract: 'contract', injury: 'medical', discipline: 'whistle', match: 'ball', news: 'mic' };
 
@@ -59,7 +60,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   const segments: Segment[] = [];
 
   // Headlines at the desk: the two anchors take turns.
-  const headlineLines: Line[] = [{ speaker: a, text: draft.welcome }];
+  const headlineLines: Line[] = [{ speaker: a, text: draft.welcome, link: 'welcome' }];
   draft.headlines.forEach((h, i) => {
     const s = story(h.storyId);
     headlineLines.push({ speaker: i % 2 === 0 ? b : a, text: h.text, graphic: s ? headlineGraphic(s) : undefined });
@@ -216,7 +217,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
         graphic: f.fans.length ? { type: 'sentiment', score: draft.fans.score, topics: draft.fans.topics } : undefined,
       },
       ...(draft.fans.lines ?? []).map((l): Line => ({ speaker: l.speaker, text: l.text, graphic: fanCard(l.ref) })),
-      { speaker: a, text: draft.outro },
+      { speaker: a, text: draft.outro, link: 'outro' },
     ],
   });
 
@@ -240,7 +241,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   // "Still to come" after the headlines.
   const later = ordered.slice(1);
   const comingUp = draft.comingUp ?? defaultComingUp(f, later);
-  if (comingUp) ordered[0].lines.push({ speaker: a, text: comingUp });
+  if (comingUp) ordered[0].lines.push({ speaker: a, text: comingUp, link: 'comingUp' });
 
   // Ad breaks (adverts.json): the first after the debate (or halfway through), the second just before the Fan Zone.
   const breaks = ADVERTS ? adBreaks(ADVERTS, now) : [];
@@ -265,7 +266,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     }
     const written = draft.transitions?.find((t) => t.to === seg.id && prev.presenters.includes(t.speaker));
     const text = written?.text ?? (seg.id === 'match' ? draft.matchHandoff : defaultHandover(f, seg));
-    if (text) prev.lines.push({ speaker: written?.speaker ?? speaker, text });
+    if (text) prev.lines.push({ speaker: written?.speaker ?? speaker, text, link: 'handover' });
   }
 
   const ids = channel.presenters.map((p) => p.id);
@@ -285,6 +286,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     ticker,
     segments: ordered,
     sidebar: sidebar(f),
+    desk: deskSignature(f, draft),
   };
 }
 
@@ -315,7 +317,7 @@ function defaultHandover(f: Facts, seg: Segment): string | undefined {
  * Next match, last result and the table around us, for the side panel beside presenters in close-up. Building up
  * to (or during) a European or cup group game, the table is that competition's.
  */
-function sidebar(f: Facts): Sidebar {
+export function sidebar(f: Facts): Sidebar {
   const name = (n: string) => teamName(f.club, n);
   const n = f.nextFixtures[0];
   const r = f.lastResult;

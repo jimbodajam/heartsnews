@@ -1,9 +1,11 @@
 // Milestone 4: collect → stories → script → bulletin.json → voices. One command makes a whole bulletin.
-// Usage: npm run bulletin [-- --cached] [--templates] [--no-voice]
+// Usage: npm run bulletin [-- --cached] [--templates] [--no-voice] [--full]
 //   --cached     reuse pipeline/out/ from the last collect instead of fetching again
 //   --templates  skip the AI writer even if GEMINI_API_KEY is set
 //   --no-voice   don't render Kokoro clips
 //   --no-check   skip the fact-check pass
+//   --full       always write the whole bulletin. Without it, a slot where nothing has changed since the last
+//                programme rewrites only the links between segments (script/quiet.ts, issue #50).
 //   --fresh      weigh stories as if nothing had aired yet (no cooldowns), to see the strongest bulletin.
 //                Presenters keep their opinions and predictions. Nothing is written to the store.
 // Put GEMINI_API_KEY (and optionally GEMINI_MODEL) in a .env file at the repo root, and STORE_TOKEN for the
@@ -15,10 +17,12 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectAll, printReport } from './collectors/index.ts';
 import { templateDraft } from './script/draft.ts';
-import { assemble } from './script/assemble.ts';
-import { buildFacts, isUs, matchNews, teamName, type Channel } from './script/facts.ts';
+import { assemble, sidebar } from './script/assemble.ts';
+import type { Bulletin, Line } from '../../shared/bulletin.ts';
+import { buildFacts, isUs, matchNews, teamName, type Channel, type Facts } from './script/facts.ts';
 import { geminiFromEnv, reportScorers } from './script/llm.ts';
-import { writeInPieces } from './script/pieces.ts';
+import { writeInPieces, writeLinks } from './script/pieces.ts';
+import { quietSlot, swapLinks, type NewLinks } from './script/quiet.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
@@ -31,7 +35,7 @@ import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
-import { buildLedger, checkBulletin, playedMatches, repeatedViews, type LedgerMatch } from './script/ledger.ts';
+import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
 import { loadMatches, loadMemory, loadOnAir, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
@@ -39,6 +43,8 @@ import { renderVoices } from './voice.ts';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const OUT = resolve(ROOT, 'pipeline/out');
 const BULLETIN = resolve(ROOT, 'site/public/bulletins/latest.json');
+/** The programme on air, unpacked from gh-pages before a build (jobs.ts); a local build falls back to its own last one. */
+const ON_AIR = resolve(OUT, 'onair/latest.json');
 
 const flags = new Set(process.argv.slice(2));
 const readJson = async <T>(path: string) => JSON.parse(await readFile(path, 'utf8')) as T;
@@ -155,7 +161,14 @@ async function main() {
   let writer = 'templates';
 
   const model = flags.has('--templates') ? undefined : geminiFromEnv();
-  if (model) {
+  // Nothing new since the last programme? Then only its links are rewritten (script/quiet.ts).
+  const prev = await readJson<Bulletin>(existsSync(ON_AIR) ? ON_AIR : BULLETIN).catch(() => undefined);
+  const forced = ['--full', '--fresh', '--templates'].find((x) => flags.has(x)) ?? (model ? undefined : 'no AI writer');
+  const quiet = quietSlot(prev, facts, { forced });
+  console.log(quiet.partial ? `\nQuiet slot: ${quiet.summary}: partial rewrite (welcome, links, sign-off)` : `\nFull build: ${quiet.reason}`);
+  if (quiet.partial) {
+    // The last programme's news stands; rewriteLinks below makes the new bulletin from it.
+  } else if (model) {
     try {
       console.log(`\nWriting script segment by segment with ${model.name}…`);
       const pieces = await writeInPieces(model, facts, draft);
@@ -183,11 +196,12 @@ async function main() {
     console.log(`\nWriting script with templates (${flags.has('--templates') ? '--templates' : 'no GEMINI_API_KEY set'}).`);
   }
 
-  const bulletin = assemble(facts, draft, writer);
+  const bulletin = quiet.partial && prev ? await rewriteLinks(prev, facts, templateDraft(facts).welcome) : assemble(facts, draft, writer);
+  const linkLines = quiet.partial ? bulletin.segments.flatMap((seg) => seg.lines.filter((l) => l.link && !l.audio)) : [];
 
   // Second pass: check every AI-written line against the sources, fixing or dropping what doesn't hold up.
   const checks: CheckLog[] = [];
-  const checker = writer === 'templates' || flags.has('--no-check') ? undefined : geminiFromEnv([150_000, 120_000]);
+  const checker = quiet.partial || writer === 'templates' || flags.has('--no-check') ? undefined : geminiFromEnv([150_000, 120_000]);
   if (checker) {
     try {
       console.log(`\nFact-checking with ${checker.name}…`);
@@ -209,7 +223,7 @@ async function main() {
   ];
   const ledger = buildLedger(club, storedMatches, freshMatches, knownPlayers,facts.phase.kind === 'live' ? facts.phase.fixture : undefined);
   // And a presenter saying again, near word for word, a view they've already made several times over.
-  const lc = [...checkBulletin(ledger, bulletin, now), ...repeatedViews(facts, bulletin)];
+  const lc = quiet.partial ? checkLinks(ledger, bulletin, linkLines, now) : [...checkBulletin(ledger, bulletin, now), ...repeatedViews(facts, bulletin)];
   console.log(`\nLedger check against ${ledger.matches.length} results: ${lc.filter((x) => x.action === 'fixed').length} fixed, ${lc.filter((x) => x.action === 'dropped').length} dropped`);
   for (const x of lc) console.log(`  ${x.action.toUpperCase()} ${x.line} ${x.kind} (${x.reason})\n    was: ${x.was}${x.now ? `\n    now: ${x.now}` : ''}`);
   checks.push(...lc.map(({ line: _, ...x }) => ({ checker: 'ledger' as const, ...x })));
@@ -218,11 +232,12 @@ async function main() {
   if (save) {
     let saved = false;
     try {
-      const remembered = remember(facts, draft);
+      // A partial rewrite airs nothing afresh, so it leaves the cooldowns (and so the running order) alone.
+      const remembered = quiet.partial ? { aired: [], takes: [], predictions: [] } : remember(facts, draft);
       await saveBuild(
         save,
         {
-          bulletin: { id: bulletin.generatedAt, phase: facts.phase.kind, runner: process.env.GITHUB_ACTIONS === 'true' ? 'github' : 'home' },
+          bulletin: { id: bulletin.generatedAt, phase: facts.phase.kind, kind: quiet.partial ? 'partial' : 'full', runner: process.env.GITHUB_ACTIONS === 'true' ? 'github' : 'home' },
           items,
           entities,
           tags,
@@ -245,7 +260,7 @@ async function main() {
       console.warn(`Couldn't write the results and fact checks to the store: ${(err as Error).message}`);
     }
   }
-  console.log(`\nBulletin written (${writer}):`);
+  console.log(`\nBulletin written (${bulletin.generatedBy ?? writer}):`);
   for (const seg of bulletin.segments) {
     console.log(`  [${seg.title}]`);
     for (const l of seg.lines) console.log(`    ${l.speaker.padEnd(7)} ${l.text}`);
@@ -255,6 +270,39 @@ async function main() {
     console.log('\nRendering voices…');
     await renderVoices(BULLETIN);
   }
+}
+
+/** A quiet slot: the last programme with its links reworded (one Flash-Lite request), the ticker and side panel current. */
+async function rewriteLinks(prev: Bulletin, facts: Facts, greeting: string): Promise<Bulletin> {
+  const lite = geminiFromEnv(undefined, ['gemini-flash-lite-latest'])!;
+  let links: NewLinks = { welcome: greeting, handovers: [] };
+  let how = 'links rewritten';
+  try {
+    console.log(`\nRewriting the links with ${lite.name}…`);
+    links = await writeLinks(lite, facts, prev);
+  } catch (err) {
+    // Keep the old links, but the welcome still has to be right for the time of day.
+    console.warn(`Couldn't rewrite the links, keeping the last programme's: ${(err as Error).message}`);
+    how = 'links kept, greeting only';
+  }
+  const { bulletin } = swapLinks(prev, links);
+  bulletin.generatedAt = facts.now.toISOString();
+  bulletin.generatedBy = `${lite.name}, quiet slot: ${how}`;
+  bulletin.ticker = assemble(facts, templateDraft(facts), 'templates').ticker;
+  bulletin.sidebar = sidebar(facts);
+  if (bulletin.desk) bulletin.desk.kind = 'partial';
+  return bulletin;
+}
+
+/** The ledger check on the new link lines alone: a line it fixes is put right, one it drops goes back to its old wording. */
+function checkLinks(ledger: Ledger, bulletin: Bulletin, lines: Line[], now: Date) {
+  const probe: Bulletin = { ...bulletin, segments: [{ id: 'links', kind: 'headlines', title: 'Links', strap: '', scene: 'desk', presenters: [], lines: lines.map((l) => ({ ...l })) }] };
+  const checks = checkBulletin(ledger, probe, now);
+  for (const l of lines) {
+    const kept = probe.segments[0].lines.find((x) => x.speaker === l.speaker && (x.text === l.text || checks.some((c) => c.was === l.text && c.now === x.text)));
+    if (kept) l.text = kept.text;
+  }
+  return checks;
 }
 
 main().catch((err) => {

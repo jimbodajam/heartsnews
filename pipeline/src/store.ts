@@ -166,7 +166,8 @@ const UPSERT_PREDICTIONS = `INSERT INTO predictions
     bulletin_id = excluded.bulletin_id`;
 
 export interface BuildRecord {
-  bulletin: { id: string; phase: string; runner: 'home' | 'github' };
+  /** `kind`: a whole new bulletin, or a quiet slot that only reworded the links (script/quiet.ts). */
+  bulletin: { id: string; phase: string; kind?: 'full' | 'partial'; runner: 'home' | 'github' };
   /** Everything collected this build. */
   items: Item[];
   entities: Entity[];
@@ -193,7 +194,10 @@ export function buildWrites(r: BuildRecord, now: Date): Statement[] {
     );
   }
 
-  statements.push({ sql: 'INSERT INTO bulletins (id, generated_at, phase, runner) VALUES (?, ?, ?, ?)', params: [id, at, r.bulletin.phase, r.bulletin.runner] });
+  statements.push({
+    sql: 'INSERT INTO bulletins (id, generated_at, phase, runner, kind) VALUES (?, ?, ?, ?, ?)',
+    params: [id, at, r.bulletin.phase, r.bulletin.runner, r.bulletin.kind ?? 'full'],
+  });
   statements.push(...itemWrites(r.items, now), ...entityWrites(r.entities), ...tagWrites(r.items, r.tags, at));
 
   const { aired, takes, predictions } = r.remembered;
