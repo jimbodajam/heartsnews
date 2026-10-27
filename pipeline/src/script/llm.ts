@@ -171,17 +171,29 @@ ${f.club.shortName} ${kind}: ${o.ourXI ? xiText(o.ourXI) : '(unknown)'}`;
 }
 
 /** The blocks of source material. Each script piece gets only the ones it needs; the fact-checker gets them all. */
-export type DataPart = 'stories' | 'match' | 'window' | 'fans' | 'videos' | 'openings' | 'articles' | 'opponent';
+export type DataPart = 'stories' | 'match' | 'window' | 'fans' | 'videos' | 'openings' | 'articles' | 'opponent' | 'next';
 export const ALL_PARTS: DataPart[] = ['stories', 'match', 'window', 'fans', 'videos', 'openings', 'articles', 'opponent'];
 
+/** What a piece narrows its DATA to; the fact-checker passes none. */
+export interface DataScope {
+  /** Limit the in-depth articles to these stories (one package's request needs only its own). */
+  articleIds?: string[];
+  /** Use these stories in place of the bulletin's pool, in the story list and the "more on" openings. */
+  stories?: Story[];
+  /** Characters of article text per outlet in the in-depth block: for a lone article, for each of several. */
+  articleChars?: [number, number];
+}
+
 /**
- * The source material as one DATA block: everything by default (for the fact-checker), or just some parts.
- * `articleIds` limits the in-depth articles to those stories (one package's request needs only its own).
+ * The source material as one DATA block: everything by default (for the fact-checker), or just some parts, narrowed
+ * by `scope`.
  */
-export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?: string[]): string {
+export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, scope: DataScope = {}): string {
   const { club, now } = f;
+  const { articleIds, articleChars = [2500, 1800] } = scope;
   const name = (n: string) => teamName(club, n);
-  const stories = f.pool
+  const pool = scope.stories ?? f.pool;
+  const stories = pool
     .map((s) => `${s.id} | ${s.category} | ${airedNote(f, s)} | ${s.sources.slice(0, 3).join(', ')} | ${s.latest.slice(0, 16)} | ${s.title} | ${truncate(s.summary, 400)}`)
     .join('\n');
   const results = f.results.map((x) => `RESULT, ${whenSaid(x.date, now).replace('earlier ', '')}: ${ourResult(club, x)}`).join('\n');
@@ -200,9 +212,10 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
     .join('\n\n');
   // Headlines need more than a title to be worth reading out: a storyline's brief and claims, and the opening of the
   // articles. In-depth articles appear in full below, so skip those here.
-  const featureIds = new Set(f.features.map((s) => s.id));
-  const headlineText = f.pool
-    .filter((s) => !featureIds.has(s.id) && (s.storyline || (s.body?.length ?? 0) > s.summary.length + 100))
+  // A piece given its own stories sees them here whether or not they get a package: nothing else shows their text.
+  const featureIds = new Set(scope.stories ? [] : f.features.map((s) => s.id));
+  const headlineText = pool
+    .filter((s) => !featureIds.has(s.id) &&(s.storyline || (s.body?.length ?? 0) > s.summary.length + 100))
     .map((s) => [`[${s.id}] ${s.title}`, storylineNotes(f, s), byOutlet(s, 800, 500)].filter(Boolean).join('\n'))
     .join('\n\n');
   const articles = f.features
@@ -211,7 +224,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
       const a = airedFor(f.memory, s);
       const last = a?.lastInDepth ?? a?.lastAired;
       const before = a?.inDepth && last ? `; covered in depth ${a.inDepth}x before, last ${clock(last)}` : '';
-      return [`[${s.id}] ${s.title} (expert: ${firstName(presenter(f, expertFor(f, s)))}${before})`, storylineNotes(f, s), byOutlet(s, 2500, 1800)]
+      return [`[${s.id}] ${s.title} (expert: ${firstName(presenter(f, expertFor(f, s)))}${before})`, storylineNotes(f, s), byOutlet(s, ...articleChars)]
         .filter(Boolean)
         .join('\n');
     })
@@ -234,6 +247,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, articleIds?
 ${results || '(none)'}
 ${stats}League table: ${table || '(none)'}
 ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}\n` : ''}Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}`,
+    next: `Next fixture (UK kick-off time, say it exactly like this): ${fixtures.split('; ')[0] || '(none)'}`,
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
     videos: `Supporters' YouTube shows, latest (ref, title; each a summary of the whole show from auto-generated captions, so expect mis-heard words; opinion and talk, not reported fact):\n${fanVideos || '(none)'}`,
@@ -241,7 +255,7 @@ ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}
     articles: `In-depth packages ([id] title (expert), then for a storyline our newsroom brief and claims, then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
     opponent: opponentData(f),
   };
-  return `DATA\n${ALL_PARTS.filter((p) => parts.includes(p)).map((p) => blocks[p]).join('\n\n')}\nEND DATA`;
+  return `DATA\n${[...ALL_PARTS, 'next' as const].filter((p) => parts.includes(p)).map((p) => blocks[p]).join('\n\n')}\nEND DATA`;
 }
 
 /** A story's text, one block per outlet ("From BBC Sport: …"): `one` characters for a lone article, `each` for several. */
@@ -395,7 +409,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
         q && usable(q.text) && usable(q.by) && q.text.split(/\s+/).length <= 30 && squash(story.body ?? '').includes(squash(q.text));
       return {
         storyId: story.id,
-        lines: lines.slice(0, 7),
+        lines: lines.slice(0, 10),
         quote: genuine ? { text: tidyQuote(q.text), by: q.by.trim() } : undefined,
         result: checkedResult(x.result, story.title, story.body ?? ''),
       };

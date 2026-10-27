@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bulletin prompts</title>
+<style>
+  :root { --bg:#f6f4f1; --panel:#fff; --ink:#1d1a1a; --mute:#6b6464; --line:#e2dcd6; --accent:#a31f34; --hdr:#e8eef7; --cast:#efe8f7; --notes:#f7efe3; --style:#e6f2ea; --data:#fff6d6; --brief:#fde5e5; --bar:#a31f34; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161414; --panel:#1f1c1c; --ink:#ece7e3; --mute:#a39a95; --line:#3a3434; --accent:#e5566b; --hdr:#1f2a3a; --cast:#2c2438; --notes:#382e20; --style:#1f3327; --data:#3a3418; --brief:#3d2222; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui, sans-serif; display:flex; height:100vh; }
+  #list { width:290px; flex:none; overflow:auto; border-right:1px solid var(--line); background:var(--panel); }
+  #list h1 { font-size:15px; margin:0; padding:14px 14px 4px; }
+  #list .when { color:var(--mute); font-size:12px; padding:0 14px 10px; }
+  .piece { display:block; width:100%; text-align:left; border:0; border-top:1px solid var(--line); background:none; color:inherit; padding:9px 14px; cursor:pointer; font:inherit; }
+  .piece:hover, .piece.on { background:var(--bg); }
+  .piece.on { box-shadow: inset 3px 0 var(--accent); }
+  .piece b { display:block; }
+  .piece small { color:var(--mute); }
+  .down { color:#2a8a4a; } .up { color:var(--accent); }
+  #main { flex:1; overflow:auto; padding:18px 24px 60px; }
+  h2 { margin:0 0 4px; font-size:20px; }
+  .sub { color:var(--mute); margin-bottom:14px; }
+  .bar { display:flex; height:16px; border-radius:4px; overflow:hidden; margin:8px 0 4px; border:1px solid var(--line); }
+  .bar i { display:block; height:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12px; color:var(--mute); margin-bottom:14px; }
+  .legend span::before { content:''; display:inline-block; width:10px; height:10px; margin-right:5px; border-radius:2px; background:var(--c); vertical-align:-1px; }
+  h3 { margin:22px 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); }
+  details { background:var(--panel); border:1px solid var(--line); border-left-width:5px; border-radius:6px; margin:6px 0; }
+  details > summary { cursor:pointer; padding:8px 12px; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:10px; }
+  details > summary::-webkit-details-marker { display:none; }
+  details > summary .n { font-weight:400; color:var(--mute); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  details pre { margin:0; padding:4px 14px 12px; white-space:pre-wrap; word-wrap:break-word; font:12.5px/1.5 ui-monospace, Consolas, monospace; max-height:520px; overflow:auto; }
+  .k-header { border-left-color:#5b7fb8; } .k-cast { border-left-color:#8e63c4; } .k-notes { border-left-color:#c98a2e; }
+  .k-style { border-left-color:#3f9a5e; } .k-data { border-left-color:#d1b21f; } .k-brief { border-left-color:#d45858; }
+  .out { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:6px 16px 12px; }
+  .line { margin:10px 0; display:grid; grid-template-columns:96px 1fr; gap:10px; }
+  .line .who { color:var(--accent); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; padding-top:2px; }
+  .field { margin:12px 0 2px; font-weight:600; font-size:12.5px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  .out p { margin:2px 0; }
+  .none { color:var(--mute); font-style:italic; }
+  .tools { margin:8px 0; } .tools button { font:inherit; border:1px solid var(--line); background:var(--panel); color:inherit; border-radius:5px; padding:3px 10px; cursor:pointer; margin-right:6px; }
+  @media (max-width:760px) { body { display:block; height:auto; } #list { width:auto; max-height:40vh; border-right:0; border-bottom:1px solid var(--line); } #main { padding:14px 16px 50px; } .line { grid-template-columns:1fr; gap:0; } }
+</style>
+</head>
+<body>
+<nav id="list"></nav>
+<main id="main"></main>
+<script type="application/json" id="prompts">__PROMPTS__</script>
+<script type="application/json" id="draft">__DRAFT__</script>
+<script type="application/json" id="baseline">__BASELINE__</script>
+<script>
+const load = (id) => { try { return JSON.parse(document.getElementById(id).textContent) || {}; } catch { return {}; } };
+const prompts = load('prompts'), draft = load('draft'), baseline = load('baseline');
+const WHEN = '__WHEN__';
+const KINDS = { header: 'Channel and phase', cast: 'Presenters', notes: 'Notebooks', style: 'Style rules', data: 'Data', brief: 'Brief and schema notes' };
+const COLORS = { header:'#5b7fb8', cast:'#8e63c4', notes:'#c98a2e', style:'#3f9a5e', data:'#d1b21f', brief:'#d45858' };
+const DATA_BLOCKS = ['Stories (id', 'Recent results', 'Next fixture', 'Transfer window', 'Fan forum threads', "Supporters' YouTube", 'More on the other top stories', 'In-depth packages', 'Opposition focus'];
+
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) k === 'class' ? e.className = v : k === 'text' ? e.textContent = v : typeof v === 'function' ? e.addEventListener(k.slice(2), v) : e.setAttribute(k, v); kids.flat().forEach((c) => e.append(c)); return e; };
+const fmt = (n) => n.toLocaleString('en-GB');
+
+// Cut a prompt into the parts it is built from, in order.
+function sections(p) {
+  const out = [];
+  const at = (s, from = 0) => { const i = p.indexOf(s, from); return i < 0 ? -1 : i; };
+  const cast = at('\nPresenters (stay in character'), notes = at("\nPRESENTERS' NOTEBOOKS."), style = at('\nStyle rules:'), data = at('\nDATA\n'), end = at('\nEND DATA');
+  const marks = [[0, 'header', 'Channel, time and bulletin type'], [cast, 'cast', 'Presenters'], [notes, 'notes', "Presenters' notebooks"], [style, 'style', 'Style rules'], [data, 'data', 'DATA'], [end >= 0 ? end + 9 : -1, 'brief', 'The brief']]
+    .filter((m) => m[0] >= 0).sort((a, b) => a[0] - b[0]);
+  marks.forEach((m, i) => {
+    const text = p.slice(m[0], i + 1 < marks.length ? marks[i + 1][0] : p.length).trim();
+    if (m[1] !== 'data') return out.push({ kind: m[1], title: m[2], text });
+    // The DATA block is several blocks of source material, each starting at a line of its own.
+    const inner = text.replace(/^DATA\n/, '').replace(/\nEND DATA$/, '');
+    const starts = DATA_BLOCKS.map((b) => ({ b, i: inner.search(new RegExp('(^|\\n\\n)' + b.replace(/[()]/g, '\\$&'))) })).filter((x) => x.i >= 0).sort((a, b) => a.i - b.i);
+    if (!starts.length) return out.push({ kind: 'data', title: 'DATA', text: inner });
+    starts.forEach((s, j) => {
+      const body = inner.slice(s.i, j + 1 < starts.length ? starts[j + 1].i : inner.length).trim();
+      out.push({ kind: 'data', title: 'Data: ' + body.split('\n')[0].replace(/\(.*$/, '').replace(/:$/, '').slice(0, 60).trim(), text: body });
+    });
+  });
+  return out;
+}
+
+const isLines = (v) => Array.isArray(v) && v.length && v.every((x) => x && typeof x === 'object' && 'text' in x);
+function render(v, parent, label) {
+  if (v == null || v === '' || (Array.isArray(v) && !v.length)) return;
+  const flat = (x) => x && typeof x === 'object' && !Array.isArray(x) && Object.values(x).every((y) => y == null || typeof y !== 'object');
+  if (label && !(isLines(v) && label === 'lines')) parent.append(el('div', { class: 'field', text: label }));
+  if (Array.isArray(v) && v.every(flat) && !isLines(v)) return v.forEach((x) => parent.append(el('p', { text: Object.entries(x).map(([k, y]) => `${k}: ${y}`).join('  ·  ') })));
+  if (isLines(v)) return v.forEach((l) => parent.append(el('div', { class: 'line' }, el('div', { class: 'who', text: l.speaker || l.role || l.to || (l.storyId ? 'story ' + l.storyId : '') }), el('div', { text: l.text }))));
+  if (Array.isArray(v)) return v.forEach((x) => (typeof x === 'object' ? render(x, parent) : parent.append(el('p', { text: String(x) }))));
+  if (typeof v === 'object') return Object.entries(v).forEach(([k, x]) => render(x, parent, k));
+  parent.append(el('p', { text: String(v) }));
+}
+
+function show(id) {
+  document.querySelectorAll('.piece').forEach((b) => b.classList.toggle('on', b.dataset.id === id));
+  const m = document.getElementById('main'); m.replaceChildren();
+  const p = prompts[id], parts = sections(p);
+  m.append(el('h2', { text: id }), el('div', { class: 'sub', text: `${fmt(p.length)} characters sent` + (baseline[id] ? `, was ${fmt(baseline[id].length)}` : '') }));
+  m.append(el('div', { class: 'bar' }, parts.map((s) => el('i', { style: `width:${(s.text.length / p.length * 100).toFixed(2)}%;background:${COLORS[s.kind]}`, title: `${s.title}: ${fmt(s.text.length)}` }))));
+  m.append(el('div', { class: 'legend' }, Object.keys(KINDS).filter((k) => parts.some((s) => s.kind === k)).map((k) => el('span', { style: `--c:${COLORS[k]}`, text: `${KINDS[k]} ${fmt(parts.filter((s) => s.kind === k).reduce((n, s) => n + s.text.length, 0))}` }))));
+
+  m.append(el('h3', { text: 'What the writer made' }));
+  const out = el('div', { class: 'out' });
+  draft[id] === undefined ? out.append(el('p', { class: 'none', text: 'No saved answer for this piece.' })) : render(draft[id], out);
+  m.append(out);
+
+  m.append(el('h3', { text: 'What it was sent' }));
+  const box = el('div');
+  const tools = el('div', { class: 'tools' }, el('button', { text: 'Expand all', onclick: () => box.querySelectorAll('details').forEach((d) => (d.open = true)) }), el('button', { text: 'Collapse all', onclick: () => box.querySelectorAll('details').forEach((d) => (d.open = false)) }));
+  parts.forEach((s) => box.append(el('details', { class: 'k-' + s.kind, ...(s.kind === 'brief' ? { open: '' } : {}) }, el('summary', {}, el('span', { text: s.title }), el('span', { class: 'n', text: fmt(s.text.length) + ' chars' })), el('pre', { text: s.text }))));
+  m.append(tools, box);
+  const raw = el('details', { class: 'k-header' }, el('summary', {}, el('span', { text: 'Raw JSON answer' })), el('pre', { text: JSON.stringify(draft[id] ?? null, null, 2) }));
+  m.append(el('h3', { text: 'Raw' }), raw);
+  history.replaceState(null, '', '#' + id);
+}
+
+const ids = Object.keys(prompts);
+const list = document.getElementById('list');
+const total = ids.reduce((n, k) => n + prompts[k].length, 0), was = Object.keys(baseline).reduce((n, k) => n + baseline[k].length, 0);
+list.append(el('h1', { text: 'Bulletin prompts' }), el('div', { class: 'when', text: `${WHEN} · ${fmt(total)} chars total` + (was ? ` (was ${fmt(was)})` : '') }));
+ids.forEach((id) => {
+  const now = prompts[id].length, old = baseline[id]?.length;
+  const d = old ? Math.round((now - old) / old * 100) : null;
+  list.append(el('button', { class: 'piece', 'data-id': id, onclick: () => show(id) }, el('b', { text: id }), el('small', { text: fmt(now) + ' chars' }), old ? el('small', { class: d <= 0 ? 'down' : 'up', text: `  ${d > 0 ? '+' : ''}${d}% vs ${fmt(old)}` }) : ''));
+});
+show(ids.includes(location.hash.slice(1)) ? location.hash.slice(1) : ids[0]);
+</script>
+</body>
+</html>

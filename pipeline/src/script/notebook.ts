@@ -104,9 +104,9 @@ const subject = (t: Opinion) => (t.storyline !== undefined ? `s${t.storyline}` :
 /**
  * One presenter's notebook for a piece of the script: their leanings, then what they've said on the people and
  * storylines in these stories (the latest view on each first, then up to two earlier ones), then a few other recent
- * views. `when` says how long ago, e.g. "yesterday".
+ * views. `when` says how long ago, e.g. "yesterday". `others: false` leaves those out, for a piece about one story.
  */
-export function notebookLines(f: Facts, presenter: string, stories: Story[], when: (at: string) => string): string[] {
+export function notebookLines(f: Facts, presenter: string, stories: Story[], when: (at: string) => string, opts: { others?: boolean } = {}): string[] {
   const p = f.channel.presenters.find((x) => x.id === presenter);
   const lines: string[] = [];
   if (p?.leanings?.length) lines.push(`leanings: ${p.leanings.join('; ')}`);
@@ -121,6 +121,7 @@ export function notebookLines(f: Facts, presenter: string, stories: Story[], whe
     lines.push(`on ${latest.take.topic}: ${said(latest)}${earlier.length ? `; before that ${earlier.slice(0, 2).map(said).join('; ')}` : ''}`);
   }
 
+  if (opts.others === false) return lines;
   const about = new Set(takesOn(f, presenter, stories));
   const other = distinct((f.memory.presenters[presenter]?.opinions ?? []).filter((t) => !about.has(t)).reverse()).slice(0, 3);
   if (other.length) lines.push(`other recent views: ${other.map((t) => `${t.take.topic}: ${said(t)}`).join('; ')}`);
