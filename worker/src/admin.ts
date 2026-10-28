@@ -58,7 +58,7 @@ export async function adminData(db: D1Database, now = Date.now(), bulletinId?: s
   const at = iso(now);
   const since = (ms: number) => iso(now - ms);
   const [state, jobCounts, jobsOpen, jobErrors, bulletins, traces, sources, fetchFailed, untagged, waiting, storylines, claims, matches, upcoming, predictions, takes] = await query(db, [
-    { sql: `SELECT key, value, updated_at FROM state WHERE key IN ('cadence', 'home_seen', 'ingest_slot') OR key LIKE 'workers_ai:%'` },
+    { sql: `SELECT key, value, updated_at FROM state WHERE key IN ('cadence', 'home_seen', 'ingest_slot', 'workers_ai_24h') OR key LIKE 'workers_ai:%'` },
     { sql: `SELECT status, kind, COUNT(*) AS n FROM jobs WHERE test = 0 AND queued_at >= ? GROUP BY status, kind`, params: [since(DAY)] },
     { sql: `SELECT id, kind, status, runner, queued_at, claimed_at, attempts, dispatches, error FROM jobs WHERE test = 0 AND status IN ('queued', 'claimed') ORDER BY queued_at` },
     { sql: `SELECT id, kind, status, runner, queued_at, finished_at, error FROM jobs WHERE test = 0 AND error IS NOT NULL AND queued_at >= ? ORDER BY queued_at DESC LIMIT 15`, params: [since(DAY)] },
@@ -130,7 +130,10 @@ export async function adminData(db: D1Database, now = Date.now(), bulletinId?: s
     m.requests++;
     if (!c.ok) m.failed++;
   }
-  const neurons = num(json(states.get(`workers_ai:${iso(now).slice(0, 10)}`)?.value));
+  // Cloudflare's own rolling-24h count, saved by each ingest run; failing that, our own since midnight UTC.
+  const rolling = states.get('workers_ai_24h');
+  const neurons = rolling ? num(json(rolling.value)) : num(json(states.get(`workers_ai:${iso(now).slice(0, 10)}`)?.value));
+  const neuronsBasis = rolling ? { basis: 'Cloudflare, last 24 hours', asOf: String(rolling.updated_at) } : { basis: 'our own count since midnight UTC (no Cloudflare figure saved yet)', asOf: undefined };
 
   // ---- Errors ----
   const errors = [
@@ -214,7 +217,7 @@ export async function adminData(db: D1Database, now = Date.now(), bulletinId?: s
     jobs,
     aiUsage: {
       gemini: { day: `${pacificToday} (Pacific)`, flashDailyLimit: FLASH_DAILY, byModel: gemini, note: 'Counted from the bulletin traces: programmes only, not the ingest or breaking news.' },
-      workersAi: { day: iso(now).slice(0, 10), neurons, budget: WORKERS_AI_BUDGET },
+      workersAi: { neurons, budget: WORKERS_AI_BUDGET, ...neuronsBasis },
     },
     errors,
     inputs,
@@ -365,7 +368,7 @@ ${table(['Job', 'Status', 'Runner', 'Queued', 'Tries', ''], d.jobs.open.map((j) 
 <p>Gemini Flash: <b>${flash ? flash[1].requests : 0}</b> of ${d.aiUsage.gemini.flashDailyLimit} requests ${bar(flash ? flash[1].requests : 0, d.aiUsage.gemini.flashDailyLimit)}</p>
 ${table(['Gemini model', 'Requests', 'Failed'], Object.entries(d.aiUsage.gemini.byModel).map(([m, v]) => [m, v.requests, v.failed]))}
 <p class="note">${esc(d.aiUsage.gemini.note)} Day: ${esc(d.aiUsage.gemini.day)}.</p>
-<p>Workers AI: <b>${d.aiUsage.workersAi.neurons.toLocaleString('en-GB')}</b> of ${d.aiUsage.workersAi.budget.toLocaleString('en-GB')} neurons ${bar(d.aiUsage.workersAi.neurons, d.aiUsage.workersAi.budget)}</p>
+<p>Workers AI: <b>${d.aiUsage.workersAi.neurons.toLocaleString("en-GB")}</b> used of ${d.aiUsage.workersAi.budget.toLocaleString('en-GB')} neurons ${bar(d.aiUsage.workersAi.neurons, d.aiUsage.workersAi.budget)}<br><small>${esc(d.aiUsage.workersAi.basis)}${d.aiUsage.workersAi.asOf ? `, as of ${esc(when(d.aiUsage.workersAi.asOf))}` : ""}</small></p>
 <h3>Recent errors</h3>
 ${table(['When', 'Where', 'What'], d.errors.map((e) => [when(e.at), e.source, e.message]))}
 </section>`;

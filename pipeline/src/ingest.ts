@@ -110,7 +110,18 @@ async function main() {
   const at = new Date();
   // Cloudflare's own count over its rolling 24 hours; failing that, ours since midnight.
   const cloudflare = await neuronsLast24h(at);
-  if (cloudflare != null) console.log(`Workers AI: ${Math.round(cloudflare)} neurons used in the last 24 hours.`);
+  if (cloudflare != null) {
+    console.log(`Workers AI: ${Math.round(cloudflare)} neurons used in the last 24 hours.`);
+    // For the admin view (issue #39), which can't ask Cloudflare itself.
+    await store
+      .batch([
+        {
+          sql: `INSERT INTO state (key, value, updated_at) VALUES ('workers_ai_24h', ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+          params: [JSON.stringify(Math.round(cloudflare)), at.toISOString()],
+        },
+      ])
+      .catch((err) => console.warn(`Couldn't save Cloudflare's neuron count: ${(err as Error).message}`));
+  }
   const used = cloudflare ?? (await neuronsToday(store, at));
   const model = workersAiFromEnv({ used, ...DEFAULT_BUDGET });
   // Long shows are summarised first (issue #49), so the reading below works from the whole show.
