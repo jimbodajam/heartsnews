@@ -46,6 +46,8 @@ test("their page names: the feeds' spellings map to London Hearts'", () => {
   assert.equal(pageSlug('Hibs'), 'hibernian');
   assert.equal(pageSlug('Rangers'), 'rangers');
   assert.equal(pageSlug('Kilmarnock FC'), 'kilmarnock');
+  assert.equal(pageSlug('St. Johnstone'), 'stjohnstone');
+  assert.equal(pageSlug('Livingston'), 'livingston(meadowbankthistle)');
 });
 
 test('the line on air is built from the record, and the card matches it', () => {

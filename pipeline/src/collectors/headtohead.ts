@@ -26,7 +26,7 @@ export interface Meeting {
 export const teamSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /** The fixture feeds' names that London Hearts file under another. */
-const ALIASES: Record<string, string> = { hibs: 'hibernian', dundeeutd: 'dundeeunited', heartofmidlothian: 'hearts', stmirrenfc: 'stmirren' };
+const ALIASES: Record<string, string> = { hibs: 'hibernian', dundeeutd: 'dundeeunited', heartofmidlothian: 'hearts', stmirrenfc: 'stmirren', livingston: 'livingston(meadowbankthistle)' };
 
 export const pageSlug = (opponent: string) => {
   const slug = teamSlug(opponent.replace(/\bFC$/i, ''));
