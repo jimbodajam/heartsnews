@@ -25,6 +25,7 @@
     { "id": "h01360", "name": "Gordon Smith" }
   ],
   "sportsdb": { "teamId": "133643", "leagueId": "4330" },
+  "ground": { "name": "Tynecastle Park", "lat": 55.9393, "lon": -3.2325 },
   "bbc": { "team": "heart-of-midlothian", "league": "scottish-premiership" },
   "sources": [
     { "id": "bbc", "name": "BBC Sport", "kind": "press", "type": "rss",

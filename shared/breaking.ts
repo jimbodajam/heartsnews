@@ -3,6 +3,7 @@
 // and published to gh-pages beside the site. The player polls it during a match and breaks in after the current line.
 
 import type { Presenter, Segment } from './bulletin.ts';
+import type { Weather } from './weather.ts';
 
 /** Where the feed sits, relative to the site root. Clip paths in it are relative to this file. */
 export const BREAKING_PATH = 'breaking/breaking.json';
@@ -22,6 +23,8 @@ export interface BreakingPackage {
   presenters: Presenter[];
   /** The anchor's hand-over at the desk, then the reporter at the ground. */
   segments: Segment[];
+  /** The weather at the ground when it was written, if we read it (kick-off, half-time and full time at home). */
+  weather?: Weather;
 }
 
 export interface BreakingFeed {

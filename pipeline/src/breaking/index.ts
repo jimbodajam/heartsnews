@@ -26,6 +26,7 @@ import { loadFaces } from '../script/faces.ts';
 import { EventTracker, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
 import { buildPackage, buildPeriodPackage } from './script.ts';
 import { buildTeamNewsPackage } from './teamnews.ts';
+import { matchWeather, type Place } from '../weather.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 /** The breaking news for `npm run dev` (and the programme builds, which copy it into the site). */
@@ -91,7 +92,13 @@ export async function writePackage(r: Ready, model?: ScriptModel): Promise<Break
     if (!previous) console.log("[breaking] Couldn't read our last team from BBC: no changes line");
     return buildTeamNewsPackage({ ...r, channel, previous, faces: loadFaces() });
   }
-  return 'period' in r ? buildPeriodPackage({ ...r, channel, model }) : buildPackage({ ...r, channel, model });
+  if ('period' in r) {
+    const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { ground?: Place };
+    // Not at the second-half kick-off: the weather has had its say by then.
+    const weather = r.period === 'ko2' ? undefined : await matchWeather(r.match, club);
+    return buildPeriodPackage({ ...r, channel, model, weather });
+  }
+  return buildPackage({ ...r, channel, model });
 }
 
 export const breakingModel = (templates?: boolean) => (templates ? undefined : geminiFromEnv([30_000], ['gemini-flash-lite-latest']));
