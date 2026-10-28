@@ -7,7 +7,7 @@ import { airedFor } from '../memory.ts';
 import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
-import { formOf, xiText } from './opponent.ts';
+import { formOf, headToHeadText, xiText } from './opponent.ts';
 import { expertFor, firstName, ourResult, packageLines, presenter, teamName, type Facts } from './facts.ts';
 
 /** Any model that can answer a prompt with JSON matching a schema. Swap providers by adding another. */
@@ -183,7 +183,7 @@ function opponentData(f: Facts): string {
   const kind = o.confirmed ? 'CONFIRMED starting XI for this match' : 'starting XI from their last match (not yet confirmed for this one)';
   return `Opposition focus for ${teamName(f.club, o.fixture.home)} against ${teamName(f.club, o.fixture.away)}:
 ${o.opponent} recent results, newest first: ${form.join('; ') || '(none)'}
-${o.opponent} ${kind}: ${o.theirXI ? xiText(o.theirXI) : '(unknown)'}
+${o.headToHead ? `${headToHeadText(o.headToHead, f.club.shortName)}\n` : ''}${o.opponent} ${kind}: ${o.theirXI ? xiText(o.theirXI) : '(unknown)'}
 ${f.club.shortName} ${kind}: ${o.ourXI ? xiText(o.ourXI) : '(unknown)'}`;
 }
 
@@ -506,6 +506,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
     // Each opposition line is kept only where there's data behind it; otherwise the template line stands.
     opponent: base.opponent && {
       form: pick(ai.opponent?.form, base.opponent.form),
+      headToHead: base.opponent.headToHead,
       theirXI: pickOptional(ai.opponent?.theirXI, base.opponent.theirXI),
       ourXI: pickOptional(ai.opponent?.ourXI, base.opponent.ourXI),
     },

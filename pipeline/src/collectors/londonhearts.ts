@@ -99,7 +99,7 @@ export interface OnThisDay {
 /** 10, 20, 25, 30… years: an anniversary worth marking. */
 export const roundYears = (years: number) => years > 0 && (years % 10 === 0 || years % 25 === 0);
 
-const text = (html: string) =>
+export const text = (html: string) =>
   html
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
@@ -107,7 +107,7 @@ const text = (html: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const cells = (row: string) => [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+export const cells = (row: string) => [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
 
 /** The HTML between a section's anchor and the end of its table. */
 function section(html: string, anchor: string): string {

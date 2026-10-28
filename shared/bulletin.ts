@@ -92,6 +92,19 @@ export type Graphic =
   | { type: 'predictions'; fixture: string; picks: { name: string; pick: string; record?: string }[] }
   /** A team's recent results with W/D/L. */
   | { type: 'form'; team: string; results: { against: string; score: string; outcome: 'W' | 'D' | 'L'; venue: 'H' | 'A' }[] }
+  /** Our record against the next opponent (league and cups), the record at the coming game's ground and the notable results. */
+  | {
+      type: 'headtohead';
+      team: string;
+      venue: 'H' | 'A';
+      all: { played: number; won: number; drawn: number; lost: number };
+      atVenue: { played: number; won: number; drawn: number; lost: number };
+      /** Short date ("MAY 2026"), score from our side and where it was. */
+      lastWin?: { date: string; score: string; venue: 'H' | 'A' | 'N' };
+      biggestWin?: { date: string; score: string; venue: 'H' | 'A' | 'N' };
+      /** The last few meetings, newest first. */
+      recent: { outcome: 'W' | 'D' | 'L'; score: string; venue: 'H' | 'A' | 'N' }[];
+    }
   /** A starting XI on a pitch: rows from the goalkeeper forwards. `changes`: the names new to the side, picked out. */
   | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean; changes?: string[] }
   /** The substitutes on a team sheet. */

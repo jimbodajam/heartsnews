@@ -1,4 +1,5 @@
 import type { MatchStats } from '../../shared/live.ts';
+import type { HeadToHead } from './headtohead.ts';
 
 export type SourceKind ='press' | 'official' | 'aggregator' | 'video' | 'podcast' | 'forum';
 
@@ -122,6 +123,8 @@ export interface OpponentFocus {
   results: Fixture[];
   theirXI?: Lineup;
   ourXI?: Lineup;
+  /** Our record against them from London Hearts (issue #34); added when the bulletin is built. */
+  headToHead?: HeadToHead;
   /** True when the XIs are the confirmed teams for this match, not the last starting line-ups. */
   confirmed: boolean;
 }

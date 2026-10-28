@@ -31,6 +31,8 @@ import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
+import { collectMeetings } from './collectors/headtohead.ts';
+import { headToHead } from './headtohead.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
@@ -93,6 +95,17 @@ async function main() {
     console.log(`On this day: ${history.birthdays.length} birthdays, ${history.results.length} results (London Hearts)`);
     await mkdir(OUT, { recursive: true });
     await writeFile(resolve(OUT, 'onthisday.json'), JSON.stringify(history, null, 2));
+  }
+
+  // Head to head with the next opponent (issue #34): our record against them, from London Hearts' page for the team.
+  if (match?.opponent) {
+    const o = match.opponent;
+    const meetings = await collectMeetings(o.opponent, now).catch((err) => {
+      console.warn(`Couldn't read London Hearts' page for ${o.opponent}: ${(err as Error).message}`);
+      return [];
+    });
+    o.headToHead = headToHead(o.opponent, meetings, isUs(club, o.fixture.home) ? 'home' : 'away');
+    if (o.headToHead) console.log(`Head to head v ${o.opponent}: ${o.headToHead.all.won}W ${o.headToHead.all.drawn}D ${o.headToHead.all.lost}L (London Hearts)`);
   }
 
   const entities = seedEntities(club, match, [stored.length ? stored : loadFaces()]);

@@ -6,7 +6,7 @@ import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
 import { adBreaks, loadAdverts } from './adverts.ts';
 import { faceFor, loadFaces } from './faces.ts';
-import { formOf } from './opponent.ts';
+import { formOf, headToHeadGraphic } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
 import { spokenList } from '../time.ts';
@@ -345,6 +345,7 @@ function opponentSegment(f: Facts, d: NonNullable<Draft['opponent']>): Segment |
       graphic: { type: 'form', team: o.opponent, results: formOf(o).map(({ against, score, outcome, venue }) => ({ against, score, outcome, venue })) },
     },
   ];
+  if (d.headToHead && o.headToHead) lines.push({ speaker: analyst, text: d.headToHead, graphic: headToHeadGraphic(o.headToHead) });
   if (d.theirXI && o.theirXI) {
     lines.push({
       speaker: analyst,

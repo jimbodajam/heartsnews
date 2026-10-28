@@ -347,6 +347,42 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'headtohead': {
+      const top = panel(g, x, y, w, h, `HEAD TO HEAD: ${gr.team}`);
+      const colour = { W: C.green, D: C.gold, L: C.red };
+      const where = { H: 'AT HOME', A: 'AWAY' }[gr.venue];
+      drawText(g, fit(`${gr.all.played} LEAGUE AND CUP GAMES`, w - 12), x + 6, top - 2, C.light);
+      // Won, drawn, lost in a row of coloured blocks.
+      const bw = Math.floor((w - 12) / 3);
+      ([['W', gr.all.won], ['D', gr.all.drawn], ['L', gr.all.lost]] as const).forEach(([k, n], i) => {
+        rect(g, x + 6 + i * bw, top + 7, bw - 2, 11, colour[k]);
+        drawTextCentred(g, `${k} ${n}`, x + 6 + i * bw + (bw - 2) / 2, top + 11, C.ink);
+      });
+      const place = (p: { date: string; score: string; venue: 'H' | 'A' | 'N' }) => `${p.score} ${p.venue === 'H' ? 'H' : p.venue === 'A' ? 'A' : 'N'} ${p.date}`;
+      const lines: [string, string][] = [
+        [where, `W${gr.atVenue.won} D${gr.atVenue.drawn} L${gr.atVenue.lost}`],
+        ...(gr.lastWin ? [['LAST WIN', place(gr.lastWin)] as [string, string]] : []),
+        ...(gr.biggestWin ? [['BIGGEST', place(gr.biggestWin)] as [string, string]] : []),
+      ];
+      lines.forEach(([label, value], i) => {
+        const ry = top + 22 + i * 9;
+        if (ry + 7 > Math.min(y + h - 2, CAPTION_SAFE_BOTTOM)) return;
+        drawText(g, label, x + 6, ry, C.grey);
+        drawTextRight(g, fit(value, w - 12 - measure(label) - 6), x + w - 6, ry, C.white);
+      });
+      // The last few meetings, oldest on the left so it reads like a form strip.
+      const sy = y + h - 12;
+      gr.recent
+        .slice()
+        .reverse()
+        .forEach((r, i) => {
+          rect(g, x + 6 + i * 10, sy, 8, 8, colour[r.outcome]);
+          drawText(g, r.outcome, x + 8 + i * 10, sy + 2, C.ink);
+        });
+      drawTextRight(g, 'RECENT', x + w - 6, sy + 2, C.grey);
+      break;
+    }
+
     case 'formation': {
       const top = panel(g, x, y, w, h, `${gr.label}: ${gr.team} ${gr.formation}`);
       const px = x + 4;

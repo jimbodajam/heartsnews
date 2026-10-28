@@ -27,7 +27,7 @@ type Shot = 'wide' | 'single' | 'full';
 /** The live score comes round in the ticker after every this many headlines. */
 const SCORE_EVERY = 3;
 
-const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'formation'];
+const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'headtohead', 'formation'];
 
 const LABEL: Record<SegmentKind, string> = {
   headlines: 'HEADLINES',

@@ -2,7 +2,7 @@ import { dayPhrase, partOfDay, spokenList, spokenOrdinal, timePhrase } from '../
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { howItsGone } from '../reading.ts';
-import { describeXI, formOf } from './opponent.ts';
+import { describeXI, formOf, headToHeadLine } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
 import { historyDraft, type HistoryDraft } from './history.ts';
 
@@ -43,7 +43,7 @@ export interface Draft {
    */
   opinions?: { speaker: string; topic: string; view: string; storyId?: string; strength?: number }[];
   /** The analyst on the next opponent's form and both XIs (build-up days). */
-  opponent?: { form: string; theirXI?: string; ourXI?: string };
+  opponent?: { form: string; /** Template only (script/opponent.ts): the record is always as London Hearts have it. */ headToHead?: string; theirXI?: string; ourXI?: string };
   /** On This Day at the museum. Template only (script/history.ts), so the history is always as the records have it. */
   history?: HistoryDraft;
   outro: string;
@@ -204,6 +204,7 @@ export function templateDraft(f: Facts): Draft {
         ? `Let's look at the opposition. ${o.opponent} have won ${wins} of their last ${form.length}` +
           (latest ? `, most recently ${latest.outcome === 'W' ? 'beating' : latest.outcome === 'L' ? 'losing to' : 'drawing with'} ${latest.against} ${latest.score}.` : '.')
         : `Let's look at the opposition, ${o.opponent}.`,
+      headToHead: o.headToHead ? headToHeadLine(o.headToHead, club.shortName) : undefined,
       theirXI: o.theirXI ? `${o.opponent} ${xiVerb} ${describeXI(o.theirXI)}.` : undefined,
       ourXI: o.ourXI ? `${club.shortName} ${o.confirmed ? 'start with' : 'went with'} ${describeXI(o.ourXI)}.` : undefined,
     };

@@ -73,7 +73,7 @@ export function rankBirthday(b: HistoryBirthday, now: Date, legends: string[] = 
 }
 
 /** League, Scottish Cup, League Cup and Europe. Not friendlies, tours, local cups or wartime football. */
-export function competitive(r: HistoryResult): boolean {
+export function competitive(r: { competition: string }): boolean {
   if (/war|southern|friendly|tour|testimonial|benefit|charity/i.test(r.competition)) return false;
   return /division|premier|championship|^scottish (cup|league)$|^league cup$|uefa|europ|champions|cup winners|fairs|intertoto/i.test(r.competition);
 }
