@@ -2,6 +2,7 @@ import { dayPhrase, partOfDay, spokenList, spokenOrdinal, timePhrase } from '../
 import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { howItsGone } from '../reading.ts';
+import { milestoneLine } from './milestones.ts';
 import { describeXI, formOf, headToHeadLine } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
 import { historyDraft, type HistoryDraft } from './history.ts';
@@ -46,6 +47,8 @@ export interface Draft {
   opponent?: { form: string; /** Template only (script/opponent.ts): the record is always as London Hearts have it. */ headToHead?: string; theirXI?: string; ourXI?: string };
   /** On This Day at the museum. Template only (script/history.ts), so the history is always as the records have it. */
   history?: HistoryDraft;
+  /** Squad milestones from our own count (script/milestones.ts), said in the Match Centre. Template only. */
+  milestones?: string;
   outro: string;
 }
 
@@ -213,6 +216,7 @@ export function templateDraft(f: Facts): Draft {
   return {
     opponent,
     history: historyDraft(f),
+    milestones: milestoneLine(f.milestones),
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
     headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${headlineRead(s)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,

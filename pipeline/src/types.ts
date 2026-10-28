@@ -99,7 +99,7 @@ export interface Fixture {
   status?: 'pre' | 'live' | 'done' | 'postponed';
   /** Live progress as the BBC shows it, e.g. "63'" or "HT". */
   period?: string;
-  scorers?: { side: 'home' | 'away'; player: string; minute: string }[];
+  scorers?: { side: 'home' | 'away'; player: string; minute: string; /** An own goal. */ og?: true }[];
   /** BBC's team stats, for a game on now or just played (read from the match page). */
   stats?: MatchStats;
   /** BBC team page slugs (e.g. "motherwell") and the match page path, when the data came from the BBC. */

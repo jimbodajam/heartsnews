@@ -10,6 +10,7 @@ import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
 import type { OnThisDay } from '../collectors/londonhearts.ts';
 import { pickHistory, type HistoryPicks } from '../history.ts';
+import type { Milestone } from '../tally.ts';
 
 /**
  * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted of the top FEATURE_MAX_SCAN stories that
@@ -66,6 +67,8 @@ export interface Facts {
   window: { open: boolean; days: number };
   /** On This Day: today's birthdays and a famous win from this date, from London Hearts. Not around a game. */
   history?: HistoryPicks;
+  /** Players near a round number of Hearts appearances or goals, or just past one, by our own count (#35). Not while a game is on. */
+  milestones?: Milestone[];
 }
 
 /** The stats for the game on now (from its minute; 45 at half-time) or just played. */
@@ -99,6 +102,7 @@ export function buildFacts(
   now: Date,
   memory: Memory = emptyMemory(),
   history?: OnThisDay,
+  milestones?: Milestone[],
 ): Facts {
   const phase = detectPhase(match, now);
   const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
@@ -134,6 +138,8 @@ export function buildFacts(
     window: transferWindow(now),
     // While a game is on or just finished, it's the story: the history waits.
     history: history && !['live', 'reaction'].includes(phase.kind) ? pickHistory(history, club, now) : undefined,
+    // A milestone isn't said as it's being reached, but straight after: the reaction is where "reached" belongs.
+    milestones: phase.kind === 'live' ? undefined : milestones,
   };
 }
 

@@ -126,6 +126,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
         ),
       });
     }
+    if (draft.milestones) lines.push({ speaker: analyst, text: draft.milestones });
     if (draft.table && f.table.length) {
       // The screen fits six rows: show the ones around us rather than always the top six.
       lines.push({

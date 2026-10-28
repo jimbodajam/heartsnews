@@ -22,6 +22,7 @@
     "store:import": "tsx src/import-memory.ts",
     "ingest": "tsx src/ingest.ts",
     "squad": "tsx src/squad-sync.ts",
+    "tally": "tsx src/tally-sync.ts",
     "backfill:articles": "tsx src/backfill-articles.ts",
     "typecheck": "tsc --noEmit -p ."
   },

@@ -35,7 +35,7 @@ export function toFixture(e: BbcEvent): Fixture {
   const scorers = (['home', 'away'] as const).flatMap((side) =>
     (e[side].actions ?? [])
       .filter((a) => a.actionType === 'goal')
-      .flatMap((a) => a.actions.map((x) => ({ side, player: a.playerName, minute: x.timeLabel?.value ?? '' }))),
+      .flatMap((a) => a.actions.map((x) => ({ side, player: a.playerName, minute: x.timeLabel?.value ?? '', ...(/own/i.test(x.type) ? { og: true as const } : {}) }))),
   );
   const status = STATUS[e.status] ?? (/postpon|abandon|cancel/i.test(e.status) ? 'postponed' : undefined);
   return {

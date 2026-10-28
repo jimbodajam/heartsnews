@@ -31,6 +31,7 @@ import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
+import { findMilestones, loadTotals, type Milestone } from './tally.ts';
 import { collectMeetings } from './collectors/headtohead.ts';
 import { headToHead } from './headtohead.ts';
 import { seedEntities } from './entities.ts';
@@ -144,6 +145,17 @@ async function main() {
     }
   }
 
+  // Players near a round number of Hearts appearances or goals, by our own count (issue #35).
+  let milestones: Milestone[] = [];
+  if (store) {
+    try {
+      milestones = findMilestones(await loadTotals(store));
+      if (milestones.length) console.log(`Squad milestones: ${milestones.map((m) => `${m.name} ${m.reached ? 'reached' : `${m.to} from`} ${m.mark} ${m.kind}`).join('; ')}`);
+    } catch (err) {
+      console.warn(`Couldn't read the appearance counts from the store: ${(err as Error).message}`);
+    }
+  }
+
   const played = (match?.last ?? []).filter((f) => f.homeScore != null);
   const stories = desk ? storylineStories(desk, { club, items, tags, played, upcoming: match?.next, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
   // No article pages are fetched: storylines carry the ingest's stored text, anything else a transcript or summary.
@@ -173,7 +185,7 @@ async function main() {
   console.log(`\nWeighted for this bulletin:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
-  const facts = buildFacts(club, channel, stories, items, match, now, memory, history);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);

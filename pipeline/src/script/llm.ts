@@ -7,6 +7,7 @@ import { airedFor } from '../memory.ts';
 import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
+import { milestoneLine } from './milestones.ts';
 import { formOf, headToHeadText, xiText } from './opponent.ts';
 import { expertFor, firstName, ourResult, packageLines, presenter, teamName, type Facts } from './facts.ts';
 
@@ -264,7 +265,7 @@ export function dataSection(f: Facts, parts: DataPart[] = ALL_PARTS, scope: Data
     match: `Recent results, newest first (form is oldest to newest, last letter = most recent game):
 ${results || '(none)'}
 ${stats}League table: ${table || '(none)'}
-${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}\n` : ''}Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}`,
+${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}\n` : ''}${milestoneLine(f.milestones) ? `Squad milestones (template-written; do not repeat): ${milestoneLine(f.milestones)}\n` : ''}Upcoming fixtures (UK kick-off times, say them exactly like this): ${fixtures || '(none)'}`,
     next: `Next fixture (UK kick-off time, say it exactly like this): ${fixtures.split('; ')[0] || '(none)'}`,
     window: `Transfer window: ${f.window.open ? `open, closes in ${f.window.days} days` : `closed, reopens in ${f.window.days} days`}`,
     fans: `Fan forum threads on ${f.fans[0]?.sourceName ?? 'fan forums'} (ref | title | replies | recent posts):\n${threads || '(none)'}`,
@@ -519,6 +520,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
         }
       : base.fans,
     history: base.history,
+    milestones: base.milestones,
     outro: pick(ai.outro, base.outro),
   };
 }

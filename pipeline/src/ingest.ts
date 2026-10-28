@@ -18,6 +18,7 @@ import { loadFaces } from './script/faces.ts';
 import { squadFor } from './squad.ts';
 import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
 import { summariseVideos } from './summarise.ts';
+import { countGames } from './tally.ts';
 import { summariseArticles } from './article-summary.ts';
 import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
@@ -63,6 +64,13 @@ async function main() {
     return loadFaces();
   });
   const entities = seedEntities(club, match, [squad]);
+
+  // Appearances and goals (issue #35): any game finished since the last run is counted from BBC's final line-ups.
+  const counted = await countGames(store, club, match?.last ?? [], now).catch((err) => {
+    console.warn(`Couldn't count the latest games: ${(err as Error).message}`);
+    return [];
+  });
+  for (const g of counted) console.log(`Tally: counted ${g.id} (${g.played} played, ${g.scored} goals)`);
 
   const headlineOnly = club.sources.filter((s) => s.pages === false).map((s) => s.id);
   const queue = await ingestItems(store, items, entities, tagItems(items, entities), now, headlineOnly);

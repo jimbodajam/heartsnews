@@ -271,6 +271,48 @@ export function teamSheets(page: BbcData): { home?: TeamSheet; away?: TeamSheet 
   return { ...(home ? { home } : {}), ...(away ? { away } : {}) };
 }
 
+/** Who actually played, from a finished game's line-ups. */
+export interface Played {
+  team: string;
+  players: { urn: string; shirt: string; first?: string; number?: number; started: boolean }[];
+}
+
+interface BbcPlayedPlayer extends BbcSheetPlayer {
+  substitutedOn?: unknown;
+  substitutedOff?: unknown;
+}
+
+/**
+ * Both teams' players who took the field, from a BBC match page after the final whistle: the starters and the
+ * substitutes marked as having come on. A side is left out unless it adds up (eleven starters, and as many players
+ * going off as coming on), so a page that isn't final yet records nothing.
+ */
+export function playedIn(page: BbcData): { home?: Played; away?: Played } {
+  interface PlayedTeam {
+    name: { shortName: string };
+    players?: { starters?: BbcPlayedPlayer[]; substitutes?: BbcPlayedPlayer[] };
+  }
+  const d = block<{ homeTeam?: PlayedTeam; awayTeam?: PlayedTeam }>(page, 'match-lineups?');
+  const side = (t?: PlayedTeam): Played | undefined => {
+    const starters = t?.players?.starters ?? [];
+    const bench = t?.players?.substitutes ?? [];
+    const on = bench.filter((p) => p.substitutedOn);
+    const off = [...starters, ...bench].filter((p) => p.substitutedOff).length;
+    if (!t || starters.length !== 11 || on.length !== off) return undefined;
+    const who = (p: BbcPlayedPlayer, started: boolean): Played['players'][number] => ({
+      urn: p.urn,
+      shirt: p.name?.shirt ?? '',
+      ...(p.name?.first ? { first: p.name.first } : {}),
+      ...(p.shirtNumber !== undefined && p.shirtNumber !== '' ? { number: Number(p.shirtNumber) } : {}),
+      started,
+    });
+    return { team: t.name.shortName, players: [...starters.map((p) => who(p, true)), ...on.map((p) => who(p, false))] };
+  };
+  const home = side(d?.homeTeam);
+  const away = side(d?.awayTeam);
+  return { ...(home ? { home } : {}), ...(away ? { away } : {}) };
+}
+
 /** Possession as whole numbers that add up to 100: 60.7 / 39.3 → 61 / 39. */
 export function possession(stats: MatchStats): { home: number; away: number } {
   const home = Math.round(stats.home.possession);
