@@ -16,12 +16,20 @@ export interface Person {
   role?: 'player' | 'staff';
 }
 
+/** A person an admin has edited or added (the entities table's `locked` rows): it wins over the club page. */
+export interface Override extends Entity {
+  active: boolean;
+  /** Not on the club's pages: put in by hand. */
+  added: boolean;
+}
+
 /**
  * Our club (with its nicknames) and every team and competition in the fixtures and table, plus the squad and staff.
- * `people` comes first from the club's own pages (faces.json), whose role wins, then SportsDB, whose spelling wins
- * ("Jamie McCart", where the club page's capitals give "Jamie Mccart").
+ * `people` is the club's own pages, the only automatic source. `overrides` are the admin's edits on top: a corrected
+ * spelling ("Jamie McCart", where the club page's capitals give "Jamie Mccart"), someone signed but not listed yet,
+ * or someone switched off.
  */
-export function seedEntities(club: ClubConfig, match: MatchData | undefined, people: Person[][]): Entity[] {
+export function seedEntities(club: ClubConfig, match: MatchData | undefined, people: Person[][], overrides: Override[] = []): Entity[] {
   const byId = new Map<string, Entity>();
   const add = (e: Entity) => {
     if (!e.id) return;
@@ -40,6 +48,11 @@ export function seedEntities(club: ClubConfig, match: MatchData | undefined, peo
       const id = slug(p.name);
       add({ id, type: byId.get(id)?.type ?? p.role ?? 'player', name: p.name, aliases: [] });
     }
+  }
+  for (const o of overrides) {
+    // An edit only holds while the club page still lists them; someone the admin added stays until switched off.
+    if (!o.active) byId.delete(o.id);
+    else if (o.added || byId.has(o.id)) byId.set(o.id, { id: o.id, type: o.type, name: o.name, aliases: o.aliases });
   }
   // Headlines often use the surname alone ("Milne ruled out"), so it's an alias, unless two people share it.
   const entities = [...byId.values()];

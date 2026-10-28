@@ -1,4 +1,5 @@
-// The admin view (issue #39): /admin (HTML, for a phone) and /admin.json (the same data, for Claude), read-only, behind
+// The admin view (issue #39): /admin (HTML, for a phone) and /admin.json (the same data, for Claude), read-only except the
+// squad list (/admin?roster=1, posting to /admin/roster), behind
 // ADMIN_TOKEN, a Worker secret. Two questions: is the channel healthy right now, and why did that bulletin say that?
 // `?bulletin=<id>` on either opens one bulletin's trace (written by pipeline/src/build.ts, migration 0008).
 // Sign in once with /admin?token=…: the Worker sets a cookie and redirects to the clean address. /admin.json also
@@ -326,6 +327,82 @@ export async function itemDetail(db: D1Database, id: string) {
   };
 }
 
+// ---- The squad list ----
+
+/** Everyone the story engine knows as a player or staff member: the club's pages, with the admin's edits (migration 0009). */
+export async function rosterData(db: D1Database) {
+  const [rows] = await query(db, [{ sql: `SELECT id, type, name, aliases, active, locked, added FROM entities WHERE type IN ('player', 'staff') ORDER BY active DESC, type DESC, name` }]);
+  return {
+    people: rows.map((r) => ({
+      id: String(r.id),
+      type: String(r.type),
+      name: String(r.name),
+      aliases: (json(r.aliases) as string[] | undefined) ?? [],
+      active: num(r.active) === 1,
+      edited: num(r.locked) === 1,
+      added: num(r.added) === 1,
+    })),
+  };
+}
+
+/** Same slug as the pipeline's (pipeline/src/text.ts), so an added player gets the id the club page would give them. */
+const slugOf = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+const cleanName = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+const cleanType = (v: unknown) => (v === 'staff' ? 'staff' : 'player');
+const cleanAliases = (v: unknown) =>
+  JSON.stringify(
+    String(v ?? '')
+      .split(',')
+      .map((a) => a.replace(/\s+/g, ' ').trim().slice(0, 40))
+      .filter(Boolean)
+      .slice(0, 10),
+  );
+
+/**
+ * Saves one change from the roster page: `save` (spelling, aliases, role), `add` (someone signed but not on the club's
+ * pages yet), `active` (switch someone off or back on). Anything touched is `locked`, so the next build lays it over the
+ * club page. Returns an error message, or undefined when it worked.
+ */
+export async function saveRoster(db: D1Database, form: FormData): Promise<string | undefined> {
+  const action = String(form.get('action') ?? '');
+  const id = String(form.get('id') ?? '');
+  const run = (sql: string, ...params: unknown[]) => db.batch([db.prepare(sql).bind(...params)]);
+  if (action === 'add') {
+    const name = cleanName(form.get('name'));
+    const newId = slugOf(name);
+    if (!newId) return 'Give the new person a name.';
+    await run(
+      `INSERT INTO entities (id, type, name, aliases, active, locked, added) VALUES (?, ?, ?, ?, 1, 1, 1)
+       ON CONFLICT (id) DO UPDATE SET name = excluded.name, type = excluded.type, active = 1, locked = 1, added = 1 WHERE entities.type IN ('player', 'staff')`,
+      newId,
+      cleanType(form.get('type')),
+      name,
+      cleanAliases(form.get('aliases')),
+    );
+    return undefined;
+  }
+  if (!id) return 'No person given.';
+  if (action === 'active') {
+    await run(`UPDATE entities SET active = ?, locked = 1 WHERE id = ? AND type IN ('player', 'staff')`, form.get('active') === '1' ? 1 : 0, id);
+    return undefined;
+  }
+  if (action === 'save') {
+    const name = cleanName(form.get('name'));
+    if (!name) return 'A name can\'t be empty.';
+    // The id stays as it was: stories and tags already point at it, and the club page still gives the old spelling.
+    await run(
+      `UPDATE entities SET name = ?, type = ?, aliases = ?, locked = 1 WHERE id = ? AND type IN ('player', 'staff')`,
+      name,
+      cleanType(form.get('type')),
+      cleanAliases(form.get('aliases')),
+      id,
+    );
+    return undefined;
+  }
+  return 'Unknown action.';
+}
+
 // ---- The page ----
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -415,7 +492,7 @@ ${table(
 )}
 </section>`;
 
-  return page(`<h1>HeartsNews24 admin</h1><p class="note">${esc(when(d.generatedAt))} · <a href="/admin.json${bulletinId ? `?bulletin=${encodeURIComponent(bulletinId)}` : ''}">JSON</a></p>${bulletinId ? traceView(d.bulletin as Trace) : ''}${health}${inputs}${story}${list}`);
+  return page(`<h1>HeartsNews24 admin</h1><p class="note">${esc(when(d.generatedAt))} · <a href="/admin.json${bulletinId ? `?bulletin=${encodeURIComponent(bulletinId)}` : ''}">JSON</a> · <a href="/admin?roster=1">Squad list</a></p>${bulletinId ? traceView(d.bulletin as Trace) : ''}${health}${inputs}${story}${list}`);
 }
 
 type Trace = Awaited<ReturnType<typeof bulletinTrace>>;
@@ -472,6 +549,32 @@ ${d.feedSummary ? `<h3>Feed blurb</h3><p>${esc(d.feedSummary)}</p>` : ''}</secti
 <section><h2>Scraped text${d.textFrom ? ` (${esc(d.textFrom)}, ${d.text!.length.toLocaleString('en-GB')} chars)` : ''}</h2>${d.text ? `<pre>${esc(d.text)}</pre>` : '<p class="none">None kept: headline only, or pruned after 30 days.</p>'}</section>`);
 }
 
+const typeSelect = (current: string) => `<select name="type"><option value="player"${current === 'player' ? ' selected' : ''}>player</option><option value="staff"${current === 'staff' ? ' selected' : ''}>staff</option></select>`;
+
+export function renderRoster(d: Awaited<ReturnType<typeof rosterData>>, error?: string): string {
+  const row = (p: (typeof d.people)[number]) => `<form method="post" action="/admin/roster" class="person${p.active ? '' : ' off'}">
+<input type="hidden" name="id" value="${esc(p.id)}">
+<input name="name" value="${esc(p.name)}" aria-label="Name" required maxlength="80">
+${typeSelect(p.type)}
+<input name="aliases" value="${esc(p.aliases.join(', '))}" aria-label="Also known as" placeholder="also known as, comma separated">
+<span class="acts"><button name="action" value="save">Save</button>
+<button name="action" value="active" formnovalidate onclick="this.form.active.value='${p.active ? 0 : 1}'">${p.active ? 'Switch off' : 'Switch on'}</button>
+<input type="hidden" name="active" value="">
+${p.added ? pill('added by hand', 'warn').slice(10) : p.edited ? pill('edited', '').slice(10) : ''}${p.active ? '' : pill('off', 'bad').slice(10)}</span>
+</form>`;
+  const on = d.people.filter((p) => p.active);
+  const off = d.people.filter((p) => !p.active);
+  return page(`<h1>Squad list</h1>
+<p class="note"><a href="/admin">Back</a> · <a href="/admin.json?roster=1">JSON</a> · ${on.length} at the club. The names come from the club's own squad and coaching staff pages; what you change here is laid over them at the next ingest or build.</p>
+${error ? `<p class="pill bad">${esc(error)}</p>` : ''}
+<section><h2>Add someone</h2>
+<p class="note">For a signing the club's site doesn't list yet. They stay until you switch them off.</p>
+<form method="post" action="/admin/roster" class="person"><input name="name" placeholder="Full name, as the press spells it" aria-label="Name" required maxlength="80">${typeSelect('player')}
+<input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as"><span class="acts"><button name="action" value="add">Add</button></span></form></section>
+<section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the club-page change fills this in.</p>'}</section>
+${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here by itself.</p>${off.map(row).join('')}</section>` : ''}`);
+}
+
 function page(body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>HeartsNews24 admin</title>
 <style>
@@ -484,6 +587,7 @@ a{color:inherit}small,.note{color:var(--mute)}.none{color:var(--mute);font-style
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600;white-space:nowrap}
 .pill{display:inline-block;padding:0 7px;border-radius:9px;border:1px solid var(--line);font-size:12px;white-space:nowrap}.pill.ok{color:var(--ok);border-color:var(--ok)}.pill.warn{color:var(--warn);border-color:var(--warn)}.pill.bad{color:var(--bad);border-color:var(--bad)}
 .bar{height:6px;background:var(--card);border-radius:3px;margin-top:3px}.bar i{display:block;height:100%;background:var(--ok);border-radius:3px}.bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
+.person{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.person.off{opacity:.65}.person input,.person select,.person button{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}.person input[name=name]{flex:1 1 160px}.person input[name=aliases]{flex:2 1 200px}.person button{cursor:pointer}.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 details{background:var(--card);border-radius:8px;padding:8px 10px;margin:6px 0}summary{cursor:pointer}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}li{margin:6px 0}
 </style></head><body>${body}</body></html>`;
 }
@@ -503,7 +607,7 @@ function cookieOf(request: Request, name: string): string {
 const noStore = { 'cache-control': 'no-store' };
 const denied = () => new Response('Unauthorised', { status: 401, headers: { ...noStore, 'content-type': 'text/plain' } });
 
-/** Serves /admin and /admin.json. Everything is 401 without the token; nothing is written to the database. */
+/** Serves /admin, /admin.json and the squad list's form post. Everything is 401 without the token; only the squad list writes. */
 export async function admin(request: Request, env: AdminEnv): Promise<Response> {
   if (!env.DB || !env.ADMIN_TOKEN) return new Response('Admin not configured', { status: 503, headers: noStore });
   const url = new URL(request.url);
@@ -512,6 +616,16 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
   const bearer = /^Bearer (.+)$/.exec(request.headers.get('authorization') ?? '')?.[1];
   const ok = [offered, bearer, cookieOf(request, COOKIE)].some((t) => t && sameToken(t, token));
   if (!ok) return denied();
+
+  // The squad list is the one thing the admin view writes. A form post from another site is refused outright (the cookie is
+  // SameSite=Strict as well), then it goes back to the list.
+  if (request.method === 'POST' && url.pathname === '/admin/roster') {
+    const origin = request.headers.get('origin');
+    if (origin && origin !== url.origin) return new Response('Forbidden', { status: 403, headers: noStore });
+    const error = await saveRoster(env.DB, await request.formData());
+    if (error) return new Response(renderRoster(await rosterData(env.DB), error), { status: 400, headers: { ...noStore, 'content-type': 'text/html; charset=utf-8' } });
+    return new Response(null, { status: 303, headers: { ...noStore, location: '/admin?roster=1' } });
+  }
 
   const asJson = url.pathname === '/admin.json';
   const setCookie = offered && sameToken(offered, token) ? `${COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${30 * 86_400}; HttpOnly; Secure; SameSite=Strict` : undefined;
@@ -530,6 +644,10 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
     headers.set('content-type', 'text/html; charset=utf-8');
     return new Response(html, { headers });
   };
+  if (url.searchParams.has('roster')) {
+    const d = await rosterData(env.DB);
+    return respond(d, renderRoster(d));
+  }
   const itemId = url.searchParams.get('item');
   if (itemId) {
     const d = await itemDetail(env.DB, itemId);

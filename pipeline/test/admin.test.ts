@@ -3,8 +3,11 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { admin, adminData, FLASH_DAILY } from '../../worker/src/admin.ts';
-import { KEEP_PROMPTS, traceWrites, type Trace } from '../src/store.ts';
+import { readFileSync } from 'node:fs';
+import { admin, adminData, FLASH_DAILY, rosterData } from '../../worker/src/admin.ts';
+import { seedEntities } from '../src/entities.ts';
+import type { ClubConfig } from '../src/types.ts';
+import { entityWrites, KEEP_PROMPTS, loadRosterOverrides, traceWrites, type Store, type Trace } from '../src/store.ts';
 import { memoryD1 } from './d1.ts';
 
 const NOW = Date.parse('2026-10-28T12:10:00Z');
@@ -118,4 +121,44 @@ test('a source lists its items, and an item shows its text, summary and the clai
   assert.match(page, /Shankland injury/);
   assert.match(await get('/admin?item=nope'), /No item nope/);
   assert.match(await get('/admin'), /\/admin\?source=other/);
+});
+
+test('the squad list: edit a spelling, add a signing, switch someone off, and the build lays it over the club page', async () => {
+  const d1 = memoryD1();
+  const env = { DB: d1, ADMIN_TOKEN: 'secret' };
+  const club = JSON.parse(readFileSync(new URL('../../clubs/hearts.json', import.meta.url), 'utf8')) as ClubConfig;
+  const fromClubPage = [[{ name: 'Jamie Mccart', role: 'player' as const }, { name: 'Old Boy', role: 'player' as const }]];
+  // The first ingest seeds the club page's names.
+  for (const s of entityWrites(seedEntities(club, undefined, fromClubPage))) d1.db.prepare(s.sql).run(...(s.params as (string | number | null)[]));
+
+  const post = (fields: Record<string, string>, headers: Record<string, string> = {}) =>
+    admin(new Request('https://w.test/admin/roster', { method: 'POST', body: new URLSearchParams(fields), headers: { cookie: 'admin=secret', ...headers } }), env);
+
+  assert.equal((await admin(new Request('https://w.test/admin/roster', { method: 'POST', body: new URLSearchParams({ action: 'add', name: 'X' }) }), env)).status, 401);
+  assert.equal((await post({ action: 'add', name: 'Evil' }, { origin: 'https://evil.test' })).status, 403);
+  assert.equal((await post({ action: 'add', name: '  ' })).status, 400);
+
+  const saved = await post({ action: 'save', id: 'jamie-mccart', name: 'Jamie McCart', type: 'player', aliases: 'Mac, ' });
+  assert.equal(saved.status, 303);
+  assert.equal((await post({ action: 'add', name: 'New  Signing', type: 'player', aliases: '' })).status, 303);
+  await post({ action: 'active', id: 'old-boy', active: '0' });
+
+  const roster = await rosterData(d1);
+  const by = (id: string) => roster.people.find((p) => p.id === id);
+  assert.deepEqual([by('jamie-mccart')?.name, by('jamie-mccart')?.aliases, by('jamie-mccart')?.edited], ['Jamie McCart', ['Mac'], true]);
+  assert.deepEqual([by('new-signing')?.name, by('new-signing')?.added, by('new-signing')?.active], ['New Signing', true, true]);
+  assert.equal(by('old-boy')?.active, false);
+  assert.match(await (await admin(new Request('https://w.test/admin?roster=1', { headers: { cookie: 'admin=secret' } }), env)).text(), /New Signing/);
+
+  // The next ingest: the club page still says "Mccart" and still lists Old Boy; the admin's edits win.
+  const store: Store = { batch: async (statements) => (await d1.batch(statements.map((s) => d1.prepare(s.sql).bind(...(s.params ?? []))))).map((r) => (r.results ?? []) as Record<string, unknown>[]) };
+  const rows = await loadRosterOverrides(store);
+  const names = seedEntities(club, undefined, fromClubPage, rows).filter((e) => e.type === 'player').map((e) => e.name).sort();
+  assert.deepEqual(names, ['Jamie McCart', 'New Signing']);
+  // An edit only holds while the club page lists them; someone added by hand stays.
+  const gone = seedEntities(club, undefined, [[]], rows).filter((e) => e.type === 'player').map((e) => e.name);
+  assert.deepEqual(gone, ['New Signing']);
+  // Writing the seed back keeps the admin's rows as they are, and retires nobody the admin kept.
+  for (const s of entityWrites(seedEntities(club, undefined, fromClubPage, rows))) d1.db.prepare(s.sql).run(...(s.params as (string | number | null)[]));
+  assert.equal((await rosterData(d1)).people.filter((p) => p.active).length, 2);
 });

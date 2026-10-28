@@ -30,13 +30,13 @@ import { emptyMemory, freshness, settlePredictions, type Memory } from './memory
 import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
-import { collectPlayers } from './collectors/sportsdb.ts';
+import { collectSquad } from './collectors/clubsite.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
-import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
+import { loadMatches, loadMemory, loadRosterOverrides, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -77,10 +77,17 @@ async function main() {
   console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached (of ${transcripts.length} available)`);
 
   // Who and what each item is about, so stories group by person (tags.ts).
-  const players = await collectPlayers(club).catch((err) => {
-    console.warn(`Couldn't read the squad from SportsDB: ${(err as Error).message}`);
+  const squad = await collectSquad().catch((err) => {
+    console.warn(`Couldn't read the squad from the club's site, using the saved list: ${(err as Error).message}`);
     return [];
   });
+  const store = storeFromEnv();
+  const overrides = store
+    ? await loadRosterOverrides(store).catch((err) => {
+        console.warn(`Couldn't read the admin's squad edits: ${(err as Error).message}`);
+        return [];
+      })
+    : [];
   // On this day in Hearts history (issue #8): today's birthdays and results from London Hearts, fetched once a day.
   const history = await collectOnThisDay(now).catch((err) => {
     console.warn(`Couldn't read London Hearts' page for today: ${(err as Error).message}`);
@@ -92,14 +99,13 @@ async function main() {
     await writeFile(resolve(OUT, 'onthisday.json'), JSON.stringify(history, null, 2));
   }
 
-  const entities = seedEntities(club, match, [loadFaces(), players]);
+  const entities = seedEntities(club, match, [squad.length ? squad : loadFaces()], overrides);
   const tags = tagItems(items, entities);
   console.log(`Tagged ${tags.size} items against ${entities.length} people, clubs and competitions`);
 
   // The store: the storylines the stories come from (onair.ts), what's aired, and what the presenters have said.
   // A pretend time (HEARTSNEWS_NOW) or --fresh reads the store but never writes to it.
   const fresh = flags.has('--fresh');
-  const store = storeFromEnv();
   const save = store && !fresh && !process.env.HEARTSNEWS_NOW ? store : undefined;
   let memory: Memory = emptyMemory();
   let desk: OnAirDesk | undefined;

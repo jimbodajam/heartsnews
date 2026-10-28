@@ -51,7 +51,7 @@ export default {
   fetch: (request: Request, env: Env): Promise<Response> => {
     const path = new URL(request.url).pathname;
     if (path === '/store') return store(request, env);
-    if (path === '/admin' || path === '/admin.json') return admin(request, env);
+    if (path === '/admin' || path === '/admin.json' || path === '/admin/roster') return admin(request, env);
     return live.respond(request);
   },
   scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): void => ctx.waitUntil(clock(env)),

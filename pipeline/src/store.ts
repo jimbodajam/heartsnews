@@ -1,6 +1,6 @@
 import type { Bulletin } from '../../shared/bulletin.ts';
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
-import type { Entity } from './entities.ts';
+import type { Entity, Override } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { OnAirDesk } from './onair.ts';
 import type { CallRecord } from './script/llm.ts';
@@ -255,7 +255,7 @@ function itemWrites(list: Item[], now: Date): Statement[] {
 }
 
 /** Entities: names and types refresh; aliases added by hand are kept. People no longer at the club go inactive. */
-function entityWrites(entities: Entity[]): Statement[] {
+export function entityWrites(entities: Entity[]): Statement[] {
   const statements = each(
     `INSERT INTO entities (id, type, name, aliases, active)
       SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?) WHERE true
@@ -271,6 +271,19 @@ function entityWrites(entities: Entity[]): Statement[] {
     });
   }
   return statements;
+}
+
+/** What an admin has changed on the squad list (migration 0009), to lay over the club's pages: see seedEntities. */
+export async function loadRosterOverrides(store: Store): Promise<Override[]> {
+  const [rows] = await store.batch([{ sql: `SELECT id, type, name, aliases, active, added FROM entities WHERE locked = 1 AND type IN ('player', 'staff')` }]);
+  return rows.map((r) => ({
+    id: String(r.id),
+    type: r.type as Override['type'],
+    name: String(r.name),
+    aliases: JSON.parse(String(r.aliases || '[]')) as string[],
+    active: Number(r.active) === 1,
+    added: Number(r.added) === 1,
+  }));
 }
 
 /**
