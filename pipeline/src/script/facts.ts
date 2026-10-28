@@ -8,6 +8,7 @@ import { emptyMemory, type Memory } from '../memory.ts';
 import { beatFor, beatPresenters, strongestTake, type Beat } from './notebook.ts';
 import { transferWindow } from '../time.ts';
 import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../types.ts';
+import type { Announced } from '../announced.ts';
 import type { OnThisDay } from '../collectors/londonhearts.ts';
 import { pickHistory, type HistoryPicks } from '../history.ts';
 import type { Milestone } from '../tally.ts';
@@ -68,6 +69,8 @@ export interface Facts {
   window: { open: boolean; days: number };
   /** On This Day: today's birthdays and a famous win from this date, from London Hearts. Not around a game. */
   history?: HistoryPicks;
+  /** Our team for the game being built up to, once it's announced and before kick-off (#36). */
+  announced?: Announced;
   /** Players near a round number of Hearts appearances or goals, or just past one, by our own count (#35). Not while a game is on. */
   milestones?: Milestone[];
 }
@@ -104,6 +107,7 @@ export function buildFacts(
   memory: Memory = emptyMemory(),
   history?: OnThisDay,
   milestones?: Milestone[],
+  announced?: Announced,
 ): Facts {
   const phase = detectPhase(match, now);
   const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
@@ -141,6 +145,7 @@ export function buildFacts(
     history: history && !['live', 'reaction'].includes(phase.kind) ? pickHistory(history, club, now) : undefined,
     // A milestone isn't said as it's being reached, but straight after: the reaction is where "reached" belongs.
     milestones: milestones && milestonesFor(phase.kind, milestones),
+    announced,
   };
 }
 

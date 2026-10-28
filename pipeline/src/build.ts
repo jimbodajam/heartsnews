@@ -37,6 +37,8 @@ import { headToHead } from './headtohead.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
+import { loadAnnounced } from './announced.ts';
+import { workerSource } from './breaking/index.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
 import { loadRoster } from './squad.ts';
 import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
@@ -190,7 +192,9 @@ async function main() {
   console.log(`\nWeighted for this bulletin:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
-  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones);
+  const announced = await loadAnnounced(club, phase, now, workerSource());
+  if (announced) console.log(`Announced team: ${announced.ours.team} ${announced.ours.formation} v ${announced.opponent}${announced.theirs ? ' (both teams)' : ''}`);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);

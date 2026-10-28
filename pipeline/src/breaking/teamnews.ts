@@ -127,18 +127,23 @@ const formation = (sheet: TeamSheet, ours: boolean, label: string, changed: stri
   ...(changed.length ? { changes: changed } : {}),
 });
 
-/** The whole package, ready to voice. */
-export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, previous, faces = [], totals, now = new Date() }: TeamNewsInput): BreakingPackage {
-  const find = (id?: string) => channel.presenters.find((p) => p.id === id);
-  const anchor = find(channel.cast.anchors[0])!;
-  const wall: Presenter = find(channel.cast.teamNews) ?? find(channel.cast.analyst) ?? anchor;
-  const us = m.us;
-  const them = us === 'home' ? 'away' : 'home';
-  const opponent = m[them].name;
-  const theirs = m.lineups?.[them];
-  const fresh = previous ? changes(sheet, previous.sheet).in : [];
+export interface TeamLinesInput {
+  speaker: string;
+  sheet: TeamSheet;
+  theirs?: TeamSheet;
+  opponent: string;
+  previous?: { sheet: TeamSheet; against: string };
+  faces?: Face[];
+  totals?: Totals[];
+}
 
-  const say = (text: string, graphic?: Graphic): Line => ({ speaker: wall.id, text, ...(graphic ? { graphic } : {}) });
+/**
+ * The announced team read out: each player's card, the shape as expected with the changes in gold, any milestone, the
+ * bench, then the opposition's expected team. Shared by the break-in and the Match Centre.
+ */
+export function teamLines({ speaker, sheet, theirs, opponent, previous, faces = [], totals }: TeamLinesInput): Line[] {
+  const fresh = previous ? changes(sheet, previous.sheet).in : [];
+  const say = (text: string, graphic?: Graphic): Line => ({ speaker, text, ...(graphic ? { graphic } : {}) });
   const lines: Line[] = [say(`Here's the ${sheet.team} team to face ${opponent}, and how they're expected to line up.`)];
   sheet.rows.forEach((row, i) =>
     row.forEach((p, j) => {
@@ -166,6 +171,17 @@ export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, pr
     lines.push(say(bench, { type: 'bench', team: sheet.team, players }));
   }
   if (theirs) lines.push(say(`${opponent} are expected to go with ${describeXI(toLineup(theirs))}.`, formation(theirs, false, 'EXPECTED')));
+  return lines;
+}
+
+/** The whole package, ready to voice. */
+export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, previous, faces = [], totals, now = new Date() }: TeamNewsInput): BreakingPackage {
+  const find = (id?: string) => channel.presenters.find((p) => p.id === id);
+  const anchor = find(channel.cast.anchors[0])!;
+  const wall: Presenter = find(channel.cast.teamNews) ?? find(channel.cast.analyst) ?? anchor;
+  const them = m.us === 'home' ? 'away' : 'home';
+  const opponent = m[them].name;
+  const lines = teamLines({ speaker: wall.id, sheet, theirs: m.lineups?.[them], opponent, previous, faces, totals });
   const last = lines[lines.length - 1];
   last.text = `${last.text} ${SIGN_OFF}`;
 

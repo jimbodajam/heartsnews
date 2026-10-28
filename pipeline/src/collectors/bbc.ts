@@ -57,7 +57,7 @@ export function toFixture(e: BbcEvent): Fixture {
 const slugOf = (urn?: string) => urn?.split(':').pop();
 
 /** Both teams from a BBC match page, if it has them yet (confirmed about an hour before kick-off). */
-async function matchSheets(link: string): Promise<{ home?: TeamSheet; away?: TeamSheet }> {
+export async function matchSheets(link: string): Promise<{ home?: TeamSheet; away?: TeamSheet }> {
   return teamSheets(initialData(await fetchText(`https://www.bbc.co.uk${link}`)));
 }
 

@@ -6,10 +6,12 @@ import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
 import { adBreaks, loadAdverts } from './adverts.ts';
 import { faceFor, loadFaces } from './faces.ts';
-import { formOf, headToHeadGraphic } from './opponent.ts';
+import { describeXI, formOf, headToHeadGraphic } from './opponent.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
 import { spokenList } from '../time.ts';
+import { changes, teamLines, shapeLine } from '../breaking/teamnews.ts';
+import { toLineup } from '../collectors/bbc.ts';
 import { historyHost, historySegment } from './history.ts';
 import { deskSignature } from './quiet.ts';
 
@@ -157,6 +159,9 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
         },
       });
     }
+    // Once the team is announced, the Match Centre reads it out until kick-off (issue #36).
+    const team = f.announced;
+    if (team) lines.push(...teamLines({ speaker: analyst, sheet: team.ours, theirs: team.theirs, opponent: team.opponent, previous: team.previous, faces: loadFaces() }));
     segments.push({
       id: 'match',
       kind: 'match',
@@ -339,6 +344,8 @@ function opponentSegment(f: Facts, d: NonNullable<Draft['opponent']>): Segment |
   if (!o) return undefined;
   const analyst = f.channel.cast.analyst;
   const label = o.confirmed ? 'CONFIRMED XI' : 'LAST XI';
+  // The shape in BBC's team sheets before kick-off is only the expected one, and our changes from the last game are known.
+  const team = f.announced;
   const lines: Line[] = [
     {
       speaker: analyst,
@@ -347,14 +354,29 @@ function opponentSegment(f: Facts, d: NonNullable<Draft['opponent']>): Segment |
     },
   ];
   if (d.headToHead && o.headToHead) lines.push({ speaker: analyst, text: d.headToHead, graphic: headToHeadGraphic(o.headToHead) });
-  if (d.theirXI && o.theirXI) {
+  if (team?.theirs) {
+    const xi = toLineup(team.theirs);
+    lines.push({
+      speaker: analyst,
+      text: `${o.opponent} are expected to go with ${describeXI(xi)}.`,
+      graphic: { type: 'formation', label: 'EXPECTED', team: xi.team, formation: xi.formation, rows: xi.rows, ours: false },
+    });
+  } else if (d.theirXI && o.theirXI) {
     lines.push({
       speaker: analyst,
       text: d.theirXI,
       graphic: { type: 'formation', label, team: o.theirXI.team, formation: o.theirXI.formation, rows: o.theirXI.rows, ours: false },
     });
   }
-  if (d.ourXI && o.ourXI) {
+  if (team) {
+    const xi = toLineup(team.ours);
+    const fresh = team.previous ? changes(team.ours, team.previous.sheet).in.map((p) => p.shirt) : [];
+    lines.push({
+      speaker: analyst,
+      text: shapeLine(team.ours, team.previous),
+      graphic: { type: 'formation', label: 'EXPECTED', team: xi.team, formation: xi.formation, rows: xi.rows, ours: true, ...(fresh.length ? { changes: fresh } : {}) },
+    });
+  } else if (d.ourXI && o.ourXI) {
     lines.push({
       speaker: analyst,
       text: d.ourXI,

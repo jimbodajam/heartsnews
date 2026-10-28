@@ -1,4 +1,4 @@
-import type { Bulletin } from '../../../shared/bulletin.ts';
+import type { Bulletin, Graphic } from '../../../shared/bulletin.ts';
 import { predictionRecord } from '../memory.ts';
 import { firstName, type Facts } from './facts.ts';
 import { dataSection, type ScriptModel } from './llm.ts';
@@ -81,6 +81,9 @@ SCRIPT (line id | speaker | text):
 ${script}`;
 }
 
+/** The announced team is read out in code from BBC's team sheets, not written, so there's nothing to check it against. */
+const isTeamSheet = (g?: Graphic) => g?.type === 'player' || g?.type === 'bench' || (g?.type === 'formation' && g.label === 'EXPECTED');
+
 export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin): Promise<FactCheckResult> {
   // Score predictions are the pundits' own calls, matched to the card on screen, the adverts are fixed copy
   // (adverts.json), and On This Day is template-written from London Hearts' page, which isn't in the DATA: none is
@@ -88,7 +91,7 @@ export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin
   const lines = bulletin.segments.flatMap((s, si) =>
     s.kind === 'adverts' || s.kind === 'history'
       ? []
-      : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' })).filter((l) => !l.prediction),
+      : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' || isTeamSheet(l.graphic) })).filter((l) => !l.prediction),
   );
   const res = (await model.generateJson(buildPrompt(f, lines), SCHEMA, 'factcheck')) as {
     corrections?: { lineId: string; action: 'fix' | 'drop'; text?: string; reason: string }[];
