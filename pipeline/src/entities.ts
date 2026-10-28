@@ -1,7 +1,7 @@
 import { slug } from './text.ts';
 import type { ClubConfig, MatchData } from './types.ts';
 
-// The people, clubs and competitions the story engine can tag, seeded into the store each build.
+// The people, clubs and competitions the story engine can tag, the clubs and competitions seeded each run, the people read from the store.
 
 export interface Entity {
   /** Slug of the name; our own club uses its config id. */
@@ -14,22 +14,16 @@ export interface Entity {
 export interface Person {
   name: string;
   role?: 'player' | 'staff';
-}
-
-/** A person an admin has edited or added (the entities table's `locked` rows): it wins over the club page. */
-export interface Override extends Entity {
-  active: boolean;
-  /** Not on the club's pages: put in by hand. */
-  added: boolean;
+  /** Set for someone already in the store, whose id stays as it was when their name is respelled. */
+  id?: string;
+  aliases?: string[];
 }
 
 /**
  * Our club (with its nicknames) and every team and competition in the fixtures and table, plus the squad and staff.
- * `people` is the club's own pages, the only automatic source. `overrides` are the admin's edits on top: a corrected
- * spelling ("Jamie McCart", where the club page's capitals give "Jamie Mccart"), someone signed but not listed yet,
- * or someone switched off.
+ * `people` is the squad list from the store (squad.ts), the source of truth for who is at the club.
  */
-export function seedEntities(club: ClubConfig, match: MatchData | undefined, people: Person[][], overrides: Override[] = []): Entity[] {
+export function seedEntities(club: ClubConfig, match: MatchData | undefined, people: Person[][]): Entity[] {
   const byId = new Map<string, Entity>();
   const add = (e: Entity) => {
     if (!e.id) return;
@@ -45,14 +39,9 @@ export function seedEntities(club: ClubConfig, match: MatchData | undefined, peo
 
   for (const list of people) {
     for (const p of list) {
-      const id = slug(p.name);
-      add({ id, type: byId.get(id)?.type ?? p.role ?? 'player', name: p.name, aliases: [] });
+      const id = p.id ?? slug(p.name);
+      add({ id, type: byId.get(id)?.type ?? p.role ?? 'player', name: p.name, aliases: p.aliases ?? [] });
     }
-  }
-  for (const o of overrides) {
-    // An edit only holds while the club page still lists them; someone the admin added stays until switched off.
-    if (!o.active) byId.delete(o.id);
-    else if (o.added || byId.has(o.id)) byId.set(o.id, { id: o.id, type: o.type, name: o.name, aliases: o.aliases });
   }
   // Headlines often use the surname alone ("Milne ruled out"), so it's an alias, unless two people share it.
   const entities = [...byId.values()];

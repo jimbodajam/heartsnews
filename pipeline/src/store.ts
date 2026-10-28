@@ -1,6 +1,6 @@
 import type { Bulletin } from '../../shared/bulletin.ts';
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
-import type { Entity, Override } from './entities.ts';
+import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { OnAirDesk } from './onair.ts';
 import type { CallRecord } from './script/llm.ts';
@@ -254,36 +254,28 @@ function itemWrites(list: Item[], now: Date): Statement[] {
   ];
 }
 
-/** Entities: names and types refresh; aliases added by hand are kept. People no longer at the club go inactive. */
+/**
+ * Clubs and competitions: names and types refresh; aliases added by hand are kept. People are never updated here: the
+ * squad list is the source of truth for them (squad.ts), changed only by a sync or the admin. They come from that list,
+ * so this only makes sure a row exists for a tag to point at.
+ */
 export function entityWrites(entities: Entity[]): Statement[] {
-  const statements = each(
-    `INSERT INTO entities (id, type, name, aliases, active)
-      SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?) WHERE true
-      ON CONFLICT (id) DO UPDATE SET type = excluded.type, name = excluded.name, active = 1,
-        aliases = CASE WHEN entities.aliases = '[]' THEN excluded.aliases ELSE entities.aliases END`,
-    entities.map((e) => ({ ...e, aliases: JSON.stringify(e.aliases) })),
-  );
-  const people = entities.filter((e) => e.type === 'player' || e.type === 'staff').map((e) => e.id);
-  if (people.length) {
-    statements.push({
-      sql: `UPDATE entities SET active = 0 WHERE type IN ('player', 'staff') AND active = 1 AND id NOT IN (SELECT value FROM json_each(?))`,
-      params: [JSON.stringify(people)],
-    });
-  }
-  return statements;
-}
-
-/** What an admin has changed on the squad list (migration 0009), to lay over the club's pages: see seedEntities. */
-export async function loadRosterOverrides(store: Store): Promise<Override[]> {
-  const [rows] = await store.batch([{ sql: `SELECT id, type, name, aliases, active, added FROM entities WHERE locked = 1 AND type IN ('player', 'staff')` }]);
-  return rows.map((r) => ({
-    id: String(r.id),
-    type: r.type as Override['type'],
-    name: String(r.name),
-    aliases: JSON.parse(String(r.aliases || '[]')) as string[],
-    active: Number(r.active) === 1,
-    added: Number(r.added) === 1,
-  }));
+  const row = (e: Entity) => ({ ...e, aliases: JSON.stringify(e.aliases) });
+  const isPerson = (e: Entity) => e.type === 'player' || e.type === 'staff';
+  return [
+    ...each(
+      `INSERT INTO entities (id, type, name, aliases, active)
+        SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?) WHERE true
+        ON CONFLICT (id) DO UPDATE SET type = excluded.type, name = excluded.name, active = 1,
+          aliases = CASE WHEN entities.aliases = '[]' THEN excluded.aliases ELSE entities.aliases END`,
+      entities.filter((e) => !isPerson(e)).map(row),
+    ),
+    ...each(
+      `INSERT OR IGNORE INTO entities (id, type, name, aliases, active)
+        SELECT value ->> 'id', value ->> 'type', value ->> 'name', value ->> 'aliases', 1 FROM json_each(?)`,
+      entities.filter(isPerson).map(row),
+    ),
+  ];
 }
 
 /**

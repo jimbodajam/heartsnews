@@ -98,7 +98,7 @@ test('a build writes everything new, and the next build reads it back', async ()
   assert.deepEqual(rows(s, "SELECT aliases FROM entities WHERE id = 'hearts'"), [{ aliases: '["Hearts","Jambos"]' }]);
 });
 
-test('a second build: first_seen and bodies stick, a new call replaces the old, results settle, leavers go inactive', async () => {
+test('a second build: first_seen and bodies stick, a new call replaces the old, results settle, and nobody leaves the squad', async () => {
   const s = setUp();
   const t1 = new Date('2026-10-23T10:00:00Z');
   await saveBuild(s.store, record(t1), t1);
@@ -130,7 +130,7 @@ test('a second build: first_seen and bodies stick, a new call replaces the old, 
   assert.deepEqual(rows(s, 'SELECT id, active FROM entities ORDER BY id'), [
     { id: 'harry-milne', active: 1 },
     { id: 'hearts', active: 1 },
-    { id: 'wouter-vrancken', active: 0 },
+    { id: 'wouter-vrancken', active: 1 }, // a build never retires anyone: only a squad sync or the admin does
   ]);
   const m = await loadMemory(s.store, new Date('2026-10-26T11:00:00Z'));
   assert.deepEqual(m.aired.find((a) => a.title === 'Milne signs new deal'), {

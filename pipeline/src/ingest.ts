@@ -12,11 +12,11 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchArticleText } from './collectors/article.ts';
 import { collectAll, printReport } from './collectors/index.ts';
-import { collectSquad } from './collectors/clubsite.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
-import { ingestItems, loadRosterOverrides, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { squadFor } from './squad.ts';
+import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
 import { summariseVideos } from './summarise.ts';
 import { summariseArticles } from './article-summary.ts';
 import { updateStorylines } from './storylines.ts';
@@ -57,15 +57,12 @@ async function main() {
   const transcripts = await loadTranscripts(resolve(ROOT, 'snapshots/transcripts.json'), TRANSCRIPT_CACHE);
   console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached`);
 
-  const squad = await collectSquad().catch((err) => {
-    console.warn(`Couldn't read the squad from the club's site, using the saved list: ${(err as Error).message}`);
-    return [];
+  // The squad comes from the store; the club's pages are read only the first time and while a transfer window is open.
+  const squad = await squadFor(store, now).catch((err) => {
+    console.warn(`Couldn't read the squad from the store, using the saved portraits' list: ${(err as Error).message}`);
+    return loadFaces();
   });
-  const overrides = await loadRosterOverrides(store).catch((err) => {
-    console.warn(`Couldn't read the admin's squad edits: ${(err as Error).message}`);
-    return [];
-  });
-  const entities = seedEntities(club, match, [squad.length ? squad : loadFaces()], overrides);
+  const entities = seedEntities(club, match, [squad]);
 
   const headlineOnly = club.sources.filter((s) => s.pages === false).map((s) => s.id);
   const queue = await ingestItems(store, items, entities, tagItems(items, entities), now, headlineOnly);

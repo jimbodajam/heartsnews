@@ -27,6 +27,7 @@
     "replay": "npm -w pipeline run replay --",
     "store:import": "npm -w pipeline run store:import --",
     "ingest": "npm -w pipeline run ingest",
+    "squad": "npm -w pipeline run squad",
     "backfill:articles": "npm -w pipeline run backfill:articles --",
     "worker:dev": "npm -w worker run dev",
     "worker:deploy": "npm -w worker run deploy",

@@ -30,13 +30,13 @@ import { emptyMemory, freshness, settlePredictions, type Memory } from './memory
 import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
-import { collectSquad } from './collectors/clubsite.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
 import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
-import { loadMatches, loadMemory, loadRosterOverrides, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
+import { loadRoster } from './squad.ts';
+import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -77,14 +77,10 @@ async function main() {
   console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached (of ${transcripts.length} available)`);
 
   // Who and what each item is about, so stories group by person (tags.ts).
-  const squad = await collectSquad().catch((err) => {
-    console.warn(`Couldn't read the squad from the club's site, using the saved list: ${(err as Error).message}`);
-    return [];
-  });
   const store = storeFromEnv();
-  const overrides = store
-    ? await loadRosterOverrides(store).catch((err) => {
-        console.warn(`Couldn't read the admin's squad edits: ${(err as Error).message}`);
+  const stored = store
+    ? await loadRoster(store).catch((err) => {
+        console.warn(`Couldn't read the squad from the store: ${(err as Error).message}`);
         return [];
       })
     : [];
@@ -99,7 +95,7 @@ async function main() {
     await writeFile(resolve(OUT, 'onthisday.json'), JSON.stringify(history, null, 2));
   }
 
-  const entities = seedEntities(club, match, [squad.length ? squad : loadFaces()], overrides);
+  const entities = seedEntities(club, match, [stored.length ? stored : loadFaces()]);
   const tags = tagItems(items, entities);
   console.log(`Tagged ${tags.size} items against ${entities.length} people, clubs and competitions`);
 

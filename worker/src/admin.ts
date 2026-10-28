@@ -565,14 +565,14 @@ ${p.added ? pill('added by hand', 'warn').slice(10) : p.edited ? pill('edited', 
   const on = d.people.filter((p) => p.active);
   const off = d.people.filter((p) => !p.active);
   return page(`<h1>Squad list</h1>
-<p class="note"><a href="/admin">Back</a> · <a href="/admin.json?roster=1">JSON</a> · ${on.length} at the club. The names come from the club's own squad and coaching staff pages; what you change here is laid over them at the next ingest or build.</p>
+<p class="note"><a href="/admin">Back</a> · <a href="/admin.json?roster=1">JSON</a> · ${on.length} at the club. This list is the source of truth: it was filled from the club's squad and staff pages, and is checked against them only while a transfer window is open (or when <code>npm run squad</code> is run). What you change here applies from the next ingest.</p>
 ${error ? `<p class="pill bad">${esc(error)}</p>` : ''}
 <section><h2>Add someone</h2>
 <p class="note">For a signing the club's site doesn't list yet. They stay until you switch them off.</p>
 <form method="post" action="/admin/roster" class="person"><input name="name" placeholder="Full name, as the press spells it" aria-label="Name" required maxlength="80">${typeSelect('player')}
 <input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as"><span class="acts"><button name="action" value="add">Add</button></span></form></section>
-<section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the club-page change fills this in.</p>'}</section>
-${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here by itself.</p>${off.map(row).join('')}</section>` : ''}`);
+<section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the migration fills this in from the club pages.</p>'}</section>
+${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here at the next window check.</p>${off.map(row).join('')}</section>` : ''}`);
 }
 
 function page(body: string): string {
