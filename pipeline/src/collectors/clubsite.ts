@@ -7,7 +7,7 @@ import type { Person } from '../entities.ts';
 export async function collectSquad(): Promise<Person[]> {
   const squad: Person[] = [];
   for (const [page, role] of Object.entries(PAGES)) {
-    for (const p of people(await fetchText(`https://www.heartsfc.co.uk/pages/${page}`))) squad.push({ name: p.name, role });
+    for (const p of people(await fetchText(`https://www.heartsfc.co.uk/pages/${page}`))) squad.push({ name: p.name, role, ...(p.href ? { href: `https://www.heartsfc.co.uk${p.href}` } : {}) });
   }
   return squad;
 }

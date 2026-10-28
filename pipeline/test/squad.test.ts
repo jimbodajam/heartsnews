@@ -79,6 +79,52 @@ test('a sync adds signings and retires people the page drops, but never undoes t
   assert.ok((await names(d1)).includes('New Signing'));
 });
 
+test('details are read once for people without them: new signings and the first time round, not again', async () => {
+  const d1 = memoryD1();
+  const store = d1store(d1);
+  const people: Person[] = [...page().map((p) => ({ ...p, href: `https://club.test/${p.name}` })), { name: 'Some Coach', role: 'staff', href: 'https://club.test/coach' }];
+  const asked: string[] = [];
+  const read = async (url: string) => {
+    asked.push(url);
+    if (url.endsWith('coach')) return undefined;
+    if (url.endsWith('NumberB')) throw new Error('HTTP 500');
+    return { number: 9, position: 'Forward', url };
+  };
+  const first = await syncSquad(store, NOW, people, read, 0);
+  assert.equal(first.detailed, 16, 'sixteen players and the coach, less the one that failed');
+  const stored = (await rosterData(d1)).people;
+  assert.deepEqual(stored.find((p) => p.id === 'player-numbera')?.details, { number: 9, position: 'Forward', url: 'https://club.test/Player NumberA' });
+  assert.deepEqual(stored.find((p) => p.id === 'some-coach')?.details, { url: 'https://club.test/coach' }, 'a page with no details is not asked for again');
+  assert.deepEqual(stored.find((p) => p.id === 'player-numberb')?.details, {}, 'a failed read stays blank to try next time');
+
+  asked.length = 0;
+  const second = await syncSquad(store, NOW, people, async (url) => (asked.push(url), { number: 2 }), 0);
+  assert.deepEqual([second.detailed, asked], [1, ['https://club.test/Player NumberB']]);
+});
+
+test('the admin edits a person’s details, and a sync never overwrites them', async () => {
+  const d1 = memoryD1();
+  const store = d1store(d1);
+  const env = { DB: d1, ADMIN_TOKEN: 'secret' };
+  const post = (fields: Record<string, string>) => admin(new Request('https://w.test/admin/roster', { method: 'POST', body: new URLSearchParams(fields), headers: { cookie: 'admin=secret' } }), env);
+  const withPages = page().map((p) => ({ ...p, href: 'https://club.test/p' }));
+  await syncSquad(store, NOW, withPages, async () => ({ number: 5, position: 'Defender', debut: 'August, 1st | Aberdeen (A)', url: 'https://club.test/p' }), 0);
+
+  assert.equal((await post({ action: 'save', id: 'player-numbera', name: 'Player NumberA', type: 'player', number: '7', position: 'Winger', nationality: 'Scottish', born: '2000-01-31', signed: '' })).status, 303);
+  const bad = await post({ action: 'save', id: 'player-numbera', name: 'Player NumberA', type: 'player', born: '31/01/2000' });
+  assert.equal(bad.status, 400);
+  assert.match(await bad.text(), /YYYY-MM-DD/);
+  assert.equal((await post({ action: 'add', name: 'New Signing', type: 'player', number: '99', position: 'Striker' })).status, 303);
+
+  const by = async (id: string) => (await rosterData(d1)).people.find((p) => p.id === id)?.details;
+  assert.deepEqual(await by('player-numbera'), { number: 7, position: 'Winger', nationality: 'Scottish', born: '2000-01-31', debut: 'August, 1st | Aberdeen (A)', url: 'https://club.test/p' });
+  assert.deepEqual(await by('new-signing'), { number: 99, position: 'Striker' });
+
+  await syncSquad(store, NOW, withPages, async () => ({ number: 1 }), 0);
+  assert.equal((await by('player-numbera'))?.number, 7);
+  assert.match(await (await admin(new Request('https://w.test/admin?roster=1', { headers: { cookie: 'admin=secret' } }), env)).text(), /value="Winger"/);
+});
+
 test('a build or ingest never changes anyone already in the squad list', async () => {
   const d1 = memoryD1();
   await syncSquad(d1store(d1), NOW, page());

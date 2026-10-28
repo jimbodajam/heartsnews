@@ -329,9 +329,23 @@ export async function itemDetail(db: D1Database, id: string) {
 
 // ---- The squad list ----
 
+/** What the club's player page said (pipeline/src/playerdetails.ts), as the admin may change it. */
+interface Details {
+  number?: number;
+  position?: string;
+  nationality?: string;
+  born?: string;
+  signed?: string;
+  debut?: string;
+  apps?: number;
+  goals?: number;
+  url?: string;
+  [other: string]: unknown;
+}
+
 /** Everyone the story engine knows as a player or staff member: the club's pages, with the admin's edits (migration 0009). */
 export async function rosterData(db: D1Database) {
-  const [rows] = await query(db, [{ sql: `SELECT id, type, name, aliases, active, locked, added FROM entities WHERE type IN ('player', 'staff') ORDER BY active DESC, type DESC, name` }]);
+  const [rows] = await query(db, [{ sql: `SELECT id, type, name, aliases, active, locked, added, details FROM entities WHERE type IN ('player', 'staff') ORDER BY active DESC, type DESC, name` }]);
   return {
     people: rows.map((r) => ({
       id: String(r.id),
@@ -341,6 +355,7 @@ export async function rosterData(db: D1Database) {
       active: num(r.active) === 1,
       edited: num(r.locked) === 1,
       added: num(r.added) === 1,
+      details: (json(r.details) as Details | undefined) ?? {},
     })),
   };
 }
@@ -349,6 +364,24 @@ export async function rosterData(db: D1Database) {
 const slugOf = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const cleanName = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+/** The editable details from the form, merged over what is stored: a blank clears the field, a bad date is refused. */
+function mergeDetails(was: Details | undefined, form: FormData): { details: Details } | { error: string } {
+  const details: Details = { ...(was ?? {}) };
+  const text = (k: string) => String(form.get(k) ?? '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const set = (k: keyof Details, v: unknown) => (v === undefined || v === '' ? delete details[k] : (details[k] = v));
+  const number = text('number');
+  if (number && !/^\d{1,3}$/.test(number)) return { error: 'The squad number is a whole number.' };
+  set('number', number ? Number(number) : undefined);
+  set('position', text('position'));
+  set('nationality', text('nationality'));
+  for (const k of ['born', 'signed'] as const) {
+    const v = text(k);
+    if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) return { error: `${k === 'born' ? 'Date of birth' : 'Signed on'} is written YYYY-MM-DD.` };
+    set(k, v);
+  }
+  return { details };
+}
+
 const cleanType = (v: unknown) => (v === 'staff' ? 'staff' : 'player');
 const cleanAliases = (v: unknown) =>
   JSON.stringify(
@@ -372,13 +405,17 @@ export async function saveRoster(db: D1Database, form: FormData): Promise<string
     const name = cleanName(form.get('name'));
     const newId = slugOf(name);
     if (!newId) return 'Give the new person a name.';
+    const merged = mergeDetails(undefined, form);
+    if ('error' in merged) return merged.error;
     await run(
-      `INSERT INTO entities (id, type, name, aliases, active, locked, added) VALUES (?, ?, ?, ?, 1, 1, 1)
-       ON CONFLICT (id) DO UPDATE SET name = excluded.name, type = excluded.type, active = 1, locked = 1, added = 1 WHERE entities.type IN ('player', 'staff')`,
+      `INSERT INTO entities (id, type, name, aliases, active, locked, added, details) VALUES (?, ?, ?, ?, 1, 1, 1, ?)
+       ON CONFLICT (id) DO UPDATE SET name = excluded.name, type = excluded.type, active = 1, locked = 1, added = 1,
+         details = COALESCE(excluded.details, entities.details) WHERE entities.type IN ('player', 'staff')`,
       newId,
       cleanType(form.get('type')),
       name,
       cleanAliases(form.get('aliases')),
+      JSON.stringify(merged.details),
     );
     return undefined;
   }
@@ -391,11 +428,15 @@ export async function saveRoster(db: D1Database, form: FormData): Promise<string
     const name = cleanName(form.get('name'));
     if (!name) return 'A name can\'t be empty.';
     // The id stays as it was: stories and tags already point at it, and the club page still gives the old spelling.
+    const [was] = await query(db, [{ sql: `SELECT details FROM entities WHERE id = ?`, params: [id] }]);
+    const merged = mergeDetails(json(was[0]?.details) as Details | undefined, form);
+    if ('error' in merged) return merged.error;
     await run(
-      `UPDATE entities SET name = ?, type = ?, aliases = ?, locked = 1 WHERE id = ? AND type IN ('player', 'staff')`,
+      `UPDATE entities SET name = ?, type = ?, aliases = ?, details = ?, locked = 1 WHERE id = ? AND type IN ('player', 'staff')`,
       name,
       cleanType(form.get('type')),
       cleanAliases(form.get('aliases')),
+      JSON.stringify(merged.details),
       id,
     );
     return undefined;
@@ -551,12 +592,22 @@ ${d.feedSummary ? `<h3>Feed blurb</h3><p>${esc(d.feedSummary)}</p>` : ''}</secti
 
 const typeSelect = (current: string) => `<select name="type"><option value="player"${current === 'player' ? ' selected' : ''}>player</option><option value="staff"${current === 'staff' ? ' selected' : ''}>staff</option></select>`;
 
+/** The details the admin can change; the rest of what the club page said (debut, appearances) is shown as it was. */
+const detailInputs = (d: Details) =>
+  `<span class="details"><input name="number" value="${esc(d.number)}" aria-label="Squad number" placeholder="no." size="3" inputmode="numeric">
+<input name="position" value="${esc(d.position)}" aria-label="Position" placeholder="position" size="11">
+<input name="nationality" value="${esc(d.nationality)}" aria-label="Nationality" placeholder="nationality" size="11">
+<input name="born" value="${esc(d.born)}" aria-label="Date of birth" placeholder="born YYYY-MM-DD" size="14">
+<input name="signed" value="${esc(d.signed)}" aria-label="Signed on" placeholder="signed YYYY-MM-DD" size="15">
+${d.debut ? `<small>debut: ${esc(d.debut)}</small>` : ''}${d.apps != null ? `<small>${esc(d.apps)} apps, ${esc(d.goals ?? 0)} goals</small>` : ''}${d.url ? `<small><a href="${esc(d.url)}" rel="noreferrer">club page</a></small>` : ''}</span>`;
+
 export function renderRoster(d: Awaited<ReturnType<typeof rosterData>>, error?: string): string {
   const row = (p: (typeof d.people)[number]) => `<form method="post" action="/admin/roster" class="person${p.active ? '' : ' off'}">
 <input type="hidden" name="id" value="${esc(p.id)}">
 <input name="name" value="${esc(p.name)}" aria-label="Name" required maxlength="80">
 ${typeSelect(p.type)}
 <input name="aliases" value="${esc(p.aliases.join(', '))}" aria-label="Also known as" placeholder="also known as, comma separated">
+${detailInputs(p.details)}
 <span class="acts"><button name="action" value="save">Save</button>
 <button name="action" value="active" formnovalidate onclick="this.form.active.value='${p.active ? 0 : 1}'">${p.active ? 'Switch off' : 'Switch on'}</button>
 <input type="hidden" name="active" value="">
@@ -570,7 +621,7 @@ ${error ? `<p class="pill bad">${esc(error)}</p>` : ''}
 <section><h2>Add someone</h2>
 <p class="note">For a signing the club's site doesn't list yet. They stay until you switch them off.</p>
 <form method="post" action="/admin/roster" class="person"><input name="name" placeholder="Full name, as the press spells it" aria-label="Name" required maxlength="80">${typeSelect('player')}
-<input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as"><span class="acts"><button name="action" value="add">Add</button></span></form></section>
+<input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as">${detailInputs({})}<span class="acts"><button name="action" value="add">Add</button></span></form></section>
 <section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the migration fills this in from the club pages.</p>'}</section>
 ${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here at the next window check.</p>${off.map(row).join('')}</section>` : ''}`);
 }
@@ -587,7 +638,7 @@ a{color:inherit}small,.note{color:var(--mute)}.none{color:var(--mute);font-style
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600;white-space:nowrap}
 .pill{display:inline-block;padding:0 7px;border-radius:9px;border:1px solid var(--line);font-size:12px;white-space:nowrap}.pill.ok{color:var(--ok);border-color:var(--ok)}.pill.warn{color:var(--warn);border-color:var(--warn)}.pill.bad{color:var(--bad);border-color:var(--bad)}
 .bar{height:6px;background:var(--card);border-radius:3px;margin-top:3px}.bar i{display:block;height:100%;background:var(--ok);border-radius:3px}.bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
-.person{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.person.off{opacity:.65}.person input,.person select,.person button{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}.person input[name=name]{flex:1 1 160px}.person input[name=aliases]{flex:2 1 200px}.person button{cursor:pointer}.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.person{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.person.off{opacity:.65}.person input,.person select,.person button{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}.person input[name=name]{flex:1 1 160px}.person input[name=aliases]{flex:2 1 200px}.person button{cursor:pointer}.details{display:flex;flex:1 1 100%;gap:6px;flex-wrap:wrap;align-items:center}.details input{min-width:0}.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 details{background:var(--card);border-radius:8px;padding:8px 10px;margin:6px 0}summary{cursor:pointer}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}li{margin:6px 0}
 </style></head><body>${body}</body></html>`;
 }

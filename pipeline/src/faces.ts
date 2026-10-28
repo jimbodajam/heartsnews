@@ -31,7 +31,7 @@ export interface Face {
 const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
 
 /** People on a club page: name from the card heading (first + last name spans) and the cut-out photo. */
-export function people(html: string): { name: string; img: string }[] {
+export function people(html: string): { name: string; img: string; href?: string }[] {
   return html
     .split('featured-card')
     .slice(1)
@@ -39,10 +39,11 @@ export function people(html: string): { name: string; img: string }[] {
       const first = /<span class="h6[^"]*">([^<]*)<\/span>/.exec(card)?.[1];
       const last = /<span class="h5[^"]*">([^<]*)<\/span>/.exec(card)?.[1];
       const img = /<img[^>]+src="([^"]+)"/.exec(card)?.[1];
+      const href = /<a href="(\/pages\/[^"]+)"/.exec(card)?.[1];
       if (!last || !img || !/\.png/i.test(img)) return undefined;
-      return { name: titleCase(decodeEntities(`${first ?? ''} ${last}`).replace(/\s+/g, ' ').trim()), img: `https:${img.replace(/&amp;/g, '&').replace(/width=\d+/, 'width=400')}` };
+      return { name: titleCase(decodeEntities(`${first ?? ''} ${last}`).replace(/\s+/g, ' ').trim()), img: `https:${img.replace(/&amp;/g, '&').replace(/width=\d+/, 'width=400')}`, ...(href ? { href } : {}) };
     })
-    .filter((p): p is { name: string; img: string } => Boolean(p));
+    .filter((p): p is { name: string; img: string; href?: string } => Boolean(p));
 }
 
 /**

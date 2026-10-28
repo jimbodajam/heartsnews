@@ -1,4 +1,5 @@
 import { collectSquad } from './collectors/clubsite.ts';
+import { fetchDetails, type PlayerDetails } from './playerdetails.ts';
 import type { Person } from './entities.ts';
 import type { Statement, Store } from './store.ts';
 import { slug } from './text.ts';
@@ -73,8 +74,37 @@ export async function squadSyncDue(store: Store, now: Date): Promise<boolean> {
   return inTransferWindow(now) && JSON.parse(String(rows[0].value)).slice(0, 10) !== now.toISOString().slice(0, 10);
 }
 
-/** Reads the club's pages and brings the stored squad into line with them. */
-export async function syncSquad(store: Store, now: Date, page: Person[] | Promise<Person[]> = collectSquad()): Promise<ReturnType<typeof planSquadSync>> {
+/**
+ * Their pages on the club site for everyone in the squad list who has no details yet: new signings, and the first time
+ * round everyone. A page with no details block (a staff page) is stored as just its address, so it isn't asked for again;
+ * a failed fetch is left blank to try next sync. Returns how many were filled.
+ */
+export async function fillDetails(store: Store, page: Person[], fetchOne: (url: string) => Promise<PlayerDetails | undefined> = fetchDetails, pauseMs = 300): Promise<number> {
+  const [rows] = await store.batch([{ sql: `SELECT id, name FROM entities WHERE ${PEOPLE} AND active = 1 AND details IS NULL` }]);
+  const writes: Statement[] = [];
+  for (const r of rows) {
+    const p = page.find((x) => slug(x.name) === String(r.id) || slug(x.name) === slug(String(r.name)));
+    if (!p?.href) continue;
+    try {
+      const d = (await fetchOne(p.href)) ?? { url: p.href };
+      writes.push({ sql: `UPDATE entities SET details = ? WHERE id = ? AND details IS NULL`, params: [JSON.stringify(d), String(r.id)] });
+    } catch (err) {
+      console.warn(`Couldn't read ${p.name}'s page: ${(err as Error).message}`);
+    }
+    if (pauseMs) await new Promise((done) => setTimeout(done, pauseMs));
+  }
+  if (writes.length) await store.batch(writes);
+  return writes.length;
+}
+
+/** Reads the club's pages and brings the stored squad into line with them, then fills in anyone's missing details. */
+export async function syncSquad(
+  store: Store,
+  now: Date,
+  page: Person[] | Promise<Person[]> = collectSquad(),
+  fetchOne?: Parameters<typeof fillDetails>[2],
+  pauseMs?: number,
+): Promise<ReturnType<typeof planSquadSync> & { detailed: number }> {
   const squad = await page;
   const [rows] = await store.batch([{ sql: `SELECT id, name, active, locked, added FROM entities WHERE ${PEOPLE}` }]);
   const plan = planSquadSync(
@@ -83,7 +113,7 @@ export async function syncSquad(store: Store, now: Date, page: Person[] | Promis
     now,
   );
   await store.batch(plan.statements);
-  return plan;
+  return { ...plan, detailed: await fillDetails(store, squad, fetchOne, pauseMs) };
 }
 
 /** The squad for this run: synced first only when it's due (or forced), and a failed sync never stops the run. */
@@ -91,7 +121,7 @@ export async function squadFor(store: Store, now: Date, force = false): Promise<
   if (force || (await squadSyncDue(store, now).catch(() => false))) {
     try {
       const p = await syncSquad(store, now);
-      console.log(`Squad synced from the club's pages: ${p.added.length} new (${p.added.join(', ') || '–'}), ${p.retired.length} gone (${p.retired.join(', ') || '–'}), ${p.returned.length} back (${p.returned.join(', ') || '–'})`);
+      console.log(`Squad synced from the club's pages: ${p.added.length} new (${p.added.join(', ') || '–'}), ${p.retired.length} gone (${p.retired.join(', ') || '–'}), ${p.returned.length} back (${p.returned.join(', ') || '–'}); details read for ${p.detailed}`);
     } catch (err) {
       if (force) throw err;
       console.warn(`Couldn't sync the squad from the club's pages, using the stored list: ${(err as Error).message}`);

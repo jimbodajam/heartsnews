@@ -14,6 +14,8 @@ export interface Entity {
 export interface Person {
   name: string;
   role?: 'player' | 'staff';
+  /** Their page on the club site, when read from it (squad.ts uses it to fetch their details). */
+  href?: string;
   /** Set for someone already in the store, whose id stays as it was when their name is respelled. */
   id?: string;
   aliases?: string[];
