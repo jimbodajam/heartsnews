@@ -2,6 +2,7 @@ import { spokenList } from '../time.ts';
 import type { Graphic } from '../../../shared/bulletin.ts';
 import type { Meeting } from '../collectors/headtohead.ts';
 import type { HeadToHead } from '../headtohead.ts';
+import { scoreWords } from './history.ts';
 import type { Fixture, Lineup, OpponentFocus } from '../types.ts';
 
 // Helpers for the opposition focus: results from one team's point of view, and line-ups in words.
@@ -44,9 +45,23 @@ export function xiText(xi: Lineup): string {
 }
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const UNITS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const under100 = (n: number) => (n < 20 ? UNITS[n] : `${TENS[Math.floor(n / 10)]}${n % 10 ? `-${UNITS[n % 10]}` : ''}`);
+
+/** "nineteen fifty-two", "nineteen oh-five", "two thousand and six", "twenty twenty-six": the voice reads 1952 as "nineteen hundred and fifty-two". */
+export function spokenYear(year: number): string {
+  const [hi, lo] = [Math.floor(year / 100), year % 100];
+  if (year >= 2000 && year < 2010) return year === 2000 ? 'two thousand' : `two thousand and ${UNITS[lo]}`;
+  if (!lo) return `${under100(hi)} hundred`;
+  return `${under100(hi)} ${lo < 10 ? `oh-${UNITS[lo]}` : under100(lo)}`;
+}
+
 const where = (v: Meeting['venue']) => ({ home: 'at home', away: 'away', neutral: 'at a neutral ground' })[v];
-const when = (m: Meeting) => `in ${MONTHS[Number(m.date.slice(5, 7)) - 1]} ${m.date.slice(0, 4)}`;
+const when = (m: Meeting) => `in ${MONTHS[Number(m.date.slice(5, 7)) - 1]} ${spokenYear(Number(m.date.slice(0, 4)))}`;
+/** Digits for the screen and the AI prompt, words ("five-nil") for the voice. */
 const scoreOf = (m: Meeting) => `${m.score[0]}-${m.score[1]}`;
+const said = (m: Meeting) => scoreWords(m.score);
 
 /**
  * The head-to-head said aloud, entirely from the records so no figure is made up: the record, the record at the coming
@@ -58,12 +73,12 @@ export function headToHeadLine(h: HeadToHead, club: string): string {
     parts.push(`${h.venue === 'home' ? 'At home' : 'Away from home'} it's ${h.atVenue.won} wins, ${h.atVenue.drawn} draws and ${h.atVenue.lost} defeats.`);
   }
   if (h.lastWin) {
-    parts.push(`The last time ${club} beat ${h.opponent} was ${when(h.lastWin)}, ${scoreOf(h.lastWin)} ${where(h.lastWin.venue)}.`);
-    if (h.lastWinAtVenue && h.lastWinAtVenue !== h.lastWin) parts.push(`The last win ${where(h.venue)} was ${when(h.lastWinAtVenue)}, ${scoreOf(h.lastWinAtVenue)}.`);
+    parts.push(`The last time ${club} beat ${h.opponent} was ${when(h.lastWin)}, ${said(h.lastWin)} ${where(h.lastWin.venue)}.`);
+    if (h.lastWinAtVenue && h.lastWinAtVenue !== h.lastWin) parts.push(`The last win ${where(h.venue)} was ${when(h.lastWinAtVenue)}, ${said(h.lastWinAtVenue)}.`);
   } else {
     parts.push(`${club} have not beaten them in a league or cup game.`);
   }
-  if (h.biggestWin && h.biggestWin !== h.lastWin) parts.push(`The biggest win was ${scoreOf(h.biggestWin)}, ${when(h.biggestWin)}.`);
+  if (h.biggestWin && h.biggestWin !== h.lastWin) parts.push(`The biggest win was ${said(h.biggestWin)}, ${when(h.biggestWin)}.`);
   return parts.join(' ');
 }
 

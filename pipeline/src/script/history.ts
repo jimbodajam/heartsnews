@@ -30,7 +30,7 @@ const ORDINALS = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /** "two-one", as the style rules want scores said. */
-const scoreWords = ([us, them]: [number, number]) => `${NUMBERS[us] ?? us}-${NUMBERS[them] ?? them}`;
+export const scoreWords = ([us, them]: [number, number]) => `${NUMBERS[us] ?? us}-${NUMBERS[them] ?? them}`;
 
 /** "24th of October": the voice reads the ordinal as a word. */
 function dayWords(day: string): string {

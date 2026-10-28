@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { pageSlug, parseTeamPage } from '../src/collectors/headtohead.ts';
 import { headToHead } from '../src/headtohead.ts';
-import { headToHeadGraphic, headToHeadLine } from '../src/script/opponent.ts';
+import { headToHeadGraphic, headToHeadLine, spokenYear } from '../src/script/opponent.ts';
 
 const games = parseTeamPage(readFileSync(new URL('./fixtures/londonhearts-teamcut-rangers.html', import.meta.url), 'utf8'));
 
@@ -54,11 +54,24 @@ test('the line on air is built from the record, and the card matches it', () => 
   const h = headToHead('Rangers', games, 'home')!;
   const line = headToHeadLine(h, 'Hearts');
   assert.match(line, new RegExp(`in ${h.all.played} league and cup meetings Hearts have won ${h.all.won}, drawn ${h.all.drawn} and lost ${h.all.lost}`));
-  assert.match(line, /The last time Hearts beat Rangers was in May 2026, 2-1 at home\./);
-  assert.match(line, /The biggest win was 5-0, in (August 1952|September 1905)\./);
+  assert.match(line, /The last time Hearts beat Rangers was in May twenty twenty-six, two-one at home\./);
+  assert.match(line, /The biggest win was five-nil, in August nineteen fifty-two\./);
   const card = headToHeadGraphic(h);
   assert.deepEqual(card.lastWin, { date: 'MAY 2026', score: '2-1', venue: 'H' });
   assert.equal(card.recent.length, 5);
   assert.deepEqual(card.recent.map((r) => r.outcome), ['W', 'L', 'W', 'W', 'L']);
   console.log(line);
+});
+
+test('years are said the way people say them', () => {
+  assert.deepEqual([1889, 1905, 1952, 1900, 2000, 2006, 2019, 2026].map(spokenYear), [
+    'eighteen eighty-nine',
+    'nineteen oh-five',
+    'nineteen fifty-two',
+    'nineteen hundred',
+    'two thousand',
+    'two thousand and six',
+    'twenty nineteen',
+    'twenty twenty-six',
+  ]);
 });
