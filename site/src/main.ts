@@ -1,6 +1,7 @@
 import { BREAKING_PATH } from '../../shared/breaking';
 import type { Bulletin } from '../../shared/bulletin';
 import { LIVE_URL } from '../../shared/live';
+import type { Weather } from '../../shared/weather';
 import { audioContext } from './audio/sting';
 import { Voices } from './audio/voice';
 import { drawSplash } from './gfx/overlay';
@@ -77,6 +78,9 @@ async function boot(): Promise<void> {
   // Painted studio background, if one has been made with `npm run pixelate`. ?bg=classic starts with the code-drawn set.
   player.classicStudio = params.get('bg') === 'classic';
   if (params.has('night')) player.night = params.get('night') === '1';
+  // ?weather=clear|overcast|rain|snow|fog, with ,windy for a breeze: the scene at the ground in that weather.
+  const [sky, wind] = (params.get('weather') ?? '').split(',');
+  if (['clear', 'overcast', 'rain', 'snow', 'fog'].includes(sky)) player.weather = { sky: sky as Weather['sky'], windy: wind === 'windy' };
   const studio = new Image();
   studio.onload = () => (player.studioImage = studio);
   studio.src = 'backgrounds/studio.png';

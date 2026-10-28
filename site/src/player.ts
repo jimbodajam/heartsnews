@@ -1,4 +1,5 @@
 import type { BreakingPackage } from '../../shared/breaking';
+import type { Weather } from '../../shared/weather';
 import type { Bulletin, Graphic, Line, Presenter, Segment, SegmentKind } from '../../shared/bulletin';
 import { playSting } from './audio/sting';
 import type { Speaking, Voices } from './audio/voice';
@@ -64,6 +65,8 @@ export class Player {
   live?: LiveScore;
   /** Forces the floodlights on or off at the ground (?night=1 or 0); otherwise it goes by the time of day. */
   night?: boolean;
+  /** Forces the weather at the ground (?weather=rain, ?weather=snow,windy…); otherwise it's the break-in's, if it has any. */
+  weather?: Pick<Weather, 'sky' | 'windy'>;
 
   private ticker = new Ticker();
   private mode: 'splash' | 'ident' | 'sting' | 'show' | 'breaking' = 'splash';
@@ -321,6 +324,7 @@ export class Player {
     return {
       colours: !m || m.us === 'home' ? [primary, secondary] : (kitColours(m.home.name) ?? [C.dark, C.light]),
       night: this.night ?? isDark(new Date()),
+      weather: this.weather ?? this.breaking?.weather,
     };
   }
 

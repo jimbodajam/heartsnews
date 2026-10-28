@@ -1,12 +1,24 @@
 import { drawHeart } from './icons';
 import { C, shade } from './palette';
 import { ditherV, offscreen, rect, W, H, type Ctx } from './screen';
+import type { Weather } from '../../../shared/weather';
 
 /** The ground our reporter is at: the home support's colours, and whether the floodlights are doing the work. */
 export interface Ground {
   colours: [string, string];
   night: boolean;
+  /** The weather at the ground, if we know it; without it the sky is the usual grey afternoon (or night). */
+  weather?: Pick<Weather, 'sky' | 'windy'>;
 }
+
+/** The sky above the roof, top to bottom, by weather and whether the floodlights are on. */
+const SKIES: Record<Weather['sky'], { day: string[]; night: string[] }> = {
+  clear: { day: ['#5f94cf', '#86b0dc', '#b3cfe8'], night: ['#05060f', C.navyDark, '#1b2140'] },
+  overcast: { day: ['#7d8ea3', '#a7b4c4', '#c3ccd6'], night: ['#0c0e1a', '#171b2e', '#262c45'] },
+  rain: { day: ['#4f5b6b', '#6c7889', '#8993a1'], night: ['#0a0c16', '#141829', '#20263a'] },
+  snow: { day: ['#aab3bf', '#c8cfd8', '#e4e8ee'], night: ['#1a1e30', '#2c3249', '#464e69'] },
+  fog: { day: ['#b5bcc4', '#c9cfd5', '#dde1e5'], night: ['#202538', '#323850', '#454c68'] },
+};
 
 interface Fan {
   x: number;
@@ -43,7 +55,8 @@ function rng(seed: number): () => number {
   };
 }
 
-const keyOf = (gr: Ground) => `${gr.colours.join()}:${gr.night ? 'night' : 'day'}`;
+const sky = (gr: Ground) => gr.weather?.sky;
+const keyOf = (gr: Ground) => `${gr.colours.join()}:${gr.night ? 'night' : 'day'}:${sky(gr) ?? 'usual'}`;
 
 // The stand is drawn once per ground and cached; the crowd in front of it is drawn every frame so it can move.
 const backgrounds = new Map<string, HTMLCanvasElement>();
@@ -55,8 +68,10 @@ function background(gr: Ground): HTMLCanvasElement {
   if (c) return c;
   const [main] = gr.colours;
   c = offscreen(W, H, (o) => {
-    // Sky above the roof: a dark winter night, or a grey Scottish afternoon.
-    ditherV(o, 0, 0, W, 19, gr.night ? ['#05060f', C.navyDark, '#1b2140'] : ['#7d8ea3', '#a7b4c4', '#c3ccd6']);
+    // Sky above the roof: a dark winter night, or a grey Scottish afternoon, or whatever the weather is doing.
+    const s = SKIES[sky(gr) ?? 'overcast'];
+    const usual = sky(gr) === undefined;
+    ditherV(o, 0, 0, W, 19, gr.night ? (usual ? SKIES.clear.night : s.night) : s.day);
 
     // Floodlight pylons rising above the roof, each with a bank of lamps.
     for (const px of PYLONS) {
@@ -89,6 +104,16 @@ function background(gr: Ground): HTMLCanvasElement {
       rect(o, x0, 30, x1 - x0, H - 30, '#4a4d5a');
       for (let y = 32; y < H; y += 4) rect(o, x0, y, x1 - x0, 1, '#2f3240');
       rect(o, x0 + 3, 30, 1, H - 30, C.grey);
+    }
+
+    // Wet seats shine along each row's edge; snow settles on the roof, the lamp banks and the seat edges.
+    if (sky(gr) === 'rain') {
+      for (const b of BANDS) for (let y = b.from; y <= b.to; y += b.row) rect(o, 0, y + b.row - 2, W, 1, shade(seat, 0.18));
+    } else if (sky(gr) === 'snow') {
+      rect(o, 0, 19, W, 1, C.white);
+      for (const px of PYLONS) rect(o, px - 9, 0, 18, 1, C.white);
+      for (let x = 0; x < W; x += 3) rect(o, x, 25, 2, 1, C.light);
+      for (const b of BANDS) for (let y = b.from; y <= b.to; y += b.row) rect(o, 0, y + b.row - 1, W, 1, C.light);
     }
   });
   backgrounds.set(key, c);
@@ -137,6 +162,8 @@ export function drawStadium(g: Ctx, gr: Ground, t: number, cheer = 0.1): void {
   const [, second] = gr.colours;
   const bobAbove = 0.92 - cheer * 0.8;
   const armsAbove = 0.95 - cheer * 0.5;
+  const wet = sky(gr) === 'rain' || sky(gr) === 'snow';
+  const windy = gr.weather?.windy ?? false;
   for (const f of crowd(gr)) {
     const { s } = f;
     const bob = Math.sin(t * (2 + (f.phase % 1.5)) + f.phase) > bobAbove ? s : 0;
@@ -148,12 +175,16 @@ export function drawStadium(g: Ctx, gr: Ground, t: number, cheer = 0.1): void {
     rect(g, bx, y + headW, bodyW, s === 1 ? 4 : 7, f.shirt);
     rect(g, f.x, y, headW, headW, f.skin);
     if (f.hat) rect(g, f.x, y, headW, s, f.hat);
+    if (wet) {
+      // A hood up over the head for some of them.
+      if ((f.phase * 7) % 1 < 0.45) rect(g, f.x - (s === 2 ? 1 : 0), y - 1, headW + (s === 2 ? 2 : 0), s + 1, shade(f.shirt, -0.3));
+    }
     if (arms) {
       rect(g, bx, y - 2 * s, s, 3 * s, f.shirt);
       rect(g, bx + bodyW - s, y - 2 * s, s, 3 * s, f.shirt);
       rect(g, bx, y - 3 * s, s, s, f.skin);
       rect(g, bx + bodyW - s, y - 3 * s, s, s, f.skin);
-      if (f.scarf) rect(g, bx, y - 3 * s - 1, bodyW, s, second);
+      if (f.scarf) rect(g, bx + (windy ? Math.round(Math.sin(t * 6 + f.phase) * 1.5) : 0), y - 3 * s - 1, bodyW, s, second);
     }
   }
   // Phones going off in the crowd at night.
@@ -169,6 +200,50 @@ export function drawStadium(g: Ctx, gr: Ground, t: number, cheer = 0.1): void {
   g.globalAlpha = 0.3;
   rect(g, 0, 26, W, H - 26, C.navyDark);
   g.globalAlpha = 1;
+  drawWeather(g, gr, t);
+}
+
+/** A cheap repeatable 0–1 number for particle `i`, so the weather looks the same every frame it's at the same time. */
+const unit = (i: number, salt: number) => {
+  const n = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+  return n - Math.floor(n);
+};
+
+/** What's falling or hanging in the air in front of the stand: rain, snow, or fog. */
+function drawWeather(g: Ctx, gr: Ground, t: number): void {
+  const sky = gr.weather?.sky;
+  const windy = gr.weather?.windy ?? false;
+  if (sky === 'rain') {
+    // Streaks falling fast, leaning with the wind.
+    const lean = windy ? 3 : 1;
+    g.globalAlpha = 0.8;
+    for (let i = 0; i < 140; i++) {
+      const speed = 70 + unit(i, 1) * 40;
+      const y = (unit(i, 2) * H + t * speed) % H;
+      const x = (unit(i, 3) * W + y * (lean / 6)) % W;
+      rect(g, x, y, 1, 3, gr.night ? '#9fb4d0' : '#c9d6e6');
+      if (windy) rect(g, x + 1, y + 3, 1, 1, gr.night ? '#9fb4d0' : '#c9d6e6');
+    }
+    g.globalAlpha = 1;
+  } else if (sky === 'snow') {
+    // Flakes drifting down, sideways when it's windy.
+    for (let i = 0; i < 70; i++) {
+      const fall = 12 + unit(i, 1) * 12;
+      const y = (unit(i, 2) * H + t * fall) % H;
+      const x = (unit(i, 3) * W + Math.sin(t * 0.9 + i) * 4 + (windy ? t * 25 : 0)) % W;
+      rect(g, x < 0 ? x + W : x, y, i % 4 === 0 ? 2 : 1, i % 4 === 0 ? 2 : 1, C.white);
+    }
+  } else if (sky === 'fog') {
+    // The back rows disappear into a bank of mist, thinning towards the front, and it slowly moves.
+    const mist = gr.night ? '#5a6280' : '#dfe3e8';
+    g.globalAlpha = 0.5;
+    rect(g, 0, 26, W, 50, mist);
+    g.globalAlpha = 0.25;
+    rect(g, 0, 76, W, H - 76, mist);
+    g.globalAlpha = 0.18;
+    for (let i = 0; i < 6; i++) rect(g, ((unit(i, 4) * W + t * 3 * (1 + i / 6)) % (W + 80)) - 40, 30 + i * 22, 80, 10, mist);
+    g.globalAlpha = 1;
+  }
 }
 
 /** The press bench our reporter sits at, with his laptop. */
