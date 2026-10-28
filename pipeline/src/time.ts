@@ -69,3 +69,15 @@ export function spokenList(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
+
+const UNITS = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const under100 = (n: number) => (n < 20 ? UNITS[n] : `${TENS[Math.floor(n / 10)]}${n % 10 ? `-${UNITS[n % 10]}` : ''}`);
+
+/** "nineteen fifty-two", "nineteen oh-five", "two thousand and six", "twenty twenty-six": the voice reads 1952 as "nineteen hundred and fifty-two". */
+export function spokenYear(year: number): string {
+  const [hi, lo] = [Math.floor(year / 100), year % 100];
+  if (year >= 2000 && year < 2010) return year === 2000 ? 'two thousand' : `two thousand and ${UNITS[lo]}`;
+  if (!lo) return `${under100(hi)} hundred`;
+  return `${under100(hi)} ${lo < 10 ? `oh-${UNITS[lo]}` : under100(lo)}`;
+}

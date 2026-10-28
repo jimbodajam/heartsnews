@@ -63,9 +63,9 @@ test("Fraser's lines: the day, the birthdays, and the final with its crowd and s
   assert.equal(d.birthdays, 'Former Hearts players born on this day include Roy Kay, Andy Lynch and Neil Murray.');
   assert.equal(
     d.game,
-    'And on this day in 1959, Hearts beat Third Lanark two-one in the League Cup final, at Hampden in front of 57,994. The goals came from Johnny Hamilton and Alex Young.',
+    'And on this day in nineteen fifty-nine, Hearts beat Third Lanark two-one in the League Cup final, at Hampden in front of 57,994. The goals came from Johnny Hamilton and Alex Young.',
   );
-  assert.deepEqual(d.also, ['On this date in 1990, Hearts beat Bologna three-one in the second round of the UEFA Cup.', 'And in 2024, Hearts beat Omonoia two-nil in the Conference League.']);
+  assert.deepEqual(d.also, ['On this date in nineteen ninety, Hearts beat Bologna three-one in the second round of the UEFA Cup.', 'And in twenty twenty-four, Hearts beat Omonoia two-nil in the Conference League.']);
 });
 
 test('16 May: the 1998 Scottish Cup Final, a penalty and all', () => {
@@ -115,9 +115,9 @@ test("a great who died on this day, on a round anniversary only, and Fraser's li
   const d = historyDraft(f)!;
   assert.equal(
     d.remember,
-    'First, we remember Willie Bauld, who died on this day in 1976, 50 years ago. He played for Hearts from 1946 to 1962, making 413 appearances and scoring 278 goals.',
+    'First, we remember Willie Bauld, who died on this day in nineteen seventy-six, 50 years ago. He played for Hearts from nineteen forty-six to nineteen sixty-two, making 413 appearances and scoring 278 goals.',
   );
-  assert.equal(d.hibs, 'And across the city, on this day in 1999, Hibs lost five-nil to Celtic. Not that anyone here is counting.');
+  assert.equal(d.hibs, 'And across the city, on this day in nineteen ninety-nine, Hibs lost five-nil to Celtic. Not that anyone here is counting.');
   const seg = historySegment(f, d)!;
   assert.equal(seg.lines[1].text, d.remember);
   assert.equal(seg.lines[1].graphic, undefined);

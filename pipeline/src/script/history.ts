@@ -1,7 +1,7 @@
 import type { Graphic, Line, Segment } from '../../../shared/bulletin.ts';
 import type { HistoryGoal, HistoryResult } from '../collectors/londonhearts.ts';
 import { isEurope, type HibsDefeat, type HistoryPicks, type RankedBirthday } from '../history.ts';
-import { spokenList } from '../time.ts';
+import { spokenList, spokenYear } from '../time.ts';
 import type { ClubConfig } from '../types.ts';
 import { firstName, presenter, type Facts } from './facts.ts';
 
@@ -141,9 +141,9 @@ export function historyDraft(f: Facts): HistoryDraft | undefined {
   if (s) {
     const goals = s.goals === 1 ? 'one goal' : `${s.goals} goals`;
     star = s.current
-      ? `Happy birthday to ${s.name}, who turns ${s.age} today. He's played ${s.apps} games for ${us} since ${s.first.slice(0, 4)}, with ${goals}.`
+      ? `Happy birthday to ${s.name}, who turns ${s.age} today. He's played ${s.apps} games for ${us} since ${spokenYear(Number(s.first.slice(0, 4)))}, with ${goals}.`
       : // Born on this day rather than an age: the records don't say who is still with us.
-        `${s.legend ? `A ${us} great` : `A familiar face`} was born on this day in ${s.born}: ${s.name}. He played for ${us} from ${s.first.slice(0, 4)} to ${s.last.slice(0, 4)}, ` +
+        `${s.legend ? `A ${us} great` : `A familiar face`} was born on this day in ${spokenYear(s.born)}: ${s.name}. He played for ${us} from ${spokenYear(Number(s.first.slice(0, 4)))} to ${spokenYear(Number(s.last.slice(0, 4)))}, ` +
         `making ${s.apps} appearances and scoring ${goals}.`;
   }
   const others = p.birthdays.filter((b) => b !== s).map((b) => b.name);
@@ -159,11 +159,11 @@ export function historyDraft(f: Facts): HistoryDraft | undefined {
     const where = `${g.venue === 'away' ? 'away ' : ''}at ${ground(g)}`;
     const crowd = g.crowd && g.crowd >= 10_000 ? ` in front of ${g.crowd.toLocaleString('en-GB')}` : '';
     game =
-      `And on this day in ${g.date.slice(0, 4)}, ${us} beat ${g.opponent} ${scoreWords(g.score)} in ${occasion(g)}, ${where}${crowd}.` +
+      `And on this day in ${spokenYear(Number(g.date.slice(0, 4)))}, ${us} beat ${g.opponent} ${scoreWords(g.score)} in ${occasion(g)}, ${where}${crowd}.` +
       (scorersSentence(g.scorers) ? ` ${scorersSentence(g.scorers)}` : '');
   }
   const also = p.also.map(
-    (r, i) => `${i === 0 ? 'On this date in' : 'And in'} ${r.date.slice(0, 4)}, ${us} beat ${r.opponent} ${scoreWords(r.score)}${isEurope(r) || occasion(r) !== 'the league' ? ` in ${occasion(r)}` : ''}.`,
+    (r, i) => `${i === 0 ? 'On this date in' : 'And in'} ${spokenYear(Number(r.date.slice(0, 4)))}, ${us} beat ${r.opponent} ${scoreWords(r.score)}${isEurope(r) || occasion(r) !== 'the league' ? ` in ${occasion(r)}` : ''}.`,
   );
 
   let remember: string | undefined;
@@ -171,8 +171,8 @@ export function historyDraft(f: Facts): HistoryDraft | undefined {
   if (r) {
     const record = r.apps ? `, making ${r.apps} appearances and scoring ${r.goals === 1 ? 'one goal' : `${r.goals ?? 0} goals`}` : '';
     remember =
-      `First, we remember ${r.name}, who died on this day in ${r.died}, ${r.years} years ago. ` +
-      `He played for ${us} from ${r.first.slice(0, 4)} to ${r.last.slice(0, 4)}${record}.`;
+      `First, we remember ${r.name}, who died on this day in ${spokenYear(r.died)}, ${r.years} years ago. ` +
+      `He played for ${us} from ${spokenYear(Number(r.first.slice(0, 4)))} to ${spokenYear(Number(r.last.slice(0, 4)))}${record}.`;
   }
 
   let hibs: string | undefined;
@@ -185,7 +185,7 @@ export function historyDraft(f: Facts): HistoryDraft | undefined {
         : /uefa|europ|champions|fairs|winners/i.test(h.competition)
           ? ` in the ${h.competition}`
           : '';
-    hibs = `And across the city, on this day in ${h.date.slice(0, 4)}, Hibs lost ${scoreWords([h.score[1], h.score[0]])} to ${h.opponent}${occ}. Not that anyone here is counting.`;
+    hibs = `And across the city, on this day in ${spokenYear(Number(h.date.slice(0, 4)))}, Hibs lost ${scoreWords([h.score[1], h.score[0]])} to ${h.opponent}${occ}. Not that anyone here is counting.`;
   }
   return { intro, remember, star, birthdays, game, also, hibs };
 }

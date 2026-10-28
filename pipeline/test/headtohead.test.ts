@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { pageSlug, parseTeamPage } from '../src/collectors/headtohead.ts';
 import { headToHead } from '../src/headtohead.ts';
-import { headToHeadGraphic, headToHeadLine, spokenYear } from '../src/script/opponent.ts';
+import { headToHeadGraphic, headToHeadLine } from '../src/script/opponent.ts';
+import { spokenYear } from '../src/time.ts';
 
 const games = parseTeamPage(readFileSync(new URL('./fixtures/londonhearts-teamcut-rangers.html', import.meta.url), 'utf8'));
 
