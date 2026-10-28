@@ -20,7 +20,7 @@ import { templateDraft } from './script/draft.ts';
 import { assemble, sidebar } from './script/assemble.ts';
 import type { Bulletin, Line } from '../../shared/bulletin.ts';
 import { buildFacts, isUs, matchNews, teamName, type Channel, type Facts } from './script/facts.ts';
-import { geminiFromEnv, reportScorers } from './script/llm.ts';
+import { geminiFromEnv, reportScorers, type ScriptModel } from './script/llm.ts';
 import { writeInPieces, writeLinks } from './script/pieces.ts';
 import { quietSlot, swapLinks, type NewLinks } from './script/quiet.ts';
 import { remember } from './script/remember.ts';
@@ -36,7 +36,7 @@ import { seedEntities } from './entities.ts';
 import { tagItems } from './tags.ts';
 import { loadFaces } from './script/faces.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
-import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, storeFromEnv, type CheckLog } from './store.ts';
+import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -165,6 +165,10 @@ async function main() {
   let writer = 'templates';
 
   const model = flags.has('--templates') ? undefined : geminiFromEnv();
+  // Every model used, for the bulletin's trace (issue #39).
+  const used: ScriptModel[] = model ? [model] : [];
+  let prompts: Record<string, string> = {};
+  let failedPieces: { id: string; error: string }[] = [];
   // Nothing new since the last programme? Then only its links are rewritten (script/quiet.ts).
   const prev = await readJson<Bulletin>(existsSync(ON_AIR) ? ON_AIR : BULLETIN).catch(() => undefined);
   const forced = ['--full', '--fresh', '--templates'].find((x) => flags.has(x)) ?? (model ? undefined : 'no AI writer');
@@ -181,6 +185,8 @@ async function main() {
       await writeFile(resolve(OUT, 'ai-prompts.json'), JSON.stringify(pieces.prompts, null, 2));
       await writeFile(resolve(OUT, 'ai-schemas.json'), JSON.stringify(pieces.schemas, null, 2));
       draft = pieces.draft;
+      prompts = pieces.prompts;
+      failedPieces = pieces.failed;
       writer = pieces.failed.length ? `${model.name}, ${pieces.failed.length} parts from templates` : model.name;
       // Match reports whose card has the score but no scorers: ask for the goals on their own.
       for (const feat of draft.features) {
@@ -201,13 +207,14 @@ async function main() {
     console.log(`\nWriting script with templates (${flags.has('--templates') ? '--templates' : 'no GEMINI_API_KEY set'}).`);
   }
 
-  const bulletin = quiet.partial && prev ? await rewriteLinks(prev, facts, templateDraft(facts).welcome) : assemble(facts, draft, writer);
+  const bulletin = quiet.partial && prev ? await rewriteLinks(prev, facts, templateDraft(facts).welcome, used) : assemble(facts, draft, writer);
   const linkLines = quiet.partial ? bulletin.segments.flatMap((seg) => seg.lines.filter((l) => l.link && !l.audio)) : [];
 
   // Second pass: check every AI-written line against the sources, fixing or dropping what doesn't hold up.
   const checks: CheckLog[] = [];
   const checker = quiet.partial || writer === 'templates' || flags.has('--no-check') ? undefined : geminiFromEnv([150_000, 120_000]);
   if (checker) {
+    used.push(checker);
     try {
       console.log(`\nFact-checking with ${checker.name}…`);
       const fc = await factCheck(checker, facts, bulletin);
@@ -264,6 +271,23 @@ async function main() {
     } catch (err) {
       console.warn(`Couldn't write the results and fact checks to the store: ${(err as Error).message}`);
     }
+    if (saved) {
+      try {
+        // Why the bulletin said what it did (issue #39): the requests, the prompts, the script. A batch of its own, so
+        // a store without the trace table yet still remembers the bulletin.
+        const trace: Trace = {
+          writer: bulletin.generatedBy ?? writer,
+          meta: { mode: quiet.partial ? 'partial' : 'full', why: quiet.partial ? quiet.summary : quiet.reason, ...(failedPieces.length ? { failed: failedPieces } : {}) },
+          calls: used.flatMap((m) => m.log ?? []),
+          prompts,
+          script: scriptOf(bulletin),
+        };
+        await saveTrace(save, bulletin.generatedAt, trace, now);
+        console.log(`Saved the trace: ${trace.calls.length} model requests, ${Object.keys(prompts).length} prompts`);
+      } catch (err) {
+        console.warn(`Couldn't write the bulletin's trace to the store: ${(err as Error).message}`);
+      }
+    }
   }
   console.log(`\nBulletin written (${bulletin.generatedBy ?? writer}):`);
   for (const seg of bulletin.segments) {
@@ -278,8 +302,9 @@ async function main() {
 }
 
 /** A quiet slot: the last programme with its links reworded (one Flash-Lite request), the ticker and side panel current. */
-async function rewriteLinks(prev: Bulletin, facts: Facts, greeting: string): Promise<Bulletin> {
+async function rewriteLinks(prev: Bulletin, facts: Facts, greeting: string, used: ScriptModel[]): Promise<Bulletin> {
   const lite = geminiFromEnv(undefined, ['gemini-flash-lite-latest'])!;
+  used.push(lite);
   let links: NewLinks = { welcome: greeting, handovers: [] };
   let how = 'links rewritten';
   try {

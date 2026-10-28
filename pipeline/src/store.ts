@@ -1,7 +1,9 @@
+import type { Bulletin } from '../../shared/bulletin.ts';
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { OnAirDesk } from './onair.ts';
+import type { CallRecord } from './script/llm.ts';
 import type { LedgerMatch } from './script/ledger.ts';
 import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
@@ -399,6 +401,47 @@ export function ledgerWrites(matches: LedgerMatch[], bulletinId: string | undefi
 export async function saveLedger(store: Store, matches: LedgerMatch[], bulletinId: string | undefined, checks: CheckLog[], now: Date): Promise<void> {
   const statements = ledgerWrites(matches, bulletinId, checks, now);
   if (statements.length) await store.batch(statements);
+}
+
+// ---- The bulletin trace ----
+// What a programme was built from, for the admin view (issue #39): each model request, the prompts, the final script.
+// In a batch of its own after saveBuild, like the ledger, so a store without migration 0008 still remembers the bulletin.
+
+/** Prompts are kept for this many of the latest bulletins; older traces keep everything else. */
+export const KEEP_PROMPTS = 30;
+/** One prompt's cap, so a trace stays well inside a D1 row. */
+const MAX_PROMPT = 40_000;
+
+export interface Trace {
+  writer?: string;
+  meta: { mode: 'full' | 'partial'; why: string; failed?: { id: string; error: string }[] };
+  calls: CallRecord[];
+  /** By piece id. */
+  prompts: Record<string, string>;
+  script: { id: string; title: string; lines: { speaker: string; text: string; link?: string }[] }[];
+}
+
+/** A trace of a bulletin's final segments, without the audio and graphics. */
+export const scriptOf = (bulletin: Bulletin): Trace['script'] =>
+  bulletin.segments.map((s) => ({ id: s.id, title: s.title, lines: s.lines.map((l) => ({ speaker: l.speaker, text: l.text, ...(l.link ? { link: l.link } : {}) })) }));
+
+export function traceWrites(bulletinId: string, t: Trace, now: Date): Statement[] {
+  const prompts = Object.fromEntries(Object.entries(t.prompts).map(([id, p]) => [id, p.slice(0, MAX_PROMPT)]));
+  return [
+    {
+      sql: `INSERT OR REPLACE INTO bulletin_traces (bulletin_id, at, writer, meta, calls, prompts, script) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      params: [bulletinId, now.toISOString(), t.writer ?? null, JSON.stringify(t.meta), JSON.stringify(t.calls), JSON.stringify(prompts), JSON.stringify(t.script)],
+    },
+    {
+      sql: `UPDATE bulletin_traces SET prompts = NULL WHERE prompts IS NOT NULL
+              AND bulletin_id NOT IN (SELECT bulletin_id FROM bulletin_traces ORDER BY at DESC LIMIT ?)`,
+      params: [KEEP_PROMPTS],
+    },
+  ];
+}
+
+export async function saveTrace(store: Store, bulletinId: string, t: Trace, now: Date): Promise<void> {
+  await store.batch(traceWrites(bulletinId, t, now));
 }
 
 // ---- Ingesting ----

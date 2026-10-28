@@ -90,7 +90,7 @@ export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin
       ? []
       : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' })).filter((l) => !l.prediction),
   );
-  const res = (await model.generateJson(buildPrompt(f, lines), SCHEMA)) as {
+  const res = (await model.generateJson(buildPrompt(f, lines), SCHEMA, 'factcheck')) as {
     corrections?: { lineId: string; action: 'fix' | 'drop'; text?: string; reason: string }[];
   };
 

@@ -4,18 +4,19 @@
 // logic is in feed.ts, which a recorded match can be replayed through (`npm run replay`).
 // It also serves /store, the channel's memory in D1, to the bulletin builds (store.ts), and is the channel's clock:
 // a cron trigger every minute queues the programmes and breaking news that are due and hands them out, and starts the
-// ingest every half hour (clock.ts).
+// ingest every half hour (clock.ts). And /admin (admin.ts), the read-only backend view, behind ADMIN_TOKEN.
 // Deploy (owner only): npx wrangler login, then npm run worker:deploy.
 
 import club from '../../clubs/hearts.json';
 import { initialData } from '../../shared/bbc.ts';
+import { admin, type AdminEnv } from './admin.ts';
 import { dispatcher, ingester, tick } from './clock.ts';
 import { liveFeed } from './feed.ts';
 import { store, type StoreEnv } from './store.ts';
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; HeartsNews24/0.1; hobby fan project)';
 
-interface Env extends StoreEnv {
+interface Env extends StoreEnv, AdminEnv {
   /** owner/name of the repo whose bulletin workflow builds jobs (wrangler.toml). */
   GITHUB_REPO?: string;
   /** A fine-grained token that can only run this repo's workflows (Actions: read and write), a Worker secret. */
@@ -47,7 +48,11 @@ async function clock(env: Env): Promise<void> {
 }
 
 export default {
-  fetch: (request: Request, env: Env): Promise<Response> =>
-    new URL(request.url).pathname === '/store' ? store(request, env) : live.respond(request),
+  fetch: (request: Request, env: Env): Promise<Response> => {
+    const path = new URL(request.url).pathname;
+    if (path === '/store') return store(request, env);
+    if (path === '/admin' || path === '/admin.json') return admin(request, env);
+    return live.respond(request);
+  },
   scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): void => ctx.waitUntil(clock(env)),
 };

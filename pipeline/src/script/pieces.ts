@@ -616,7 +616,7 @@ function bulletinGists(prev: Bulletin): (Slot & { gist: string })[] {
  */
 export async function writeLinks(model: ScriptModel, f: Facts, prev: Bulletin): Promise<NewLinks> {
   const slots = bulletinGists(prev);
-  const answer = (await model.generateJson(linksPromptFor(f, slots, true), QUIET_LINKS_SCHEMA)) as Record<string, unknown>;
+  const answer = (await model.generateJson(linksPromptFor(f, slots, true), QUIET_LINKS_SCHEMA, 'links')) as Record<string, unknown>;
   const ids = new Set(f.channel.presenters.map((p) => p.id));
   const text = (v: unknown) => (typeof v === 'string' && v.trim().length > 3 ? v.trim() : undefined);
   const handovers = (Array.isArray(answer.transitions) ? answer.transitions : [])
@@ -655,7 +655,7 @@ export async function writeInPieces(model: ScriptModel, f: Facts, base: Draft): 
     prompts[id] = prompt;
     schemas[id] = schema;
     try {
-      const answer = (await model.generateJson(prompt, schema)) as Record<string, unknown>;
+      const answer = (await model.generateJson(prompt, schema, id)) as Record<string, unknown>;
       raw[id] = answer;
       written.push(id);
       console.log(`  ✓ ${id} (${Math.round((Date.now() - started) / 1000)}s)`);
