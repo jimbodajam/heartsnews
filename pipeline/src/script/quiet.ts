@@ -67,12 +67,19 @@ export function quietSlot(prev: Bulletin | undefined, f: Facts, opts: QuietOptio
 
   // Which packages are picked shifts after every full build (an aired one is down-weighted), so a different pick isn't
   // news by itself: a pick with a new claim is caught above, and an aired story leaving the pool below.
-  if (now.lead !== was.lead) return full('a different lead story');
-  if (!sameSet(now.top, was.top)) return full('a different set of top stories');
-  if (!sameSet(now.transfers, was.transfers)) return full('a different set of transfer stories');
-  const inPool = new Set([...f.pool, ...f.features, ...f.transfers].map((s) => s.id));
-  const gone = was.aired.find((id) => !inPool.has(id));
-  if (gone) return full('a story the last programme aired has dropped out');
+  const all = [...f.pool, ...f.features, ...f.transfers];
+  const name = (id: string | undefined) => {
+    const s = all.find((x) => x.id === id);
+    return s ? `"${s.title}"` : `${id ?? 'none'} (not in the pool)`;
+  };
+  const names = (ids: string[]) => (ids.length ? ids.map(name).join(', ') : 'none');
+  const diff = (a: string[], b: string[]) => `now has ${names(a.filter((x) => !b.includes(x)))}; no longer has ${names(b.filter((x) => !a.includes(x)))}`;
+  if (now.lead !== was.lead) return full(`a different lead story: ${name(now.lead)} instead of ${name(was.lead)}`);
+  if (!sameSet(now.top, was.top)) return full(`a different set of top stories: ${diff(now.top, was.top)}`);
+  if (!sameSet(now.transfers, was.transfers)) return full(`a different set of transfer stories: ${diff(now.transfers, was.transfers)}`);
+  const inPool = new Set(all.map((s) => s.id));
+  const gone = was.aired.filter((id) => !inPool.has(id));
+  if (gone.length) return full(`a story the last programme aired has dropped out: ${names(gone)}`);
 
   return { partial: true, summary: `nothing new on the ${onAir.length} top stories, order unchanged` };
 }
