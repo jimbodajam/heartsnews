@@ -11,6 +11,8 @@ import type { LiveMatch, SheetPlayer, TeamSheet } from '../../../shared/live.ts'
 import { toLineup } from '../collectors/bbc.ts';
 import type { Face } from '../faces.ts';
 import type { Channel } from '../script/facts.ts';
+import { milestoneSentence } from '../script/milestones.ts';
+import { findMilestones, findPlayer, type Totals } from '../tally.ts';
 import { describeXI } from '../script/opponent.ts';
 import { spokenList } from '../time.ts';
 import { SIGN_OFF } from './script.ts';
@@ -99,7 +101,20 @@ export interface TeamNewsInput {
   /** Our last starting XI and who it was against, for the changes. */
   previous?: { sheet: TeamSheet; against: string };
   faces?: Face[];
+  /** Everyone's Hearts appearances and goals by our own count (tally.ts), for a milestone the game could bring. */
+  totals?: Totals[];
   now?: Date;
+}
+
+/**
+ * Milestones this team could bring: a player in the XI one appearance short of a round number, or within reach of a goals
+ * one. Said by our count, and only for the names in the XI (a substitute may not play).
+ */
+export function xiMilestones(sheet: TeamSheet, totals: Totals[] = []): string | undefined {
+  const roster = totals.map((t) => ({ id: t.id, name: t.name, aliases: [] as string[] }));
+  const ids = new Set(sheet.rows.flat().flatMap((p) => findPlayer(roster, p)?.id ?? []));
+  const found = findMilestones(totals.filter((t) => ids.has(t.id))).filter((m) => !m.reached && (m.kind === 'goals' || m.to === 1)).slice(0, 2);
+  return found.length ? `By our count, there could be a milestone today. ${found.map(milestoneSentence).join(' ')}` : undefined;
 }
 
 const formation = (sheet: TeamSheet, ours: boolean, label: string, changed: string[] = []): Graphic => ({
@@ -113,7 +128,7 @@ const formation = (sheet: TeamSheet, ours: boolean, label: string, changed: stri
 });
 
 /** The whole package, ready to voice. */
-export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, previous, faces = [], now = new Date() }: TeamNewsInput): BreakingPackage {
+export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, previous, faces = [], totals, now = new Date() }: TeamNewsInput): BreakingPackage {
   const find = (id?: string) => channel.presenters.find((p) => p.id === id);
   const anchor = find(channel.cast.anchors[0])!;
   const wall: Presenter = find(channel.cast.teamNews) ?? find(channel.cast.analyst) ?? anchor;
@@ -143,6 +158,8 @@ export function buildTeamNewsPackage({ key, match: m, lineup: sheet, channel, pr
     }),
   );
   lines.push(say(shapeLine(sheet, previous), formation(sheet, true, 'EXPECTED', fresh.map((p) => p.shirt))));
+  const milestone = xiMilestones(sheet, totals);
+  if (milestone) lines.push(say(milestone));
   const bench = benchLine(sheet);
   if (bench) {
     const players = sheet.bench.map((p) => ({ name: p.shirt, ...(p.number !== undefined ? { number: p.number } : {}), ...playerFace(p, faces) }));

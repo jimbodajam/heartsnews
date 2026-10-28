@@ -25,6 +25,8 @@ import { previousSheet } from '../collectors/bbc.ts';
 import { loadFaces } from '../script/faces.ts';
 import { EventTracker, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
 import { buildPackage, buildPeriodPackage } from './script.ts';
+import { storeFromEnv } from '../store.ts';
+import { loadTotals } from '../tally.ts';
 import { buildTeamNewsPackage } from './teamnews.ts';
 import { matchWeather, type Place } from '../weather.ts';
 
@@ -90,7 +92,10 @@ export async function writePackage(r: Ready, model?: ScriptModel): Promise<Break
     const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
     const previous = await previousSheet(club.bbc.team, r.match.kickOff).catch(() => undefined);
     if (!previous) console.log("[breaking] Couldn't read our last team from BBC: no changes line");
-    return buildTeamNewsPackage({ ...r, channel, previous, faces: loadFaces() });
+    // Our own appearances and goals count, for a milestone the team could bring (issue #35). Without it there is no line.
+    const store = storeFromEnv();
+    const totals = store ? await loadTotals(store).catch(() => undefined) : undefined;
+    return buildTeamNewsPackage({ ...r, channel, previous, faces: loadFaces(), totals });
   }
   if ('period' in r) {
     const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { ground?: Place };

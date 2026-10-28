@@ -47,7 +47,7 @@ export interface Draft {
   opponent?: { form: string; /** Template only (script/opponent.ts): the record is always as London Hearts have it. */ headToHead?: string; theirXI?: string; ourXI?: string };
   /** On This Day at the museum. Template only (script/history.ts), so the history is always as the records have it. */
   history?: HistoryDraft;
-  /** Squad milestones from our own count (script/milestones.ts), said in the Match Centre. Template only. */
+  /** Squad milestones from our own count (script/milestones.ts), said in the Match Centre: the writer's words, or the template's line. */
   milestones?: string;
   outro: string;
 }

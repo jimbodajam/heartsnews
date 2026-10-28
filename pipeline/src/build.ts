@@ -31,7 +31,7 @@ import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
-import { findMilestones, loadTotals, type Milestone } from './tally.ts';
+import { countGames, findMilestones, loadTotals, type Milestone } from './tally.ts';
 import { collectMeetings } from './collectors/headtohead.ts';
 import { headToHead } from './headtohead.ts';
 import { seedEntities } from './entities.ts';
@@ -149,6 +149,11 @@ async function main() {
   let milestones: Milestone[] = [];
   if (store) {
     try {
+      // A game that has just finished is counted now, so a milestone reached in it can be said in the reaction.
+      if (save) {
+        const counted = await countGames(save, club, match?.last ?? [], now);
+        for (const g of counted) console.log(`Tally: counted ${g.id} (${g.played} played, ${g.scored} goals)`);
+      }
       milestones = findMilestones(await loadTotals(store));
       if (milestones.length) console.log(`Squad milestones: ${milestones.map((m) => `${m.name} ${m.reached ? 'reached' : `${m.to} from`} ${m.mark} ${m.kind}`).join('; ')}`);
     } catch (err) {

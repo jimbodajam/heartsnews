@@ -14,12 +14,15 @@ import type { ClubConfig, Fixture } from './types.ts';
 
 export { auditTally, loadTotals, tallySince, type Drift, type Totals } from './tally-totals.ts';
 
-/** A finished page is final well inside this; sooner than this and a late goal or a corrected sub could still change it. */
+/**
+ * A game is counted as soon as BBC calls it done and its line-ups add up (so the reaction bulletin can say a milestone was
+ * reached), then counted again once this long after kick-off, in case a late goal or a corrected sub changed the page.
+ */
 const SETTLE_MS = 3 * 3_600_000;
 
 /** Appearances and goals worth marking, and how close counts as "nearly". */
 export const APP_MILESTONES = [50, 100, 150, 200, 250, 300];
-export const GOAL_MILESTONES = [25, 50, 100];
+export const GOAL_MILESTONES = [10, 25, 50, 100];
 export const NEAR_APPS = 3;
 export const NEAR_GOALS = 2;
 
@@ -114,6 +117,7 @@ export function countGame(
   club: ClubConfig,
   page: ReturnType<typeof playedIn>,
   roster: RosterPlayer[],
+  now = new Date(),
 ): { statements: Statement[]; counted: CountedGame } | undefined {
   const team = club.bbc?.team;
   const side = f.homeSlug === team ? 'home' : f.awaySlug === team ? 'away' : undefined;
@@ -141,8 +145,9 @@ export function countGame(
   return {
     counted: { id, played: rows.size, scored, unmatched },
     statements: [
+      { sql: `DELETE FROM tally_games WHERE match_id = ?`, params: [id] },
       { sql: `INSERT OR REPLACE INTO tally_games (match_id, entity_id, started, goals) SELECT ?, value ->> 'entity', value ->> 'started', value ->> 'goals' FROM json_each(?)`, params: [id, json] },
-      { sql: `INSERT OR REPLACE INTO tally_runs (match_id, date, counted_at, unmatched) VALUES (?, ?, ?, ?)`, params: [id, f.date, new Date().toISOString(), JSON.stringify(unmatched)] },
+      { sql: `INSERT OR REPLACE INTO tally_runs (match_id, date, counted_at, unmatched) VALUES (?, ?, ?, ?)`, params: [id, f.date, now.toISOString(), JSON.stringify(unmatched)] },
     ],
   };
 }
@@ -160,10 +165,16 @@ export async function countGames(
 ): Promise<CountedGame[]> {
   const since = await tallySince(store);
   if (!since) return [];
-  const [counted] = await store.batch([{ sql: `SELECT match_id FROM tally_runs` }]);
-  const done = new Set(counted.map((r) => String(r.match_id)));
+  const [counted] = await store.batch([{ sql: `SELECT match_id, counted_at FROM tally_runs` }]);
+  const countedAt = new Map(counted.map((r) => [String(r.match_id), Date.parse(String(r.counted_at))]));
+  // Counted once the page is done, and again if that was before it settled and it has now.
+  const needed = (f: Fixture) => {
+    const at = countedAt.get(gameId(f));
+    const settled = Date.parse(f.date) + SETTLE_MS;
+    return at === undefined || (at < settled && now.getTime() >= settled);
+  };
   const due = fixtures
-    .filter((f) => f.status === 'done' && f.link && f.date.slice(0, 10) > since && countable(f.competition) && now.getTime() - Date.parse(f.date) > SETTLE_MS && !done.has(gameId(f)))
+    .filter((f) => f.status === 'done' && f.link && f.date.slice(0, 10) > since && countable(f.competition) && needed(f))
     .sort((a, b) => a.date.localeCompare(b.date));
   if (!due.length) return [];
 
@@ -171,7 +182,7 @@ export async function countGames(
   const out: CountedGame[] = [];
   for (const f of due) {
     try {
-      const game = countGame(f, club, playedIn(initialData(await fetchPage(f.link!))), roster);
+      const game = countGame(f, club, playedIn(initialData(await fetchPage(f.link!))), roster, now);
       if (!game) {
         console.warn(`Tally: ${f.home} v ${f.away} (${f.date.slice(0, 10)}) has no final line-ups yet`);
         continue;

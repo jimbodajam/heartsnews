@@ -10,7 +10,8 @@ import type { Store } from '../src/store.ts';
 import { auditTally, countGame, countGames, findMilestones, findPlayer, loadPlayers, loadTotals, seedTally, type RosterPlayer } from '../src/tally.ts';
 import type { ClubConfig, Fixture } from '../src/types.ts';
 import { admin, rosterData, runAudit } from '../../worker/src/admin.ts';
-import { milestoneLine } from '../src/script/milestones.ts';
+import { xiMilestones } from '../src/breaking/teamnews.ts';
+import { milestoneFacts, milestoneLine, milestonesFor } from '../src/script/milestones.ts';
 import { memoryD1 } from './d1.ts';
 
 const d1store = (d1: ReturnType<typeof memoryD1>): Store => ({
@@ -93,10 +94,10 @@ test('a finished game is counted once: starters, the sub who came on, and the sc
   const page = bbcPage(eleven(['Starter9']), [{ ...person('Player', 'Sub', 12), substitutedOn: { timeMin: 70 } }, person('Played', 'Never', 13)]);
   const html = `<script>window.__INITIAL_DATA__ = ${JSON.stringify(JSON.stringify({ data: page }))};</script>`;
 
-  assert.equal((await countGames(store, club, [fixture()], new Date('2026-10-25T15:00:00Z'), async () => html)).length, 0, 'not settled yet');
+  assert.equal((await countGames(store, club, [fixture()], new Date('2026-10-25T16:30:00Z'), async () => html)).length, 1, 'counted as soon as the page is done');
   const counted = await countGames(store, club, [fixture(), fixture({ date: '2026-10-03T14:00:00.000Z' }), fixture({ date: '2026-10-26T14:00:00.000Z', competition: 'Club Friendly' })], NOW, async () => html);
-  assert.deepEqual(counted.map((g) => [g.id, g.played, g.scored, g.unmatched]), [['2026-10-25|Motherwell|Hearts', 12, 1, []]]);
-  assert.equal((await countGames(store, club, [fixture()], NOW, async () => html)).length, 0, 'counted once');
+  assert.deepEqual(counted.map((g) => [g.id, g.played, g.scored, g.unmatched]), [['2026-10-25|Motherwell|Hearts', 12, 1, []]], 'and again once it has settled');
+  assert.equal((await countGames(store, club, [fixture()], NOW, async () => html)).length, 0, 'then left alone');
 
   const t = new Map((await loadTotals(store)).map((x) => [x.name, x]));
   assert.deepEqual([t.get('First3 Starter3')?.apps, t.get('First3 Starter3')?.goals], [100, 25]);
@@ -178,4 +179,25 @@ test('the squad list shows our counts, and the audit button compares them with L
   const body = await page.text();
   assert.match(body, /Run audit/);
   assert.match(body, /100 appearances, 25 goals/);
+});
+
+test('before a game only what it could bring is said; after one, what was reached; never during', () => {
+  const m = (over: object) => ({ id: 'x', name: 'Test Player', kind: 'apps' as const, mark: 100, total: 99, reached: false, to: 1, ...over });
+  const all = [m({}), m({ to: 3, total: 97 }), m({ kind: 'goals', mark: 25, to: 2 }), m({ reached: true, to: 0, total: 100 })];
+  assert.deepEqual(milestonesFor('preview', all).map((x) => [x.kind, x.to, x.reached]), [['apps', 1, false], ['goals', 2, false]]);
+  assert.equal(milestonesFor('reaction', all).length, 4);
+  assert.equal(milestonesFor('live', all).length, 0);
+  assert.deepEqual(milestoneFacts([m({})]), ['Test Player: 99 Hearts appearances by our count; one short of one hundred']);
+});
+
+test('team news notes a milestone only for a player in the XI', () => {
+  const totals = [
+    { id: 'a', name: 'Harry Milne', apps: 49, goals: 1 },
+    { id: 'b', name: 'Zander Clark', apps: 76, goals: 0 },
+    { id: 'c', name: 'Bench Warmer', apps: 99, goals: 0 },
+  ];
+  const p = (shirt: string, first: string) => ({ urn: shirt, shirt, first });
+  const sheet = { team: 'Hearts', formation: '4-4-2', rows: [[p('Clark', 'Zander')], [p('Milne', 'Harry')]], bench: [p('Warmer', 'Bench')] };
+  assert.equal(xiMilestones(sheet, totals), 'By our count, there could be a milestone today. Harry Milne needs one more appearance to reach fifty for Hearts.');
+  assert.equal(xiMilestones({ ...sheet, rows: [[p('Clark', 'Zander')]] }, totals), undefined);
 });

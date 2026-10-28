@@ -366,11 +366,12 @@ opinions: 0 or 1 view ${expert} (speaker "${expertId}") voiced here that they sh
       cast: [analyst.id],
       schema: {
         type: 'OBJECT',
-        properties: { result: STR, stats: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
+        properties: { result: STR, stats: STR, milestones: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
         // Asking for every field that has data stops a lighter model running them all together in one.
         required: [
           ...(f.lastResult || f.phase.kind === 'live' ? ['result'] : []),
           ...(f.matchStats ? ['stats'] : []),
+          ...(f.milestones?.length ? ['milestones'] : []),
           ...(f.table.length && f.phase.kind !== 'live' ? ['table'] : []),
           ...(ct ? ['competitionTable'] : []),
           ...(next ? ['next'] : []),
@@ -393,6 +394,12 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
   Use our reading of the stats given in the data (and only that: if it says nothing is clear-cut, don't say anyone was
   on top), with one or two of the numbers exactly as given. Stay neutral, even when ${club.shortName} come off worse.`
       : 'leave it out (no stats).'
+  }
+- milestones: ${
+    f.milestones?.length
+      ? `${f.phase.kind === 'preview' ? 'this is a build-up, so say who could reach a round number of Hearts appearances or goals in this game (one more appearance, or goals within reach): "could", never "will".' : 'say who has just reached a round number of Hearts appearances or goals, and who is close to one.'}
+  Use only the milestones in the data, with their names and numbers exactly as given, in one or two sentences. Keep it about the player, not the stats.`
+      : 'leave it out (no milestones).'
   }
 - competitionTable: ${
     ct

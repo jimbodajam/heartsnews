@@ -11,6 +11,7 @@ import type { ClubConfig, Fixture, Item, MatchData, OpponentFocus } from '../typ
 import type { OnThisDay } from '../collectors/londonhearts.ts';
 import { pickHistory, type HistoryPicks } from '../history.ts';
 import type { Milestone } from '../tally.ts';
+import { milestonesFor } from './milestones.ts';
 
 /**
  * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted of the top FEATURE_MAX_SCAN stories that
@@ -139,7 +140,7 @@ export function buildFacts(
     // While a game is on or just finished, it's the story: the history waits.
     history: history && !['live', 'reaction'].includes(phase.kind) ? pickHistory(history, club, now) : undefined,
     // A milestone isn't said as it's being reached, but straight after: the reaction is where "reached" belongs.
-    milestones: phase.kind === 'live' ? undefined : milestones,
+    milestones: milestones && milestonesFor(phase.kind, milestones),
   };
 }
 
