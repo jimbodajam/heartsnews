@@ -134,6 +134,12 @@ test('a match leads around the game, and five days on it does not lead unless so
   assert.ok(celtic.score > 5 * scores(quiet).l1, `${celtic.score} against ${scores(quiet).l1}`);
   assert.deepEqual(celtic.storyline?.claims.map((c) => c.isNew), [false, true]);
 
+  // A new article restating a claim that was already there is not news.
+  const [first, ...rest] = desk().storylines[0].claims;
+  const restated = { ...first, sources: [...first.sources, source('c3', '2026-10-23T10:30:00.000Z')] };
+  const again = onAir(desk({ airings: aired, celticClaims: [restated, ...rest] }), at('2026-10-23T12:00:00Z')).find((s) => s.id === 'l1')!;
+  assert.equal(again.storyline?.isNew, false);
+
   // Once the next match is played it drops away, new claims or not.
   const after = scores(onAir(desk({ airings: aired, celticClaims: [...desk().storylines[0].claims, pressure] }), at('2026-10-26T12:00:00Z'), { played: [HIBS] }));
   assert.ok(after.l1 < 0.1, `${after.l1}`);

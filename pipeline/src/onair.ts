@@ -178,8 +178,8 @@ export function storylineStories(desk: OnAirDesk, o: OnAirOptions): Story[] {
   const stories = lines.map((s): Story => {
     const aired = o.ignoreAirings ? undefined : desk.airings.get(s.id);
     const fresh = justIn.get(s.id) ?? [];
-    const since = (c: Storyline['claims'][number], at: string | undefined) =>
-      !at || c.sources.some((x) => !x.corroboration && (x.at ?? c.firstSeen) > at);
+    // New means the claim itself first appeared after `at`; another article restating it is not news.
+    const since = (c: Storyline['claims'][number], at: string | undefined) => !at || c.firstSeen > at;
     const standing = s.claims.filter((c) => c.status !== 'replaced');
     const claims = standing.map((c) => ({ text: c.text, status: c.status, isNew: since(c, aired?.lastAired) }));
     const newClaims = standing.filter((c, i) => claims[i].isNew);
