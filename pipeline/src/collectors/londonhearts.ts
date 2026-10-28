@@ -219,22 +219,7 @@ export function parsePlayerTotals(html: string): Map<string, { apps: number; goa
   return new Map(people(html).filter((c) => c.length >= 12).map((c) => [playerId(c[0]), { apps: Number(text(c[10])) || 0, goals: Number(text(c[11])) || 0 }]));
 }
 
-/** One row of their list of every Hearts player: who he is, his last Hearts game, and his career apps and goals. */
-export interface PlayerRecord {
-  id: string;
-  name: string;
-  /** YYYY-MM-DD; friendlies count, and so does a game on the bench. */
-  last: string;
-  apps: number;
-  goals: number;
-}
-
-/** Every player on their list by birthday (the same columns as parsePlayerTotals). */
-export function parsePlayerRecords(html: string): PlayerRecord[] {
-  return people(html)
-    .filter((c) => c.length >= 12)
-    .map((c) => ({ id: playerId(c[0]), name: text(c[0]), last: gameDate(c[8]), apps: Number(text(c[10])) || 0, goals: Number(text(c[11])) || 0 }));
-}
+export { parsePlayerRecords, type PlayerRecord } from '../../../shared/londonhearts-players.ts';
 
 /** Today's page (UK date), from the cache if it was already fetched today. */
 export async function collectOnThisDay(now: Date, cacheDir = LONDON_HEARTS_CACHE): Promise<OnThisDay> {

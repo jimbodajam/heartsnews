@@ -9,6 +9,7 @@ import { parsePlayerRecords } from '../src/collectors/londonhearts.ts';
 import type { Store } from '../src/store.ts';
 import { auditTally, countGame, countGames, findMilestones, findPlayer, loadPlayers, loadTotals, seedTally, type RosterPlayer } from '../src/tally.ts';
 import type { ClubConfig, Fixture } from '../src/types.ts';
+import { admin, rosterData, runAudit } from '../../worker/src/admin.ts';
 import { milestoneLine } from '../src/script/milestones.ts';
 import { memoryD1 } from './d1.ts';
 
@@ -148,4 +149,33 @@ test('the milestone line says what the count says, reached ones first', () => {
     'By our count: Test Player has now made one hundred appearances for Hearts. Other One needs two more goals to reach twenty-five for Hearts.',
   );
   assert.equal(milestoneLine([m({})]), 'By our count: Test Player needs one more appearance to reach one hundred for Hearts.');
+});
+
+const listing = (rows: { id: string; name: string; last: string; apps: number; goals: number }[]) =>
+  `<table>${[...rows, ...Array.from({ length: 100 }, (_, i) => ({ id: `h9${String(i).padStart(4, '0')}`, name: `Old Timer${i}`, last: '1990-01-01', apps: 1, goals: 0 }))]
+    .map((r) => `<tr><td><a href="../newplayers/${r.id}.html">${r.name}</a></td><td>1</td><td>1</td><td>1970</td><td>X</td><td>Y</td><td>1990</td><td>a</td><td>${r.last} Sat</td><td>l</td><td>${r.apps}</td><td>${r.goals}</td></tr>`)
+    .join('')}</table>`;
+
+test('the squad list shows our counts, and the audit button compares them with London Hearts', async () => {
+  const { d1, store, records } = await seeded();
+  await seedTally(store, records, await loadPlayers(store), NOW);
+  const html = `<script>window.__INITIAL_DATA__ = ${JSON.stringify(JSON.stringify({ data: bbcPage(eleven(), []) }))};</script>`;
+  await countGames(store, club, [fixture()], NOW, async () => html);
+
+  const roster = await rosterData(d1);
+  assert.equal(roster.tallySince, '2026-10-10');
+  assert.deepEqual(roster.people.find((p) => p.name === 'First3 Starter3')?.tally, { apps: 100, goals: 25 });
+
+  // London Hearts has caught up with the game but gives the goal to nobody.
+  const theirs = listing(records.map((r) => ({ ...r, last: '2026-10-25', apps: r.name === 'First3 Starter3' ? 100 : r.name === 'First0 Starter0' ? 49 : r.apps, goals: r.name === 'First3 Starter3' ? 24 : r.goals })));
+  const audit = await runAudit(d1, async () => theirs);
+  assert.deepEqual(audit.drift, [{ name: 'First3 Starter3', field: 'goals', ours: 25, theirs: 24 }]);
+
+  const env = { DB: d1, ADMIN_TOKEN: 'secret' };
+  const refused = await admin(new Request('https://x.test/admin/audit', { method: 'POST', headers: { authorization: 'Bearer secret', origin: 'https://evil.test' } }), env);
+  assert.equal(refused.status, 403);
+  const page = await admin(new Request('https://x.test/admin?roster=1', { headers: { authorization: 'Bearer secret' } }), env);
+  const body = await page.text();
+  assert.match(body, /Run audit/);
+  assert.match(body, /100 appearances, 25 goals/);
 });

@@ -5,6 +5,9 @@
 // Sign in once with /admin?token=…: the Worker sets a cookie and redirects to the clean address. /admin.json also
 // takes `Authorization: Bearer …`.
 
+import { parsePlayerRecords, PLAYERS_URL } from '../../shared/londonhearts-players.ts';
+import { auditTally, loadTotals, tallySince } from '../../pipeline/src/tally-totals.ts';
+import type { TallyStore } from '../../pipeline/src/tally-totals.ts';
 import { EVERY_MS } from './clock.ts';
 import { sameToken, type D1Database } from './store.ts';
 
@@ -341,10 +344,19 @@ interface Details {
   [other: string]: unknown;
 }
 
+/** The pipeline's view of the database (pipeline/src/store.ts), over D1. */
+const asStore = (db: D1Database): TallyStore => ({ batch: (statements) => query(db, statements) });
+
 /** Everyone the story engine knows as a player or staff member: the club's pages, with the admin's edits (migration 0009). */
 export async function rosterData(db: D1Database) {
   const [rows] = await query(db, [{ sql: `SELECT id, type, name, aliases, active, locked, added, details FROM entities WHERE type IN ('player', 'staff') ORDER BY active DESC, type DESC, name` }]);
+  // Our own appearances and goals count (issue #35), once it has been seeded.
+  const store = asStore(db);
+  const [totals, since] = await Promise.all([loadTotals(store).catch(() => []), tallySince(store).catch(() => undefined)]);
+  const tally = new Map(totals.map((t) => [t.id, t]));
   return {
+    /** The date of the last game in London Hearts' figures we started from. */
+    tallySince: since,
     people: rows.map((r) => ({
       id: String(r.id),
       type: String(r.type),
@@ -354,8 +366,20 @@ export async function rosterData(db: D1Database) {
       edited: num(r.locked) === 1,
       added: num(r.added) === 1,
       details: (json(r.details) as Details | undefined) ?? {},
+      tally: tally.has(String(r.id)) ? { apps: tally.get(String(r.id))!.apps, goals: tally.get(String(r.id))!.goals } : undefined,
     })),
   };
+}
+
+/** Our count against London Hearts' list as it stands now (read live: a few hundred kilobytes). */
+export async function runAudit(db: D1Database, fetchPage: (url: string) => Promise<string> = async (url) => {
+  const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; HeartsNews24/0.1; hobby fan project)' } });
+  if (!res.ok) throw new Error(`London Hearts: HTTP ${res.status}`);
+  return res.text();
+}) {
+  const records = parsePlayerRecords(await fetchPage(PLAYERS_URL));
+  if (records.length < 100) throw new Error(`London Hearts' list has only ${records.length} players, so its layout has probably changed`);
+  return auditTally(asStore(db), records);
 }
 
 /** Same slug as the pipeline's (pipeline/src/text.ts), so an added player gets the id the club page would give them. */
@@ -606,6 +630,7 @@ export function renderRoster(d: Awaited<ReturnType<typeof rosterData>>, error?: 
 ${typeSelect(p.type)}
 <input name="aliases" value="${esc(p.aliases.join(', '))}" aria-label="Also known as" placeholder="also known as, comma separated">
 ${detailInputs(p.details)}
+${p.tally ? `<small class="tally">Hearts: ${p.tally.apps} appearances, ${p.tally.goals} goals (our count)</small>` : ''}
 <span class="acts"><button name="action" value="save">Save</button>
 <button name="action" value="active" formnovalidate onclick="this.form.active.value='${p.active ? 0 : 1}'">${p.active ? 'Switch off' : 'Switch on'}</button>
 <input type="hidden" name="active" value="">
@@ -616,12 +641,25 @@ ${p.added ? pill('added by hand', 'warn').slice(10) : p.edited ? pill('edited', 
   return page(`<h1>Squad list</h1>
 <p class="note"><a href="/admin">Back</a> · <a href="/admin.json?roster=1">JSON</a> · ${on.length} at the club. This list is the source of truth: it was filled from the club's squad and staff pages, and is checked against them only while a transfer window is open (or when <code>npm run squad</code> is run). What you change here applies from the next ingest.</p>
 ${error ? `<p class="pill bad">${esc(error)}</p>` : ''}
+${d.tallySince ? `<section><h2>Appearances and goals</h2><p class="note">Our own count, started from London Hearts' figures up to ${esc(d.tallySince)} and added to after every game from BBC's line-ups. The audit reads London Hearts' list now and shows where we differ, for the games they include.</p>
+<form method="post" action="/admin/audit"><button>Run audit</button></form></section>` : ''}
 <section><h2>Add someone</h2>
 <p class="note">For a signing the club's site doesn't list yet. They stay until you switch them off.</p>
 <form method="post" action="/admin/roster" class="person"><input name="name" placeholder="Full name, as the press spells it" aria-label="Name" required maxlength="80">${typeSelect('player')}
 <input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as">${detailInputs({})}<span class="acts"><button name="action" value="add">Add</button></span></form></section>
 <section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the migration fills this in from the club pages.</p>'}</section>
 ${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here at the next window check.</p>${off.map(row).join('')}</section>` : ''}`);
+}
+
+export function renderAudit(a: Awaited<ReturnType<typeof runAudit>> | undefined, error?: string): string {
+  const body = error
+    ? `<p class="pill bad">${esc(error)}</p>`
+    : a
+      ? `<p class="note">London Hearts' list runs to ${esc(a.upTo)}. We started from ${esc(a.since)} and have counted ${a.counted} game${a.counted === 1 ? '' : 's'} since, up to the same date. ${a.checked} players compared.</p>
+${a.drift.length ? table(['Player', '', 'Ours', 'London Hearts'], a.drift.map((d) => [d.name, d.field, d.ours, d.theirs])) : '<p><span class="pill ok">No drift</span> every total matches.</p>'}
+${a.drift.length ? '<p class="note">If London Hearts is a game or two behind us the difference is theirs to catch up, so only differences after they have added the games mean anything. A player listed for one side only usually means a name or a line-up was misread.</p>' : ''}`
+      : '';
+  return page(`<h1>Audit</h1><p class="note"><a href="/admin?roster=1">Back to the squad list</a></p>${body}`);
 }
 
 function page(body: string): string {
@@ -636,7 +674,7 @@ a{color:inherit}small,.note{color:var(--mute)}.none{color:var(--mute);font-style
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600;white-space:nowrap}
 .pill{display:inline-block;padding:0 7px;border-radius:9px;border:1px solid var(--line);font-size:12px;white-space:nowrap}.pill.ok{color:var(--ok);border-color:var(--ok)}.pill.warn{color:var(--warn);border-color:var(--warn)}.pill.bad{color:var(--bad);border-color:var(--bad)}
 .bar{height:6px;background:var(--card);border-radius:3px;margin-top:3px}.bar i{display:block;height:100%;background:var(--ok);border-radius:3px}.bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
-.person{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.person.off{opacity:.65}.person input,.person select,.person button{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}.person input[name=name]{flex:1 1 160px}.person input[name=aliases]{flex:2 1 200px}.person button{cursor:pointer}.details{display:flex;flex:1 1 100%;gap:6px;flex-wrap:wrap;align-items:center}.details input{min-width:0}.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.person{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.tally{flex:1 1 100%}.person.off{opacity:.65}.person input,.person select,.person button{font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}.person input[name=name]{flex:1 1 160px}.person input[name=aliases]{flex:2 1 200px}.person button{cursor:pointer}.details{display:flex;flex:1 1 100%;gap:6px;flex-wrap:wrap;align-items:center}.details input{min-width:0}.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 details{background:var(--card);border-radius:8px;padding:8px 10px;margin:6px 0}summary{cursor:pointer}pre{white-space:pre-wrap;word-break:break-word;font-size:12px}li{margin:6px 0}
 </style></head><body>${body}</body></html>`;
 }
@@ -674,6 +712,18 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
     const error = await saveRoster(env.DB, await request.formData());
     if (error) return new Response(renderRoster(await rosterData(env.DB), error), { status: 400, headers: { ...noStore, 'content-type': 'text/html; charset=utf-8' } });
     return new Response(null, { status: 303, headers: { ...noStore, location: '/admin?roster=1' } });
+  }
+
+  // The audit reads London Hearts and writes nothing, but it is a button, so a post like the squad list's.
+  if (request.method === 'POST' && url.pathname === '/admin/audit') {
+    const origin = request.headers.get('origin');
+    if (origin && origin !== url.origin) return new Response('Forbidden', { status: 403, headers: noStore });
+    const html = { ...noStore, 'content-type': 'text/html; charset=utf-8' };
+    try {
+      return new Response(renderAudit(await runAudit(env.DB)), { headers: html });
+    } catch (err) {
+      return new Response(renderAudit(undefined, (err as Error).message), { status: 502, headers: html });
+    }
   }
 
   const asJson = url.pathname === '/admin.json';
