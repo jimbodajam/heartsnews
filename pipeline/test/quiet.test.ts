@@ -65,7 +65,7 @@ test('a story turning new outside the running order does not', () => {
 
 test('a changed running order forces a full build', () => {
   const prev = last(desk());
-  isFull(quietSlot(prev, desk({ features: [story('b'), story('a')] })), /packages/);
+  assert.equal(quietSlot(prev, desk({ features: [story('c'), story('b')] })).partial, true, 'a different package pick is not news');
   isFull(quietSlot(prev, desk({ pool: ['b', 'a', 'c', 'd', 'e'].map((id) => story(id)) })), /lead/);
   isFull(quietSlot(prev, desk({ pool: ['a', 'b', 'c', 'e', 'd'].map((id) => story(id)) })), /top stories/);
   isFull(quietSlot(prev, desk({ transfers: [story('t1'), story('t2')] })), /transfer/);
@@ -92,11 +92,10 @@ test('a phase change, a new result, a live match or a new UK day forces a full b
   isFull(quietSlot(afterGame, desk({ phase: { kind: 'reaction', result: { ...result, homeScore: 3 } } })), /phase/);
 });
 
-test('no last programme, no running order recorded, templates or a forcing flag all give a full build', () => {
+test('no last programme, no running order recorded or a forcing flag all give a full build', () => {
   const f = desk();
   isFull(quietSlot(undefined, f), /no last programme/);
   isFull(quietSlot(last(f, { desk: undefined }), f), /running order/);
-  isFull(quietSlot(last(f, { generatedBy: 'templates' }), f), /templates/);
   isFull(quietSlot(last(f), f, { forced: '--full' }), /--full/);
 });
 
@@ -136,4 +135,9 @@ test('swapping links keeps every other line and its clip exactly as it was', () 
   assert.deepEqual(debate.lines[0], before.segments[1].lines[0]);
   assert.deepEqual(debate.lines[1], before.segments[1].lines[1], 'a link with no new wording is kept');
   assert.equal(changed.length, 3);
+});
+
+test('a programme written by templates (Gemini out of quota) is reused like any other', () => {
+  const f = desk();
+  assert.equal(quietSlot(last(f, { generatedBy: 'templates' }), f).partial, true);
 });

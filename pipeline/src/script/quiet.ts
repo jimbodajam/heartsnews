@@ -48,7 +48,6 @@ export function quietSlot(prev: Bulletin | undefined, f: Facts, opts: QuietOptio
   if (!prev) return full('no last programme to reuse');
   const was = prev.desk;
   if (!was) return full("the last programme doesn't record its running order");
-  if (prev.generatedBy?.startsWith('templates')) return full('the last programme was written by templates');
 
   const now: Omit<DeskSignature, 'aired' | 'kind'> = {
     features: f.features.map((s) => s.id),
@@ -66,7 +65,8 @@ export function quietSlot(prev: Bulletin | undefined, f: Facts, opts: QuietOptio
   const fresh = onAir.find((s) => s.storyline?.isNew);
   if (fresh) return full(`new claim on "${fresh.title}"`);
 
-  if (!same(now.features, was.features)) return full('the in-depth packages changed');
+  // Which packages are picked shifts after every full build (an aired one is down-weighted), so a different pick isn't
+  // news by itself: a pick with a new claim is caught above, and an aired story leaving the pool below.
   if (now.lead !== was.lead) return full('a different lead story');
   if (!sameSet(now.top, was.top)) return full('a different set of top stories');
   if (!sameSet(now.transfers, was.transfers)) return full('a different set of transfer stories');
