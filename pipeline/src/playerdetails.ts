@@ -2,8 +2,9 @@ import { fetchText } from './http.ts';
 import { decodeEntities } from './text.ts';
 
 // What a player's page on the club site says about them: squad number, position, nationality, date of birth, when they
-// signed and their debut, and appearances and goals. The page is hand-typed ("4th August 20245" is on it), so a date is
-// kept only when it reads as a whole date, and the page's own words are kept beside it in `raw`.
+// signed and their debut. Appearances and goals are left out: they change every game. The page is hand-typed
+// ("4th August 20245" is on it), so a date is kept only when it reads as a whole date, and the page's own words are
+// kept beside it in `raw`.
 
 export interface PlayerDetails {
   number?: number;
@@ -15,8 +16,6 @@ export interface PlayerDetails {
   /** The debut as the page words it ("Saturday, 10th May, 2025", "August, 1st | Aberdeen (A)"), and its date when whole. */
   debut?: string;
   debutOn?: string;
-  apps?: number;
-  goals?: number;
   /** The player's page. */
   url?: string;
   /** Label → text as the page gave it. */
@@ -50,10 +49,6 @@ export function parseDetails(html: string): PlayerDetails | undefined {
     if (l && values[i]) raw[l] = values[i];
   });
   const get = (label: RegExp) => Object.entries(raw).find(([k]) => label.test(k))?.[1];
-  const count = (label: string) => {
-    const m = new RegExp(`<span class="uppercase">${label}</span>\\s*<span[^>]*>(\\d+)</span>`, 'i').exec(html);
-    return m ? Number(m[1]) : undefined;
-  };
   const number = get(/squad number/i);
   const debut = get(/^debut/i);
   const out: PlayerDetails = {
@@ -64,8 +59,6 @@ export function parseDetails(html: string): PlayerDetails | undefined {
     signed: parseDate(get(/signed/i) ?? ''),
     debut,
     debutOn: parseDate(debut ?? ''),
-    apps: count('appearances'),
-    goals: count('goals'),
     raw,
   };
   return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined)) as PlayerDetails;

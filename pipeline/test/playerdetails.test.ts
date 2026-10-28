@@ -9,9 +9,7 @@ const block = (labels: string[], values: string[]) => `<span class="h6 font-bold
 <div class="flex w-full mb-10 border-b border-grey-100">
   <div class="flex flex-col basis-1/2 gap-4 pt-4 pb-10">${labels.map((l) => `<span class="font-normal text-grey-600">${l}</span>`).join('')}</div>
   <div class="flex flex-col basis-1/2 gap-4 pt-4 pb-10">${values.map((v) => `<span class=" text-primary">${v}</span>`).join('')}</div>
-</div><div class="flex w-full pb-6"><div><span class="uppercase">appearances</span>
-<span class="font-bold h3">18</span></div><div><span class="uppercase">goals</span>
-<span class="font-bold h3">0</span></div></div>`;
+</div><div class="flex w-full pb-6"><div><span class="uppercase">appearances</span><span class="font-bold h3">18</span></div></div>`;
 
 test('whole dates are read in the forms the club page uses, and nothing else is a date', () => {
   assert.equal(parseDate('30th October 2001'), '2001-10-30');
@@ -32,8 +30,6 @@ test('a goalkeeper with no "Signed On": the labels and values line up by positio
     nationality: 'Netherlands',
     born: '2001-10-30',
     debut: 'August, 1st | Aberdeen (A)',
-    apps: 18,
-    goals: 0,
     raw: { 'Squad Number': '1', Position: 'Goalkeeper', Nationality: 'Netherlands', 'Date of Birth': '30th October 2001', Debut: 'August, 1st | Aberdeen (A)' },
   });
 });

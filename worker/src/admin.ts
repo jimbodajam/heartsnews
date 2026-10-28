@@ -337,8 +337,6 @@ interface Details {
   born?: string;
   signed?: string;
   debut?: string;
-  apps?: number;
-  goals?: number;
   url?: string;
   [other: string]: unknown;
 }
@@ -592,14 +590,14 @@ ${d.feedSummary ? `<h3>Feed blurb</h3><p>${esc(d.feedSummary)}</p>` : ''}</secti
 
 const typeSelect = (current: string) => `<select name="type"><option value="player"${current === 'player' ? ' selected' : ''}>player</option><option value="staff"${current === 'staff' ? ' selected' : ''}>staff</option></select>`;
 
-/** The details the admin can change; the rest of what the club page said (debut, appearances) is shown as it was. */
+/** The details the admin can change; the debut is shown as the club page worded it. */
 const detailInputs = (d: Details) =>
   `<span class="details"><input name="number" value="${esc(d.number)}" aria-label="Squad number" placeholder="no." size="3" inputmode="numeric">
 <input name="position" value="${esc(d.position)}" aria-label="Position" placeholder="position" size="11">
 <input name="nationality" value="${esc(d.nationality)}" aria-label="Nationality" placeholder="nationality" size="11">
 <input name="born" value="${esc(d.born)}" aria-label="Date of birth" placeholder="born YYYY-MM-DD" size="14">
 <input name="signed" value="${esc(d.signed)}" aria-label="Signed on" placeholder="signed YYYY-MM-DD" size="15">
-${d.debut ? `<small>debut: ${esc(d.debut)}</small>` : ''}${d.apps != null ? `<small>${esc(d.apps)} apps, ${esc(d.goals ?? 0)} goals</small>` : ''}${d.url ? `<small><a href="${esc(d.url)}" rel="noreferrer">club page</a></small>` : ''}</span>`;
+${d.debut ? `<small>debut: ${esc(d.debut)}</small>` : ''}${d.url ? `<small><a href="${esc(d.url)}" rel="noreferrer">club page</a></small>` : ''}</span>`;
 
 export function renderRoster(d: Awaited<ReturnType<typeof rosterData>>, error?: string): string {
   const row = (p: (typeof d.people)[number]) => `<form method="post" action="/admin/roster" class="person${p.active ? '' : ' off'}">
