@@ -267,6 +267,8 @@ Storylines:
 Never open a storyline for one person's comments, form, position or availability ("Vrancken comments", "Kingsley availability"): that goes under the match it's about, reaction under the last game and team news under the next.
 An article reacting to a result often looks ahead to the next game too: what's said about the result goes under the game just played, and only what's about the next game goes under that one.
 File each claim under an open storyline when one fits. Open a new one (ref "n1", "n2", ...) only when none does, and never two for the same person and topic or the same fixture. Skip routine notices (ticket sales, travel and merchandise) and pundits' opinions.
+Never make a claim that only says a game is on or coming up, or gives its date, kick-off, venue or TV channel ("Rangers face Hearts in a midweek trip", "Hearts host Rangers on Wednesday"): the fixture list already has that, and a claim is news about the game. Nor one that only sets the scene ("a big night at Tynecastle") or retells history from past seasons.
+Before marking a claim new, check every standing claim under that storyline: the same thing in different words (another outlet, another interview with the same quotes) is "same", not new.
 Some "articles" are video shows, given as a summary of the whole show. Take their claims section the way you take a reporter's: what the show presented as news (an injury update, a transfer link), credited to the show. A show saying something is not the club confirming it. Ignore their opinions and predictions.
 
 relation: how the claim stands against the claims we already have:
