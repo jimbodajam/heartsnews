@@ -94,3 +94,28 @@ test('an empty store still renders, and a bulletin without a trace says so', asy
   assert.equal((data.bulletin as { traced: boolean }).traced, false);
   assert.match(await (await admin(new Request('https://w.test/admin?bulletin=nope', { headers: { authorization: 'Bearer t' } }), { DB: d1, ADMIN_TOKEN: 't' })).text(), /No bulletin nope/);
 });
+
+test('a source lists its items, and an item shows its text, summary and the claims built on it', async () => {
+  const d1 = memoryD1();
+  const seen = new Date(NOW).toISOString();
+  d1.db.prepare(`INSERT INTO items (id, source, kind, title, url, first_seen, body, fetch_status, summary_json, sifted_at) VALUES ('a1', 'bbc', 'press', 'Shankland back', 'https://bbc.test/a1', ?, 'Full article text.', 'ok', '{"points":["He is back"]}', ?)`).run(seen, seen);
+  d1.db.prepare(`INSERT INTO items (id, source, kind, title, first_seen) VALUES ('b1', 'other', 'press', 'Elsewhere', ?)`).run(seen);
+  d1.db.prepare(`INSERT INTO storylines (id, title, opened_at, updated_at) VALUES (1, 'Shankland injury', ?, ?)`).run(seen, seen);
+  d1.db.prepare(`INSERT INTO claims (id, storyline_id, text, first_seen) VALUES (1, 1, 'Shankland is fit', ?)`).run(seen);
+  d1.db.prepare(`INSERT INTO claim_sources (claim_id, item_id) VALUES (1, 'a1')`).run();
+  const env = { DB: d1, ADMIN_TOKEN: 't' };
+  const get = async (path: string) => (await admin(new Request(`https://w.test${path}`, { headers: { authorization: 'Bearer t' } }), env)).text();
+
+  const list = await get('/admin?source=bbc');
+  assert.match(list, /Shankland back/);
+  assert.doesNotMatch(list, /Elsewhere/);
+  const item = JSON.parse(await get('/admin.json?item=a1'));
+  assert.equal(item.text, 'Full article text.');
+  assert.deepEqual(item.summary, { points: ['He is back'] });
+  assert.equal(item.claims[0].text, 'Shankland is fit');
+  const page = await get('/admin?item=a1');
+  assert.match(page, /Full article text\./);
+  assert.match(page, /Shankland injury/);
+  assert.match(await get('/admin?item=nope'), /No item nope/);
+  assert.match(await get('/admin'), /\/admin\?source=other/);
+});

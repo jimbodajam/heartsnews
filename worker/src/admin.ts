@@ -254,6 +254,75 @@ export async function bulletinTrace(db: D1Database, id: string) {
   };
 }
 
+/** Everything we've pulled from one source, newest first. */
+export async function sourceItems(db: D1Database, source: string) {
+  const [items] = await query(db, [
+    {
+      sql: `SELECT i.id, i.kind, i.title, i.published_at, i.first_seen, i.fetch_status, i.sifted_at IS NOT NULL AS read, i.summary_json IS NOT NULL AS summarised,
+              length(COALESCE(i.body, i.transcript)) AS chars, t.category,
+              (SELECT COUNT(*) FROM claim_sources cs WHERE cs.item_id = i.id) AS claims
+            FROM items i LEFT JOIN item_tags t ON t.item_id = i.id WHERE i.source = ? ORDER BY i.first_seen DESC, i.id LIMIT 200`,
+      params: [source],
+    },
+  ]);
+  return {
+    source,
+    items: items.map((r) => ({
+      id: r.id,
+      kind: r.kind,
+      title: r.title,
+      publishedAt: r.published_at ?? undefined,
+      firstSeen: r.first_seen,
+      fetch: r.fetch_status ?? undefined,
+      chars: r.chars == null ? undefined : num(r.chars),
+      category: r.category ?? undefined,
+      read: num(r.read) === 1,
+      summarised: num(r.summarised) === 1,
+      claims: num(r.claims),
+    })),
+  };
+}
+
+/** One item: the text we scraped, the summary made from it, and the claims built on it. */
+export async function itemDetail(db: D1Database, id: string) {
+  const [item, tags, entities, claims] = await query(db, [
+    {
+      sql: `SELECT id, source, kind, publisher, title, summary, url, published_at, first_seen, body, transcript, summary_json, summarised_at, sifted_at,
+              fetch_status, fetched_at, attempts, fetch_error FROM items WHERE id = ?`,
+      params: [id],
+    },
+    { sql: `SELECT category, mood, tagger_version, from_text FROM item_tags WHERE item_id = ?`, params: [id] },
+    { sql: `SELECT e.name, e.type FROM item_entities ie JOIN entities e ON e.id = ie.entity_id WHERE ie.item_id = ?`, params: [id] },
+    {
+      sql: `SELECT c.id, c.text, c.status, cs.corroboration, s.id AS storyline_id, s.title AS storyline
+            FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id JOIN storylines s ON s.id = c.storyline_id WHERE cs.item_id = ? ORDER BY c.id`,
+      params: [id],
+    },
+  ]);
+  const r = item[0];
+  if (!r) return { error: `No item ${id}` };
+  return {
+    id: r.id,
+    source: r.source,
+    kind: r.kind,
+    publisher: r.publisher ?? undefined,
+    title: r.title,
+    url: r.url ?? undefined,
+    publishedAt: r.published_at ?? undefined,
+    firstSeen: r.first_seen,
+    feedSummary: r.summary ?? undefined,
+    fetch: { status: r.fetch_status ?? undefined, at: r.fetched_at ?? undefined, attempts: num(r.attempts), error: r.fetch_error ?? undefined },
+    text: (r.body ?? r.transcript ?? undefined) as string | undefined,
+    textFrom: r.body != null ? 'article' : r.transcript != null ? 'transcript' : undefined,
+    summary: json(r.summary_json) ?? undefined,
+    summarisedAt: r.summarised_at ?? undefined,
+    readForClaimsAt: r.sifted_at ?? undefined,
+    tags: tags[0] ? { category: tags[0].category, mood: tags[0].mood, fromText: num(tags[0].from_text) === 1 } : undefined,
+    entities: entities.map((e) => `${e.name} (${e.type})`),
+    claims: claims.map((c) => ({ id: num(c.id), text: c.text, status: c.status, headlineOnly: num(c.corroboration) === 1, storyline: c.storyline })),
+  };
+}
+
 // ---- The page ----
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -305,7 +374,7 @@ ${table(['When', 'Where', 'What'], d.errors.map((e) => [when(e.at), e.source, e.
 <section><h2>Inputs</h2>
 ${table(
   ['Source', 'Kind', '24h', '14d', 'Newest', ''],
-  d.inputs.sources.map((r) => [String(r.source), String(r.kind), r.last24h, r.last14d, when(r.newest), r.failedFetches ? pill(`${r.failedFetches} fetches failed`, 'bad') : r.quiet ? pill('quiet', 'warn') : '']),
+  d.inputs.sources.map((r) => [raw(`<a href="/admin?source=${encodeURIComponent(String(r.source))}">${esc(r.source)}</a>`), String(r.kind), r.last24h, r.last14d, when(r.newest), r.failedFetches ? pill(`${r.failedFetches} fetches failed`, 'bad') : r.quiet ? pill('quiet', 'warn') : '']),
 )}
 <h3>Waiting</h3>
 <p>${d.inputs.waiting.untagged} untagged · ${d.inputs.waiting.articlesToFetch} articles to fetch · ${d.inputs.waiting.toRead} to read for claims · ${d.inputs.waiting.videosToSummarise} videos to summarise (past 7 days)</p>
@@ -372,6 +441,34 @@ ${script.map((seg) => `<details><summary><b>${esc(seg.title)}</b></summary>${seg
 </section>`;
 }
 
+export function renderSource(d: Awaited<ReturnType<typeof sourceItems>>): string {
+  return page(`<h1>${esc(d.source)}</h1><p><a href="/admin">Back</a> · ${d.items.length} items, newest first (up to 200)</p>${table(
+    ['Title', 'Seen', 'Kind', 'Text', 'Read', 'Summary', 'Claims'],
+    d.items.map((i) => [
+      raw(`<a href="/admin?item=${encodeURIComponent(String(i.id))}">${esc(i.title)}</a>`),
+      when(i.firstSeen),
+      String(i.kind),
+      i.fetch === 'ok' || (i.chars != null && !i.fetch) ? `${i.chars} chars` : (i.fetch ?? 'headline only'),
+      i.read ? '✓' : '',
+      i.summarised ? '✓' : '',
+      i.claims || '',
+    ]),
+  )}`);
+}
+
+export function renderItem(d: Awaited<ReturnType<typeof itemDetail>>): string {
+  if ('error' in d) return page(`<p>${esc(d.error)}</p><p><a href="/admin">Back</a></p>`);
+  const summary = d.summary ? JSON.stringify(d.summary, null, 2) : undefined;
+  return page(`<h1>${esc(d.title)}</h1>
+<p><a href="/admin?source=${encodeURIComponent(String(d.source))}">Back to ${esc(d.source)}</a> · ${esc(d.kind)} · first seen ${esc(when(d.firstSeen))}${d.url ? ` · <a href="${esc(d.url)}" rel="noreferrer">original</a>` : ''}</p>
+<p class="note">Fetch: ${esc(d.fetch.status ?? 'not tried')}${d.fetch.attempts ? ` (${d.fetch.attempts} tries)` : ''}${d.fetch.error ? ` · ${esc(d.fetch.error)}` : ''} · tags: ${d.tags ? `${esc(d.tags.category)}, ${esc(d.tags.mood)}${d.tags.fromText ? ' (from the text)' : ' (from the headline)'}` : 'none'}${d.entities.length ? ` · ${esc(d.entities.join(', '))}` : ''}</p>
+<section><h2>Claims built on it (${d.claims.length})</h2>${table(['Claim', 'Status', 'Storyline', ''], d.claims.map((c) => [c.text, String(c.status), String(c.storyline), c.headlineOnly ? 'headline only' : '']))}
+<p class="note">${d.readForClaimsAt ? `Read for claims ${esc(when(d.readForClaimsAt))}.` : 'Not read for claims yet.'}</p></section>
+<section><h2>Summary</h2>${summary ? `<p class="note">Made ${esc(when(d.summarisedAt))}</p><pre>${esc(summary)}</pre>` : '<p class="none">No generated summary (short items are used whole).</p>'}
+${d.feedSummary ? `<h3>Feed blurb</h3><p>${esc(d.feedSummary)}</p>` : ''}</section>
+<section><h2>Scraped text${d.textFrom ? ` (${esc(d.textFrom)}, ${d.text!.length.toLocaleString('en-GB')} chars)` : ''}</h2>${d.text ? `<pre>${esc(d.text)}</pre>` : '<p class="none">None kept: headline only, or pruned after 30 days.</p>'}</section>`);
+}
+
 function page(body: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>HeartsNews24 admin</title>
 <style>
@@ -423,11 +520,25 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
     return new Response(null, { status: 303, headers });
   }
 
-  const bulletinId = url.searchParams.get('bulletin') ?? undefined;
-  const data = await adminData(env.DB, Date.now(), bulletinId);
   const headers = new Headers(noStore);
   if (setCookie) headers.append('set-cookie', setCookie);
-  if (asJson) return Response.json(data, { headers });
-  headers.set('content-type', 'text/html; charset=utf-8');
-  return new Response(renderAdmin(data, bulletinId), { headers });
+  const respond = (data: unknown, html: string) => {
+    if (asJson) return Response.json(data, { headers });
+    headers.set('content-type', 'text/html; charset=utf-8');
+    return new Response(html, { headers });
+  };
+  const itemId = url.searchParams.get('item');
+  if (itemId) {
+    const d = await itemDetail(env.DB, itemId);
+    return respond(d, renderItem(d));
+  }
+  const source = url.searchParams.get('source');
+  if (source) {
+    const d = await sourceItems(env.DB, source);
+    return respond(d, renderSource(d));
+  }
+
+  const bulletinId = url.searchParams.get('bulletin') ?? undefined;
+  const data = await adminData(env.DB, Date.now(), bulletinId);
+  return respond(data, renderAdmin(data, bulletinId));
 }
