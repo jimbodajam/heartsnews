@@ -6,7 +6,7 @@ import type { Draft } from './draft.ts';
 import type { NewLinks } from './quiet.ts';
 import { dataSection, mergeDraft, whenSaid, type DataPart, type DataScope, type ScriptModel } from './llm.ts';
 import { notebookLines } from './notebook.ts';
-import { expertFor, firstName, focusFixture, ourResult, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
+import { expertFor, firstName, focusFixture, isUs, ourResult, packageLines, presenter, runningOrder, teamName, type Facts, type Slot, type Story } from './facts.ts';
 
 // The script is written segment by segment: each piece is its own small request with only the data it needs, a few
 // run side by side, and a piece that fails is left to its template on its own. A last "links" request then writes
@@ -47,6 +47,20 @@ const FEATURE_SCHEMA = {
 
 /** How a returning package picks its story back up: a different one each, since they're written apart. */
 const OPENERS = ['Back to our top story…', 'More now on…', 'Let\'s return to…', 'Staying with the build-up…', 'Another story we\'ve been following…'];
+
+/** Whether a story is the build-up to the game this bulletin is built around (its title names the opposition). */
+function isBuildUp(f: Facts, s: Story): boolean {
+  const p = f.phase;
+  if (p.kind !== 'preview' || s.category !== 'match') return false;
+  const opposition = (isUs(f.club, p.fixture.home) ? p.fixture.away : p.fixture.home).toLowerCase();
+  return s.title.toLowerCase().includes(opposition);
+}
+
+/** The ground a build-up package covers, so a rich one is a proper preview and not one angle on it. */
+const BUILD_UP_BEATS = `This is the build-up to tonight's game, so cover as many of these as the material supports, each in a line or two and
+in whatever order flows (skip any with nothing behind it in the DATA): the stakes and context; team news and injuries; the
+officials; the opposition's form and what they bring; the likely line-up (only as a prediction, credited to Hearts Standard
+or whoever made it, never as fact); a quote from each side if there are quotes; and what to watch for.`;
 
 /** One request: the data it sees, what to write, the JSON shape, and where the answer goes in the draft. */
 interface Piece {
@@ -260,6 +274,7 @@ function pieces(f: Facts): Piece[] {
     const hasQuote = /["“”]/.test(articleText);
     const isReport = s.category === 'match' || s.storyline?.kind === 'match';
     const before = airedFor(f.memory, s)?.inDepth ?? 0;
+    const lines = packageLines(s);
     const { quote, result, ...properties } = FEATURE_SCHEMA.properties;
     list.push({
       id: `story-${s.id}`,
@@ -279,7 +294,9 @@ function pieces(f: Facts): Piece[] {
         opinions: (Array.isArray(opinions) ? (opinions as Draft['opinions'] & object) : []).filter((o) => o?.speaker === expertId).map((o) => ({ ...o, storyId: s.id })),
       }),
       brief: `Write the in-depth package on "${s.title}": ${firstName(a)} (role "lead") at the desk with ${expert} (role "expert").
-This is where viewers get the real substance behind a headline. As many lines as the material supports, from 4 up to 10: a story with little to say stays short, a rich one runs on. "lead" lines are ${firstName(a)} introducing
+This is where viewers get the real substance behind a headline. Write ${lines.min} to ${lines.max} lines, using the material in proportion: ${
+        lines.min > 4 ? `there is plenty here, so aim for at least ${lines.min} and use the details, figures and different outlets' accounts rather than one angle` : 'a story with little to say stays short'
+      }. "lead" lines are ${firstName(a)} introducing
 and steering, "expert" lines are ${expert} explaining. Cover what happened, the key details, why it matters for ${club.shortName}
 and what comes next. Make it a conversation (the lead can ask the expert a question). This is ${expert}'s story: the
 facts come from the brief and claims, but ${expert} puts their own spin on it from their notebook, while ${firstName(a)}
@@ -295,9 +312,13 @@ ${place}${
 A big story is meant to come round again during the day, and this one was covered in depth before, so viewers may have
 seen it: when there are claims marked NEW, lead with those ("there's been a development…"); when there's nothing new,
 take a fresh angle: different details from the articles, what it means for the next game, or the expert's own take.
-Open by picking the story back up, in words like "${OPENERS[i % OPENERS.length]}", rather than introducing it from scratch.`
+Open by picking the story back up, in words like "${OPENERS[i % OPENERS.length]}", rather than introducing it from scratch.
+That changes how it opens, not how much it covers: it is still a full package.`
           : ''
       }${
+        isBuildUp(f, s) && lines.min > 4 ? `\n${BUILD_UP_BEATS}` : ''
+      }
+${expert}'s notebook views were said on air already: don't open with one or recite it, and bring in a view only where the facts call for it.${
         hasQuote
           ? `
 quote is optional: only if the article contains a direct quote from a named person, copy at most 25 words of it exactly,

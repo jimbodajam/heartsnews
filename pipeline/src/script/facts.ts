@@ -177,6 +177,17 @@ export function teamName(club: ClubConfig, name: string): string {
   return name === club.name ? club.shortName : name;
 }
 
+/**
+ * How many lines a package may run to: its material decides, not the model. A story with one short article stays brief;
+ * one with a lot of text behind it (several outlets, a long brief and claims) is given room to use it.
+ */
+export function packageLines(s: Pick<Story, 'body'>): { min: number; max: number } {
+  const size = s.body?.length ?? 0;
+  if (size >= 12_000) return { min: 8, max: 14 };
+  if (size >= 5_000) return { min: 6, max: 10 };
+  return { min: 4, max: 8 };
+}
+
 /** BBC uses the short name, TheSportsDB the full one. */
 export function isUs(club: ClubConfig, name: string): boolean {
   return name === club.name || name === club.shortName;

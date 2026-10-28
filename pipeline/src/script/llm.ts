@@ -8,7 +8,7 @@ import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
 import { formOf, xiText } from './opponent.ts';
-import { expertFor, firstName, ourResult, presenter, teamName, type Facts } from './facts.ts';
+import { expertFor, firstName, ourResult, packageLines, presenter, teamName, type Facts } from './facts.ts';
 
 /** Any model that can answer a prompt with JSON matching a schema. Swap providers by adding another. */
 export interface ScriptModel {
@@ -427,7 +427,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
         q && usable(q.text) && usable(q.by) && q.text.split(/\s+/).length <= 30 && squash(story.body ?? '').includes(squash(q.text));
       return {
         storyId: story.id,
-        lines: lines.slice(0, 10),
+        lines: lines.slice(0, packageLines(story).max),
         quote: genuine ? { text: tidyQuote(q.text), by: q.by.trim() } : undefined,
         result: checkedResult(x.result, story.title, story.body ?? ''),
       };

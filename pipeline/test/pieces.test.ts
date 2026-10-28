@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { emptyMemory } from '../src/memory.ts';
 import { templateDraft } from '../src/script/draft.ts';
-import { buildFacts, type Channel } from '../src/script/facts.ts';
+import { buildFacts, packageLines, type Channel } from '../src/script/facts.ts';
 import type { ScriptModel } from '../src/script/llm.ts';
 import { writeInPieces } from '../src/script/pieces.ts';
 import type { Story } from '../src/stories.ts';
@@ -66,4 +66,15 @@ test('the fan zone and the debate keep the forum rules, and the headlines have a
   assert.ok(all.debate.includes('Fan forum posts'));
   assert.ok(!all.headlines.includes('Fan forum posts'));
   assert.ok(all.headlines.length < all['story-s1'].length + 2000);
+});
+
+test('a package is given room in proportion to its material', async () => {
+  assert.deepEqual(packageLines({ body: 'x'.repeat(2_000) }), { min: 4, max: 8 });
+  assert.deepEqual(packageLines({ body: 'x'.repeat(7_000) }), { min: 6, max: 10 });
+  assert.deepEqual(packageLines({ body: 'x'.repeat(24_000) }), { min: 8, max: 14 });
+
+  assert.ok((await prompts([milne]))['story-s1'].includes('Write 4 to 8 lines'));
+  const rich = (await prompts([{ ...milne, body: text.repeat(20) }]))['story-s1'];
+  assert.ok(rich.includes('Write 8 to 14 lines'), rich);
+  assert.ok(!rich.includes('likely line-up'), 'the build-up beats are for the game the bulletin is built around');
 });
