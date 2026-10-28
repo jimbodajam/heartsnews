@@ -16,7 +16,9 @@ export function renderSummary(s: VideoSummary, use: 'claims' | 'full' | 'fan'): 
   const out: string[] = ['(Summary of the whole show, read from auto-generated captions.)'];
   if (s.points.length) out.push('Covered, in order:', ...s.points.map((p) => `- ${p}`));
   if (use !== 'fan' && s.claims.length) out.push('Presented as news on the show (not confirmed by anyone else):', ...s.claims.map((c) => `- ${by(c)}${c.text}`));
-  if (use !== 'claims' && s.takes.length) out.push('Opinions and predictions (opinion, not fact):', ...s.takes.map((t) => `- ${by(t)}${t.text}`));
+  if (use !== 'claims' && s.takes.length) {
+    out.push('Opinions and predictions (opinion, not fact: credit them to the show, e.g. "the show are predicting…"):', ...s.takes.map((t) => `- ${by(t)}${t.text}`));
+  }
   if (use === 'fan' && s.claims.length) out.push('Things they said they had heard (talk, not reported fact):', ...s.claims.map((c) => `- ${by(c)}${c.text}`));
   return out.join('\n');
 }
