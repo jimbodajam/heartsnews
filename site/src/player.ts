@@ -12,6 +12,7 @@ import {
 import { type LiveScore, scoreLine } from './live';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
 import { drawAdvert, preloadAdvert } from './gfx/adverts';
+import { drawSponsor, type SponsorKind } from './gfx/sponsor';
 import { C } from './gfx/palette';
 import type { Ctx } from './gfx/screen';
 import { H, rect, W } from './gfx/screen';
@@ -23,6 +24,17 @@ import { drawPressDesk, drawStadium, type Ground, isDark } from './gfx/stadium';
 import { kitColours } from '../../shared/kits';
 
 type Shot = 'wide' | 'single' | 'full';
+
+/** The sponsor's announcer: a fixed line pre-rendered with Kokoro (`npm run sponsor-clip`), not one of the presenters. */
+const SPONSOR_LINE = "Hearts News 24, in association with Marshall's Chunky Chicken.";
+const SPONSOR_CLIP = new URL('sponsor/marshalls-bm_lewis.mp3', document.baseURI).href;
+/** The jingle itself, from the old advert: three chants of 'Marshalls, the chunky chicken champions' at the show open, one around ad breaks. */
+const SPONSOR_JINGLE = new URL('sponsor/jingle.mp3', document.baseURI).href;
+const SPONSOR_JINGLE_SHORT = new URL('sponsor/jingle-short.mp3', document.baseURI).href;
+const SPONSOR_VOICE: Presenter = {
+  id: 'sponsor', name: 'Announcer', role: 'Announcer', voice: 'male', tts: { voice: 'bm_lewis' },
+  look: { build: 'male', skin: '#e8b796', hair: '#3a2a1a', hairStyle: 'short', suit: '#2b3160', shirt: '#f2efe6' },
+};
 
 /** The live score comes round in the ticker after every this many headlines. */
 const SCORE_EVERY = 3;
@@ -69,7 +81,11 @@ export class Player {
   weather?: Pick<Weather, 'sky' | 'windy'>;
 
   private ticker = new Ticker();
-  private mode: 'splash' | 'ident' | 'sting' | 'show' | 'breaking' = 'splash';
+  private mode: 'splash' | 'ident' | 'sting' | 'show' | 'breaking' | 'sponsor' = 'splash';
+  private sponsorKind: SponsorKind = 'open';
+  /** Marshall's logo (art/adverts/Marshalls, pixelated); the card draws its own badge without it. */
+  sponsorLogo?: HTMLImageElement;
+  private jingleAt = 0;
   /** Breaking news waiting for the current line to finish, and the one on air now. */
   private breakingQueue: BreakingPackage[] = [];
   private breaking?: BreakingPackage;
@@ -172,6 +188,9 @@ export class Player {
 
   /** Fetch every clip in the bulletin up front so lines start without a gap. */
   private preloadClips(): void {
+    this.voices.preload(SPONSOR_CLIP).catch(() => undefined);
+    this.voices.preload(SPONSOR_JINGLE).catch(() => undefined);
+    this.voices.preload(SPONSOR_JINGLE_SHORT).catch(() => undefined);
     for (const seg of this.bulletin.segments) {
       for (const line of seg.lines) {
         const url = this.clipUrl(line);
@@ -185,6 +204,23 @@ export class Player {
     if (!this.voices.muted) playSting(kind, look);
   }
 
+  /** Marshall's Chunky Chicken: the announcer reads the sponsor line over the card, then the jingle plays. */
+  private async sponsor(kind: SponsorKind): Promise<void> {
+    this.sponsorKind = kind;
+    this.jingleAt = 0;
+    this.setMode('sponsor');
+    this.speaking = this.voices.speak(SPONSOR_LINE, SPONSOR_VOICE, SPONSOR_CLIP);
+    await this.speaking.done;
+    this.speaking = undefined;
+    // The jingle: the full thing as the show opens, one chant of it either side of an ad break.
+    this.jingleAt = performance.now();
+    this.speaking = this.voices.speak('', SPONSOR_VOICE, kind === 'open' ? SPONSOR_JINGLE : SPONSOR_JINGLE_SHORT);
+    await this.speaking.done;
+    this.speaking = undefined;
+    await this.wait(200);
+    this.jingleAt = 0;
+  }
+
   /** `startAt` (a segment id) skips the ident and earlier segments on the first loop only. */
   private async loop(startAt?: string): Promise<void> {
     for (;;) {
@@ -194,9 +230,11 @@ export class Player {
         this.setMode('ident');
         this.sting('ident');
         await this.wait(IDENT_MS);
+        await this.sponsor('open');
       }
       startAt = undefined;
 
+      let afterBreak = false;
       for (const seg of this.bulletin.segments.slice(first)) {
         this.seg = seg;
         this.line = undefined;
@@ -204,9 +242,17 @@ export class Player {
         this.shot = 'wide';
         this.strap = undefined;
         this.strapped.clear();
-        this.setMode('sting');
-        this.sting('segment');
-        await this.wait(STING_MS);
+        // The sponsor's card stands in for the segment sting going into and coming out of an ad break.
+        if (seg.kind === 'adverts') {
+          await this.sponsor('in');
+        } else if (afterBreak) {
+          await this.sponsor('out');
+        } else {
+          this.setMode('sting');
+          this.sting('segment');
+          await this.wait(STING_MS);
+        }
+        afterBreak = seg.kind === 'adverts';
         this.setMode('show');
         for (let i = 0; i < seg.lines.length; i++) await this.playLine(seg, i);
         await this.wait(500);
@@ -272,6 +318,7 @@ export class Player {
 
     if (this.mode === 'splash') return drawSplash(g, t, name, this.status);
     if (this.mode === 'ident') return drawIdent(g, age, name);
+    if (this.mode === 'sponsor') return drawSponsor(g, age, this.jingleAt ? now - this.jingleAt : -1, this.sponsorKind, this.sponsorLogo);
     const seg = this.seg!;
 
     // An ad break fills the screen: no channel logo, clock, straps or ticker, just the advert (and subtitles).

@@ -89,6 +89,9 @@ async function boot(): Promise<void> {
   // ?weather=clear|overcast|rain|snow|fog, with ,windy for a breeze: the scene at the ground in that weather.
   const [sky, wind] = (params.get('weather') ?? '').split(',');
   if (['clear', 'overcast', 'rain', 'snow', 'fog'].includes(sky)) player.weather = { sky: sky as Weather['sky'], windy: wind === 'windy' };
+  const logo = new Image();
+  logo.onload = () => (player.sponsorLogo = logo);
+  logo.src = 'backgrounds/marshalls-logo.png';
   const studio = new Image();
   studio.onload = () => (player.studioImage = studio);
   studio.src = 'backgrounds/studio.png';

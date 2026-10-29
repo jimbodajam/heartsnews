@@ -9,6 +9,7 @@
     "snapshot": "tsx src/snapshot.ts",
     "pronounce": "tsx src/pronounce-check.ts",
     "pixelate": "tsx src/pixelate.ts",
+    "sponsor-clip": "tsx src/sponsor-clip.ts",
     "faces": "tsx src/faces.ts",
     "faces:draw": "tsx src/draw-faces.ts",
     "club-xi": "tsx src/club-xi.ts",
