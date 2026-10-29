@@ -9,6 +9,7 @@
 // drops or delays most runs on this repo.
 
 import { EventTracker, type TrackerState } from '../../pipeline/src/breaking/detect.ts';
+import type { ClubPost } from '../../pipeline/src/club-post.ts';
 import { Cadence, type CadenceState } from '../../pipeline/src/cadence.ts';
 import type { LiveFeed } from '../../shared/live.ts';
 import type { D1Database } from './store.ts';
@@ -43,6 +44,8 @@ export interface TickOptions {
   test?: string;
   /** Asks GitHub Actions to run the ingest. A replay never does. */
   ingest?: () => Promise<void>;
+  /** Reads the club's latest posts (Instagram) for its team-news graphic; only asked in the hour and a half before kick-off. */
+  clubPosts?: () => Promise<ClubPost[]>;
 }
 
 export interface TickReport {
@@ -68,7 +71,7 @@ const setState = (key: string, value: unknown, at: string): Statement => ({
 });
 
 /** One run of the clock: queue what's due, tidy the queue, and send GitHub what the home PC won't take. */
-export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatch, now = Date.now(), test, ingest }: TickOptions): Promise<TickReport> {
+export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatch, now = Date.now(), test, ingest, clubPosts }: TickOptions): Promise<TickReport> {
   const prefix = test ? 'test:' : '';
   const at = iso(now);
   const [rows] = await run(db, [
@@ -81,11 +84,21 @@ export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatc
   const homeOn = !test && now - homeSeen < HOME_FRESH_MS;
 
   const jobs: { id: string; kind: JobKind; payload: unknown }[] = [];
+  const errors: string[] = [];
   const m = feed?.match;
   if (m) {
     const t = Date.parse(feed.updated);
     const breaking = (key: string, payload: object) =>
       jobs.push({ id: `${test ? `test:${test}:` : ''}breaking:${m.kickOff}:${key}`, kind: 'breaking', payload: { ...payload, ...(test ? { templates: true } : {}) } });
+    // The club's graphic first: it is ahead of BBC, and BBC's sheet then isn't news again.
+    if (clubPosts && tracker.wantsClubPost(m, t)) {
+      try {
+        const club = tracker.clubLineup(m, await clubPosts(), t);
+        if (club) breaking(club.key, club);
+      } catch (err) {
+        errors.push(`club post: ${(err as Error).message}`);
+      }
+    }
     const lineup = tracker.lineup(m);
     if (lineup) breaking(lineup.key, lineup);
     for (const r of tracker.update(m, t)) breaking(r.key, r);
@@ -136,7 +149,7 @@ export async function tick(db: D1Database, feed: LiveFeed | undefined, { dispatc
     },
   ]);
 
-  const report: TickReport = { queued: jobs.map((j) => j.id), dispatched: [], errors: [] };
+  const report: TickReport = { queued: jobs.map((j) => j.id), dispatched: [], errors };
   for (const j of queued) {
     const kind = j.kind as JobKind;
     // The home PC's to take for a minute or two, while it's on. Test jobs are for GitHub.

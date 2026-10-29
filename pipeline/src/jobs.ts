@@ -126,7 +126,8 @@ async function programme(store: Store | undefined, reason: Reason, test: boolean
 /** Builds and voices a breaking package, then adds it to what's on air and publishes. */
 async function breaking(store: Store | undefined, ready: Ready & { templates?: boolean }, test: boolean, o: RunOptions): Promise<Outcome> {
   console.log(`[job] ${describe(ready)}${undescribed(ready) ? ' (no description from BBC)' : ''}`);
-  const pkg: BreakingPackage = await writePackage(ready, breakingModel(o.templates || ready.templates));
+  const pkg: BreakingPackage | undefined = await writePackage(ready, breakingModel(o.templates || ready.templates));
+  if (!pkg) return 'dropped';
   for (const line of pkg.segments.flatMap((s) => s.lines)) console.log(`  ${line.speaker}: ${line.text}`);
   const voiced = await mkdtemp(join(tmpdir(), 'heartsnews-voiced-'));
   const site = await mkdtemp(join(tmpdir(), 'heartsnews-onair-'));

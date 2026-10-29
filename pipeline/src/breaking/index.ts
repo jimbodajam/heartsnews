@@ -23,10 +23,13 @@ import { geminiFromEnv, type ScriptModel } from '../script/llm.ts';
 import { dropUnusedClips, voiceLines } from '../voice.ts';
 import { previousSheet } from '../collectors/bbc.ts';
 import { loadFaces } from '../script/faces.ts';
-import { EventTracker, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
+import { EventTracker, type ReadyClubLineup, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
 import { buildPackage, buildPeriodPackage } from './script.ts';
 import { storeFromEnv } from '../store.ts';
-import { loadTotals } from '../tally.ts';
+import { loadPlayers, loadTotals } from '../tally.ts';
+import { instagramFrom } from '../club-post.ts';
+import { downloadPost, readClubXI } from '../club-xi.ts';
+import { buildClubNewsPackage } from './clubnews.ts';
 import { buildTeamNewsPackage } from './teamnews.ts';
 import { matchWeather, type Place } from '../weather.ts';
 
@@ -72,22 +75,40 @@ function interval(feed?: LiveFeed): number {
 const PERIOD: Record<Period, string> = { ko1: 'KICK-OFF', ko2: 'SECOND HALF UNDER WAY', ht: 'HALF TIME', ft: 'FULL TIME' };
 
 /** What a package is built from: the team news, a goal or red card, or a period. The clock queues these as breaking jobs. */
-export type Ready = ReadyLineup | ReadyEvent | ReadyPeriod;
+export type Ready = ReadyLineup | ReadyClubLineup | ReadyEvent | ReadyPeriod;
 
 /** A line for the log saying what happened. */
 export const describe = (r: Ready) =>
-  'lineup' in r
+  'club' in r
+    ? `TEAM NEWS (club graphic): ${r.club.permalink}${r.aired ? ' (BBC already out: check)' : ''}`
+    : 'lineup' in r
     ? `TEAM NEWS: ${r.lineup.team}`
     : 'period' in r
       ? PERIOD[r.period]
       : `${r.event.kind === 'goal' ? 'GOAL' : 'RED CARD'}: ${r.event.player} ${r.event.minute}`;
 
 /** Whether BBC's description is missing from what a package is built from (the team news never has one). */
-export const undescribed = (r: Ready) => !('lineup' in r) && !r.text.length;
+export const undescribed = (r: Ready) => !('lineup' in r) && !('club' in r) && !r.text.length;
 
-/** Writes the package (no voices yet). Flash-Lite only: Flash's 20 free requests a day are for the bulletins. */
-export async function writePackage(r: Ready, model?: ScriptModel): Promise<BreakingPackage> {
+/** Writes the package (no voices yet), or nothing if there's none to put out (the club's team matches BBC's). Flash-Lite only: Flash's 20 free requests a day are for the bulletins. */
+export async function writePackage(r: Ready, model?: ScriptModel): Promise<BreakingPackage | undefined> {
   const channel = JSON.parse(await readFile(resolve(ROOT, 'channel.json'), 'utf8')) as Channel;
+  if ('club' in r) {
+    const auth = instagramFrom(process.env);
+    // The image first, straight away: the URL is signed and expires.
+    const { image, mime } = await downloadPost(r.club, auth);
+    await mkdir(resolve(ROOT, 'pipeline/out/club-xi'), { recursive: true });
+    await writeFile(resolve(ROOT, `pipeline/out/club-xi/${r.club.id}.${mime.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'}`), image).catch(() => undefined);
+    const xi = await readClubXI(image, mime, 'gemini-flash-lite-latest');
+    if (xi.unsure.length) console.warn(`[breaking] Club graphic, not read clearly: ${xi.unsure.join('; ')}`);
+    const store = storeFromEnv();
+    if (!store) throw new Error('STORE_TOKEN is not set: the club graphic is matched to the squad table in the store');
+    const roster = await loadPlayers(store);
+    const config = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
+    const previous = await previousSheet(config.bbc.team, r.match.kickOff).catch(() => undefined);
+    const totals = await loadTotals(store).catch(() => undefined);
+    return buildClubNewsPackage({ ready: r, xi, roster, channel, previous, faces: loadFaces(), totals });
+  }
   if ('lineup' in r) {
     const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
     const previous = await previousSheet(club.bbc.team, r.match.kickOff).catch(() => undefined);
@@ -161,6 +182,10 @@ export async function watchBreaking({ source, pace = 1, templates, stop }: Watch
         try {
           console.log(`[breaking] ${describe(r)}${undescribed(r) ? ' (no description from BBC)' : ''}`);
           const pkg = await writePackage(r, model);
+          if (!pkg) {
+            console.log('[breaking] Nothing to put out');
+            continue;
+          }
           for (const line of pkg.segments.flatMap((s) => s.lines)) console.log(`  ${line.speaker}: ${line.text}`);
           await voicePackage(pkg, LOCAL_DIR);
           await addToFeed(pkg, LOCAL_DIR);

@@ -34,13 +34,15 @@ export interface RosterPlayer {
   name: string;
   aliases: string[];
   number?: number;
+  /** From the club's player page: Goalkeeper, Defender, Midfielder, Forward. */
+  position?: string;
 }
 
 export async function loadPlayers(store: Store): Promise<RosterPlayer[]> {
   const [rows] = await store.batch([{ sql: `SELECT id, name, aliases, details FROM entities WHERE type = 'player' AND active = 1 ORDER BY id` }]);
   return rows.map((r) => {
-    const details = r.details ? (JSON.parse(String(r.details)) as { number?: number }) : {};
-    return { id: String(r.id), name: String(r.name), aliases: JSON.parse(String(r.aliases || '[]')) as string[], number: details.number };
+    const details = r.details ? (JSON.parse(String(r.details)) as { number?: number; position?: string }) : {};
+    return { id: String(r.id), name: String(r.name), aliases: JSON.parse(String(r.aliases || '[]')) as string[], number: details.number, position: details.position };
   });
 }
 

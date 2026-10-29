@@ -11,6 +11,8 @@
     "pixelate": "tsx src/pixelate.ts",
     "faces": "tsx src/faces.ts",
     "faces:draw": "tsx src/draw-faces.ts",
+    "club-xi": "tsx src/club-xi.ts",
+    "ig-token": "tsx src/ig-token.ts",
     "adverts": "tsx src/advert-art.ts",
     "publish-site": "tsx src/publish.ts",
     "agent": "tsx src/agent.ts",

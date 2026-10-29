@@ -13,6 +13,7 @@ import { admin, type AdminEnv } from './admin.ts';
 import { dispatcher, ingester, tick } from './clock.ts';
 import { liveFeed } from './feed.ts';
 import { store, type StoreEnv } from './store.ts';
+import { fetchClubPosts, instagramFrom } from '../../pipeline/src/club-post.ts';
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; HeartsNews24/0.1; hobby fan project)';
 
@@ -21,6 +22,9 @@ interface Env extends StoreEnv, AdminEnv {
   GITHUB_REPO?: string;
   /** A fine-grained token that can only run this repo's workflows (Actions: read and write), a Worker secret. */
   GITHUB_DISPATCH_TOKEN?: string;
+  /** Instagram Graph API login for the club's team-news post (issue #40), Worker secrets. Without them BBC's sheet is the team news. */
+  IG_USER_ID?: string;
+  IG_ACCESS_TOKEN?: string;
 }
 
 async function page(path: string) {
@@ -41,7 +45,9 @@ async function clock(env: Env): Promise<void> {
           throw new Error('GITHUB_DISPATCH_TOKEN is not set');
         };
   const ingest = env.GITHUB_REPO && env.GITHUB_DISPATCH_TOKEN ? ingester(env.GITHUB_REPO, env.GITHUB_DISPATCH_TOKEN) : undefined;
-  const r = await tick(env.DB, feed ?? undefined, { dispatch, ingest });
+  const instagram = instagramFrom(env);
+  const clubPosts = instagram ? () => fetchClubPosts(instagram) : undefined;
+  const r = await tick(env.DB, feed ?? undefined, { dispatch, ingest, clubPosts });
   if (r.queued.length || r.dispatched.length) console.log(`clock: queued ${r.queued.join(', ') || 'nothing'}; sent to GitHub ${r.dispatched.join(', ') || 'nothing'}`);
   if (r.ingested) console.log('clock: started the ingest');
   for (const e of r.errors) console.warn(`clock: couldn't send ${e}`);

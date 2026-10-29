@@ -4,6 +4,7 @@
 
 import type { Period } from '../../../shared/breaking.ts';
 import type { LiveEvent, LiveMatch, LivePost, TeamSheet } from '../../../shared/live.ts';
+import { findTeamNews, type ClubPost, inPollWindow } from '../club-post.ts';
 import { minuteOf } from '../reading.ts';
 
 /** How long to wait for BBC's description of an event before going with a plain line. */
@@ -32,6 +33,19 @@ export interface ReadyLineup {
 }
 
 export const LINEUP_KEY = 'lineup';
+export const CLUB_KEY = 'club-lineup';
+
+/**
+ * The club's own team-news graphic is out (issue #40), ahead of BBC. The runner reads the names off the image. If
+ * BBC's sheet had already gone out (`aired`), the club's is only checked against it, and a correction goes out if they differ.
+ */
+export interface ReadyClubLineup {
+  key: typeof CLUB_KEY;
+  club: ClubPost;
+  match: LiveMatch;
+  aired: boolean;
+  text: string[];
+}
 
 export interface ReadyPeriod {
   key: string;
@@ -143,15 +157,32 @@ export class EventTracker {
   }
 
   /**
-   * The team news break-in, once our team is out on BBC's match page: only before kick-off, and once a match. A
-   * match first seen after kick-off counts its team news as old.
+   * The team news break-in from BBC's match page, once our team is out there: only before kick-off, and once a match. A
+   * match first seen after kick-off counts its team news as old. If the club's own graphic already went out, BBC's sheet
+   * is not news again.
    */
   lineup(m: LiveMatch): ReadyLineup | undefined {
     this.see(m);
     const ours = m.lineups?.[m.us];
     if (m.status !== 'pre' || !ours || this.state.done.includes(LINEUP_KEY)) return undefined;
     this.state.done.push(LINEUP_KEY);
+    if (this.state.done.includes(CLUB_KEY)) return undefined;
     return { key: LINEUP_KEY, lineup: ours, match: m, text: [] };
+  }
+
+  /** Whether the clock should look at the club's posts now: in the window before kick-off, until its graphic has been seen. */
+  wantsClubPost(m: LiveMatch, now: number): boolean {
+    this.see(m);
+    return inPollWindow(m, now) && !this.state.done.includes(CLUB_KEY);
+  }
+
+  /** The team news break-in from the club's graphic, once a match, the first time a "TEAM NEWS" post for this match turns up. */
+  clubLineup(m: LiveMatch, posts: ClubPost[], now: number): ReadyClubLineup | undefined {
+    if (!this.wantsClubPost(m, now)) return undefined;
+    const club = findTeamNews(posts, m.kickOff);
+    if (!club) return undefined;
+    this.state.done.push(CLUB_KEY);
+    return { key: CLUB_KEY, club, match: m, aired: this.state.done.includes(LINEUP_KEY), text: [] };
   }
 
   /**

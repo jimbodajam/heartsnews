@@ -95,5 +95,7 @@ jobs:
           JOB: ${{ inputs.job }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STORE_TOKEN: ${{ secrets.STORE_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: if [ -n "$JOB" ]; then npm run job -- --id "$JOB"; else npm run job; fi

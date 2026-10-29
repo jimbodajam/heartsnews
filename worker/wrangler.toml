@@ -10,6 +10,8 @@ crons = ["* * * * *"]
 [vars]
 # Whose bulletin workflow builds the jobs the home PC doesn't take. The token is a secret:
 # `npx wrangler secret put GITHUB_DISPATCH_TOKEN` (fine-grained, this repo only, Actions: read and write).
+# The club's team-news graphic (issue #40) is read through Instagram's Graph API: `npx wrangler secret put IG_USER_ID` and
+# `npx wrangler secret put IG_ACCESS_TOKEN` (long-lived, about 60 days). Without them BBC's sheet is the team news.
 GITHUB_REPO = "jimbodajam/heartsnews"
 
 # The channel's memory (src/store.ts). Create it once with `npx wrangler d1 create heartsnews` and paste its id here.
