@@ -50,7 +50,7 @@ The repo stays lean: audio is built during each run and published, not committed
 | Official | heartsfc.co.uk news | RSS or HTML |
 | YouTube | Hearts TV + Hearts Standard | Channel RSS, plus transcripts fetched at home (`npm run snapshot`) |
 | Forums | Jambos Kickback | Hot threads and recent posts, from home (it returns 403 to GitHub's servers). Fan Zone only |
-| Forums, whole threads | Jambos Kickback | The crawler (`kickback/`, #62) runs in the Worker's cron, which the forum answers (GitHub's servers get 403), and keeps whole threads in D1: a cursor per thread, 2-3s between requests, capped per run and per day, any 403/429/503 stops it for a cool-off. Viewer at `/admin?kickback=1` |
+| Forums, whole threads | Jambos Kickback | The crawler (`kickback/`, #62) keeps whole threads in D1. The forum's Cloudflare bot check turns away Workers but not a home IP, so the Worker decides (cursor, 2-3s pacing, caps per 5 minutes and per day, any 403/429/503 stops it for a cool-off) and a small loop on the Pi (`tools/pi/`) fetches and reports. Viewer at `/admin?kickback=1` |
 | Fixtures/table | BBC Sport team pages (`__INITIAL_DATA__`) | Fixtures, results with scorers, live status, tables, line-ups |
 
 Each collector is isolated. If one fails, it is logged and skipped, and the bulletin still builds. Reddit blocks the

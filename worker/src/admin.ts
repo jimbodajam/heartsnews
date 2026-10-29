@@ -8,7 +8,7 @@
 import { parsePlayerRecords, PLAYERS_URL } from '../../shared/londonhearts-players.ts';
 import { auditTally, loadTotals, tallySince } from '../../pipeline/src/tally-totals.ts';
 import type { TallyStore } from '../../pipeline/src/tally-totals.ts';
-import { LIMITS as KICKBACK_LIMITS, pollEvery, STATE_KEYS as KICKBACK_KEYS, type Block, type RunReport } from '../../kickback/src/crawl.ts';
+import { LIMITS as KICKBACK_LIMITS, pollEvery, STATE_KEYS as KICKBACK_KEYS, type Block, type LastFetch } from '../../kickback/src/crawl.ts';
 import { EVERY_MS } from './clock.ts';
 import { sameToken, type D1Database } from './store.ts';
 
@@ -339,9 +339,9 @@ export const KICKBACK_PAGE = 100;
 export async function kickbackData(db: D1Database, threadId?: number, page = 1, now = Date.now()) {
   const day = iso(now).slice(0, 10);
   const [state, threads] = await query(db, [
-    { sql: `SELECT key, value FROM state WHERE key IN (?, ?, ?)`, params: [KICKBACK_KEYS.block, KICKBACK_KEYS.last, KICKBACK_KEYS.day(day)] },
+    { sql: `SELECT key, value FROM state WHERE key IN (?, ?, ?, ?)`, params: [KICKBACK_KEYS.block, KICKBACK_KEYS.last, KICKBACK_KEYS.pause, KICKBACK_KEYS.day(day)] },
     {
-      sql: `SELECT t.id, t.title, t.url, t.watching, t.pages, t.next_page, t.newest_post_at, t.last_crawled_at, t.last_new, t.last_error,
+      sql: `SELECT t.id, t.title, t.url, t.watching, t.pages, t.next_page, t.caught_up, t.newest_post_at, t.last_crawled_at, t.last_new, t.last_error,
               (SELECT COUNT(*) FROM kickback_posts p WHERE p.thread_id = t.id) AS stored,
               (SELECT COUNT(*) FROM kickback_posts p WHERE p.thread_id = t.id AND p.reply_to IS NOT NULL) AS replies
             FROM kickback_threads t ORDER BY t.newest_post_at DESC`,
@@ -352,11 +352,12 @@ export async function kickbackData(db: D1Database, threadId?: number, page = 1, 
   const overview = {
     cooling: block && Date.parse(block.until) > now ? block : undefined,
     lastBlock: block,
-    lastRun: value(KICKBACK_KEYS.last) as RunReport | undefined,
+    lastFetch: value(KICKBACK_KEYS.last) as LastFetch | undefined,
+    paused: value(KICKBACK_KEYS.pause) as { until: string; why: string } | undefined,
     requestsToday: num(value(KICKBACK_KEYS.day(day))),
-    limits: { perRun: KICKBACK_LIMITS.perRun, perDay: KICKBACK_LIMITS.perDay },
+    limits: { perWindow: KICKBACK_LIMITS.perWindow, windowMinutes: KICKBACK_LIMITS.windowMs / 60_000, perDay: KICKBACK_LIMITS.perDay },
     threads: threads.map((t) => {
-      const caughtUp = num(t.next_page) >= num(t.pages);
+      const caughtUp = num(t.caught_up) === 1;
       return {
         id: num(t.id),
         title: String(t.title),
@@ -736,11 +737,14 @@ ${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h
 type Kickback = Awaited<ReturnType<typeof kickbackData>>;
 
 export function renderKickback(d: Kickback): string {
+  const paused = d.paused && Date.parse(d.paused.until) > Date.parse(d.generatedAt) ? d.paused : undefined;
   const status = d.cooling
     ? pill(`cooling off until ${when(d.cooling.until)}`, 'bad')
-    : d.lastRun?.stopped
-      ? pill(`last run stopped: ${d.lastRun.stopped}`, 'warn')
-      : pill('crawling', 'ok');
+    : paused
+      ? pill(`paused until ${when(paused.until)}`, 'warn')
+      : d.lastFetch
+        ? pill('crawling', 'ok')
+        : pill('waiting for the fetcher at home', 'warn');
   const threads = table(
     ['Thread', 'Posts kept', 'Pages', 'Cursor', 'Newest post', 'Last fetch', ''],
     d.threads.map((t) => [
@@ -753,13 +757,14 @@ export function renderKickback(d: Kickback): string {
       t.lastError ? pill(t.lastError, 'bad') : !t.watching ? pill('not watched', 'warn') : '',
     ]),
   );
-  const run = d.lastRun
-    ? `Last run ${esc(when(d.lastRun.at))}: ${d.lastRun.requests} requests, ${d.lastRun.newPosts} new posts${d.lastRun.stopped ? `, stopped: ${esc(d.lastRun.stopped)}` : ''}.`
-    : 'No run yet.';
+  const run = d.lastFetch
+    ? `Last page reported ${esc(when(d.lastFetch.at))}: HTTP ${d.lastFetch.status}, ${d.lastFetch.newPosts} new posts${d.lastFetch.stopped ? `, ${esc(d.lastFetch.stopped)}` : ''}.`
+    : 'No page reported yet.';
   const header = `<h1>Jambos Kickback crawler</h1><p class="note"><a href="/admin">Back</a> · <a href="/admin.json?kickback=${'thread' in d && d.thread ? d.thread.id : 1}">JSON</a></p>
 <section><h2>Crawler</h2><p>${status.slice(10)}</p>
 <p>Requests today: <b>${d.requestsToday}</b> of ${d.limits.perDay} ${bar(d.requestsToday, d.limits.perDay)}</p>
-<p class="note">${run} Up to ${d.limits.perRun} requests a run, 2-3 seconds apart; any 403, 429 or 503 stops it and starts a cool-off (6 hours, doubling on repeats${d.lastBlock ? `; the last was HTTP ${d.lastBlock.status} on ${esc(when(d.lastBlock.at))}, strike ${d.lastBlock.strikes}` : ''}).</p>
+<p class="note">${run} Fetched from home, never more than ${d.limits.perWindow} requests in ${d.limits.windowMinutes} minutes, 2-3 seconds apart; any 403, 429 or 503 stops it and starts a cool-off (6 hours, doubling on repeats${d.lastBlock ? `; the last was HTTP ${d.lastBlock.status} on ${esc(when(d.lastBlock.at))}, strike ${d.lastBlock.strikes}` : ''}).</p>
+${paused ? `<p class="note">Paused: ${esc(paused.why)}</p>` : ''}
 ${d.lastBlock?.detail ? `<details><summary>What the refusal looked like</summary><pre>${esc(JSON.stringify(d.lastBlock.detail, null, 2))}</pre></details>` : ''}
 <h3>Threads</h3>${threads}</section>`;
   if (!('rate' in d)) return page(header);
