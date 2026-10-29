@@ -6,6 +6,8 @@ import type { ClubXI } from './club-xi.ts';
 import { findPlayer, type RosterPlayer } from './tally.ts';
 import { slug } from './text.ts';
 
+const plain = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
 export interface ClubSheet {
   sheet: TeamSheet;
   /** Printed names that matched nobody in the squad: shown as printed, with no number or portrait. */
@@ -47,11 +49,13 @@ export function clubSheet(xi: ClubXI, roster: RosterPlayer[], team: string): Clu
     const position = bbcPosition(who?.position) ?? bbcPosition(listed) ?? last;
     last = position;
     // "Reus" is Beau Reus: the first name is whatever of the squad name comes before the printed one.
-    const first = who && who.name.toLowerCase().endsWith(` ${shirt.toLowerCase()}`) ? who.name.slice(0, -shirt.length).trim() : undefined;
+    // The squad's spelling and capitalisation (the graphic is in capitals: MCCART).
+    const spelt = who && plain(who.name).endsWith(` ${plain(shirt)}`) ? who.name.slice(-shirt.length) : shirt;
+    const first = who && plain(who.name).endsWith(` ${plain(shirt)}`) ? who.name.slice(0, -shirt.length).trim() : undefined;
     const shirtNumber = who?.number ?? number;
     return {
       urn: who ? `club:${who.id}` : `club:?${slug(shirt)}`,
-      shirt,
+      shirt: spelt,
       ...(first ? { first } : {}),
       ...(shirtNumber !== undefined ? { number: shirtNumber } : {}),
       position,
@@ -60,12 +64,16 @@ export function clubSheet(xi: ClubXI, roster: RosterPlayer[], team: string): Clu
   const starters = xi.starters.map((s) => player(s.name, s.number, s.position));
   const by = (position: string) => starters.filter((p) => p.position === position);
   const rows = [by('Goalkeeper'), by('Defender'), by('Midfielder'), by('Striker')];
-  const shaped = rows.flat().length === starters.length ? rows : [starters.slice(0, 1), starters.slice(1)];
+  // The club site's positions are loose (Braga and McPake are down as forwards), so a shape that isn't a clean one is not
+  // claimed: the keeper, the defenders, then everyone else in the order the graphic gave them.
+  const shape = guessFormation(rows);
+  const outfield = starters.filter((p) => p.position !== 'Goalkeeper' && p.position !== 'Defender');
+  const shaped = shape ? rows : [by('Goalkeeper'), by('Defender'), outfield].filter((r) => r.length);
   const bench = xi.bench.map((x) => {
     const { position: _position, ...p } = player(x.name, x.number);
     return p;
   });
-  return { sheet: { team, formation: guessFormation(shaped) ?? '', rows: shaped, bench }, unmatched };
+  return { sheet: { team, formation: shape ?? '', rows: shaped, bench }, unmatched };
 }
 
 const surname = (p: SheetPlayer) => slug(p.shirt).split('-').at(-1) ?? '';

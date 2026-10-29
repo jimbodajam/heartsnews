@@ -55,7 +55,7 @@ export function playerName(p: SheetPlayer, faces: Face[] = []): { name: string; 
 /** How the announcer opens each line of the team: "In goal", "At the back", "In midfield", "Ahead of them", "Up front". */
 export function rowOpening(sheet: TeamSheet, i: number): string {
   if (i === 0) return 'in goal';
-  if (i === sheet.rows.length - 1) return 'up front';
+  if (i === sheet.rows.length - 1 && sheet.formation) return 'up front';
   const position = sheet.rows[i][0]?.position;
   if (position === 'Defender') return 'at the back';
   const before = sheet.rows.slice(1, i).some((r) => r[0]?.position === 'Midfielder');
