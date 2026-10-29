@@ -11,3 +11,4 @@ site/public/breaking/
 site/public/memory.json
 *.log
 .DS_Store
+.cache/

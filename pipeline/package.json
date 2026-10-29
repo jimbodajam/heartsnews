@@ -15,6 +15,7 @@
     "club-xi": "tsx src/club-xi.ts",
     "ig-token": "tsx src/ig-token.ts",
     "adverts": "tsx src/advert-art.ts",
+    "phonein": "tsx src/phonein.ts",
     "publish-site": "tsx src/publish.ts",
     "agent": "tsx src/agent.ts",
     "job": "tsx src/jobs.ts",
