@@ -185,24 +185,79 @@ export function drawSting(g: Ctx, age: number, label: string, title: string): vo
 }
 
 /**
- * Breaking-news flash: red bars slam in over the programme, BREAKING NEWS across them and the big word ("GOAL")
- * flashing between. Lasts BREAKING_MS.
+ * What kind of break-in it is, for the sound: a goal (the same for either team, so it doesn't give the scorer away),
+ * a red card, or calm news. The card itself looks the same for all of them.
+ */
+export type BreakingLook = 'goal' | 'red' | 'calm';
+export const breakingLook = (flash: string): BreakingLook => (flash === 'GOAL' ? 'goal' : flash === 'RED CARD' ? 'red' : 'calm');
+
+/**
+ * Flash for a match event: a maroon card with the word stacked big on the left and a gold panel with the heart on the
+ * right. The panel sweeps in with a white flash and a shake, the word types in, and the card wipes off to the right
+ * into the reporter. Lasts BREAKING_MS.
  */
 export const BREAKING_MS = 2800;
+const WIPE_MS = 260;
+/** Deeper than the channel's yellowy gold, closer to the club's metallic gold. */
+const CARD_GOLD = '#c8932a';
+const CARD_GOLD_LIGHT = '#dcaa40';
 export function drawBreaking(g: Ctx, age: number, flash: string): void {
-  const inT = easeOut(clamp01(age / 250));
-  const outT = clamp01((age - (BREAKING_MS - 300)) / 300);
-  // Two bars close in from top and bottom, then open out again.
-  const half = Math.round((H / 2) * inT * (1 - outT * outT));
-  rect(g, 0, 0, W, half, C.red);
-  rect(g, 0, H - half, W, half, C.red);
-  if (half < H / 2 - 1) return;
-  rect(g, 0, 52, W, 2, C.white);
-  rect(g, 0, 126, W, 2, C.white);
-  rect(g, 0, 56, W, 14, C.white);
-  drawTextCentred(g, 'BREAKING NEWS', W / 2, 61, C.red);
-  const on = Math.floor(age / 220) % 2 === 0;
-  drawTextCentred(g, fit(flash, W - 20, 4), W / 2, 84, on ? C.gold : C.white, 4);
+  const wipe = clamp01((age - (BREAKING_MS - WIPE_MS)) / WIPE_MS);
+  g.save();
+  if (wipe > 0) {
+    g.beginPath();
+    g.rect(Math.round(wipe * W), 0, W, H);
+    g.clip();
+  }
+  // Shake that dies away over the first half second.
+  const shake = Math.max(0, 1 - age / 500) * 5;
+  g.translate(Math.round(Math.sin(age * 0.9) * shake), Math.round(Math.cos(age * 1.3) * shake * 0.6));
+  rect(g, -8, -8, W + 16, H + 16, C.maroon);
+
+  // The gold panel slides in from the right on a diagonal, with a white edge.
+  const slide = Math.round((1 - easeOut(clamp01(age / 240))) * 140);
+  // Drawn a row at a time so the diagonal stays pixel-crisp rather than anti-aliased.
+  for (let y = 0; y < H; y++) {
+    const x = Math.round(W * 0.86 - W * 0.24 * (y / H)) + slide;
+    rect(g, x, y, W + 8 - x, 1, CARD_GOLD);
+    rect(g, x + 16, y, 7, 1, CARD_GOLD_LIGHT);
+    rect(g, x - 4, y, 4, 1, C.white);
+  }
+  // The heart beats.
+  const big = Math.floor(age / 350) % 2 === 0;
+  const hs = big ? 6 : 5;
+  drawHeart(g, Math.round(285 + slide - 3.5 * hs), Math.round(82 - 3 * hs), hs, C.maroonDark);
+
+  // The word, stacked a line per space, typing in once the panel has landed.
+  const lines = flash.split(' ');
+  let scale = 8;
+  while (scale > 2 && Math.max(...lines.map((l) => measure(l, scale))) > 205) scale--;
+  const lh = scale * 9;
+  const top = Math.round(80 - ((lines.length - 1) * lh + 7 * scale) / 2);
+  const total = lines.reduce((n, l) => n + l.length, 0);
+  let left = Math.ceil(total * clamp01((age - 200) / 300));
+  lines.forEach((l, i) => {
+    const shown = l.slice(0, Math.max(0, left));
+    left -= l.length;
+    drawText(g, shown, 14, Math.round(top + i * lh + scale / 2), C.maroonDark, scale);
+    drawText(g, shown, 12, top + i * lh, C.white, scale);
+  });
+
+  // Channel strip along the bottom.
+  const stripY = H - Math.round(14 * easeOut(clamp01((age - 100) / 200)));
+  rect(g, 0, stripY, W, H - stripY, C.maroonDark);
+  rect(g, 0, stripY, W, 1, C.gold);
+  drawHeart(g, 8, stripY + 3, 1, C.gold);
+  drawText(g, 'HEARTS NEWS 24', 20, stripY + 4, C.white);
+  g.restore();
+
+  // White flash on impact, and a bright edge leading the wipe.
+  if (age < 180) {
+    g.globalAlpha = 1 - age / 180;
+    rect(g, 0, 0, W, H, C.white);
+    g.globalAlpha = 1;
+  }
+  if (wipe > 0 && wipe < 1) rect(g, Math.round(wipe * W) - 3, 0, 3, H, C.white);
 }
 
 export function drawSplash(g: Ctx, t: number, name: string, status: string): void {

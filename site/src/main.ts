@@ -61,6 +61,14 @@ async function boot(): Promise<void> {
     fetchBulletin().catch(() => undefined),
   );
 
+  // Dev only: ?stinger=goal|red|calm|ko plays just the break-in flash at the first line, for checking its look and sound.
+  const stinger = import.meta.env.DEV ? params.get('stinger') : null;
+  if (stinger) {
+    const flash = { goal: 'GOAL', red: 'RED CARD', calm: 'TEAM NEWS', ko: 'KICK-OFF' }[stinger] ?? stinger.toUpperCase();
+    const now = new Date().toISOString();
+    player.queueBreaking({ id: `stinger-${stinger}`, kind: 'goal', publishedAt: now, kickOff: now, flash, presenters: [], segments: [] });
+  }
+
   const live = await liveSource();
   if (live) {
     player.live = new LiveScore(live.source, live.pace);

@@ -6,8 +6,8 @@ import type { Speaking, Voices } from './audio/voice';
 import { isFresh } from './breaking';
 import { drawGraphic, drawSidePanel } from './gfx/graphics';
 import {
-  BREAKING_MS, drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS,
-  STING_MS, Ticker, type TickerItem,
+  BREAKING_MS, breakingLook, drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS,
+  STING_MS, Ticker, type BreakingLook, type TickerItem,
 } from './gfx/overlay';
 import { type LiveScore, scoreLine } from './live';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
@@ -131,7 +131,7 @@ export class Player {
       const was = { seg: this.seg, line: this.line, segGraphic: this.segGraphic, shot: this.shot, strap: this.strap, strapped: new Set(this.strapped) };
       this.breaking = p;
       this.setMode('breaking');
-      this.sting('breaking');
+      this.sting('breaking', breakingLook(p.flash));
       await this.wait(BREAKING_MS);
       for (const seg of p.segments) {
         this.seg = seg;
@@ -181,8 +181,8 @@ export class Player {
     }
   }
 
-  private sting(kind: 'ident' | 'segment' | 'breaking'): void {
-    if (!this.voices.muted) playSting(kind);
+  private sting(kind: 'ident' | 'segment' | 'breaking', look?: BreakingLook): void {
+    if (!this.voices.muted) playSting(kind, look);
   }
 
   /** `startAt` (a segment id) skips the ident and earlier segments on the first loop only. */
