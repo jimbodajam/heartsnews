@@ -4,7 +4,7 @@
 // logic is in feed.ts, which a recorded match can be replayed through (`npm run replay`).
 // It also serves /store, the channel's memory in D1, to the bulletin builds (store.ts), and is the channel's clock:
 // a cron trigger every minute queues the programmes and breaking news that are due and hands them out, and starts the
-// ingest every half hour (clock.ts). And /admin (admin.ts), the read-only backend view, behind ADMIN_TOKEN.
+// ingest every half hour (clock.ts). The same cron lets the Kickback crawler look at its threads (issue #62). And /admin (admin.ts), the read-only backend view, behind ADMIN_TOKEN.
 // Deploy (owner only): npx wrangler login, then npm run worker:deploy.
 
 import club from '../../clubs/hearts.json';
@@ -12,6 +12,7 @@ import { initialData } from '../../shared/bbc.ts';
 import { admin, type AdminEnv } from './admin.ts';
 import { dispatcher, ingester, tick } from './clock.ts';
 import { liveFeed } from './feed.ts';
+import { crawl, liveDeps } from '../../kickback/src/crawl.ts';
 import { store, type StoreEnv } from './store.ts';
 import { fetchClubPosts, instagramFrom } from '../../pipeline/src/club-post.ts';
 
@@ -53,6 +54,21 @@ async function clock(env: Env): Promise<void> {
   for (const e of r.errors) console.warn(`clock: couldn't send ${e}`);
 }
 
+/** The Kickback crawler (kickback/src/crawl.ts, issue #62), looked at every minute: it fetches only what is due, politely. */
+async function kickback(env: Env): Promise<void> {
+  const db = env.DB;
+  if (!db) return;
+  try {
+    const r = await crawl(
+      { batch: async (statements) => (await db.batch(statements.map((s) => db.prepare(s.sql).bind(...(s.params ?? []))))).map((x) => (x.results ?? []) as Record<string, unknown>[]) },
+      liveDeps(),
+    );
+    if (r.requests) console.log(`kickback: ${r.requests} requests, ${r.newPosts} new posts${r.stopped ? `; stopped: ${r.stopped}` : ''}`);
+  } catch (err) {
+    console.warn(`kickback: ${(err as Error).message}`);
+  }
+}
+
 export default {
   fetch: (request: Request, env: Env): Promise<Response> => {
     const path = new URL(request.url).pathname;
@@ -60,5 +76,8 @@ export default {
     if (path === '/admin' || path === '/admin.json' || path === '/admin/roster') return admin(request, env);
     return live.respond(request);
   },
-  scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): void => ctx.waitUntil(clock(env)),
+  scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): void => {
+    ctx.waitUntil(clock(env));
+    ctx.waitUntil(kickback(env));
+  },
 };

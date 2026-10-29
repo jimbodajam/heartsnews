@@ -8,6 +8,7 @@
 import { parsePlayerRecords, PLAYERS_URL } from '../../shared/londonhearts-players.ts';
 import { auditTally, loadTotals, tallySince } from '../../pipeline/src/tally-totals.ts';
 import type { TallyStore } from '../../pipeline/src/tally-totals.ts';
+import { LIMITS as KICKBACK_LIMITS, pollEvery, STATE_KEYS as KICKBACK_KEYS, type Block, type RunReport } from '../../kickback/src/crawl.ts';
 import { EVERY_MS } from './clock.ts';
 import { sameToken, type D1Database } from './store.ts';
 
@@ -330,6 +331,87 @@ export async function itemDetail(db: D1Database, id: string) {
   };
 }
 
+// ---- The Kickback crawler (issue #62) ----
+
+export const KICKBACK_PAGE = 100;
+
+/** The crawler's state and its threads; with a thread id, that thread's posting rate and one page of its posts. */
+export async function kickbackData(db: D1Database, threadId?: number, page = 1, now = Date.now()) {
+  const day = iso(now).slice(0, 10);
+  const [state, threads] = await query(db, [
+    { sql: `SELECT key, value FROM state WHERE key IN (?, ?, ?)`, params: [KICKBACK_KEYS.block, KICKBACK_KEYS.last, KICKBACK_KEYS.day(day)] },
+    {
+      sql: `SELECT t.id, t.title, t.url, t.watching, t.pages, t.next_page, t.newest_post_at, t.last_crawled_at, t.last_new, t.last_error,
+              (SELECT COUNT(*) FROM kickback_posts p WHERE p.thread_id = t.id) AS stored,
+              (SELECT COUNT(*) FROM kickback_posts p WHERE p.thread_id = t.id AND p.reply_to IS NOT NULL) AS replies
+            FROM kickback_threads t ORDER BY t.newest_post_at DESC`,
+    },
+  ]);
+  const value = (key: string) => json(state.find((r) => r.key === key)?.value);
+  const block = value(KICKBACK_KEYS.block) as Block | undefined;
+  const overview = {
+    cooling: block && Date.parse(block.until) > now ? block : undefined,
+    lastBlock: block,
+    lastRun: value(KICKBACK_KEYS.last) as RunReport | undefined,
+    requestsToday: num(value(KICKBACK_KEYS.day(day))),
+    limits: { perRun: KICKBACK_LIMITS.perRun, perDay: KICKBACK_LIMITS.perDay },
+    threads: threads.map((t) => {
+      const caughtUp = num(t.next_page) >= num(t.pages);
+      return {
+        id: num(t.id),
+        title: String(t.title),
+        url: String(t.url),
+        watching: num(t.watching) === 1,
+        pages: num(t.pages),
+        nextPage: num(t.next_page),
+        stored: num(t.stored),
+        replies: num(t.replies),
+        newestPostAt: (t.newest_post_at as string | null) ?? undefined,
+        lastCrawledAt: (t.last_crawled_at as string | null) ?? undefined,
+        lastNew: num(t.last_new),
+        lastError: (t.last_error as string | null) ?? undefined,
+        caughtUp,
+        pollMinutes: caughtUp ? pollEvery((t.newest_post_at as string | null) ?? undefined, now) / 60_000 : 0,
+      };
+    }),
+  };
+  if (threadId === undefined) return { generatedAt: iso(now), ...overview };
+
+  const [slots, posts] = await query(db, [
+    {
+      // Posts per quarter-hour, in UTC: the rate the polling has to keep up with.
+      sql: `SELECT strftime('%Y-%m-%dT%H:', ts) || printf('%02d', (CAST(strftime('%M', ts) AS INTEGER) / 15) * 15) AS slot, COUNT(*) AS n
+            FROM kickback_posts WHERE thread_id = ? GROUP BY slot ORDER BY slot`,
+      params: [threadId],
+    },
+    {
+      sql: `SELECT p.id, p.ts, p.author, p.text, p.reply_to, q.author AS reply_author, q.thread_id AS reply_thread
+            FROM kickback_posts p LEFT JOIN kickback_posts q ON q.id = p.reply_to WHERE p.thread_id = ? ORDER BY p.ts, p.id LIMIT ? OFFSET ?`,
+      params: [threadId, KICKBACK_PAGE, (Math.max(1, page) - 1) * KICKBACK_PAGE],
+    },
+  ]);
+  const quarter = slots.map((s) => ({ slot: String(s.slot), n: num(s.n) }));
+  // The busiest stretch of this many quarter-hours in a row (a quarter-hour with no posts has no row, so go by the clock).
+  const at15 = quarter.map((q) => ({ t: Date.parse(`${q.slot}:00Z`), n: q.n }));
+  const busiest = (width: number) => at15.reduce((m, s) => Math.max(m, at15.filter((o) => o.t >= s.t && o.t < s.t + width * 900_000).reduce((a, o) => a + o.n, 0)), 0);
+  return {
+    generatedAt: iso(now),
+    ...overview,
+    thread: overview.threads.find((t) => t.id === threadId),
+    page: Math.max(1, page),
+    rate: { quarterHours: quarter, peak15: busiest(1), peak30: busiest(2), peak60: busiest(4) },
+    posts: posts.map((p) => ({
+      id: num(p.id),
+      ts: String(p.ts),
+      author: (p.author as string | null) ?? undefined,
+      text: String(p.text),
+      replyTo: p.reply_to == null ? undefined : num(p.reply_to),
+      replyAuthor: (p.reply_author as string | null) ?? undefined,
+      replyKnown: p.reply_thread != null,
+    })),
+  };
+}
+
 // ---- The squad list ----
 
 /** What the club's player page said (pipeline/src/playerdetails.ts), as the admin may change it. */
@@ -555,7 +637,7 @@ ${table(
 )}
 </section>`;
 
-  return page(`<h1>HeartsNews24 admin</h1><p class="note">${esc(when(d.generatedAt))} · <a href="/admin.json${bulletinId ? `?bulletin=${encodeURIComponent(bulletinId)}` : ''}">JSON</a> · <a href="/admin?roster=1">Squad list</a></p>${bulletinId ? traceView(d.bulletin as Trace) : ''}${health}${inputs}${story}${list}`);
+  return page(`<h1>HeartsNews24 admin</h1><p class="note">${esc(when(d.generatedAt))} · <a href="/admin.json${bulletinId ? `?bulletin=${encodeURIComponent(bulletinId)}` : ''}">JSON</a> · <a href="/admin?roster=1">Squad list</a> · <a href="/admin?kickback=1">Kickback</a></p>${bulletinId ? traceView(d.bulletin as Trace) : ''}${health}${inputs}${story}${list}`);
 }
 
 type Trace = Awaited<ReturnType<typeof bulletinTrace>>;
@@ -649,6 +731,65 @@ ${d.tallySince ? `<section><h2>Appearances and goals</h2><p class="note">Our own
 <input name="aliases" placeholder="also known as, comma separated" aria-label="Also known as">${detailInputs({})}<span class="acts"><button name="action" value="add">Add</button></span></form></section>
 <section><h2>At the club (${on.length})</h2>${on.map(row).join('') || '<p class="none">Nobody yet: the first ingest after the migration fills this in from the club pages.</p>'}</section>
 ${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h2><p class="note">Stories about these people can no longer open. Anyone the club's pages stop listing lands here at the next window check.</p>${off.map(row).join('')}</section>` : ''}`);
+}
+
+type Kickback = Awaited<ReturnType<typeof kickbackData>>;
+
+export function renderKickback(d: Kickback): string {
+  const status = d.cooling
+    ? pill(`cooling off until ${when(d.cooling.until)}`, 'bad')
+    : d.lastRun?.stopped
+      ? pill(`last run stopped: ${d.lastRun.stopped}`, 'warn')
+      : pill('crawling', 'ok');
+  const threads = table(
+    ['Thread', 'Posts kept', 'Pages', 'Cursor', 'Newest post', 'Last fetch', ''],
+    d.threads.map((t) => [
+      raw(`<a href="/admin?kickback=${t.id}">${esc(t.title)}</a>`),
+      `${t.stored.toLocaleString('en-GB')}${t.replies ? ` (${t.replies} replies)` : ''}`,
+      t.pages,
+      t.caughtUp ? `caught up, looks again every ${t.pollMinutes >= 60 ? `${t.pollMinutes / 60}h` : `${t.pollMinutes} min`}` : `page ${t.nextPage} of ${t.pages}`,
+      when(t.newestPostAt),
+      `${when(t.lastCrawledAt)}${t.lastCrawledAt ? `, ${t.lastNew} new` : ''}`,
+      t.lastError ? pill(t.lastError, 'bad') : !t.watching ? pill('not watched', 'warn') : '',
+    ]),
+  );
+  const run = d.lastRun
+    ? `Last run ${esc(when(d.lastRun.at))}: ${d.lastRun.requests} requests, ${d.lastRun.newPosts} new posts${d.lastRun.stopped ? `, stopped: ${esc(d.lastRun.stopped)}` : ''}.`
+    : 'No run yet.';
+  const header = `<h1>Jambos Kickback crawler</h1><p class="note"><a href="/admin">Back</a> · <a href="/admin.json?kickback=${'thread' in d && d.thread ? d.thread.id : 1}">JSON</a></p>
+<section><h2>Crawler</h2><p>${status.slice(10)}</p>
+<p>Requests today: <b>${d.requestsToday}</b> of ${d.limits.perDay} ${bar(d.requestsToday, d.limits.perDay)}</p>
+<p class="note">${run} Up to ${d.limits.perRun} requests a run, 2-3 seconds apart; any 403, 429 or 503 stops it and starts a cool-off (6 hours, doubling on repeats${d.lastBlock ? `; the last was HTTP ${d.lastBlock.status} on ${esc(when(d.lastBlock.at))}, strike ${d.lastBlock.strikes}` : ''}).</p>
+${d.lastBlock?.detail ? `<details><summary>What the refusal looked like</summary><pre>${esc(JSON.stringify(d.lastBlock.detail, null, 2))}</pre></details>` : ''}
+<h3>Threads</h3>${threads}</section>`;
+  if (!('rate' in d)) return page(header);
+
+  const { rate } = d;
+  const max = Math.max(1, ...rate.quarterHours.map((q) => q.n));
+  const body = d.thread
+    ? `<section><h2>${esc(d.thread.title)}</h2>
+<p class="note"><a href="${esc(d.thread.url)}" rel="noreferrer">On the forum</a> · ${d.thread.stored.toLocaleString('en-GB')} posts kept</p>
+<h3>How fast people posted</h3>
+<p>Busiest: <b>${rate.peak15}</b> posts in 15 minutes · <b>${rate.peak30}</b> in 30 · <b>${rate.peak60}</b> in an hour (about ${Math.ceil(rate.peak60 / 50)} forum pages an hour).</p>
+${table(
+  ['Quarter-hour (UK)', 'Posts', ''],
+  rate.quarterHours.filter((q) => q.n >= Math.max(5, max * 0.1)).map((q) => [when(`${q.slot}:00Z`), q.n, raw(bar(q.n, max))]),
+)}
+<p class="note">Quarter-hours with under a tenth of the peak are left out.</p>
+<h3>Posts ${(d.page - 1) * KICKBACK_PAGE + 1}-${(d.page - 1) * KICKBACK_PAGE + d.posts.length}, oldest first</h3>
+<p>${d.page > 1 ? `<a href="/admin?kickback=${d.thread.id}&p=${d.page - 1}">Earlier</a> · ` : ''}${d.posts.length === KICKBACK_PAGE ? `<a href="/admin?kickback=${d.thread.id}&p=${d.page + 1}">Later</a>` : ''}</p>
+${table(
+  ['When (UK)', 'Who', 'Post'],
+  d.posts.map((p) => [
+    when(p.ts),
+    p.author ?? '',
+    raw(
+      `${p.replyTo ? `<small>↩ ${p.replyKnown ? esc(p.replyAuthor ?? 'a post') : 'a post not kept'}</small><br>` : ''}${esc(p.text) || '<small>(no words: a picture, or only a quote)</small>'}`,
+    ),
+  ]),
+)}</section>`
+    : '<section><p>No such thread.</p></section>';
+  return page(header + body);
 }
 
 export function renderAudit(a: Awaited<ReturnType<typeof runAudit>> | undefined, error?: string): string {
@@ -746,6 +887,12 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
   if (url.searchParams.has('roster')) {
     const d = await rosterData(env.DB);
     return respond(d, renderRoster(d));
+  }
+  const kickback = url.searchParams.get('kickback');
+  if (kickback) {
+    const id = Number(kickback);
+    const d = await kickbackData(env.DB, Number.isInteger(id) && id > 1 ? id : undefined, Number(url.searchParams.get('p')) || 1);
+    return respond(d, renderKickback(d));
   }
   const itemId = url.searchParams.get('item');
   if (itemId) {
