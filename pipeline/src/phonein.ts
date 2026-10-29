@@ -4,10 +4,10 @@
 // Usage: npm run phonein -- <posts.json> --ft 2026-10-28T21:45:00Z --result "Hearts 2-2 Rangers" [--hours 2] [--callers 5] [--audio]
 //   posts.json: the rows of kickback_posts ({ id, ts, text, reply_to }), or wrangler's --json output for them.
 
-import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import type { Line, Presenter, Segment } from '../../shared/bulletin.ts';
 import { geminiFromEnv, type ScriptModel } from './script/llm.ts';
 
 export interface Post {
@@ -20,6 +20,8 @@ export interface Post {
 export interface Position {
   /** What these fans are saying, in a sentence. */
   view: string;
+  /** The call in a few words, for the on-screen strap ("JJ WILLIAMS NOT GOOD ENOUGH"). */
+  tag: string;
   /** How many of the posts lean this way. */
   posts: number;
   /** "furious", "fed up", "upbeat", "calm" … */
@@ -84,7 +86,7 @@ function readPositions(posts: Post[]): { prompt: string; schema: object } {
     prompt: `These are fans' posts from a football supporters' forum after Hearts' match. Work out the 4 to 6 distinct
 things fans are actually arguing or feeling, most popular first. For each: "view" is one plain sentence in your own words
 (not a quote), "posts" is roughly how many of these ${posts.length} posts lean that way (the counts should add up to about
-${posts.length} at most; a post can only count once), "mood" is one or two words, "points" is two or three specific things fans cite for it (a moment, a player, a stat), in your own words. Do not name any poster.
+${posts.length} at most; a post can only count once), "tag" is the view in at most six words, "mood" is one or two words, "points" is two or three specific things fans cite for it (a moment, a player, a stat), in your own words. Do not name any poster.
 
 POSTS:
 ${list}`,
@@ -93,7 +95,7 @@ ${list}`,
       properties: {
         positions: {
           type: 'ARRAY',
-          items: { type: 'OBJECT', properties: { view: STR, posts: { type: 'INTEGER' }, mood: STR, points: { type: 'ARRAY', items: STR } }, required: ['view', 'posts', 'mood', 'points'] },
+          items: { type: 'OBJECT', properties: { view: STR, posts: { type: 'INTEGER' }, mood: STR, tag: STR, points: { type: 'ARRAY', items: STR } }, required: ['view', 'posts', 'mood', 'tag', 'points'] },
         },
       },
       required: ['positions'],
@@ -155,9 +157,6 @@ export async function buildPhoneIn(model: ScriptModel, posts: Post[], opts: { re
   return { positions, callers, lines: script.lines.filter((l) => valid.has(l.speaker) && l.text.trim()) };
 }
 
-// A phone line: voice squeezed to the band a landline carried, a touch of grit.
-export const PHONE_FILTER = 'highpass=f=350,lowpass=f=3200,acompressor=threshold=-18dB:ratio=4,volume=1.4';
-
 /** Spare Kokoro voices for callers, none of them a presenter's. */
 export const CALLER_VOICES = { m: ['am_adam', 'bm_fable', 'am_michael'], f: ['bf_lily', 'af_nicole', 'af_sarah'] };
 
@@ -172,12 +171,7 @@ export async function renderPhoneIn(p: PhoneIn, dir: string, presenterVoices: Re
     const c = caller ? p.callers[Number(caller[1])] : undefined;
     const voice = c ? CALLER_VOICES[c.sex][p.callers.slice(0, Number(caller![1])).filter((x) => x.sex === c.sex).length % 3] : presenterVoices[l.speaker];
     const file = resolve(dir, `${String(i).padStart(2, '0')}-${l.speaker.replace(':', '')}.mp3`);
-    await renderClip(tts, l.text, voice, 1, file);
-    if (caller) {
-      const raw = file.replace(/\.mp3$/, '-raw.mp3');
-      spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', file, '-af', PHONE_FILTER, raw]);
-      spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-b:a', '96k', file]);
-    }
+    await renderClip(tts, l.text, voice, 1, file, caller ? 'phone' : undefined);
     files.push(file);
   }
   return files;
@@ -217,3 +211,36 @@ async function main() {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(e); process.exit(1); });
+
+/** The phone-in as a bulletin segment after the Debate. Callers are voices only (ids "caller-N"): the pundits stay on screen. */
+export function phoneInSegment(p: PhoneIn, hosts: { host: string; pundits: string[] }): { segment: Segment; callers: Presenter[] } {
+  const callers: Presenter[] = p.callers.map((c, i) => ({
+    id: `caller-${i}`,
+    name: c.name,
+    role: 'Caller',
+    voice: c.sex === 'f' ? 'female' : 'male',
+    tts: { voice: CALLER_VOICES[c.sex][p.callers.slice(0, i).filter((x) => x.sex === c.sex).length % 3], filter: 'phone' },
+    look: { skin: '#c98e6a', hair: '#1a1416', hairStyle: 'short', suit: '#333333', shirt: '#cccccc' },
+  }));
+  // The strap stays up through the callers' lines and the answers that follow, until the next caller or the close.
+  let on: number | undefined;
+  const lines: Line[] = p.lines.map((l) => {
+    const m = /^caller:(\d+)$/.exec(l.speaker);
+    if (m) on = Number(m[1]);
+    else if (l.speaker === hosts.host) {
+      // The host naming the next caller puts them on the line; the last name said wins ("Thanks, Kev. Morag from Leith…").
+      const named = p.callers.map((c, i) => ({ i, at: l.text.lastIndexOf(c.name) })).filter((x) => x.at >= 0).sort((a, b) => b.at - a.at)[0];
+      on = named ? named.i : /^(thanks|thank you)/i.test(l.text) ? undefined : on;
+    }
+    const c = on === undefined ? undefined : p.callers[on];
+    return {
+      speaker: m ? `caller-${m[1]}` : l.speaker,
+      text: l.text,
+      graphic: c ? { type: 'caller', name: c.name, from: c.from, topic: p.positions[c.position].tag } : undefined,
+    };
+  });
+  return {
+    callers,
+    segment: { id: 'phonein', kind: 'phonein', title: 'Phone-in', strap: 'The post-match phone-in', scene: 'desk', presenters: [hosts.host, ...hosts.pundits], lines },
+  };
+}

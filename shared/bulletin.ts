@@ -1,10 +1,10 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
 export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside' | 'museum' | 'videowall';
-export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'opponent' | 'adverts' | 'breaking' | 'history';
+export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'phonein' | 'opponent' | 'adverts' | 'breaking' | 'history';
 /** The 16×16 pixel picture on an advert card. */
 export type AdArt = 'pig' | 'fish' | 'shirt' | 'pint' | 'ticket';
-export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat';
+export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat' | 'phone';
 export type HairStyle = 'short' | 'quiff' | 'bald' | 'long' | 'bob' | 'ponytail';
 
 export interface PresenterLook {
@@ -33,7 +33,7 @@ export interface Presenter {
   /** Used to pick a browser voice when a line has no pre-rendered audio. */
   voice: 'male' | 'female';
   /** Kokoro voice used to pre-render this presenter's lines, e.g. "bf_emma". */
-  tts?: { voice: string; speed?: number };
+  tts?: { voice: string; speed?: number; /** Run through a phone-line band-pass after rendering (phone-in callers). */ filter?: 'phone' };
   /** Character notes the script writer plays to. */
   persona?: string;
   /** Lasting views that keep their opinions consistent, e.g. "always backs academy players" (pipeline/src/script/notebook.ts). */
@@ -59,6 +59,8 @@ export interface TableRow {
 }
 
 export type Graphic =
+  /** A phone-in caller on the line: shown on the headline bar as "DAVIE IN GORGIE | what the call is about". */
+  | { type: 'caller'; name: string; from: string; topic: string }
   | { type: 'headline'; title: string; source?: string; icon?: IconId; /** Pixel portrait (faces/<slug>.png) of who it's about. */ face?: string }
   | { type: 'transfer'; player: string; from: string; to: string; status: 'rumour' | 'talks' | 'medical' | 'done'; fee?: string }
   | { type: 'sentiment'; score: number; topics: string[] } // score: -1 (raging) .. 1 (buzzing)

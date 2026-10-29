@@ -1,5 +1,5 @@
 import { drawText, drawTextCentred, fit, measure, wrap } from './font';
-import { drawHeart } from './icons';
+import { drawHeart, drawIcon } from './icons';
 import { C } from './palette';
 import { clamp01, ditherV, offscreen, rect, W, H, type Ctx } from './screen';
 
@@ -270,4 +270,30 @@ export function drawSplash(g: Ctx, t: number, name: string, status: string): voi
   if (num) drawText(g, ` ${num}`, x + drawn, 82, C.gold, 3);
   if (t % 1.2 < 0.8) drawTextCentred(g, status, W / 2, 112, C.white, 2);
   drawTextCentred(g, 'M MUTE   C CAPTIONS   > SKIP   F FULLSCREEN   T RETRO TV', W / 2, 160, C.light);
+}
+
+/**
+ * A phone-in caller on the line, in place of the headline bar: phone and a little audio wave on maroon, then
+ * "DAVIE IN GORGIE" and what the call is about. The wave just moves; it isn't the caller's real voice.
+ */
+export function drawCallerBar(g: Ctx, name: string, from: string, topic: string, now: number, age: number): void {
+  const label = `${name} IN ${from}`.toUpperCase();
+  const lw = measure(label) + 40;
+  const slide = easeOut(clamp01(age / 300));
+  const y = HEADLINE_Y;
+  rect(g, 0, y, W, 14, C.gold);
+  rect(g, 0, y, Math.min(W, lw) * slide, 14, C.maroon);
+  g.save();
+  g.beginPath();
+  g.rect(0, y, Math.min(W, lw) * slide, 14);
+  g.clip();
+  drawIcon(g, 'phone', 4, y + 3);
+  // Five bars bobbing out of step, like a voice level.
+  for (let i = 0; i < 5; i++) {
+    const h = 2 + Math.round(5 * Math.abs(Math.sin(now / 130 + i * 1.7) * Math.sin(now / 410 + i)));
+    rect(g, 16 + i * 3, y + 7 - Math.floor(h / 2), 2, h, C.gold);
+  }
+  drawText(g, label, 36, y + 5, C.white);
+  g.restore();
+  if (slide > 0.9) drawText(g, fit(topic.toUpperCase(), W - lw - 10), lw + 5, y + 5, C.ink);
 }

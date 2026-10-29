@@ -32,12 +32,15 @@ export async function loadKokoro(): Promise<KokoroTTS> {
 }
 
 /** Speak `text` with a Kokoro voice into `file` (.mp3 when ffmpeg is available, else .wav). */
-export async function renderClip(tts: KokoroTTS, text: string, voice: string, speed: number, file: string): Promise<void> {
+/** A phone line: voice squeezed to the band a landline carried, a touch of grit. */
+export const PHONE_FILTER = 'highpass=f=350,lowpass=f=3200,acompressor=threshold=-18dB:ratio=4,volume=1.4';
+
+export async function renderClip(tts: KokoroTTS, text: string, voice: string, speed: number, file: string, filter?: 'phone'): Promise<void> {
   const audio = await tts.generate(text, { voice: voice as Voice, speed });
   if (!hasFfmpeg) return audio.save(file);
   const wav = file.replace(/\.mp3$/, '.wav');
   await audio.save(wav);
-  const res = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav, '-b:a', '96k', file]);
+  const res = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav, ...(filter ? ['-af', PHONE_FILTER] : []), '-b:a', '96k', file]);
   await rm(wav);
   if (res.status !== 0) throw new Error(`ffmpeg failed: ${res.stderr}`);
 }
@@ -46,6 +49,7 @@ interface Job {
   text: string;
   voice: string;
   speed: number;
+  filter?: 'phone';
   out: string;
 }
 
@@ -68,7 +72,7 @@ async function renderOnGpu(jobs: Job[]): Promise<void> {
   if (res.status !== 0) throw new Error(`tools/gpu/voices.py exited with ${res.status ?? res.signal}`);
   if (!hasFfmpeg) return;
   for (const j of jobs) {
-    const conv = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav(j.out), '-b:a', '96k', j.out]);
+    const conv = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav(j.out), ...(j.filter ? ['-af', PHONE_FILTER] : []), '-b:a', '96k', j.out]);
     await rm(wav(j.out), { force: true });
     if (conv.status !== 0) throw new Error(`ffmpeg failed: ${conv.stderr}`);
   }
@@ -94,11 +98,11 @@ export async function voiceLines(presenters: Presenter[], lines: Line[], dir: st
     const speed = p.tts.speed ?? 1;
     // The spoken text (with respellings) goes into the hash, so editing pronunciations re-renders affected lines.
     const spoken = say(line.text);
-    const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}|${spoken}`)}.${CLIP_EXT}`;
+    const name = `${shortHash(`${MODEL}|${DTYPE}|${p.tts.voice}|${speed}${p.tts.filter ? `|${p.tts.filter}` : ''}|${spoken}`)}.${CLIP_EXT}`;
     const file = resolve(outDir, name);
     line.audio = `${AUDIO_DIR}/${name}`;
     if (existsSync(file)) reused++;
-    else if (!jobs.some((j) => j.out === file)) jobs.push({ text: spoken, voice: p.tts.voice, speed, out: file });
+    else if (!jobs.some((j) => j.out === file)) jobs.push({ text: spoken, voice: p.tts.voice, speed, filter: p.tts.filter, out: file });
   }
 
   // The GPU does the whole batch in seconds when it's set up (tools/gpu/setup.sh); otherwise Kokoro runs on the CPU.
@@ -118,7 +122,7 @@ export async function voiceLines(presenters: Presenter[], lines: Line[], dir: st
   for (const j of remaining) {
     tts ??= await loadKokoro();
     const started = Date.now();
-    await renderClip(tts, j.text, j.voice, j.speed, j.out);
+    await renderClip(tts, j.text, j.voice, j.speed, j.out, j.filter);
     console.log(`  ${j.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${j.text.slice(0, 50)}…`);
   }
   return { rendered: jobs.length, reused };

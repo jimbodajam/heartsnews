@@ -12,3 +12,4 @@ site/public/memory.json
 *.log
 .DS_Store
 .cache/
+site/public/bulletins/mock-phonein/

@@ -1,4 +1,4 @@
-import type { Bulletin, Graphic, IconId, Line, Segment, Sidebar, TableRow } from '../../../shared/bulletin.ts';
+import type { Bulletin, Graphic, IconId, Line, Presenter, Segment, Sidebar, TableRow } from '../../../shared/bulletin.ts';
 import { statsCard } from '../../../shared/live.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
@@ -7,6 +7,7 @@ import { predictionRecord } from '../memory.ts';
 import { adBreaks, loadAdverts } from './adverts.ts';
 import { faceFor, loadFaces } from './faces.ts';
 import { describeXI, formOf, headToHeadGraphic } from './opponent.ts';
+import { phoneInSegment } from '../phonein.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
 import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Facts } from './facts.ts';
 import { spokenList } from '../time.ts';
@@ -244,6 +245,16 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     .map((slot) => segments.find((s) => s.id === slot.id))
     .filter((s): s is Segment => Boolean(s));
 
+  // The phone-in follows the debate (or comes first after the headlines when there isn't one).
+  let callers: Presenter[] = [];
+  if (draft.phonein) {
+    const cast = f.channel.cast;
+    const built = phoneInSegment(draft.phonein, { host: cast.anchors[0], pundits: cast.debate ?? [cast.anchors[1], cast.transfers] });
+    callers = built.callers;
+    const at = ordered.findIndex((s) => s.id === 'debate');
+    ordered.splice(at >= 0 ? at + 1 : Math.min(1, ordered.length), 0, built.segment);
+  }
+
   // "Still to come" after the headlines.
   const later = ordered.slice(1);
   const comingUp = draft.comingUp ?? defaultComingUp(f, later);
@@ -288,7 +299,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     generatedAt: now.toISOString(),
     generatedBy,
     channel: { name: channel.name, club: club.name, colours: club.colours },
-    presenters: breaks.length && ADVERTS ? [...channel.presenters, ...ADVERTS.voices] : channel.presenters,
+    presenters: [...channel.presenters, ...(breaks.length && ADVERTS ? ADVERTS.voices : []), ...callers],
     ticker,
     segments: ordered,
     sidebar: sidebar(f),

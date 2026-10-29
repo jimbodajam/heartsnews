@@ -15,6 +15,7 @@ const ICONS: Record<IconId, string[]> = {
   medical: ['..wwww..', '.wwrrww.', 'wwwrrwww', 'wrrrrrrw', 'wrrrrrrw', 'wwwrrwww', '.wwrrww.', '..wwww..'],
   mic: ['..ssss..', '..sdds..', '..ssss..', '..sdds..', '..ssss..', '...kk...', '...kk...', '..kkkk..'],
   stadium: ['w......w', 'w......w', 'mmmmmmmm', 'mnnnnnnm', 'mnwnnwnm', 'mnnnnnnm', 'mmmmmmmm', '........'],
+  phone: ['........', 'ww......', 'wwww....', '.www....', '..www...', '...wwww.', '....wwww', '.....ww.'],
   chat: ['.wwwwww.', 'wwkwkwkw', 'wwwwwwww', '.wwwwww.', '..ww....', '.w......', '........', '........'],
 };
 

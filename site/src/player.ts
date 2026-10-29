@@ -8,6 +8,7 @@ import { drawGraphic, drawSidePanel } from './gfx/graphics';
 import {
   BREAKING_MS, breakingLook, drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS,
   STING_MS, Ticker, type BreakingLook, type TickerItem,
+  drawCallerBar,
 } from './gfx/overlay';
 import { type LiveScore, scoreLine } from './live';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
@@ -48,6 +49,7 @@ const LABEL: Record<SegmentKind, string> = {
   fans: 'FAN ZONE',
   match: 'MATCH CENTRE',
   debate: 'THE DEBATE',
+  phonein: 'PHONE-IN',
   opponent: 'OPPOSITION FOCUS',
   adverts: 'AD BREAK',
   breaking: 'BREAKING',
@@ -275,7 +277,7 @@ export class Player {
     this.line = line;
     if (line.graphic) this.segGraphic = line.graphic;
     // Voiceovers in an ad break don't get a name strap.
-    if (seg.kind === 'adverts') {
+    if (seg.kind === 'adverts' || line.speaker.startsWith('caller-')) {
       this.strap = undefined;
     } else if (seg.scene === 'pitchside') {
       // At the ground the strap says where we are, and stays up.
@@ -298,6 +300,8 @@ export class Player {
 
   private pickShot(seg: Segment, i: number, line: Line): Shot {
     if (seg.scene !== 'desk') return 'wide';
+    // The caller isn't at the desk: both pundits stay in the wide shot while they talk.
+    if (line.graphic?.type === 'caller') return line.speaker.startsWith('caller-') ? 'wide' : 'single';
     if (line.graphic) return FULLSCREEN.includes(line.graphic.type) ? 'full' : 'single';
     if (i === 0) return 'wide';
     return i % 2 ? 'single' : 'wide';
@@ -338,7 +342,8 @@ export class Player {
     if (this.strap) drawStrap(g, this.strap.name, this.strap.role, now - this.strap.at, this.strap.hold ? Infinity : undefined);
     if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
     const graphic = this.line?.graphic;
-    drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
+    if (graphic?.type === 'caller') drawCallerBar(g, graphic.name, graphic.from, graphic.topic, now, now - this.graphicAt);
+    else drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
     this.ticker.draw(g, this.tickerItems(), now);
 
     if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
@@ -408,7 +413,8 @@ export class Player {
           drawDesk(g, deskY, -20, W + 20);
           drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
           const shown = graphic ?? this.segGraphic;
-          if (shown) drawGraphic(g, shown, 168, 22, 142, 80, graphic ? graphicAge : Infinity, now);
+          const panel = shown?.type === 'caller' ? undefined : shown;
+          if (panel) drawGraphic(g, panel, 168, 22, 142, 80, graphic ? graphicAge : Infinity, now);
           else if (this.bulletin.sidebar) drawSidePanel(g, this.bulletin.sidebar, 168, 22, 142, 80, now);
           return;
         }
