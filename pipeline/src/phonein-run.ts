@@ -68,12 +68,16 @@ export async function markAired(store: Store, key: string, now: Date): Promise<v
 }
 
 /** The game's posts from the crawler: its match thread is the one whose title names the opponent. */
+/** Other names the forum uses for a club (BBC says "Hibernian", the fixtures list may say "Hibs"). */
+const ALSO: Record<string, string> = { hibs: 'hibernian', hibernian: 'hibs', 'dundee utd': 'dundee united', 'dundee united': 'dundee utd' };
+
 export async function loadGamePosts(store: Store, opponent: string): Promise<Post[]> {
+  const name = opponent.toLowerCase().replace(/[%_]/g, '');
   const [rows] = await store.batch([
     {
       sql: `SELECT p.id, p.ts, p.text, p.reply_to FROM kickback_posts p JOIN kickback_threads t ON t.id = p.thread_id
-            WHERE lower(t.title) LIKE '%match thread%' AND lower(t.title) LIKE ? ORDER BY p.ts`,
-      params: [`%${opponent.toLowerCase().replace(/[%_]/g, '')}%`],
+            WHERE lower(t.title) LIKE '%match thread%' AND (lower(t.title) LIKE ? OR lower(t.title) LIKE ?) ORDER BY p.ts`,
+      params: [`%${name}%`, `%${ALSO[name] ?? name}%`],
     },
   ]);
   return rows.map((r) => ({ id: Number(r.id), ts: String(r.ts), text: String(r.text), reply_to: r.reply_to == null ? null : Number(r.reply_to) }));
