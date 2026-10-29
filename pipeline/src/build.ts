@@ -23,6 +23,8 @@ import { buildFacts, isUs, matchNews, teamName, type Channel, type Facts } from 
 import { geminiFromEnv, reportScorers, type ScriptModel } from './script/llm.ts';
 import { writeInPieces, writeLinks } from './script/pieces.ts';
 import { quietSlot, swapLinks, type NewLinks } from './script/quiet.ts';
+import { airedPhoneIns, buildDue, dueNow, markAired, type PhoneInDue } from './phonein-run.ts';
+import type { PhoneIn } from './phonein.ts';
 import { remember } from './script/remember.ts';
 import { factCheck } from './script/factcheck.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
@@ -207,7 +209,30 @@ async function main() {
   let failedPieces: { id: string; error: string }[] = [];
   // Nothing new since the last programme? Then only its links are rewritten (script/quiet.ts).
   const prev = await readJson<Bulletin>(existsSync(ON_AIR) ? ON_AIR : BULLETIN).catch(() => undefined);
-  const forced = ['--full', '--fresh', '--templates'].find((x) => flags.has(x)) ?? (model ? undefined : 'no AI writer');
+  // The fan phone-in (issue #9): built from the game's Kickback thread when one is due, which makes this a full build.
+  let phoneIn: { due: PhoneInDue; built: PhoneIn } | undefined;
+  const game = facts.lastResult;
+  if (store && game && !flags.has('--templates')) {
+    try {
+      const due = dueNow(game, now, await airedPhoneIns(store));
+      const lite = due && geminiFromEnv(undefined, ['gemini-flash-lite-latest']);
+      if (due && lite) {
+        used.push(lite);
+        const [h, a] = [teamName(club, game.home), teamName(club, game.away)];
+        const built = await buildDue(store, lite, game, isUs(club, game.home) ? a : h, due, now, {
+          result: `${h} ${game.homeScore}-${game.awayScore} ${a}`,
+          personas: channel.presenters
+            .filter((p) => ['isla', 'fraser', 'ross'].includes(p.id))
+            .map((p) => `${p.name} (id "${p.id}"): ${p.persona}`)
+            .join('\n'),
+        });
+        if (built) phoneIn = { due, built };
+      }
+    } catch (err) {
+      console.warn(`Couldn't build the phone-in: ${(err as Error).message}`);
+    }
+  }
+  const forced = ['--full', '--fresh', '--templates'].find((x) => flags.has(x)) ?? (phoneIn ? 'a phone-in is due' : model ? undefined : 'no AI writer');
   const quiet = quietSlot(prev, facts, { forced });
   console.log(quiet.partial ? `\nQuiet slot: ${quiet.summary}: partial rewrite (welcome, links, sign-off)` : `\nFull build: ${quiet.reason}`);
   if (quiet.partial) {
@@ -243,6 +268,7 @@ async function main() {
     console.log(`\nWriting script with templates (${flags.has('--templates') ? '--templates' : 'no GEMINI_API_KEY set'}).`);
   }
 
+  if (phoneIn) draft.phonein = phoneIn.built;
   const bulletin = quiet.partial && prev ? await rewriteLinks(prev, facts, templateDraft(facts).welcome, used) : assemble(facts, draft, writer);
   const linkLines = quiet.partial ? bulletin.segments.flatMap((seg) => seg.lines.filter((l) => l.link && !l.audio)) : [];
 
@@ -297,6 +323,7 @@ async function main() {
       );
       console.log(`\nSaved to the store: ${items.length} items, ${remembered.aired.length} airings, ${remembered.takes.length} takes, ${remembered.predictions.length} predictions, ${settled.length} settled`);
       saved = true;
+      if (phoneIn) await markAired(save, phoneIn.due.key, now).catch((err) => console.warn(`Couldn't record the phone-in as aired (it may go out twice): ${(err as Error).message}`));
     } catch (err) {
       console.warn(`\nCouldn't write to the store, so this bulletin isn't remembered: ${(err as Error).message}`);
     }

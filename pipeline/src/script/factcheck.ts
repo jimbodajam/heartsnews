@@ -86,10 +86,10 @@ const isTeamSheet = (g?: Graphic) => g?.type === 'player' || g?.type === 'bench'
 
 export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin): Promise<FactCheckResult> {
   // Score predictions are the pundits' own calls, matched to the card on screen, the adverts are fixed copy
-  // (adverts.json), and On This Day is template-written from London Hearts' page, which isn't in the DATA: none is
+  // (adverts.json), the phone-in is made-up callers' opinions from the Kickback (issue #9), and On This Day is template-written from London Hearts' page, which isn't in the DATA: none is
   // a fact to check here.
   const lines = bulletin.segments.flatMap((s, si) =>
-    s.kind === 'adverts' || s.kind === 'history'
+    s.kind === 'adverts' || s.kind === 'history' || s.kind === 'phonein'
       ? []
       : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' || isTeamSheet(l.graphic) })).filter((l) => !l.prediction),
   );
