@@ -33,7 +33,8 @@ while true; do
   next=$(worker "$KICKBACK_WORKER/kickback/next") || { log "couldn't reach the Worker"; sleep 60; continue; }
   url=$(echo "$next" | jq -r '.url // empty' 2>/dev/null)
   if [ -z "$url" ]; then
-    why=$(echo "$next" | jq -r '.idle // "unexpected answer"' 2>/dev/null)
+    why=$(echo "$next" | jq -r '.idle // empty' 2>/dev/null)
+    [ -z "$why" ] && why="unexpected answer: $(echo "$next" | head -c 200)"
     secs=$(echo "$next" | jq -r '.retryInSec // 60' 2>/dev/null)
     [ "$why" != "$LAST_WHY" ] && log "idle: $why"
     LAST_WHY=$why
