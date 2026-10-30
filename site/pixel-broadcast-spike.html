@@ -611,7 +611,7 @@ let seated = qs.get('desk') ?? (TWO ? 'both' : 'isla'), cam = qs.get('cam') ?? '
 const seatX = who => seated === 'both' ? (who === 'isla' ? 168 : 312) : 240;
 function shot() {
   if (cam === 'wide' || (seated !== 'both' && seated !== cam)) return { z: 1, x: 240, y: 135, sy: 135 };
-  return { z: 2, x: seatX(cam), y: 72, sy: 78 };
+  return { z: 1.5, x: seatX(cam), y: 55, sy: 68 };
 }
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -626,14 +626,15 @@ function tick(ms) {
   sideV += ((sideOn ? 1 : 0) - sideV) * 0.12; if (Math.abs(sideV - (sideOn ? 1 : 0)) < 0.002) sideV = sideOn ? 1 : 0;
   sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); 
   if (director) { const i = cur ? SCRIPT.indexOf(cur) : 0; cam = !cur || i % 3 === 0 ? 'wide' : cur.by === 'b' ? 'fraser' : 'isla'; }   // tight on whoever is speaking, back to wide every third line
-  { const s = shot(); cv.style.transform = `translate(${((240 - SHIFT * sideV - s.z * s.x) / GW * 100).toFixed(3)}%, ${((s.sy - s.z * s.y) / GH * 100).toFixed(3)}%) scale(${s.z})`; }
+  const sh = shot(), big = sh.z > 1 ? cam : null;   // the presenter in a tight shot is drawn at full size; on the wide they are shrunk to suit the desk
+  cv.style.transform = `translate(${((240 - SHIFT * sideV - sh.z * sh.x) / GW * 100).toFixed(3)}%, ${((sh.sy - sh.z * sh.y) / GH * 100).toFixed(3)}%) scale(${sh.z})`;
   if (rotate && sideOn && ms - paneAt > 9000) { paneAt = ms; showPane(1 - pane); }
   g.fillStyle = '#0e0c10'; g.fillRect(0, 0, GW, GH);
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
-  if (seated !== 'fraser') drawIsla(t, aTalk, seatX('isla'));
-  if (seated !== 'isla') drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
+  if (seated !== 'fraser') drawIsla(t, aTalk, seatX('isla'), 0, isla, big === 'isla' ? 1 : ISLA_S);
+  if (seated !== 'isla') drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, big === 'fraser' ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
   g.drawImage(desk, 0, DESK_Y);
   g.drawImage(mug, 70, DESK_Y + 1); g.drawImage(mug, 398, DESK_Y + 1);
