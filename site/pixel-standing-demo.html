@@ -112,12 +112,21 @@ const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
 const VIS = ['small', 'wide', 'O', 'A', 'closed', 'small', 'A', 'wide', 'smile'];
 const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
 let forceBlink = 0, forceGlance = 0, env = 0, shape = 'closed', shapeAt = 0, forcedPose = new URLSearchParams(location.search).get('pose') || '';
+const BLEND = new URLSearchParams(location.search).get('blend') === '1';   // ?blend=1: 110 ms crossfade between poses
+const GESTURES = ['palm', 'point', 'open', 'explain', 'welcome'], POSE_ACTIVE = new Set(GESTURES), TO_SCREEN = new Set(['point', 'palm', 'open']);
+let lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseCur = 'idle', prevPose = null, poseAt = 0, blendAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
+/** Pick the next gesture (never the same twice), blink on the cut, and look at the screen if the gesture points at it. */
+function nextGesture(ms) {
+  let n; do { n = GESTURES[Math.floor(hash(ms * 0.001 + gi++) * GESTURES.length)]; } while (n === poseTarget);
+  poseTarget = n; poseAt = ms; forceBlink = ms + 150; if (TO_SCREEN.has(n)) glanceUntil = ms + 1300;
+}
 addEventListener('keydown', e => { if (e.key === '0') forcedPose = ''; else if (/^[1-9]$/.test(e.key)) forcedPose = POSE_NAMES[+e.key - 1] || ''; });
 addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm') mTest = (mTest + 1) % MOUTHS.length; else if (k === 'b') forceBlink = performance.now() + 160; else if (k === 'g') forceGlance = performance.now() + 900; else if (k === 'escape') mTest = -1; });
 const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
 const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
 
 function tick(ms) {
+  const dt = Math.min(100, ms - (lastMs || ms)); lastMs = ms;
   const t = ms / 1000, talking = !!cur && cur.by === 'a';
   analyser.getByteTimeDomainData(spec); { let mx = 0; for (const v of spec) mx = Math.max(mx, Math.abs(v - 128)); LEVEL = mx / 128; }
   g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH);
@@ -130,7 +139,7 @@ function tick(ms) {
   g.fillStyle = '#e0b13a'; g.fillText('FULL TIME', SCREEN.x + 10, SCREEN.y + 44);
   // Eye state: periodic blink, occasional glance at the screen while talking.
   const blinking = (t % 3.6) > 3.48 || ms < forceBlink;
-  const glance = ms < forceGlance ? 1 : talking && (t % 6.7) > 6.0 ? 1 : 0;
+  const glance = ms < forceGlance || ms < glanceUntil ? 1 : talking && (t % 6.7) > 6.0 ? 1 : 0;
   const eye = blinking ? 'blink' : glance ? 'gazeR' : 'open';
   // Mouth: level-driven visemes while talking, a smile now and then at rest. M cycles through every shape for inspection.
   // Mouth: follow a smoothed loudness envelope (fast attack, slow release) and hold each shape for a moment so it does not flicker.
@@ -138,13 +147,18 @@ function tick(ms) {
   if (talking && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
   const key = mTest >= 0 ? MOUTHS[mTest] : talking ? shape : (t % 5 < 1.2 ? 'smile' : 'rest');
   // Pose: while she talks, cut to a new gesture every few seconds; while Fraser talks she listens (idle or hand on hip). 1-9 force a pose, 0 goes back to automatic.
-  let pose = forcedPose;
-  if (!pose) {
-    const seg = Math.floor(ms / 3200), h = hash(seg + (cur ? idx * 7 : 0));
-    pose = talking ? ['palm', 'point', 'open', 'explain', 'palm', 'welcome', 'point', 'open'][Math.floor(h * 8)] : cur ? (h > 0.6 ? 'hip' : 'idle') : 'idle';
-  }
-  if (DERIVED) pose = 'palm';
-  g.drawImage(frame(eye, key, pose), FX, FY);
+  // Gestures change on phrase starts (a pause, then speech), not on a timer, with a blink and a look at the screen on the cut.
+  if (env < 0.04) quietFor += dt; else { if (quietFor > 220 && talking && !forcedPose && ms - poseAt > 2000) nextGesture(ms); quietFor = 0; }
+  if (!talking && !forcedPose && ms - poseAt > 5200) { poseTarget = poseTarget === 'idle' ? (hash(ms) > 0.45 ? 'hip' : 'idle') : 'idle'; poseAt = ms; }   // listening: drift between the two resting poses
+  if (talking) lastTalk = ms;
+  if (talking && !wasTalking && !forcedPose && ms - poseAt > 600) nextGesture(ms);                                                                   // her line has just started: gesture straight away
+  wasTalking = talking;
+  if (!talking && POSE_ACTIVE.has(poseTarget) && !forcedPose && ms - lastTalk > 900) { poseTarget = 'idle'; poseAt = ms; }                                   // she finished speaking: hold the gesture a moment, then lower her arms
+
+  const want = forcedPose || (DERIVED ? 'palm' : poseTarget);
+  if (want !== poseCur) { prevPose = poseCur; poseCur = want; blendAt = ms; }
+  if (BLEND && prevPose && ms - blendAt < 110) { g.drawImage(frame(eye, key, prevPose), FX, FY); g.globalAlpha = (ms - blendAt) / 110; g.drawImage(frame(eye, key, poseCur), FX, FY); g.globalAlpha = 1; }
+  else g.drawImage(frame(eye, key, poseCur), FX, FY);
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
   if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }
