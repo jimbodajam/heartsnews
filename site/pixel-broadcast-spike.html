@@ -541,6 +541,26 @@ if (fImgs.every(Boolean)) {
   };
 }
 const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
+// ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites and set on the desk top ----
+// name, grid box on the sheet, centre x on the 480 canvas, scale, zone (C props sit in the gap between the presenters, so they hide when one is seated alone)
+const PROP_DEFS = [
+  ['laptop', [9, 23, 96, 77], 92, 0.55, 'L'], ['notebook', [181, 92, 220, 117], 132, 0.7, 'L'],
+  ['papers', [184, 42, 231, 76], 226, 0.7, 'C'], ['mug', [103, 47, 133, 76], 256, 0.7, 'C'],
+  ['glass', [141, 40, 160, 76], 352, 0.7, 'R'], ['bottle', [161, 36, 177, 76], 372, 0.7, 'R'], ['headphones', [124, 90, 168, 119], 408, 0.6, 'R'],
+];
+const PROP_BASE = 190;   // scene row the props stand on
+const propSheet = await load('./public/spike/props/sheet.jpg');
+const PROPS = propSheet ? (() => { const PG = toGrid(propSheet); return PROP_DEFS.map(([name, b, cx, s, zone]) => ({ name, cx, s, zone, img: crop(PG, ...b) })); })() : [];
+function drawProps(t) {
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  for (const p of PROPS) {
+    if (p.zone === 'C' && seated !== 'both') continue;
+    const w = Math.round(p.img.width * p.s), h = Math.round(p.img.height * p.s), x = Math.round(p.cx - w / 2), y = PROP_BASE - h - (p.name === 'laptop' ? 2 : 0);
+    g.drawImage(p.img, x, y, w, h);
+    if (p.name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
+  }
+  g.imageSmoothingEnabled = false;
+}
 
 // ===== Runtime =========================================================================
 const cv = document.getElementById('cv'); cv.width = GW; cv.height = GH;
@@ -641,6 +661,7 @@ function tick(ms) {
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
+  drawProps(t);
   g.restore();
 
   const bk = easeOut(seg(t, IN_A + 0.3, IN_A + 1.1)), out = easeOut(seg(t, OUT_A, OUT_A + 0.8));
