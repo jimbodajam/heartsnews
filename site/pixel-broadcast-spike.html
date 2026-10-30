@@ -553,10 +553,10 @@ const SLOT_SIDE = 14;    // art px a small prop sits towards the middle of the d
 const propSheet = await load('./public/spike/props/sheet.jpg');
 const PROPS = {};
 if (propSheet) { const PG = toGrid(propSheet); for (const [n, d] of Object.entries(PROP_DEFS)) PROPS[n] = { ...d, img: crop(PG, ...d.box) }; }
-function drawProp(name, cx, t) {
+function drawProp(name, cx, t, k = 1) {
   const p = PROPS[name]; if (!p) return;
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  const w = Math.round(p.img.width * p.s), h = Math.round(p.img.height * p.s), x = Math.round(cx - w / 2), y = PROP_BASE - h - (name === 'laptop' ? 2 : 0);
+  const w = Math.round(p.img.width * p.s * k), h = Math.round(p.img.height * p.s * k), x = Math.round(cx - w / 2), y = PROP_BASE + Math.round((k - 1) * 26) - h - (name === 'laptop' ? 2 : 0);
   g.drawImage(p.img, x, y, w, h);
   if (name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
   g.imageSmoothingEnabled = false;
@@ -655,15 +655,15 @@ function tick(ms) {
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
-  if (seated !== 'fraser') drawIsla(t, aTalk, seatX('isla'), 0, isla, big === 'isla' ? 1 : ISLA_S);
-  if (seated !== 'isla') drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, big === 'fraser' ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
+  if (seated !== 'fraser') drawIsla(t, aTalk, seatX('isla'), 0, isla, big ? 1 : ISLA_S);
+  if (seated !== 'isla') drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, big ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
   g.drawImage(desk, 0, DESK_Y);
   g.drawImage(mug, 70, DESK_Y + 1); g.drawImage(mug, 398, DESK_Y + 1);
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
-  for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (who === 'isla' ? 1 : -1), t);
+  for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (big ? 1 / ISLA_S : 1) * (who === 'isla' ? 1 : -1), t, big ? 1 / ISLA_S : 1);
   g.restore();
 
   const bk = easeOut(seg(t, IN_A + 0.3, IN_A + 1.1)), out = easeOut(seg(t, OUT_A, OUT_A + 0.8));
