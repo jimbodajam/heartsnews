@@ -598,6 +598,7 @@ document.getElementById('pTable').innerHTML = '<h2>PREMIERSHIP</h2><div class="r
   TABLE.map(([n, p, pts, gd], i) => `<div class="row${n === 'HEARTS' ? ' me' : ''}${i === 5 ? ' cut' : ''}"><span>${i + 1}</span><span>${n}</span><span>${p}</span><span>${pts}</span><span>${gd}</span></div>`).join('');
 document.getElementById('pFix').innerHTML = '<h2>COMING UP</h2><div class="fx">' +
   FIXTURES.map(([d, h, a]) => `<div><b>${d}</b><span class="${h === 'HEARTS' ? 'me' : ''}">${h}</span> V <span class="${a === 'HEARTS' ? 'me' : ''}">${a}</span></div>`).join('') + '</div>';
+const SHIFT = 58;   // art px the studio slides left (half the panel width) so the presenters sit in the visible part; the height stays full
 const sideEl = document.getElementById('side'), PANES = [document.getElementById('pTable'), document.getElementById('pFix')];
 
 const qs = new URLSearchParams(location.search);
@@ -614,7 +615,7 @@ function tick(ms) {
   if (cur !== playing) { if (playing) playing.el.pause(); playing = cur; if (cur) { cur.el.currentTime = Math.max(0, t - cur.a); cur.el.play().catch(() => {}); } }
   analyser.getByteTimeDomainData(spec); { let m = 0; for (const v of spec) m = Math.max(m, Math.abs(v - 128)); LEVEL = m / 128; }
   sideV += ((sideOn ? 1 : 0) - sideV) * 0.12; if (Math.abs(sideV - (sideOn ? 1 : 0)) < 0.002) sideV = sideOn ? 1 : 0;
-  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); { const k = 1 - 0.24 * sideV; cv.style.transform = `translateY(${(222 * (1 - k) / 270 * 100).toFixed(3)}%) scale(${k})`; cv.style.imageRendering = sideV > 0 ? 'auto' : 'pixelated'; }
+  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); cv.style.transform = `translateX(${(-SHIFT / GW * 100 * sideV).toFixed(3)}%)`;
   if (rotate && sideOn && ms - paneAt > 9000) { paneAt = ms; showPane(1 - pane); }
   g.fillStyle = '#0e0c10'; g.fillRect(0, 0, GW, GH);
   g.save(); g.translate(0, -STACK);
