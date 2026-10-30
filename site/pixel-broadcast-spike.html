@@ -67,7 +67,7 @@
     </div>
   </div>
 </div></div>
-<div id="hint">480×270 art grid, shown 3× at 1440×810 · S side panel · T table · F fixtures · R auto-rotate (?side=0 starts full screen)</div>
+<div id="hint">480×270 art grid, shown 3× at 1440×810 · 1 wide · 2 Isla close · 3 Fraser close · 4 both / 5 Isla / 6 Fraser at the desk · D auto-director · S side panel · T table · F fixtures · R auto-rotate (?side=0 starts full screen)</div>
 
 <script type="module">
 import { toGrid as toGridLib, detectEyes, gaze as gazeShift, blink as blinkEyes } from './spike-lib/pixel-derive.js';
@@ -605,9 +605,18 @@ const qs = new URLSearchParams(location.search);
 let sideOn = qs.get('side') !== '0', sideV = sideOn ? 1 : 0, pane = qs.get('panel') === 'fixtures' ? 1 : 0, rotate = qs.get('rotate') !== '0', paneAt = performance.now();
 function showPane(i) { pane = i; PANES.forEach((p, k) => p.classList.toggle('on', k === i)); }
 showPane(pane);
+// ---- Cameras: wide (both), tight on Isla, tight on Fraser (hard cuts, like a gallery). Desk: both seated, or just one, centred. ----
+// A shot is { z: zoom, x/y: art point to centre on, sy: screen row it lands on }; the canvas is moved and zoomed in CSS, so tight shots are a clean 2x pixel zoom.
+let seated = qs.get('desk') ?? (TWO ? 'both' : 'isla'), cam = qs.get('cam') ?? 'wide', director = qs.get('director') === '1';
+const seatX = who => seated === 'both' ? (who === 'isla' ? 168 : 312) : 240;
+function shot() {
+  if (cam === 'wide' || (seated !== 'both' && seated !== cam)) return { z: 1, x: 240, y: 135, sy: 135 };
+  return { z: 2, x: seatX(cam), y: 72, sy: 78 };
+}
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
-  if (k === 's') sideOn = !sideOn; else if (k === 't') { sideOn = true; rotate = false; showPane(0); } else if (k === 'f') { sideOn = true; rotate = false; showPane(1); } else if (k === 'r') rotate = !rotate;
+  if ('123'.includes(k) && k) { cam = ['wide', 'isla', 'fraser'][k - 1]; director = false; } else if ('456'.includes(k) && k) seated = ['both', 'isla', 'fraser'][k - 4]; else if (k === 'd') director = !director;
+  else if (k === 's') sideOn = !sideOn; else if (k === 't') { sideOn = true; rotate = false; showPane(0); } else if (k === 'f') { sideOn = true; rotate = false; showPane(1); } else if (k === 'r') rotate = !rotate;
 });
 const intro = document.getElementById('intro'), who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
 function tick(ms) {
@@ -615,13 +624,16 @@ function tick(ms) {
   if (cur !== playing) { if (playing) playing.el.pause(); playing = cur; if (cur) { cur.el.currentTime = Math.max(0, t - cur.a); cur.el.play().catch(() => {}); } }
   analyser.getByteTimeDomainData(spec); { let m = 0; for (const v of spec) m = Math.max(m, Math.abs(v - 128)); LEVEL = m / 128; }
   sideV += ((sideOn ? 1 : 0) - sideV) * 0.12; if (Math.abs(sideV - (sideOn ? 1 : 0)) < 0.002) sideV = sideOn ? 1 : 0;
-  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); cv.style.transform = `translateX(${(-SHIFT / GW * 100 * sideV).toFixed(3)}%)`;
+  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); 
+  if (director) { const i = cur ? SCRIPT.indexOf(cur) : 0; cam = !cur || i % 3 === 0 ? 'wide' : cur.by === 'b' ? 'fraser' : 'isla'; }   // tight on whoever is speaking, back to wide every third line
+  { const s = shot(); cv.style.transform = `translate(${((240 - SHIFT * sideV - s.z * s.x) / GW * 100).toFixed(3)}%, ${((s.sy - s.z * s.y) / GH * 100).toFixed(3)}%) scale(${s.z})`; }
   if (rotate && sideOn && ms - paneAt > 9000) { paneAt = ms; showPane(1 - pane); }
   g.fillStyle = '#0e0c10'; g.fillRect(0, 0, GW, GH);
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
-  if (TWO) { drawIsla(t, aTalk, 168); drawIsla(t, bTalk, 312, 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU); } else drawIsla(t, !!cur, 240);
+  if (seated !== 'fraser') drawIsla(t, aTalk, seatX('isla'));
+  if (seated !== 'isla') drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
   g.drawImage(desk, 0, DESK_Y);
   g.drawImage(mug, 70, DESK_Y + 1); g.drawImage(mug, 398, DESK_Y + 1);
