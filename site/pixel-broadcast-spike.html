@@ -67,7 +67,7 @@
     </div>
   </div>
 </div></div>
-<div id="hint">480×270 art grid, shown 3× at 1440×810 · 1 wide · 2 Isla close · 3 Fraser close · 4 both / 5 Isla / 6 Fraser at the desk · D auto-director · S side panel · T table · F fixtures · R auto-rotate (?side=0 starts full screen)</div>
+<div id="hint">480×270 art grid, shown 3× at 1440×810 · 1 wide · 2 Isla close · 3 Fraser close · 4 both / 5 Isla / 6 Fraser at the desk · 7 / 8 change Isla's / Fraser's prop · D auto-director · S side panel · T table · F fixtures · R auto-rotate (?side=0 starts full screen)</div>
 
 <script type="module">
 import { toGrid as toGridLib, detectEyes, gaze as gazeShift, blink as blinkEyes } from './spike-lib/pixel-derive.js';
@@ -541,24 +541,24 @@ if (fImgs.every(Boolean)) {
   };
 }
 const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
-// ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites and set on the desk top ----
-// name, grid box on the sheet, centre x on the 480 canvas, scale, zone (C props sit in the gap between the presenters, so they hide when one is seated alone)
-const PROP_DEFS = [
-  ['laptop', [9, 23, 96, 77], 92, 0.55, 'L'], ['notebook', [181, 92, 220, 117], 132, 0.7, 'L'],
-  ['papers', [184, 42, 231, 76], 226, 0.7, 'C'], ['mug', [103, 47, 133, 76], 256, 0.7, 'C'],
-  ['glass', [141, 40, 160, 76], 352, 0.7, 'R'], ['bottle', [161, 36, 177, 76], 372, 0.7, 'R'], ['headphones', [124, 90, 168, 119], 408, 0.6, 'R'],
-];
+// ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites. Each presenter has one slot in front of them; any prop can be put in it. ----
+// name: grid box on the sheet, scale on the canvas, and how far to the side of the presenter it sits (0 = straight in front)
+const PROP_DEFS = {
+  laptop: { box: [9, 23, 96, 77], s: 0.5, side: 0 }, mug: { box: [103, 47, 133, 76], s: 0.7, side: 1 }, notebook: { box: [181, 92, 220, 117], s: 0.7, side: 1 },
+  papers: { box: [184, 42, 231, 76], s: 0.7, side: 1 }, glass: { box: [141, 40, 160, 76], s: 0.7, side: 1 }, bottle: { box: [161, 36, 177, 76], s: 0.7, side: 1 }, headphones: { box: [124, 90, 168, 119], s: 0.6, side: 1 },
+};
+const PROP_NAMES = ['none', ...Object.keys(PROP_DEFS)];
 const PROP_BASE = 190;   // scene row the props stand on
+const SLOT_SIDE = 26;    // art px a small prop sits towards the middle of the desk from its presenter
 const propSheet = await load('./public/spike/props/sheet.jpg');
-const PROPS = propSheet ? (() => { const PG = toGrid(propSheet); return PROP_DEFS.map(([name, b, cx, s, zone]) => ({ name, cx, s, zone, img: crop(PG, ...b) })); })() : [];
-function drawProps(t) {
+const PROPS = {};
+if (propSheet) { const PG = toGrid(propSheet); for (const [n, d] of Object.entries(PROP_DEFS)) PROPS[n] = { ...d, img: crop(PG, ...d.box) }; }
+function drawProp(name, cx, t) {
+  const p = PROPS[name]; if (!p) return;
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  for (const p of PROPS) {
-    if (p.zone === 'C' && seated !== 'both') continue;
-    const w = Math.round(p.img.width * p.s), h = Math.round(p.img.height * p.s), x = Math.round(p.cx - w / 2), y = PROP_BASE - h - (p.name === 'laptop' ? 2 : 0);
-    g.drawImage(p.img, x, y, w, h);
-    if (p.name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
-  }
+  const w = Math.round(p.img.width * p.s), h = Math.round(p.img.height * p.s), x = Math.round(cx - w / 2), y = PROP_BASE - h - (name === 'laptop' ? 2 : 0);
+  g.drawImage(p.img, x, y, w, h);
+  if (name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
   g.imageSmoothingEnabled = false;
 }
 
@@ -628,6 +628,7 @@ showPane(pane);
 // ---- Cameras: wide (both), tight on Isla, tight on Fraser (hard cuts, like a gallery). Desk: both seated, or just one, centred. ----
 // A shot is { z: zoom, x/y: art point to centre on, sy: screen row it lands on }; the canvas is moved and zoomed in CSS, so tight shots are a clean 2x pixel zoom.
 let seated = qs.get('desk') ?? (TWO ? 'both' : 'isla'), cam = qs.get('cam') ?? 'wide', director = qs.get('director') === '1';
+const slot = { isla: qs.get('isla') ?? 'laptop', fraser: qs.get('fraser') ?? 'mug' };   // what sits in front of each presenter (7 / 8 cycle them)
 const seatX = who => seated === 'both' ? (who === 'isla' ? 168 : 312) : 240;
 function shot() {
   if (cam === 'wide' || (seated !== 'both' && seated !== cam)) return { z: 1, x: 240, y: 135, sy: 135 };
@@ -636,6 +637,7 @@ function shot() {
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if ('123'.includes(k) && k) { cam = ['wide', 'isla', 'fraser'][k - 1]; director = false; } else if ('456'.includes(k) && k) seated = ['both', 'isla', 'fraser'][k - 4]; else if (k === 'd') director = !director;
+  else if (k === '7' || k === '8') { const w = k === '7' ? 'isla' : 'fraser'; slot[w] = PROP_NAMES[(PROP_NAMES.indexOf(slot[w]) + 1) % PROP_NAMES.length]; }
   else if (k === 's') sideOn = !sideOn; else if (k === 't') { sideOn = true; rotate = false; showPane(0); } else if (k === 'f') { sideOn = true; rotate = false; showPane(1); } else if (k === 'r') rotate = !rotate;
 });
 const intro = document.getElementById('intro'), who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
@@ -661,7 +663,7 @@ function tick(ms) {
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
-  drawProps(t);
+  for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (who === 'isla' ? 1 : -1), t);
   g.restore();
 
   const bk = easeOut(seg(t, IN_A + 0.3, IN_A + 1.1)), out = easeOut(seg(t, OUT_A, OUT_A + 0.8));
