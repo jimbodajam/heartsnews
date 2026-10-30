@@ -548,8 +548,8 @@ const PROP_DEFS = {
   papers: { box: [184, 42, 231, 76], s: 0.7, side: 1 }, glass: { box: [141, 40, 160, 76], s: 0.7, side: 1 }, bottle: { box: [161, 36, 177, 76], s: 0.7, side: 1 }, headphones: { box: [124, 90, 168, 119], s: 0.6, side: 1 },
 };
 const PROP_NAMES = ['none', ...Object.keys(PROP_DEFS)];
-const PROP_BASE = 190;   // scene row the props stand on
-const SLOT_SIDE = 26;    // art px a small prop sits towards the middle of the desk from its presenter
+const PROP_BASE = 182;   // scene row the props stand on
+const SLOT_SIDE = 14;    // art px a small prop sits towards the middle of the desk from its presenter
 const propSheet = await load('./public/spike/props/sheet.jpg');
 const PROPS = {};
 if (propSheet) { const PG = toGrid(propSheet); for (const [n, d] of Object.entries(PROP_DEFS)) PROPS[n] = { ...d, img: crop(PG, ...d.box) }; }
