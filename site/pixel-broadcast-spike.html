@@ -8,8 +8,8 @@
 <style>
   html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; }
   #stage { position: fixed; inset: 0; display: grid; place-items: center; }
-  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
-  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  #frame { background: #120f22; position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; transform-origin: 0 0; }
   .px { box-shadow: 0 -.2em 0 0 #0e0c10, 0 .2em 0 0 #0e0c10, -.2em 0 0 0 #0e0c10, .2em 0 0 0 #0e0c10; }
   #intro { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); background: #6d1a2a; color: #f2efe6; padding: 1.6em 2.4em; font-size: 3.2em; border-top: .25em solid #e0b13a; border-bottom: .25em solid #e0b13a; white-space: nowrap; opacity: 0; }
   #intro b { color: #e0b13a; font-weight: normal; margin-left: .5em; }
@@ -599,7 +599,7 @@ document.getElementById('pTable').innerHTML = '<h2>PREMIERSHIP</h2><div class="r
 document.getElementById('pFix').innerHTML = '<h2>COMING UP</h2><div class="fx">' +
   FIXTURES.map(([d, h, a]) => `<div><b>${d}</b><span class="${h === 'HEARTS' ? 'me' : ''}">${h}</span> V <span class="${a === 'HEARTS' ? 'me' : ''}">${a}</span></div>`).join('') + '</div>';
 const sideEl = document.getElementById('side'), PANES = [document.getElementById('pTable'), document.getElementById('pFix')];
-const SHIFT = 28;   // art px the studio slides left so the presenters clear the panel
+
 const qs = new URLSearchParams(location.search);
 let sideOn = qs.get('side') !== '0', sideV = sideOn ? 1 : 0, pane = qs.get('panel') === 'fixtures' ? 1 : 0, rotate = qs.get('rotate') !== '0', paneAt = performance.now();
 function showPane(i) { pane = i; PANES.forEach((p, k) => p.classList.toggle('on', k === i)); }
@@ -614,10 +614,10 @@ function tick(ms) {
   if (cur !== playing) { if (playing) playing.el.pause(); playing = cur; if (cur) { cur.el.currentTime = Math.max(0, t - cur.a); cur.el.play().catch(() => {}); } }
   analyser.getByteTimeDomainData(spec); { let m = 0; for (const v of spec) m = Math.max(m, Math.abs(v - 128)); LEVEL = m / 128; }
   sideV += ((sideOn ? 1 : 0) - sideV) * 0.12; if (Math.abs(sideV - (sideOn ? 1 : 0)) < 0.002) sideV = sideOn ? 1 : 0;
-  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5);
+  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5); { const k = 1 - 0.24 * sideV; cv.style.transform = `translateY(${(222 * (1 - k) / 270 * 100).toFixed(3)}%) scale(${k})`; cv.style.imageRendering = sideV > 0 ? 'auto' : 'pixelated'; }
   if (rotate && sideOn && ms - paneAt > 9000) { paneAt = ms; showPane(1 - pane); }
   g.fillStyle = '#0e0c10'; g.fillRect(0, 0, GW, GH);
-  g.save(); g.translate(-Math.round(SHIFT * sideV), -STACK);
+  g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
   if (TWO) { drawIsla(t, aTalk, 168); drawIsla(t, bTalk, 312, 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU); } else drawIsla(t, !!cur, 240);
