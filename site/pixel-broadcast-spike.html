@@ -556,7 +556,7 @@ if (propSheet) { const PG = toGrid(propSheet); for (const [n, d] of Object.entri
 function drawProp(name, cx, t, k = 1) {
   const p = PROPS[name]; if (!p) return;
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  const w = Math.round(p.img.width * p.s * k), h = Math.round(p.img.height * p.s * k), x = Math.round(cx - w / 2), y = PROP_BASE + Math.round((k - 1) * 26) - h - (name === 'laptop' ? 2 : 0);
+  const w = Math.round(p.img.width * p.s * k), h = Math.round(p.img.height * p.s * k), x = Math.round(cx - w / 2), y = PROP_BASE + Math.round((k - 1) * 26) - (k > 1 && p.side ? 4 : 0) - h - (name === 'laptop' ? 2 : 0);
   g.drawImage(p.img, x, y, w, h);
   if (name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
   g.imageSmoothingEnabled = false;
@@ -629,9 +629,10 @@ showPane(pane);
 // A shot is { z: zoom, x/y: art point to centre on, sy: screen row it lands on }; the canvas is moved and zoomed in CSS, so tight shots are a clean 2x pixel zoom.
 let seated = qs.get('desk') ?? (TWO ? 'both' : 'isla'), cam = qs.get('cam') ?? 'wide', director = qs.get('director') === '1';
 const slot = { isla: qs.get('isla') ?? 'laptop', fraser: qs.get('fraser') ?? 'mug' };   // what sits in front of each presenter (7 / 8 cycle them)
-const seatX = who => seated === 'both' ? (who === 'isla' ? 168 : 312) : 240;
+const isTight = () => cam !== 'wide' && (seated === 'both' || seated === cam);
+const seatX = who => seated !== 'both' ? 240 : isTight() ? (who === 'isla' ? 222 : 258) : (who === 'isla' ? 168 : 312);   // tight shots seat them nearer the middle so the desk fills the frame
 function shot() {
-  if (cam === 'wide' || (seated !== 'both' && seated !== cam)) return { z: 1, x: 240, y: 135, sy: 135 };
+  if (!isTight()) return { z: 1, x: 240, y: 135, sy: 135 };
   return { z: 1.5, x: seatX(cam), y: 55, sy: 68 };
 }
 addEventListener('keydown', e => {
@@ -663,7 +664,7 @@ function tick(ms) {
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
-  for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who) && (!big || big === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (big ? 1 / ISLA_S : 1) * (who === 'isla' ? 1 : -1), t, big ? 1 / ISLA_S : 1);
+  for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who) && (!big || big === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (big ? 2 : 1) * (who === 'isla' ? 1 : -1), t, big ? 1 / ISLA_S : 1);
   g.restore();
 
   const bk = easeOut(seg(t, IN_A + 0.3, IN_A + 1.1)), out = easeOut(seg(t, OUT_A, OUT_A + 0.8));
