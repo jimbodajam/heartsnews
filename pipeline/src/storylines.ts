@@ -179,6 +179,22 @@ export function closingDue(open: Storyline[], played: Fixture[], now: Date): { i
   return out;
 }
 
+/** How far ahead of kick-off the next game gets its storyline. */
+const OPEN_AHEAD_DAYS = 7;
+
+/**
+ * The next game's storyline when it hasn't got one: opened as soon as the game is within a week, so previews and team
+ * news have somewhere to go (otherwise they end up under the game just played, and a cup tie that is only previews
+ * never gets one).
+ */
+export function nextMatchStoryline(open: Storyline[], next: Fixture[] | undefined, nextId: number, now: Date): SiftPlan['storylines'][number] | undefined {
+  const f = [...(next ?? [])].filter((x) => Date.parse(x.date) > now.getTime()).sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!f || Date.parse(f.date) - now.getTime() > OPEN_AHEAD_DAYS * DAY_MS) return undefined;
+  const key = fixtureKey(f);
+  if (open.some((s) => s.kind === 'match' && s.fixture === key)) return undefined;
+  return { id: nextId, kind: 'match', category: 'match', title: `${f.home} v ${f.away}`, fixture: key, kickOff: f.date, openedAt: now.toISOString() };
+}
+
 // ---- Reading articles into claims ----
 
 const S = { type: 'string' };
@@ -265,7 +281,7 @@ Storylines:
 - match: one per fixture in the fixture list, running from the preview through the game to the report and the fallout. Everything about that game goes here: team news for it, the result, goals, substitutions, saves, refereeing, who said what about it, and reaction to the result ("Vrancken under pressure after the defeat") while it's about that result. A match report always gives the result as a claim. fixture: its ref.
 - club: the club when it's neither: the manager's job, finances, the stadium, the board, the academy, the women's team.
 Never open a storyline for one person's comments, form, position or availability ("Vrancken comments", "Kingsley availability"): that goes under the match it's about, reaction under the last game and team news under the next.
-An article reacting to a result often looks ahead to the next game too: what's said about the result goes under the game just played, and only what's about the next game goes under that one.
+An article reacting to a result often looks ahead to the next game too: what's said about the result goes under the game just played, and only what's about the next game goes under that one. Cup ties and derbies are fixtures like any other: the manager's build-up, who is fit or doubtful, the referee and expected tactics stated by the club all go under the next game's storyline, never under the last one.
 File each claim under an open storyline when one fits. Open a new one (ref "n1", "n2", ...) only when none does, and never two for the same person and topic or the same fixture. Skip routine notices (ticket sales, travel and merchandise) and pundits' opinions.
 Never make a claim that only says a game is on or coming up, or gives its date, kick-off, venue or TV channel ("Rangers face Hearts in a midweek trip", "Hearts host Rangers on Wednesday"): the fixture list already has that, and a claim is news about the game. Nor one that only sets the scene ("a big night at Tynecastle") or retells history from past seasons.
 Before marking a claim new, check every standing claim under that storyline: the same thing in different words (another outlet, another interview with the same quotes) is "same", not new.
@@ -620,6 +636,13 @@ export async function updateStorylines(r: StorylineRun): Promise<void> {
   const closing = closingDue(desk.open, played, now);
   await closeStorylines(store, closing, now);
   if (closing.length) log(`Closed ${closing.length} storylines (${closing.map((c) => `s${c.id} ${c.reason}`).join(', ')}).`);
+  const opening = nextMatchStoryline(desk.open.filter((s) => !closing.some((c) => c.id === s.id)), r.match?.next, desk.nextIds.storyline, now);
+  if (opening) {
+    await saveSift(store, { storylines: [opening], claims: [], sources: [], statuses: [], touched: [], resolved: [], sifted: [] }, 0, now);
+    desk.open.push({ ...opening, status: 'open', updatedAt: opening.openedAt, claims: [] });
+    desk.nextIds.storyline++;
+    log(`Opened the storyline for ${opening.title}.`);
+  }
 
   const model = r.model;
   if (!model) {

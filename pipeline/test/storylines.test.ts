@@ -15,6 +15,7 @@ import {
   CORROBORATE_SCHEMA,
   fixtureKey,
   matchPhase,
+  nextMatchStoryline,
   planSift,
   SIFT_SCHEMA,
   updateStorylines,
@@ -81,8 +82,10 @@ function scripted(replies: { sift?: object[]; corroborate?: object[]; brief?: ob
   };
 }
 
+// The next game a month off, so a run doesn't open its storyline unless the test is about that.
+const farMatch = { ...match, next: [{ ...HIBS, date: '2026-11-25T15:00:00.000Z' }] };
 const run = (s: ReturnType<typeof setUp>, model: ScriptModel | undefined, now: Date, lines: string[] = []) =>
-  updateStorylines({ store: s.store, model, entities, match, names, club: club.name, now, log: (l) => lines.push(l) });
+  updateStorylines({ store: s.store, model, entities, match: farMatch, names, club: club.name, now, log: (l) => lines.push(l) });
 
 test('the Milne news from several outlets is one storyline, its claims sourced to each, with a brief', async () => {
   const s = setUp();
@@ -520,4 +523,27 @@ test('the free allowance running out stops the run, without trying the light mod
   const model = workersAi({ accountId: 'x', token: 'y', budget: { used: 0, lightAt: 7_000, stopAt: 9_500 }, fetchFn });
   await assert.rejects(model.generateJson('p', {}), OutOfBudget);
   assert.deepEqual(asked, ['@cf/openai/gpt-oss-120b']);
+});
+
+test("the next game gets its storyline a week before kick-off, once", async () => {
+  const cup: Fixture = { date: '2026-11-01T15:00:00.000Z', home: 'Heart of Midlothian', away: 'Hibernian', competition: 'League Cup' };
+  const league: Fixture = { date: '2026-11-08T15:00:00.000Z', home: 'Aberdeen', away: 'Heart of Midlothian', competition: 'Scottish Premiership' };
+  const now = new Date('2026-10-30T12:00:00Z');
+  const opened = nextMatchStoryline([], [league, cup], 30, now);
+  assert.deepEqual(opened, { id: 30, kind: 'match', category: 'match', title: 'Heart of Midlothian v Hibernian', fixture: fixtureKey(cup), kickOff: cup.date, openedAt: now.toISOString() });
+  assert.equal(nextMatchStoryline([storyline(30, { kind: 'match', fixture: fixtureKey(cup) })], [league, cup], 31, now), undefined);
+  assert.equal(nextMatchStoryline([], [league], 31, now), undefined, 'more than a week off');
+  assert.equal(nextMatchStoryline([], [cup], 31, new Date('2026-11-01T16:00:00Z')), undefined, 'already played');
+});
+
+test("a run opens the next game's storyline without a model, and it gets no brief until it has claims", async () => {
+  const s = setUp();
+  const lines: string[] = [];
+  const model = scripted({});
+  await updateStorylines({ store: s.store, model, entities, match, names, club: club.name, now: new Date('2026-10-23T09:00:00Z'), log: (l) => lines.push(l) });
+  assert.match(lines.join('\n'), /Opened the storyline for Heart of Midlothian v Hibernian/);
+  assert.deepEqual(rows(s, 'SELECT title, fixture, kind FROM storylines'), [{ title: 'Heart of Midlothian v Hibernian', fixture: '2026-10-25|Heart of Midlothian|Hibernian', kind: 'match' }]);
+  assert.equal(model.prompts.length, 0);
+  await updateStorylines({ store: s.store, model, entities, match, names, club: club.name, now: new Date('2026-10-23T10:00:00Z'), log: (l) => lines.push(l) });
+  assert.deepEqual(rows(s, 'SELECT COUNT(*) AS n FROM storylines'), [{ n: 1 }]);
 });

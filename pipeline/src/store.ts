@@ -723,7 +723,7 @@ export async function loadOpenStorylines(store: Store): Promise<{ open: Storylin
  * since the last one. Open ones, and any closed in the last day (resolved by the claim that closed them).
  */
 export async function storylinesDueBriefs(store: Store, now: Date, limit: number): Promise<Storyline[]> {
-  const due = `(status = 'open' OR closed_at >= '${new Date(now.getTime() - DAY_MS).toISOString()}') AND (brief_at IS NULL OR EXISTS (
+  const due = `(status = 'open' OR closed_at >= '${new Date(now.getTime() - DAY_MS).toISOString()}') AND EXISTS (SELECT 1 FROM claims WHERE storyline_id = storylines.id) AND (brief_at IS NULL OR EXISTS (
       SELECT 1 FROM claims c JOIN claim_sources cs ON cs.claim_id = c.id
       WHERE c.storyline_id = storylines.id AND cs.corroboration = 0 AND cs.at > storylines.brief_at))`;
   const [storylines, claims] = await store.batch([
