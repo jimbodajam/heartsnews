@@ -633,7 +633,7 @@ const isTight = () => cam !== 'wide' && (seated === 'both' || seated === cam);
 const seatX = who => seated !== 'both' ? 240 : isTight() ? (who === 'isla' ? 222 : 258) : (who === 'isla' ? 168 : 312);   // tight shots seat them nearer the middle so the desk fills the frame
 function shot() {
   if (!isTight()) return { z: 1, x: 240, y: 135, sy: 135 };
-  return { z: 1.5, x: seatX(cam), y: 55, sy: 68 };
+  return { z: 1.8, x: seatX(cam), y: 55, sy: 62 };
 }
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
