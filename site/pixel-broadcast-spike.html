@@ -31,6 +31,21 @@
   #track span { padding-right: 3em; } #track b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
   #cap { position: absolute; left: 4em; right: 4em; bottom: 23em; background: #120f22; color: #f2efe6; padding: .6em 1.2em; font-size: .95em; line-height: 1.6; }
   #cap b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
+  /* Optional side panel (the Sky-style table / fixtures column). Sits above the stack, slides in from the right. */
+  #side { position: absolute; top: 0; right: 0; bottom: 10em; width: 24em; background: #120f22; color: #f2efe6; border-left: .35em solid #e0b13a; transform: translateX(100%); overflow: hidden; }
+  #side .pane { position: absolute; inset: 0; opacity: 0; transition: opacity .3s steps(4); }
+  #side .pane.on { opacity: 1; }
+  #side h2 { margin: 0; background: #6d1a2a; border-bottom: .3em solid #e0b13a; font-size: .8em; font-weight: normal; line-height: 1.4; padding: 1.2em 1em; white-space: nowrap; }
+  #side .row { display: grid; grid-template-columns: 2em 1fr 1.6em 2.4em 2.8em; gap: .6em; align-items: center; height: 3.1em; padding: 0 1em 0 .8em; font-size: .75em; border-bottom: .15em solid #1d1a35; }
+  #side .row.hd { color: #e0b13a; height: 2.6em; }
+  #side .row.me { background: #6d1a2a; color: #f2efe6; }
+  #side .row.cut { border-bottom: .2em dashed #e0b13a; }
+  #side .row span:nth-child(n+3) { text-align: right; }
+  #side .fx { padding: 1em 1em 0; font-size: .75em; }
+  #side .fx div { border-bottom: .15em solid #1d1a35; padding: .9em 0 1.1em; line-height: 1.7; }
+  #side .fx b { color: #e0b13a; font-weight: normal; display: block; }
+  #side .fx .me { color: #f6dc8a; }
+  #frame.sidebar #cap { right: 28em; }
   #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font: 12px sans-serif; }
 </style>
 </head>
@@ -40,6 +55,7 @@
   <div id="intro" class="px"><span>HEARTS NEWS</span><b>24</b></div>
   <button id="start" class="px">CLICK TO START (SOUND ON)</button>
   <div id="cap" class="px"><b id="who"></b><span id="line"></span></div>
+  <div id="side"><div class="pane" id="pTable"></div><div class="pane" id="pFix"></div></div>
   <div id="stack">
     <div id="top">
       <div id="brand"><div class="mark">H24</div><div class="name">HEARTS<i>NEWS 24</i></div></div>
@@ -51,7 +67,7 @@
     </div>
   </div>
 </div></div>
-<div id="hint">480×270 art grid, shown 3× at 1440×810 · 42s loop · bottom stack + ticker</div>
+<div id="hint">480×270 art grid, shown 3× at 1440×810 · S side panel · T table · F fixtures · R auto-rotate (?side=0 starts full screen)</div>
 
 <script type="module">
 import { toGrid as toGridLib, detectEyes, gaze as gazeShift, blink as blinkEyes } from './spike-lib/pixel-derive.js';
@@ -575,12 +591,33 @@ const TICKER = [['HT', 'HEARTS 2-1 DUNDEE UTD'], ['RESULT', 'MOTHERWELL 0-2 HIBE
 const track = document.getElementById('track'), clockEl = document.getElementById('clock'), frame = document.getElementById('frame'), headin = document.getElementById('headin');
 const itemsHtml = TICKER.map(([k, v]) => `<span><b>${k}</b>${v}</span>`).join('');
 track.innerHTML = `<div style="display:flex">${itemsHtml}</div><div style="display:flex">${itemsHtml}</div>`;
+// ---- Side panel: optional column beside the studio. Panes: table, fixtures. Hidden = full-screen studio. ----
+const TABLE = [['HEARTS', 8, 18, '+9'], ['CELTIC', 8, 17, '+10'], ['RANGERS', 8, 14, '+6'], ['HIBS', 8, 13, '+4'], ['MOTHERWELL', 8, 11, '+1'], ['ABERDEEN', 8, 10, '0'], ['DUNDEE UTD', 8, 9, '-2'], ['FALKIRK', 8, 8, '-1'], ['LIVINGSTON', 8, 7, '-4'], ['KILMARNOCK', 8, 6, '-5'], ['DUNDEE', 8, 5, '-8'], ['ST MIRREN', 8, 4, '-10']];
+const FIXTURES = [['SAT 1 NOV · 12:30', 'HEARTS', 'RANGERS'], ['SAT 8 NOV · 15:00', 'ABERDEEN', 'HEARTS'], ['SAT 22 NOV · 15:00', 'HEARTS', 'FALKIRK'], ['SUN 30 NOV · 12:00', 'CELTIC', 'HEARTS'], ['SAT 6 DEC · 15:00', 'HEARTS', 'DUNDEE']];
+document.getElementById('pTable').innerHTML = '<h2>PREMIERSHIP</h2><div class="row hd"><span></span><span></span><span>P</span><span>PTS</span><span>GD</span></div>' +
+  TABLE.map(([n, p, pts, gd], i) => `<div class="row${n === 'HEARTS' ? ' me' : ''}${i === 5 ? ' cut' : ''}"><span>${i + 1}</span><span>${n}</span><span>${p}</span><span>${pts}</span><span>${gd}</span></div>`).join('');
+document.getElementById('pFix').innerHTML = '<h2>COMING UP</h2><div class="fx">' +
+  FIXTURES.map(([d, h, a]) => `<div><b>${d}</b><span class="${h === 'HEARTS' ? 'me' : ''}">${h}</span> V <span class="${a === 'HEARTS' ? 'me' : ''}">${a}</span></div>`).join('') + '</div>';
+const sideEl = document.getElementById('side'), PANES = [document.getElementById('pTable'), document.getElementById('pFix')];
+const SHIFT = 28;   // art px the studio slides left so the presenters clear the panel
+const qs = new URLSearchParams(location.search);
+let sideOn = qs.get('side') !== '0', sideV = sideOn ? 1 : 0, pane = qs.get('panel') === 'fixtures' ? 1 : 0, rotate = qs.get('rotate') !== '0', paneAt = performance.now();
+function showPane(i) { pane = i; PANES.forEach((p, k) => p.classList.toggle('on', k === i)); }
+showPane(pane);
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 's') sideOn = !sideOn; else if (k === 't') { sideOn = true; rotate = false; showPane(0); } else if (k === 'f') { sideOn = true; rotate = false; showPane(1); } else if (k === 'r') rotate = !rotate;
+});
 const intro = document.getElementById('intro'), who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
 function tick(ms) {
   const t = T0 === null ? 0.5 : ((ms - T0) / 1000) % LOOP, cur = T0 === null ? null : SCRIPT.find(s => t >= s.a && t < s.b);
   if (cur !== playing) { if (playing) playing.el.pause(); playing = cur; if (cur) { cur.el.currentTime = Math.max(0, t - cur.a); cur.el.play().catch(() => {}); } }
   analyser.getByteTimeDomainData(spec); { let m = 0; for (const v of spec) m = Math.max(m, Math.abs(v - 128)); LEVEL = m / 128; }
-  g.save(); g.translate(0, -STACK);
+  sideV += ((sideOn ? 1 : 0) - sideV) * 0.12; if (Math.abs(sideV - (sideOn ? 1 : 0)) < 0.002) sideV = sideOn ? 1 : 0;
+  sideEl.style.transform = `translateX(${Math.round((1 - sideV) * 100)}%)`; frame.classList.toggle('sidebar', sideV > 0.5);
+  if (rotate && sideOn && ms - paneAt > 9000) { paneAt = ms; showPane(1 - pane); }
+  g.fillStyle = '#0e0c10'; g.fillRect(0, 0, GW, GH);
+  g.save(); g.translate(-Math.round(SHIFT * sideV), -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
   if (TWO) { drawIsla(t, aTalk, 168); drawIsla(t, bTalk, 312, 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU); } else drawIsla(t, !!cur, 240);
