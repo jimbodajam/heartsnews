@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Standing poses compare</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:11px sans-serif} .row{display:flex;flex-wrap:wrap;gap:6px;padding:6px} figure{margin:0} canvas{image-rendering:pixelated;background:#444;display:block}</style>
+<div class="row" id="out"></div>
+<pre id="log" style="padding:6px"></pre>
+<script type="module">
+const { toGrid } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const SRC = [['master', './public/spike/isla/standing-master.jpg'], ...Array.from({ length: 8 }, (_, i) => ['b' + (i + 1), './public/spike/isla/standing/b' + (i + 1) + '.jpg'])];
+const S = +(new URLSearchParams(location.search).get('s') || 1.4), log = []; let base = null;
+// head = rows 0..56, torso = 56..119, legs = 119..216 on the 145x216 grid
+const bands = { head: [0, 56, 40, 102], feet: [160, 216, 0, 145], hips: [95, 160, 40, 105] };
+for (const [name, src] of SRC) {
+  const img = await load(src); if (!img) { log.push(name + ' missing'); continue; }
+  const w = Math.round(img.naturalWidth / 5.865), h = Math.round(img.naturalHeight / 5.865), P = toGrid(img, { w, h });
+  if (!base) base = P;
+  const d = { head: 0, feet: 0, hips: 0 };
+  for (const [bn, [y0, y1, x0, x1]] of Object.entries(bands)) for (let y = y0; y < Math.min(y1, h, base.h); y++) for (let x = x0; x < Math.min(x1, w, base.w); x++) { const a = base.get(x, y), b = P.get(x, y); if (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) > 60 || base.has(x, y) !== P.has(x, y)) d[bn]++; }
+  log.push(`${name} ${img.naturalWidth}x${img.naturalHeight} grid ${w}x${h}  changed px  head ${d.head}  hips/skirt ${d.hips}  feet ${d.feet}`);
+  const cv = P.canvas(); cv.style.width = cv.width * S + 'px'; const f = document.createElement('figure'); f.append(cv, name); document.getElementById('out').append(f);
+}
+document.getElementById('log').textContent = log.join('\n');
+</script>

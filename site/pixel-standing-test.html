@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Mouth derive test</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:11px sans-serif} .row{display:flex;flex-wrap:wrap;gap:6px;padding:6px;align-items:flex-end} figure{margin:0} canvas{image-rendering:pixelated;background:#444;display:block}</style>
+<div id="out"></div>
+<pre id="log" style="padding:6px"></pre>
+<script type="module">
+const { toGrid, detectMouth, mouth, MOUTH_PRESETS } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const q = new URLSearchParams(location.search);
+const CFG = [
+  { name: 'standing', src: './public/spike/isla/standing-master.jpg', blk: { w: 145, h: 216 }, win: (q.get('sw') || '70,38,78,42').split(',').map(Number) },
+  { name: 'sitting', src: './public/spike/isla/master.jpg', blk: {}, win: (q.get('tw') || '112,52,128,62').split(',').map(Number) },
+];
+const log = [];
+const S = +(q.get('s') || 12);
+for (const c of CFG) {
+  const img = await load(c.src); if (!img) { log.push(c.name + ' missing'); continue; }
+  const P = toGrid(img, c.blk);
+  let m; try { m = detectMouth(P, c.win); } catch (e) { log.push(c.name + ' detect fail ' + e.message); continue; }
+  log.push(c.name + ' ' + JSON.stringify(m.bb) + ' yc ' + m.yc + ' hw ' + m.hw);
+  const x0 = Math.floor(m.cx - 14), x1 = Math.ceil(m.cx + 14), y0 = m.bb.y0 - 6, y1 = m.bb.y1 + 8;
+  const row = document.createElement('div'); row.className = 'row'; row.append(c.name + ':'); document.getElementById('out').append(row);
+  const add = (label, X) => { const cv = document.createElement('canvas'); cv.width = x1 - x0 + 1; cv.height = y1 - y0 + 1; cv.getContext('2d').drawImage(X.canvas(), -x0, -y0); cv.style.width = cv.width * S + 'px'; const f = document.createElement('figure'); f.append(cv, label); row.append(f); };
+  add('orig', P);
+  for (const k of Object.keys(MOUTH_PRESETS)) add(k, mouth(P, m, k));
+}
+document.getElementById('log').textContent = log.join('\n');
+</script>

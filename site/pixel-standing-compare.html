@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Standing variants compare</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:11px sans-serif} .row{display:flex;flex-wrap:wrap;gap:6px;padding:6px} figure{margin:0} canvas{image-rendering:pixelated;background:#444;display:block}</style>
+<div class="row" id="out"></div>
+<pre id="log" style="padding:6px"></pre>
+<script type="module">
+const { toGrid } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const SRC = [['master', './public/spike/isla/standing-master.jpg'], ...Array.from({ length: 9 }, (_, i) => ['v' + (i + 1), './public/spike/isla/standing/v' + (i + 1) + '.jpg'])];
+const q = new URLSearchParams(location.search), S = +(q.get('s') || 6), box = (q.get('box') || '56,26,96,52').split(',').map(Number);
+const log = []; let base = null;
+for (const [name, src] of SRC) {
+  const img = await load(src); if (!img) { log.push(name + ' missing'); continue; }
+  const w = Math.round(img.naturalWidth / 5.865), h = Math.round(img.naturalHeight / 5.865);
+  const P = toGrid(img, { w, h });
+  if (!base) base = P;
+  let diff = 0, face = 0; for (let y = 0; y < Math.min(h, base.h); y++) for (let x = 0; x < Math.min(w, base.w); x++) { const a = base.get(x, y), b = P.get(x, y); const d = Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]); if (d > 60 || base.has(x, y) !== P.has(x, y)) { diff++; if (x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]) face++; } }
+  log.push(`${name} ${img.naturalWidth}x${img.naturalHeight} grid ${w}x${h}  changed px: ${diff} (in face box: ${face}, elsewhere: ${diff - face})`);
+  const cv = document.createElement('canvas'); cv.width = box[2] - box[0] + 1; cv.height = box[3] - box[1] + 1; cv.getContext('2d').drawImage(P.canvas(), -box[0], -box[1]); cv.style.width = cv.width * S + 'px';
+  const f = document.createElement('figure'); f.append(cv, name); document.getElementById('out').append(f);
+}
+document.getElementById('log').textContent = log.join('\n');
+</script>

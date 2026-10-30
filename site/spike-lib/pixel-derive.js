@@ -202,9 +202,11 @@ export const MOUTH_PRESETS = {
 export function mouth(P, m, preset) {
   const out = P.clone(), s = typeof preset === 'string' ? MOUTH_PRESETS[preset] : preset;
   // Erase the old lips: each column above the centre line takes the skin above the mouth, below takes the skin beneath.
-  for (let x = m.bb.x0 - 2; x <= m.bb.x1 + 2; x++) {
-    const above = P.get(x, m.bb.y0 - 2), below = P.get(x, Math.min(P.h - 1, m.bb.y1 + 2));
-    for (let y = m.bb.y0 - 1; y <= m.bb.y1 + 1; y++) if (P.has(x, y) && (m.comp.has(key(x, y)) || y === m.bb.y0 - 1 || y === m.bb.y1 + 1)) out.set(x, y, y <= m.yc ? above : below);
+  // Fill colours are the median of a few neighbouring columns, so dither from the philtrum or chin shadow is not copied into the patch.
+  const fillAt = (x, y) => { const cs = []; for (let xx = x - 3; xx <= x + 3; xx++) if (P.has(xx, y)) cs.push(P.get(xx, y)); return cs.length ? [0, 1, 2].map(i => median(cs.map(c => c[i]))) : P.get(x, y); };
+  for (let x = m.bb.x0 - 1; x <= m.bb.x1 + 1; x++) {
+    const above = fillAt(x, m.bb.y0 - 2), below = above;
+    for (let y = m.bb.y0 - 1; y <= m.bb.y1 + 1; y++) if (P.has(x, y)) out.set(x, y, y <= m.yc ? above : below);   // whole rectangle: pale lip pixels do not always register as lip-like
   }
   const hw = Math.max(2, Math.round(m.hw * (s.w ?? 1))), open = s.open ?? 0, smile = s.smile ?? 0;
   const inside = [58, 15, 24], teethC = [246, 240, 232], tongueC = [196, 84, 98];
