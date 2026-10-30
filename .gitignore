@@ -13,3 +13,11 @@ site/public/memory.json
 .DS_Store
 .cache/
 site/public/bulletins/mock-phonein/
+
+# voice bake-off renders
+tools/gpu/bakeoff/out/
+
+# reference clips of real voices stay local, never committed
+tools/gpu/bakeoff/refs/
+site/public/bulletins/clone-test/
+__pycache__/

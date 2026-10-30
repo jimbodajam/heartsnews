@@ -32,8 +32,18 @@ export interface Presenter {
   role: string;
   /** Used to pick a browser voice when a line has no pre-rendered audio. */
   voice: 'male' | 'female';
-  /** Kokoro voice used to pre-render this presenter's lines, e.g. "bf_emma". */
-  tts?: { voice: string; speed?: number; /** Run through a phone-line band-pass after rendering (phone-in callers). */ filter?: 'phone' };
+  /**
+   * Kokoro voice used to pre-render this presenter's lines, e.g. "bf_emma". `clone` names a reference clip (in ~/.cache/heartsnews-gpu/voices)
+   * to clone instead, when the home PC has the clone voices set up (tools/gpu/clone-setup.sh); otherwise, and for any line the clone
+   * fails, Kokoro speaks it. `voiceOnly` clones the voice without the clip's words, for a clip whose words the model can't follow.
+   */
+  tts?: {
+    voice: string;
+    speed?: number;
+    /** Run through a phone-line band-pass after rendering (phone-in callers). */
+    filter?: 'phone';
+    clone?: { ref: string; voiceOnly?: boolean };
+  };
   /** Character notes the script writer plays to. */
   persona?: string;
   /** Lasting views that keep their opinions consistent, e.g. "always backs academy players" (pipeline/src/script/notebook.ts). */

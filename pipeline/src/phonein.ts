@@ -160,6 +160,12 @@ export async function buildPhoneIn(model: ScriptModel, posts: Post[], opts: { re
 /** Spare Kokoro voices for callers, none of them a presenter's. */
 export const CALLER_VOICES = { m: ['am_adam', 'bm_fable', 'am_michael'], f: ['bf_lily', 'af_nicole', 'af_sarah'] };
 
+/**
+ * Cloned voices for callers (see Presenter.tts.clone), shared out by sex in the order callers ring in. Only two of each are approved so far,
+ * so a third caller of the same sex repeats the first.
+ */
+export const CALLER_CLONES = { m: [{ ref: 'ben' }, { ref: 'bruce' }], f: [{ ref: 'bethany' }, { ref: 'margaret', voiceOnly: true }] };
+
 /** Render the segment to one mp3 per line (callers through the phone filter), into `dir`. */
 export async function renderPhoneIn(p: PhoneIn, dir: string, presenterVoices: Record<string, string>): Promise<string[]> {
   const { loadKokoro, renderClip } = await import('./voice.ts');
@@ -219,7 +225,11 @@ export function phoneInSegment(p: PhoneIn, hosts: { host: string; pundits: strin
     name: c.name,
     role: 'Caller',
     voice: c.sex === 'f' ? 'female' : 'male',
-    tts: { voice: CALLER_VOICES[c.sex][p.callers.slice(0, i).filter((x) => x.sex === c.sex).length % 3], filter: 'phone' },
+    tts: {
+      voice: CALLER_VOICES[c.sex][p.callers.slice(0, i).filter((x) => x.sex === c.sex).length % 3],
+      filter: 'phone',
+      clone: CALLER_CLONES[c.sex][p.callers.slice(0, i).filter((x) => x.sex === c.sex).length % CALLER_CLONES[c.sex].length],
+    },
     look: { skin: '#c98e6a', hair: '#1a1416', hairStyle: 'short', suit: '#333333', shirt: '#cccccc' },
   }));
   // The strap stays up through the callers' lines and the answers that follow, until the next caller or the close.

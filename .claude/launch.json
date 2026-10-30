@@ -12,6 +12,24 @@
       "runtimeExecutable": "wsl",
       "runtimeArgs": ["-e", "bash", "-lc", "cd /mnt/c/Users/jimbo/Documents/code/heartsnews/.cache/phonein && python3 -m http.server 5180"],
       "port": 5180
+    },
+    {
+      "name": "bakeoff",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["-e", "bash", "-lc", "cd /mnt/c/Users/jimbo/Documents/code/heartsnews/tools/gpu/bakeoff && python3 -m http.server 5181"],
+      "port": 5181
+    },
+    {
+      "name": "phonein-clone",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["-e", "bash", "-lc", "cd /mnt/c/Users/jimbo/Documents/code/heartsnews/.cache/phonein-clone && python3 -m http.server 5182"],
+      "port": 5182
+    },
+    {
+      "name": "bulletin-test",
+      "runtimeExecutable": "wsl",
+      "runtimeArgs": ["-e", "bash", "-lc", "cd /mnt/c/Users/jimbo/Documents/code/heartsnews/.cache/bulletin-test && python3 -m http.server 5183"],
+      "port": 5183
     }
   ]
 }

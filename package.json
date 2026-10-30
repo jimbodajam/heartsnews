@@ -18,6 +18,7 @@
     "faces:draw": "npm -w pipeline run faces:draw --",
     "adverts": "npm -w pipeline run adverts",
     "gpu:setup": "bash tools/gpu/setup.sh",
+    "gpu:clone-setup": "bash tools/gpu/clone-setup.sh",
     "publish-site": "npm -w pipeline run publish-site",
     "agent": "npm -w pipeline run agent --",
     "job": "npm -w pipeline run job --",

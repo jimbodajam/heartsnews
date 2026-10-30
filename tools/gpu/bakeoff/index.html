@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Voice bake-off</title>
+<style>
+  body { font: 15px system-ui, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; background: #fafafa; color: #222 }
+  h2 { margin-top: 2rem } .text { color: #555; margin: .2rem 0 1rem }
+  .clip { display: grid; grid-template-columns: 190px 1fr 170px; gap: .8rem; align-items: center; padding: .4rem 0; border-top: 1px solid #ddd }
+  .meta { font-size: 12px; color: #777 } .stars button { font-size: 20px; border: 0; background: none; cursor: pointer; color: #bbb; padding: 0 1px }
+  .stars button.on { color: #d4a017 } audio { width: 100% } pre { background: #eee; padding: .8rem; overflow: auto }
+</style>
+<h1>Voice bake-off</h1>
+<p>Same lines through each engine. Click stars to rate (saved in this browser). Speed is per line on the 2080 Ti.</p>
+<div id="app"></div>
+<p><button id="export">Copy my ratings</button></p>
+<pre id="summary"></pre>
+<script>document.write('<script src="out/results.js?t=' + Date.now() + '"><\/script>'); // never cached, so new renders always show</script>
+<script>
+const all = window.BAKEOFF || { lines: [], clips: [] };
+// Only the current Kokoro voices against the Qwen clones, so they can be compared head to head. Add engines here to bring others back.
+const broken = []; // voices to hide, e.g. a clone that runs on past the end of its line
+const shown = (c) => (c.engine === 'kokoro' || c.engine === 'qwen') && !broken.includes(c.variant);
+const clips = all.clips.filter(shown).sort((a, b) => (b.engine === 'kokoro') - (a.engine === 'kokoro'));
+const data = { clips, lines: all.lines.filter((l) => clips.some((c) => c.line === l.id && c.engine !== 'kokoro')) };
+const store = JSON.parse(localStorage.getItem('bakeoff') || '{}');
+const app = document.getElementById('app');
+for (const line of data.lines) {
+  const h = document.createElement('div');
+  h.innerHTML = `<h2>${line.who}</h2><div class="text">${line.text}</div>`;
+  app.append(h);
+  for (const c of data.clips.filter((x) => x.line === line.id)) {
+    const key = `${c.engine}/${c.variant}/${c.line}`;
+    const row = document.createElement('div');
+    row.className = 'clip';
+    row.innerHTML = `<div><b>${c.engine}</b> ${c.variant}<div class="meta">${c.seconds}s${c.vram_mb ? ` · ${c.vram_mb} MB VRAM` : ''}${c.engine === 'qwen' && c.note ? ` · ${c.note}` : ''}</div></div><audio controls preload="none" src="${c.file}"></audio><div class="stars"></div>`;
+    const stars = row.querySelector('.stars');
+    const draw = () => {
+      stars.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const b = document.createElement('button');
+        b.textContent = '★';
+        b.className = (store[key] || 0) >= i ? 'on' : '';
+        b.onclick = () => { store[key] = store[key] === i ? 0 : i; localStorage.setItem('bakeoff', JSON.stringify(store)); draw(); summarise(); };
+        stars.append(b);
+      }
+    };
+    draw();
+    app.append(row);
+  }
+}
+function summarise() {
+  const by = {};
+  for (const [k, v] of Object.entries(store)) {
+    if (!v) continue;
+    const [e, variant] = k.split('/');
+    (by[`${e} ${variant}`] ||= []).push(v);
+  }
+  document.getElementById('summary').textContent = Object.entries(by).map(([k, v]) => `${k.padEnd(28)} ${(v.reduce((a, b) => a + b, 0) / v.length).toFixed(1)} avg over ${v.length} lines`).join('\n');
+}
+summarise();
+document.getElementById('export').onclick = () => navigator.clipboard.writeText(document.getElementById('summary').textContent);
+</script>
