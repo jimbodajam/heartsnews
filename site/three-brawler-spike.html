@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — brawler style spike</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Lobster&display=swap" />
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
+  canvas.main { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  .hud { position: absolute; top: 2%; left: 2%; right: 2%; display: flex; gap: 1.4%; pointer-events: none; }
+  .panel { flex: 1; display: flex; gap: .8em; align-items: center; background: #1b1f3a; border: .35em solid var(--c); outline: .25em solid #0e0c10; padding: .5em; color: #f2efe6; position: relative; }
+  .panel canvas { width: 4.2em; height: 4.2em; image-rendering: pixelated; background: #3a3d4a; border: .2em solid #0e0c10; flex: none; }
+  .panel .name { font-size: 1.15em; }
+  .panel .score { position: absolute; right: .7em; top: .4em; font-size: 1.5em; color: #e0b13a; }
+  .panel .bars { margin-top: .6em; height: .7em; width: 11em; background: #0e0c10; }
+  .panel .bars i { display: block; height: 100%; background: linear-gradient(#9be564, #3bb273); width: var(--hp); }
+  .panel .st { color: #3fa7d6; font-size: .9em; margin-top: .5em; }
+  .panel.join { border-color: #8a8f9e; color: #8a8f9e; justify-content: center; font-size: 1.2em; }
+  .panel.join span { animation: blink 1s steps(1) infinite; } @keyframes blink { 50% { opacity: 0; } }
+  #combo { position: absolute; left: 3%; top: 17%; color: #9be564; font-size: 4.6em; text-shadow: .08em .08em 0 #1d4d20, -.05em -.05em 0 #0e0c10, .05em -.05em 0 #0e0c10, -.05em .05em 0 #0e0c10, .08em 0 #0e0c10; transform: scale(0); transform-origin: left top; }
+  #combo small { font-size: .32em; margin-left: .4em; color: #c9f4a0; }
+  #bubble { position: absolute; max-width: 34%; background: #f2efe6; color: #1a1620; border: .35em solid #0e0c10; padding: 1em 1.2em; font-size: 1.15em; line-height: 1.7; transform: translate(-50%, -100%); display: none; }
+  #bubble:after { content: ''; position: absolute; left: 50%; bottom: -1.3em; margin-left: -.8em; border: .8em solid transparent; border-top: .9em solid #0e0c10; }
+  #bubble b { display: block; color: #6d1a2a; font-weight: normal; font-size: .8em; margin-bottom: .6em; }
+  #banner { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; font-size: 2.1em; color: #e0b13a; letter-spacing: .06em; text-shadow: .12em .12em 0 #3d0d17, -.06em -.06em 0 #0e0c10, .06em -.06em 0 #0e0c10, -.06em .06em 0 #0e0c10; opacity: 0; }
+  #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font: 12px sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame">
+  <div class="hud" id="hud"></div>
+  <div id="combo">3<small>HEADLINES</small></div>
+  <div id="bubble"><b id="bwho"></b><span id="btext"></span></div>
+  <div id="banner">HEARTS NEWS 24</div>
+</div></div>
+<div id="hint">brawler-style spike · 14s loop</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// 640×360 native, 32 px per world unit. Sprites are drawn at 1 canvas px = 1 screen px.
+const RW = 640, RH = 360, VIEW_H = RH / 32;
+const OUT = '#1a1018';
+const frame = document.getElementById('frame');
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setPixelRatio(1); renderer.setSize(RW, RH, false);
+renderer.domElement.className = 'main'; frame.prepend(renderer.domElement);
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf0d9d0);
+const aspect = RW / RH;
+const camera = new THREE.OrthographicCamera(-VIEW_H * aspect / 2, VIEW_H * aspect / 2, VIEW_H / 2, -VIEW_H / 2, 0.1, 80);
+const EL = 38 * Math.PI / 180, DIST = 25, TARGET = new THREE.Vector3(0, 3.0, -0.4);
+camera.position.set(0, TARGET.y + Math.sin(EL) * DIST, TARGET.z + Math.cos(EL) * DIST);
+camera.lookAt(TARGET);
+scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(-4, 8, 6); scene.add(sun);
+
+const nearest = t => { t.magFilter = t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace; t.generateMipmaps = false; return t; };
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; return [c, g]; }
+const R = (g, x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+const outlineMat = new THREE.LineBasicMaterial({ color: 0x1a1018 });
+function box(w, h, d, col, x, y, z, outline = true) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: col }));
+  m.position.set(x, y, z); if (outline) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), outlineMat));
+  scene.add(m); return m;
+}
+
+// ---- Floor: pastel diamond tiles with peach grout -------------------------
+{
+  const [c, g] = canvas(32, 32);
+  R(g, 0, 0, 32, 32, '#f6ead8');
+  g.fillStyle = '#b9c3e6';
+  g.beginPath(); g.moveTo(16, 2); g.lineTo(30, 16); g.lineTo(16, 30); g.lineTo(2, 16); g.closePath(); g.fill();
+  g.fillStyle = '#d9a99a'; for (let i = 0; i < 32; i++) { g.fillRect(i, i, 1, 1); g.fillRect(31 - i, i, 1, 1); }
+  const tex = nearest(new THREE.CanvasTexture(c)); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14, 9);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 18), new THREE.MeshBasicMaterial({ map: tex }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, 4); scene.add(floor);
+}
+
+// ---- Back wall --------------------------------------------------------------
+const WALL_Z = -5;
+{
+  const [c, g] = canvas(448, 128);
+  R(g, 0, 0, 448, 128, '#f2d3cb');
+  for (let x = 0; x < 448; x += 56) { R(g, x, 0, 2, 70, '#e5bdb4'); }
+  R(g, 0, 70, 448, 58, '#3a4a7a'); R(g, 0, 70, 448, 3, '#e0b13a'); R(g, 0, 73, 448, 2, '#1a1018');
+  for (let x = 0; x < 448; x += 28) { R(g, x, 76, 14, 52, '#34437a'); R(g, x, 76, 1, 52, '#4d5e99'); }
+  R(g, 0, 124, 448, 4, '#1a1018');
+  // pink neon rail
+  R(g, 0, 28, 448, 2, '#ff8fb8'); R(g, 0, 30, 448, 1, '#c85a86');
+  const tex = nearest(new THREE.CanvasTexture(c));
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(14, 4), new THREE.MeshBasicMaterial({ map: tex }));
+  wall.position.set(0, 2, WALL_Z); scene.add(wall);
+  const top = box(14, 3.2, 0.3, 0xf2d3cb, 0, 5.6, WALL_Z - 0.15, false); // upper wall block to fill the frame
+  top.material = new THREE.MeshBasicMaterial({ color: 0xf2d3cb });
+}
+// Right side wall with tall windows.
+{
+  const [c, g] = canvas(256, 128);
+  R(g, 0, 0, 256, 128, '#f2d3cb'); R(g, 0, 90, 256, 38, '#3a4a7a'); R(g, 0, 90, 256, 3, '#e0b13a');
+  for (let i = 0; i < 4; i++) { const x = 12 + i * 60; R(g, x - 2, 6, 46, 82, '#1a1018'); R(g, x, 8, 42, 78, '#c6d4f0'); for (let k = 0; k < 6; k++) R(g, x, 8 + k * 13, 42, 1, '#7d90c4'); R(g, x + 20, 8, 2, 78, '#7d90c4'); R(g, x + 3, 12, 5, 30, '#e9f1ff'); }
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(10, 5), new THREE.MeshBasicMaterial({ map: nearest(new THREE.CanvasTexture(c)) }));
+  side.rotation.y = -Math.PI / 2; side.position.set(7, 2.5, 0); scene.add(side);
+}
+
+// Gold coving where wall meets the pillar tops, plus counters and pillars (real 3D boxes: top faces show).
+box(5.2, 1.1, 1.2, 0x6d1a2a, -4.2, 0.55, -4.2);           // left counter
+box(5.4, 0.12, 1.4, 0x1b1f3a, -4.2, 1.16, -4.2);          // counter top
+box(0.9, 4.2, 0.9, 0xf2e8da, -1.0, 2.1, -4.3);            // pillar
+box(1.0, 0.25, 1.0, 0xe0b13a, -1.0, 0.12, -4.3);
+box(1.0, 0.25, 1.0, 0xe0b13a, -1.0, 4.1, -4.3);
+box(0.9, 4.2, 0.9, 0xf2e8da, 6.0, 2.1, -4.3);
+box(1.0, 0.25, 1.0, 0xe0b13a, 6.0, 0.12, -4.3);
+
+// Neon sign (script font, redrawn once webfonts arrive).
+const [signC, sg] = canvas(160, 64);
+const signTex = nearest(new THREE.CanvasTexture(signC));
+function drawSign() {
+  sg.clearRect(0, 0, 160, 64);
+  sg.font = '40px Lobster, cursive'; sg.textAlign = 'center'; sg.textBaseline = 'middle';
+  sg.fillStyle = '#1a1018'; for (const [dx, dy] of [[-2,0],[2,0],[0,-2],[0,2],[2,2]]) sg.fillText('Hearts News', 80 + dx, 24 + dy);
+  sg.fillStyle = '#f2efe6'; sg.fillText('Hearts News', 80, 24);
+  sg.fillStyle = '#e0b13a'; sg.fillRect(20, 46, 120, 8); sg.fillStyle = '#6d1a2a'; sg.font = '10px "Press Start 2P", monospace'; sg.fillText('24', 80, 51);
+  signTex.needsUpdate = true;
+}
+drawSign(); document.fonts.load('40px Lobster').then(() => document.fonts.load('10px "Press Start 2P"')).then(drawSign);
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 2), new THREE.MeshBasicMaterial({ map: signTex, transparent: true }));
+sign.position.set(-3.6, 3.3, WALL_Z + 0.05); scene.add(sign);
+
+// Video wall: top story slate.
+const [scrC, sc] = canvas(160, 90);
+const scrTex = nearest(new THREE.CanvasTexture(scrC));
+const badge = new Image(); badge.src = './public/badges/heart-of-midlothian.png';
+const face = new Image(); face.src = './public/faces/wouter-vrancken.png';
+function drawScreen(t, top) {
+  R(sc, 0, 0, 160, 90, '#1a1018'); R(sc, 3, 3, 154, 84, '#6d1a2a');
+  for (let k = -90; k < 160; k += 16) for (let q = 0; q < 84; q++) { const px = k + q; if (px >= 0 && px < 152 && q % 2 === 0) R(sc, 4 + px, 3 + q, 2, 1, '#8c2a3e'); }
+  R(sc, 8, 8, 144, 74, '#1b1f3a');
+  if (!top) { if (badge.complete) sc.drawImage(badge, 55, 12, 50, 50); R(sc, 30, 68, 100, 6, '#e0b13a'); }
+  else {
+    if (face.complete) sc.drawImage(face, 14, 14, 60, 60);
+    R(sc, 82, 16, 62, 12, '#e0b13a'); R(sc, 82, 36, 62, 4, '#f2efe6'); R(sc, 82, 46, 52, 4, '#f2efe6'); R(sc, 82, 56, 58, 4, '#f2efe6'); R(sc, 82, 66, 40, 4, '#f2efe6');
+  }
+  R(sc, 10, 10, 18, 8, (Math.floor(t * 2) % 2) ? '#c0392b' : '#7d231b');
+  scrTex.needsUpdate = true;
+}
+const screen = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.36), new THREE.MeshBasicMaterial({ map: scrTex }));
+screen.position.set(3.1, 2.9, WALL_Z + 0.06); scene.add(screen);
+
+// ---- Pixel presenters -----------------------------------------------------
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16); const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
+  return '#' + ((f(n >> 16 & 255) << 16) | (f(n >> 8 & 255) << 8) | f(n & 255)).toString(16).padStart(6, '0');
+}
+const SW = 48, SH = 80;
+function drawPerson(c, look, o) {
+  const g = c.getContext('2d'); g.clearRect(0, 0, SW, SH);
+  const b = o.bob, parts = [], dets = [];
+  const P = (x, y, w, h, col) => parts.push([x, y, w, h, col]);
+  const D = (x, y, w, h, col) => dets.push([x, y, w, h, col]);
+  const skinS = shade(look.skin, -0.18), suitL = shade(look.suit, 0.18), suitD = shade(look.suit, -0.25);
+  // legs
+  P(15, 58, 8, 14 - o.l1, look.pants); P(25, 58, 8, 14 - o.l2, look.pants);
+  P(13, 70 - o.l1, 11, 6, '#2a1d22'); P(24, 70 - o.l2, 11, 6, '#2a1d22');
+  // torso + arms
+  P(9, 30 + b, 30, 30, look.suit);
+  P(3, 32 + b, 7, 22, look.suit); P(3, 53 + b, 7, 7, look.skin);
+  if (o.arm > 0.5) { P(38, 36 + b, 7, 10, look.suit); P(41, 22 + b, 6, 16, look.suit); P(41, 16 + b, 6, 7, look.skin); }
+  else { P(38, 32 + b, 7, 22, look.suit); P(38, 53 + b, 7, 7, look.skin); }
+  P(21, 25 + b, 6, 6, skinS);
+  // head + hair
+  P(12, 4 + b, 24, 23, look.skin);
+  if (look.hairStyle === 'bob') { P(10, 1 + b, 28, 10, look.hair); P(9, 7 + b, 6, 25, look.hair); P(33, 7 + b, 6, 25, look.hair); }
+  else if (look.hairStyle === 'short') { P(11, 1 + b, 26, 8, look.hair); }
+  else { P(10, 11 + b, 4, 10, look.hair); P(34, 11 + b, 4, 10, look.hair); }
+  for (const [x, y, w, h] of parts) { g.fillStyle = OUT; g.fillRect(x - 1, y - 1, w + 2, h + 2); }
+  for (const [x, y, w, h, col] of parts) R(g, x, y, w, h, col);
+  // details (no outline)
+  D(10, 31 + b, 2, 28, suitL); D(35, 31 + b, 3, 28, suitD); D(4, 33 + b, 2, 20, suitL);
+  D(20, 31 + b, 8, 15, look.shirt); D(20, 31 + b, 8, 2, shade(look.shirt, -0.15));
+  if (look.tie) { D(23, 33 + b, 3, 13, look.tie); } else { D(15, 31 + b, 5, 15, suitL); D(28, 31 + b, 5, 15, suitL); }
+  D(31, 5 + b, 5, 22, skinS);
+  if (look.hairStyle === 'bob') D(13, 8 + b, 22, 4, look.hair);
+  const eyeH = o.blink ? 1 : 4; D(18, 14 + b + (4 - eyeH), 3, eyeH, '#1a1018'); D(28, 14 + b + (4 - eyeH), 3, eyeH, '#1a1018');
+  if (!o.blink) { D(19, 14 + b, 1, 1, '#fff'); D(29, 14 + b, 1, 1, '#fff'); }
+  D(23, 18 + b, 3, 3, skinS);
+  D(21, 22 + b, 7, 1 + Math.round(o.talk * 3), '#5a1f2a');
+  D(15, 20 + b, 3, 2, shade(look.skin, 0.0) === look.skin ? '#e58f8f' : '#e58f8f');
+  for (const [x, y, w, h, col] of dets) R(g, x, y, w, h, col);
+}
+function makePerson(look, x, z) {
+  const [c] = canvas(SW, SH); const tex = nearest(new THREE.CanvasTexture(c));
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  spr.center.set(0.5, 0.0); spr.scale.set(SW / 32, SH / 32, 1);
+  scene.add(spr);
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(0.75, 24), new THREE.MeshBasicMaterial({ color: 0x1a1018, transparent: true, opacity: 0.3 }));
+  sh.rotation.x = -Math.PI / 2; sh.scale.y = 0.55; scene.add(sh);
+  return { c, tex, spr, sh, look, x, z, o: { bob: 0, l1: 0, l2: 0, arm: 0, blink: false, talk: 0 } };
+}
+const isla = makePerson({ skin: '#e8b796', hair: '#8a4b2a', hairStyle: 'bob', suit: '#2b3160', shirt: '#f2efe6', pants: '#222642' }, -3, 3.0);
+const fraser = makePerson({ skin: '#f0c4a0', hair: '#b9b4ad', hairStyle: 'bald', suit: '#26262e', shirt: '#f2efe6', tie: '#c0392b', pants: '#1a1a22' }, 3, 2.8);
+const ross = makePerson({ skin: '#c98e6a', hair: '#2b1d14', hairStyle: 'short', suit: '#3a6a58', shirt: '#f2efe6', pants: '#2a3a34' }, 1.2, -2.6);
+const people = [isla, fraser, ross];
+function place(p, x, z) {
+  p.spr.position.set(x, 0, z); p.sh.position.set(x, 0.02, z);
+}
+
+// Starburst "hit" effect.
+const [bsC, bg] = canvas(96, 96);
+{
+  const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+  const poly = (r1, r2, n, col) => { bg.fillStyle = col; bg.beginPath(); for (let i = 0; i < n * 2; i++) { const a = i * Math.PI / n, r = (i % 2 ? r2 : r1) * (0.8 + 0.4 * rnd()); bg.lineTo(48 + Math.cos(a) * r, 48 + Math.sin(a) * r); } bg.closePath(); bg.fill(); };
+  poly(46, 16, 11, '#1a1018'); poly(42, 14, 11, '#f08a24'); poly(32, 12, 11, '#ffd23a'); poly(16, 8, 8, '#ffffff');
+}
+const burst = new THREE.Sprite(new THREE.SpriteMaterial({ map: nearest(new THREE.CanvasTexture(bsC)), transparent: true, depthTest: false }));
+burst.scale.set(0, 0, 1); scene.add(burst);
+
+// ---- HUD ------------------------------------------------------------------
+const hud = document.getElementById('hud');
+const panels = [
+  ['ISLA', '#e0b13a', isla, '156', '88%'], ['FRASER', '#c0392b', fraser, '133', '71%'], ['ROSS', '#3bb273', ross, '107', '64%'],
+];
+const portraits = [];
+for (const [name, col, p, score, hp] of panels) {
+  const d = document.createElement('div'); d.className = 'panel'; d.style.setProperty('--c', col);
+  d.innerHTML = `<canvas width="36" height="36"></canvas><div><div class="name">${name}</div><div class="bars" style="--hp:${hp}"><i></i></div><div class="st">LIVE</div></div><div class="score">${score}</div>`;
+  hud.appendChild(d); portraits.push([d.querySelector('canvas').getContext('2d'), p]);
+}
+const j = document.createElement('div'); j.className = 'panel join'; j.innerHTML = '<span>KIRSTY<br><br>PRESS START</span>'; hud.appendChild(j);
+for (const [pg] of portraits) pg.imageSmoothingEnabled = false;
+
+// ---- Script ---------------------------------------------------------------
+const LOOP = 14;
+const SCRIPT = [
+  { a: 2.2, b: 5.2, who: 'ISLA', by: isla, text: 'Welcome to Hearts News 24!' },
+  { a: 5.4, b: 9.8, who: 'ISLA', by: isla, text: 'TOP STORY: Vrancken has Hearts high-pressure proofed for Rangers.' },
+  { a: 10.0, b: 13.3, who: 'FRASER', by: fraser, text: "Aye, Mato's a miss, but the belief's there." },
+];
+const easeOut = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+const bubble = document.getElementById('bubble'), bwho = document.getElementById('bwho'), btext = document.getElementById('btext');
+const combo = document.getElementById('combo'), banner = document.getElementById('banner');
+const v = new THREE.Vector3();
+
+function tick(ms) {
+  const t = (ms / 1000) % LOOP;
+  const cur = SCRIPT.find(s => t >= s.a && t < s.b);
+
+  // Walk-in: presenters enter from the screen edges, then idle.
+  const wIsla = seg(t, 0, 2.0), wFr = seg(t, 0.3, 2.2);
+  const ix = -9 + 6 * easeOut(wIsla), fx = 9 - 6 * easeOut(wFr);
+  place(isla, ix, isla.z); place(fraser, fx, fraser.z); place(ross, ross.x, ross.z);
+  const walk = (w, p) => { const moving = w < 1; const ph = Math.sin(t * 14 + p) > 0; return moving ? [ph ? 3 : 0, ph ? 0 : 3, Math.abs(Math.sin(t * 14 + p)) > 0.5 ? 0 : 1] : [0, 0, Math.round(Math.sin(t * 2.2 + p) * 0.5 + 0.5)]; };
+
+  for (const [p, w, ph] of [[isla, wIsla, 0], [fraser, wFr, 1.7], [ross, 1, 3.1]]) {
+    const [l1, l2, bob] = walk(w, ph);
+    const talking = cur && cur.by === p;
+    p.o.l1 = l1; p.o.l2 = l2; p.o.bob = bob;
+    p.o.talk = talking ? Math.max(0, Math.sin(t * 17) * Math.sin(t * 6 + 1)) : 0;
+    p.o.blink = ((t + ph) % 3.2) > 3.08;
+    p.o.arm = talking && Math.sin(t * 3) > 0 ? 1 : (p === ross && t > 5.4 && t < 9.8 && Math.sin(t * 4) > 0 ? 1 : 0);
+    drawPerson(p.c, p.look, p.o); p.tex.needsUpdate = true;
+  }
+  // HUD portraits cropped from the live sprites.
+  for (const [pg, p] of portraits) { pg.clearRect(0, 0, 36, 36); pg.drawImage(p.c, 6, 0, 36, 36, 0, 0, 36, 36); }
+
+  drawScreen(t, t > 5.2 && t < 13.5);
+
+  // Camera drifts slowly so the 3D set shows parallax against the sprites.
+  camera.position.x = Math.sin(t * 0.4) * 0.6; camera.lookAt(TARGET.x + camera.position.x * 0.2, TARGET.y, TARGET.z);
+
+  // Starburst at the top-story moment and on Fraser's reply.
+  const hit = (t0) => { const k = (t - t0) / 0.55; return k > 0 && k < 1 ? k : -1; };
+  const hk = Math.max(hit(5.2), hit(10.0));
+  if (hk > 0) { const s = 1 + easeOut(hk * 3) * 4.5 - hk * 1.2; burst.scale.set(s, s, 1); burst.material.rotation = hk * 0.5; burst.position.set(hit(5.2) > 0 ? 1.2 : 3.2, 2.6, WALL_Z + 3); burst.material.opacity = 1 - hk * hk; }
+  else burst.scale.set(0, 0, 1);
+
+  // Combo-style counter pops in at the top story.
+  const ck = seg(t, 5.3, 5.6); combo.style.transform = `scale(${ck < 1 ? easeOut(ck) * 1.3 : 1 + (t > 5.6 && t < 5.8 ? 0.0 : 0)})`;
+  if (t > 12.6) combo.style.transform = `scale(${1 - easeOut(seg(t, 12.6, 13.0))})`;
+  const bk = t > 12.8 ? 1 - seg(t, 12.8, 13.4) : seg(t, 0.6, 1.2);
+  banner.style.opacity = t < 2 ? seg(t, 0.4, 0.8) : Math.max(0, 1 - seg(t, 2, 2.6));
+
+  // Speech bubble anchored above the speaker's head.
+  if (cur) {
+    v.set(cur.by.spr.position.x, 2.7, cur.by.spr.position.z).project(camera);
+    bubble.style.display = 'block';
+    bubble.style.left = ((v.x * 0.5 + 0.5) * 100) + '%'; bubble.style.top = ((-v.y * 0.5 + 0.5) * 100) + '%';
+    bwho.textContent = cur.who;
+    btext.textContent = cur.text.slice(0, Math.floor(seg(t, cur.a + 0.1, cur.b - 0.5) * cur.text.length) + 1);
+  } else bubble.style.display = 'none';
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

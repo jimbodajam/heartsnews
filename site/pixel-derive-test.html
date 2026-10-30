@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Derive poses test</title>
+<style>
+  body { background: #14111a; color: #f2efe6; font: 13px/1.4 system-ui, sans-serif; margin: 16px; }
+  h2 { margin: 18px 0 6px; font-size: 14px; color: #e0b13a; }
+  .row { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  figure { margin: 0; } figcaption { font-size: 11px; color: #aaa; margin-top: 3px; }
+  canvas { image-rendering: pixelated; border: 1px solid #333; background: #ff00ff; display: block; }
+  .stat { color: #9be564; }
+</style>
+</head>
+<body>
+<h1 style="font-size:16px">Derive eye/brow poses from the master (Isla, scored against Gemini's real frames)</h1>
+<div id="out">loading…</div>
+<script type="module">
+import { toGrid, detectEyes, gaze, blink, brows, detectMouth, mouth } from './spike-lib/pixel-derive.js';
+
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const B = './public/spike/isla/';
+const [m, rBlink, rGaze, rBrow] = await Promise.all(['master.jpg', 'variants/eyes-blink.jpg', 'variants/eyes-gaze-right-a.jpg', 'variants/brows-raised.jpg'].map(n => load(B + n)));
+const M = toGrid(m), R = { blink: toGrid(rBlink), gaze: toGrid(rGaze), brows: toGrid(rBrow) };
+
+const eyes = detectEyes(M, [96, 30, 144, 50]);
+const out = document.getElementById('out'); out.innerHTML = '';
+out.insertAdjacentHTML('beforeend', `<div>Detected ${eyes.length} eyes: ` + eyes.map(e => `bbox x${e.bb.x0}-${e.bb.x1} y${e.top}-${e.bottom}, ${e.moving.size} moving px, sclera ${e.sclera.length}px`).join(' | ') + '</div>');
+
+const RG = { x0: 94, y0: 24, x1: 146, y1: 52 }, SC = 7;
+const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+function crop(P, mark) {
+  const c = document.createElement('canvas'); c.width = RG.x1 - RG.x0 + 1; c.height = RG.y1 - RG.y0 + 1;
+  const g = c.getContext('2d');
+  for (let y = RG.y0; y <= RG.y1; y++) for (let x = RG.x0; x <= RG.x1; x++) if (P.has(x, y)) { const col = mark ? mark(x, y) : P.get(x, y); g.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; g.fillRect(x - RG.x0, y - RG.y0, 1, 1); }
+  c.style.width = c.width * SC + 'px'; c.style.height = c.height * SC + 'px'; return c;
+}
+function fig(title, canvas) { const f = document.createElement('figure'); f.appendChild(canvas); const c = document.createElement('figcaption'); c.textContent = title; f.appendChild(c); return f; }
+function compare(name, derived, real) {
+  let realCh = 0, derCh = 0, hit = 0, falseCh = 0, miss = 0;
+  for (let y = RG.y0; y <= RG.y1; y++) for (let x = RG.x0; x <= RG.x1; x++) {
+    if (!M.has(x, y) || !real.has(x, y) || !derived.has(x, y)) continue;
+    const rc = dist(M.get(x, y), real.get(x, y)) > 90, dc = dist(M.get(x, y), derived.get(x, y)) > 90;
+    if (rc) realCh++; if (dc) derCh++;
+    if (rc && dc && dist(real.get(x, y), derived.get(x, y)) <= 90) hit++;
+    else if (rc && !dc) miss++; else if (dc && !rc) falseCh++; else if (rc && dc) miss++;
+  }
+  const row = document.createElement('div'); row.className = 'row';
+  const diffMark = (x, y) => { if (!real.has(x, y) || !derived.has(x, y)) return [255, 0, 255]; const d = dist(real.get(x, y), derived.get(x, y)); return d > 90 ? [255, 40, 40] : [Math.round(real.get(x, y)[0] * 0.45), Math.round(real.get(x, y)[1] * 0.45), Math.round(real.get(x, y)[2] * 0.45)]; };
+  row.append(fig('master', crop(M)), fig('derived', crop(derived)), fig('real (Gemini)', crop(real)), fig('red = derived ≠ real', crop(derived, diffMark)));
+  const h = document.createElement('h2'); h.textContent = name; out.append(h);
+  out.insertAdjacentHTML('beforeend', `<div class="stat">real changed ${realCh}px · derived changed ${derCh}px · matching ${hit} (${realCh ? Math.round(100 * hit / realCh) : 0}% of real) · missed ${miss} · extra ${falseCh}</div>`);
+  out.append(row);
+}
+compare('Blink', blink(M, eyes), R.blink);
+for (const dx of [1, 2, 3]) compare(`Look right, shift ${dx}`, gaze(M, eyes, dx), R.gaze);
+// (brows: classifier not reliable yet; Gemini's own raised-brow frame barely differs from the master, so skipped)
+
+// ---- Mouths: Isla, derived from the master's own colours, scored against Gemini's six real frames ----
+{
+  const mouthReal = await Promise.all(['smile', 'parted', 'ee', 'oh', 'ah', 'closed'].map(n => load(B + 'variants/mouth-' + n + '.jpg')));
+  const RM = mouthReal.map(toGrid), mm = detectMouth(M, [108, 55, 132, 62]);
+  const h = document.createElement('h2'); h.textContent = 'MOUTHS (Isla)'; out.append(h);
+  out.insertAdjacentHTML('beforeend', `<div class="stat">mouth bbox x${mm.bb.x0}-${mm.bb.x1} y${mm.bb.y0}-${mm.bb.y1}, centre line y${mm.yc}, half width ${mm.hw}; lipU rgb(${mm.lipU}) lipL rgb(${mm.lipL}) line rgb(${mm.line})</div>`);
+  const MR = { x0: 100, y0: 46, x1: 140, y1: 72 }, SCM = 8;
+  const cropM = (P, mark) => { const c = document.createElement('canvas'); c.width = MR.x1 - MR.x0 + 1; c.height = MR.y1 - MR.y0 + 1; const g = c.getContext('2d'); for (let y = MR.y0; y <= MR.y1; y++) for (let x = MR.x0; x <= MR.x1; x++) if (P.has(x, y)) { const col = mark ? mark(x, y) : P.get(x, y); g.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; g.fillRect(x - MR.x0, y - MR.y0, 1, 1); } c.style.width = c.width * SCM + 'px'; c.style.height = c.height * SCM + 'px'; return c; };
+  const cases = [['smile', 'smile'], ['parted', 'small'], ['ee', 'wide'], ['oh', 'O'], ['ah', 'A'], ['closed', 'closed']];
+  cases.forEach(([realName, preset], i) => {
+    const real = RM[i], derived = mouth(M, mm, preset);
+    let realCh = 0, hit = 0, derCh = 0;
+    for (let y = MR.y0; y <= MR.y1; y++) for (let x = MR.x0; x <= MR.x1; x++) { if (!M.has(x, y) || !real.has(x, y) || !derived.has(x, y)) continue; const rc = dist(M.get(x, y), real.get(x, y)) > 90, dc = dist(M.get(x, y), derived.get(x, y)) > 90; if (rc) realCh++; if (dc) derCh++; if (rc && dc && dist(real.get(x, y), derived.get(x, y)) <= 90) hit++; }
+    const dm = (x, y) => { if (!real.has(x, y) || !derived.has(x, y)) return [255, 0, 255]; const d = dist(real.get(x, y), derived.get(x, y)); return d > 90 ? [255, 40, 40] : real.get(x, y).map(v => Math.round(v * 0.45)); };
+    out.insertAdjacentHTML('beforeend', `<div class="stat">${realName} ← "${preset}": real changed ${realCh}px · derived changed ${derCh}px · matching ${hit} (${realCh ? Math.round(100 * hit / realCh) : 0}% of real)</div>`);
+    const row = document.createElement('div'); row.className = 'row'; row.append(fig('master', cropM(M)), fig('derived', cropM(derived)), fig('real (Gemini)', cropM(real)), fig('red = differs', cropM(derived, dm))); out.append(row);
+  });
+}
+
+// ---- Fraser mouths: derived only ----
+{
+  const fi = await load('./public/spike/fraser/master.jpg');
+  if (fi) {
+    const F2 = toGrid(fi), fm = detectMouth(F2, [108, 56, 132, 67]);
+    const h = document.createElement('h2'); h.textContent = 'MOUTHS (Fraser, derived only)'; out.append(h);
+    out.insertAdjacentHTML('beforeend', `<div class="stat">mouth bbox x${fm.bb.x0}-${fm.bb.x1} y${fm.bb.y0}-${fm.bb.y1}, centre line y${fm.yc}, half width ${fm.hw}</div>`);
+    const row = document.createElement('div'); row.className = 'row';
+    const cropFM = P => { const c = document.createElement('canvas'); c.width = 32; c.height = 22; const g = c.getContext('2d'); for (let y = 0; y < 22; y++) for (let x = 0; x < 32; x++) { const px = x + 104, py = y + 50; if (P.has(px, py)) { const col = P.get(px, py); g.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; g.fillRect(x, y, 1, 1); } } c.style.width = 32 * 6 + 'px'; c.style.height = 22 * 6 + 'px'; return c; };
+    row.append(fig('master', cropFM(F2)));
+    for (const p of ['smile', 'small', 'wide', 'ee', 'O', 'A', 'closed']) row.append(fig(p, cropFM(mouth(F2, fm, p))));
+    out.append(row);
+  }
+}
+
+// ---- Fraser: same code, a rough eye window is all it needs. No real frames to compare, so judge by eye. ----
+const fImg = await load('./public/spike/fraser/master.jpg');
+if (fImg) {
+  const F = toGrid(fImg), fe = detectEyes(F, [98, 30, 144, 52]);
+  const h = document.createElement('h2'); h.textContent = 'Fraser (derived only)'; out.append(h);
+  out.insertAdjacentHTML('beforeend', `<div class="stat">Detected ${fe.length} eyes: ` + fe.map(e => `bbox x${e.bb.x0}-${e.bb.x1} y${e.top}-${e.bottom}, ${e.moving.size} moving px, sclera ${e.sclera.length}px`).join(' | ') + '</div>');
+  const row = document.createElement('div'); row.className = 'row';
+  const cropF = P => { const c = document.createElement('canvas'); c.width = 60; c.height = 30; const g = c.getContext('2d'); for (let y = 0; y < 30; y++) for (let x = 0; x < 60; x++) { const px = x + 90, py = y + 26; if (F.has(px, py) && P.has(px, py)) { const col = P.get(px, py); g.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`; g.fillRect(x, y, 1, 1); } } c.style.width = 60 * SC + 'px'; c.style.height = 30 * SC + 'px'; return c; };
+  row.append(fig('master', cropF(F)), fig('blink', cropF(blink(F, fe))), fig('look left (−3)', cropF(gaze(F, fe, -3))), fig('look right (+3)', cropF(gaze(F, fe, 3))));
+  out.append(row);
+}
+</script>
+</body>
+</html>

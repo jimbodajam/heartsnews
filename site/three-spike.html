@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — three.js intro spike</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; background: #120f22; }
+  canvas { display: block; width: 100%; height: 100%; }
+  /* Lower third is plain DOM/CSS: crisp text, easy to restyle, animated from the same clock as the 3D scene. */
+  #lower { position: absolute; left: 0; bottom: 3%; width: 100%; pointer-events: none; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
+  #tag { position: absolute; left: 5em; bottom: 8.4em; background: #e0b13a; color: #3d0d17; font-weight: 800; letter-spacing: .18em; font-size: 1.9em; padding: .35em 1em; transform: translateX(-120%); opacity: 0; }
+  #bar { position: absolute; left: 5em; bottom: 1.2em; right: 5em; background: linear-gradient(90deg, #6d1a2a, #3d0d17); color: #f2efe6; font-size: 2.6em; font-weight: 700; padding: .55em .9em; border-left: .25em solid #e0b13a; clip-path: inset(0 100% 0 0); box-shadow: 0 .5em 2em #0008; line-height: 1.15; }
+  #bar small { display: block; font-size: .45em; font-weight: 600; color: #e0b13a; letter-spacing: .2em; margin-bottom: .3em; }
+  #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font-size: 12px; }
+  button { position: fixed; left: 12px; top: 10px; background: #e0b13a; border: 0; padding: 6px 12px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame">
+  <div id="lower"><div id="tag">TOP STORY</div><div id="bar"><small>HEARTS NEWS 24 · 30 OCT</small><span id="headline"></span></div></div>
+</div></div>
+<button id="replay">▶ Replay</button>
+<div id="hint">three.js spike · 9s · click Replay</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import fontJson from 'three/examples/fonts/helvetiker_bold.typeface.json';
+
+const HEADLINE = "Vrancken has Hearts high-pressure proofed ahead of Rangers — Mato out, derby belief high";
+const DURATION = 9;
+const MAROON = 0x6d1a2a, GOLD = 0xe0b13a, NAVY = 0x120f22, WHITE = 0xf2efe6;
+
+const frame = document.getElementById('frame');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+frame.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(NAVY);
+scene.fog = new THREE.Fog(NAVY, 12, 34);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+
+const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 100);
+
+// Lights: warm key, maroon rim from behind, gold kicker.
+const key = new THREE.SpotLight(0xfff1d6, 900, 40, 0.5, 0.6); key.position.set(-4, 7, 9); scene.add(key, key.target);
+const rim = new THREE.PointLight(0xc2304a, 160, 30); rim.position.set(5, 3, -4); scene.add(rim);
+const kick = new THREE.PointLight(GOLD, 120, 30); kick.position.set(-7, 1, 3); scene.add(kick);
+
+// Reflective studio floor.
+const floor = new THREE.Mesh(new THREE.CircleGeometry(40, 64),
+  new THREE.MeshStandardMaterial({ color: 0x1b1f3a, roughness: 0.22, metalness: 0.8 }));
+floor.rotation.x = -Math.PI / 2; floor.position.y = -1.6; scene.add(floor);
+
+// Concentric gold ring on the floor, pulsing.
+const rings = [];
+for (let i = 0; i < 3; i++) {
+  const r = new THREE.Mesh(new THREE.RingGeometry(3 + i * 1.4, 3.04 + i * 1.4, 128),
+    new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+  r.rotation.x = -Math.PI / 2; r.position.y = -1.59; scene.add(r); rings.push(r);
+}
+
+// Particles: gold dust drifting upwards.
+const N = 500, pos = new Float32Array(N * 3), seed = new Float32Array(N);
+for (let i = 0; i < N; i++) { pos[i*3] = (Math.random()-.5)*26; pos[i*3+1] = Math.random()*10-1.6; pos[i*3+2] = (Math.random()-.5)*16-2; seed[i] = Math.random(); }
+const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: GOLD, size: 0.06, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+scene.add(dust);
+
+// Light beams sweeping behind the title.
+const beams = [];
+for (let i = 0; i < 6; i++) {
+  const b = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 30),
+    new THREE.MeshBasicMaterial({ color: i % 2 ? MAROON : GOLD, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  b.position.set(-9 + i * 3.6, 4, -6); b.rotation.z = 0.5; scene.add(b); beams.push(b);
+}
+
+// Club badge as a coin.
+const coin = new THREE.Group(); scene.add(coin);
+const badgeTex = new THREE.TextureLoader().load('./public/badges/heart-of-midlothian.png', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; });
+const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.16, 64),
+  new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.25 }));
+disc.rotation.x = Math.PI / 2; coin.add(disc);
+for (const s of [1, -1]) {
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.7), new THREE.MeshStandardMaterial({ map: badgeTex, transparent: true, roughness: 0.6, envMapIntensity: 0.3 }));
+  face.position.z = 0.09 * s; if (s < 0) face.rotation.y = Math.PI; coin.add(face);
+}
+coin.position.set(0, 1.5, 0);
+
+// Title text, one mesh per letter so they can stagger in.
+const letters = [];
+let ready = false;
+let titleGroup = new THREE.Group(); scene.add(titleGroup);
+const textMat = new THREE.MeshPhysicalMaterial({ color: MAROON, metalness: 0.35, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1 });
+const goldMat = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 1, roughness: 0.2, emissive: 0x3a2400 });
+(font => {
+  const build = (str, size, mat, y, depth) => {
+    const g = new THREE.Group(); let x = 0; const items = [];
+    for (const ch of str) {
+      if (ch === ' ') { x += size * 0.45; continue; }
+      const geo = new TextGeometry(ch, { font, size, depth, curveSegments: 8, bevelEnabled: true, bevelThickness: depth * 0.12, bevelSize: size * 0.025, bevelSegments: 4 });
+      geo.computeBoundingBox();
+      const w = geo.boundingBox.max.x - geo.boundingBox.min.x;
+      const m = new THREE.Mesh(geo, mat); m.position.x = x - geo.boundingBox.min.x; x += w + size * 0.1;
+      g.add(m); items.push(m);
+    }
+    g.children.forEach(m => m.position.x -= x / 2); g.position.y = y; titleGroup.add(g);
+    items.forEach(m => { m.userData.baseY = 0; m.userData.baseX = m.position.x; });
+    return items;
+  };
+  letters.push(...build('HEARTS NEWS', 0.8, textMat, -0.35, 0.32));
+  letters.push(...build('24', 0.7, goldMat, -1.15, 0.3));
+  // "24" sits right under, so nudge title block
+  titleGroup.position.set(0, 0, 0);
+  letters.forEach(m => { m.position.y = -6; m.visible = false; });
+  ready = true;
+})(new FontLoader().parse(fontJson));
+
+// Glint plane that sweeps across the text.
+const glint = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 4),
+  new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+glint.rotation.z = 0.35; glint.position.z = 0.7; scene.add(glint);
+
+// Post: bloom.
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(1280, 720), 0.5, 0.6, 0.93);
+composer.addPass(bloom); composer.addPass(new OutputPass());
+
+function resize() {
+  const w = frame.clientWidth, h = frame.clientHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+const easeOut = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+const easeBack = t => { t = Math.min(1, Math.max(0, t)); const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+
+const tag = document.getElementById('tag'), bar = document.getElementById('bar'), head = document.getElementById('headline');
+let t0 = performance.now();
+document.getElementById('replay').onclick = () => { t0 = performance.now(); head.textContent = ''; };
+
+function tick(now) {
+  const t = ((now - t0) / 1000) % (DURATION + 3); // 3s hold then loop
+  const T = Math.min(t, DURATION);
+
+  // Camera: low push-in with a slight orbit.
+  const push = easeOut(seg(T, 0, 6));
+  const ang = -0.35 + push * 0.35;
+  const dist = 14 - push * 4.5;
+  camera.position.set(Math.sin(ang) * dist, 1.2 + push * 0.4, Math.cos(ang) * dist);
+  const rise = easeOut(seg(T, 5.2, 6.2)); camera.position.y -= rise * 0.4; camera.lookAt(0, 0.4 - rise * 1.1, 0);
+
+  // Beams fade in and sweep.
+  beams.forEach((b, i) => { b.material.opacity = 0.09 * seg(T, 0, 1.2) * (0.6 + 0.4 * Math.sin(T * 1.5 + i)); b.position.x = -9 + i * 3.6 + Math.sin(T * 0.6 + i) * 1.2; });
+  rings.forEach((r, i) => { const k = seg(T, 0.3 + i * 0.25, 1.4 + i * 0.25); r.material.opacity = 0.5 * easeOut(k) * (0.7 + 0.3 * Math.sin(T * 3 - i)); r.scale.setScalar(0.6 + 0.4 * easeOut(k)); });
+
+  // Coin drops in and spins, then settles above the title.
+  const drop = easeBack(seg(T, 0.4, 1.6));
+  coin.position.y = 1.5 + (1 - drop) * 7 + Math.sin(T * 1.4) * 0.05;
+  coin.rotation.y = (1 - easeOut(seg(T, 0.4, 3.0))) * Math.PI * 6 + Math.sin(T * 0.8) * 0.15;
+  coin.scale.setScalar(0.6 + 0.4 * drop);
+
+  // Letters rise with stagger.
+  if (ready) {
+    letters.forEach((m, i) => {
+      const k = easeBack(seg(T, 1.8 + i * 0.07, 2.7 + i * 0.07));
+      m.visible = k > 0.001; m.position.y = -4 * (1 - k); m.rotation.x = (1 - k) * 1.2;
+    });
+    // Slight float after landing.
+    titleGroup.position.y = Math.sin(T * 1.1) * 0.04;
+  }
+
+  // Glint sweep across title at ~4.2s.
+  const g = seg(T, 4.0, 5.0);
+  glint.position.x = -7 + g * 14; glint.material.opacity = g > 0 && g < 1 ? 0.55 * Math.sin(g * Math.PI) : 0;
+  glint.position.y = -0.6;
+
+  // Dust drift.
+  const p = dustGeo.attributes.position;
+  for (let i = 0; i < N; i++) { let y = p.getY(i) + 0.004 + seed[i] * 0.006; if (y > 8.5) y = -1.6; p.setY(i, y); p.setX(i, p.getX(i) + Math.sin(T + seed[i] * 20) * 0.0015); }
+  p.needsUpdate = true;
+
+  // Lower third: tag slides in, bar wipes, headline types.
+  const tk = easeOut(seg(T, 5.2, 5.8)); tag.style.transform = `translateX(${(1 - tk) * -120}%)`; tag.style.opacity = tk;
+  const bk = easeOut(seg(T, 5.5, 6.4)); bar.style.clipPath = `inset(0 ${(1 - bk) * 100}% 0 0)`;
+  const chars = Math.floor(seg(T, 6.2, 8.6) * HEADLINE.length);
+  head.textContent = HEADLINE.slice(0, chars);
+
+  // Scene eases off slightly so the lower third reads.
+  bloom.strength = 0.5 + 0.2 * Math.sin(seg(T, 1.8, 3) * Math.PI);
+
+  composer.render();
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

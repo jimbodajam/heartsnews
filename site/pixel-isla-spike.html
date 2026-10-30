@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — generated Isla spike</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  .px { box-shadow: 0 -.2em 0 0 #0e0c10, 0 .2em 0 0 #0e0c10, -.2em 0 0 0 #0e0c10, .2em 0 0 0 #0e0c10; }
+  #tag { position: absolute; left: 4em; bottom: 12.6em; background: #e0b13a; color: #3d0d17; padding: .7em 1em; font-size: 1em; transform: translateX(-130%); }
+  #bar { position: absolute; left: 4em; right: 4em; bottom: 8em; background: #6d1a2a; color: #f2efe6; padding: .8em 1.2em; font-size: 1.15em; border-left: .6em solid #e0b13a; clip-path: inset(0 100% 0 0); }
+  #cap { position: absolute; left: 4em; right: 4em; bottom: 2.2em; background: #120f22; color: #f2efe6; padding: .7em 1.2em; font-size: .95em; line-height: 1.7; }
+  #cap b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
+  #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font: 12px sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame">
+  <canvas id="cv"></canvas>
+  <div id="tag" class="px">TOP STORY</div>
+  <div id="bar" class="px">VRANCKEN HAS HEARTS HIGH-PRESSURE PROOFED FOR RANGERS</div>
+  <div id="cap" class="px"><b id="who"></b><span id="line"></span></div>
+</div></div>
+<div id="hint">480×270 art grid, shown 3× at 1440×810 · 13s loop</div>
+
+<script type="module">
+import { toGrid as toGridLib, detectEyes, gaze as gazeShift, blink as blinkEyes } from './spike-lib/pixel-derive.js';
+// ===== Hi-res pixel art, built from layered sprites ==========================
+// Each presenter is baked once into small layers (body, head, eye / brow / mouth frames, hand frames)
+// using per-pixel lighting quantised to hand-tuned colour ramps with a light dither at band edges.
+// At runtime we just composite the layers at integer offsets: no re-drawing, so animation is cheap and crisp.
+const GW = 480, GH = 270;
+
+// ---------- colour + pixel helpers -----------------------------------------
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+/** Hue-shifted ramp: shadows drift cool/purple, highlights drift warm. */
+function ramp(base, n = 6, cool = [0.42, 0.32, 0.62], warm = [255, 238, 200]) {
+  const b = hex(base), sh = [b[0] * cool[0], b[1] * cool[1], b[2] * cool[2]];
+  return Array.from({ length: n }, (_, i) => { const t = i / (n - 1) * 2 - 1; return t < 0 ? mix(b, sh, -t * 0.85) : mix(b, warm, t * 0.5); });
+}
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]].map(r => r.map(v => (v + 0.5) / 16));
+function pick(lum, rp, x, y) {
+  const v = clamp(lum) * (rp.length - 1), base = Math.floor(v), f = smooth(0.3, 0.7, v - base);
+  const i = Math.min(rp.length - 1, base + (f > BAYER[y & 3][x & 3] ? 1 : 0));
+  return rp[i];
+}
+const LIGHT = (() => { const l = [-0.55, -0.65, 0.55], m = Math.hypot(...l); return l.map(v => v / m); })();
+function lambert(nx, ny, nz, rim = 0.25) {
+  const m = Math.hypot(nx, ny, nz) || 1; nx /= m; ny /= m; nz /= m;
+  let l = (nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) * 0.8 + 0.4;
+  if (nx > 0) l += Math.pow(1 - nz, 2) * rim;
+  return clamp(l);
+}
+
+class Pix {
+  constructor(w, h) { this.w = w; this.h = h; this.d = new Uint8ClampedArray(w * h * 4); }
+  idx(x, y) { return (y * this.w + x) * 4; }
+  has(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h && this.d[this.idx(x, y) + 3] > 0; }
+  set(x, y, c) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; const i = this.idx(x, y); this.d[i] = c[0]; this.d[i + 1] = c[1]; this.d[i + 2] = c[2]; this.d[i + 3] = 255; }
+  get(x, y) { const i = this.idx(x, y); return [this.d[i], this.d[i + 1], this.d[i + 2]]; }
+  paint(x0, y0, x1, y1, fn) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const c = fn(x, y); if (c) this.set(x, y, c); } }
+  rect(x, y, w, h, c) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c); }
+  outline(col) {
+    const out = [];
+    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) if (!this.has(x, y) && (this.has(x - 1, y) || this.has(x + 1, y) || this.has(x, y - 1) || this.has(x, y + 1))) out.push([x, y]);
+    for (const [x, y] of out) this.set(x, y, col);
+  }
+  canvas() { const c = document.createElement('canvas'); c.width = this.w; c.height = this.h; c.getContext('2d').putImageData(new ImageData(this.d, this.w, this.h), 0, 0); return c; }
+}
+
+// ---------- head -------------------------------------------------------------
+// Head layer is 100×112, centre (50, 48). Features are separate layers placed relative to this.
+const HW = 100, HH = 112, HCX = 50, HCY = 48, RX = 17, RY = 21;
+const FACE = { eyeY: -1, eyeX: 8, browY: -7, noseY: 9, mouthY: 15 };
+
+function headShape(x, y) {
+  const u = (x - HCX) / RX, v = (y - HCY) / RY;
+  const taper = 1 - 0.3 * smooth(0.1, 1, v);
+  const ue = u / taper;
+  const d = ue * ue + v * v;
+  return d <= 1 ? { ue, v, z: Math.sqrt(1 - d), u } : null;
+}
+
+function buildHead(o) {
+  const P = new Pix(HW, HH);
+  const skin = ramp(o.skin, 6), hair = ramp(o.hair, 6, [0.4, 0.3, 0.55], [255, 230, 180]);
+  const skinOut = mix(hex(o.skin), [40, 18, 30], 0.78), hairOut = mix(hex(o.hair), [20, 10, 14], 0.8);
+  const isHair = new Set();
+  // Hair back (behind the head) for long styles.
+  if (o.style === 'bob') {
+    P.paint(HCX - 30, HCY - RY - 6, HCX + 30, HCY + 22, (x, y) => {
+      const u = (x - HCX) / (RX + 7), v = (y - HCY) / (RY + 4);
+      let inside = y < HCY ? u * u + v * v <= 1 : Math.abs(u) <= 1 - Math.pow(Math.max(0, y - (HCY + 12)) / 12, 2) * 0.6;
+      if (!inside) return null;
+      const l = lambert(u * 0.9, -0.1, Math.sqrt(Math.max(0.05, 1 - u * u))) * 0.75 + 0.04 * Math.sin(x * 1.2 + y * 0.15);
+      return pick(l, hair, x, y);
+    });
+  }
+  // Ears (behind face so the shaded head overlaps them).
+  for (const s of [-1, 1]) {
+    P.paint(HCX + s * (RX) - 3, HCY - 2, HCX + s * RX + 3, HCY + 10, (x, y) => {
+      const u = (x - (HCX + s * (RX + 0.5))) / 3, v = (y - (HCY + 4)) / 5;
+      if (u * u + v * v > 1) return null;
+      return pick(lambert(s * 0.6, 0, 0.8) - 0.12, skin, x, y);
+    });
+    P.set(HCX + s * (RX + 0.5), HCY + 3, skin[1]); P.set(HCX + s * (RX + 0.5), HCY + 4, skin[1]);
+  }
+  // Face.
+  const faceMap = new Set();
+  P.paint(HCX - RX - 1, HCY - RY - 1, HCX + RX + 1, HCY + RY + 1, (x, y) => {
+    const h = headShape(x, y); if (!h) return null;
+    faceMap.add(x + ',' + y);
+    let l = lambert(h.ue * 0.85, h.v * 0.85, h.z);
+    // Soft occlusion under the chin line and slight cheekbone lift.
+    l += 0.06 * smooth(0.0, 0.5, -Math.abs(h.u + 0.55)) * (h.v > -0.1 && h.v < 0.5 ? 1 : 0);
+    if (o.dome) l += 0.34 * Math.exp(-Math.pow((h.v + 0.62) / 0.14, 2)) * (Math.abs(h.u) < 0.55 ? 1 : 0); // shiny bald dome
+    return pick(l, skin, x, y);
+  });
+  // Cheek blush (dithered).
+  if (o.blush) {
+    const bl = mix(skin[3], [226, 110, 124], 0.4);
+    for (const s of [-1, 1]) P.paint(HCX + s * 10 - 5, HCY + 4, HCX + s * 10 + 5, HCY + 12, (x, y) => {
+      const u = (x - (HCX + s * 10)) / 5, v = (y - (HCY + 8)) / 3.6;
+      return u * u + v * v < 1 && (1 - u * u - v * v) * 0.9 > BAYER[y & 3][x & 3] && faceMap.has(x + ',' + y) ? bl : null;
+    });
+  }
+  // Nose: right-side shadow, tip highlight, nostrils, shadow beneath.
+  for (let y = HCY - 3; y <= HCY + 7; y++) P.set(HCX + 2 + (y > HCY + 4 ? 1 : 0), y, skin[1]);
+  P.paint(HCX - 4, HCY + 5, HCX + 4, HCY + 12, (x, y) => { const u = (x - HCX) / 3.6, v = (y - (HCY + 9)) / 2.6; return u * u + v * v < 1 ? skin[4] : null; });
+  P.set(HCX - 1, HCY + 8, skin[5]); P.set(HCX - 2, HCY + 8, skin[5]);
+  P.set(HCX - 2, HCY + 11, skin[0]); P.set(HCX + 2, HCY + 11, skin[0]);
+  for (let x = -3; x <= 3; x++) P.set(HCX + x, HCY + 12, skin[1]);
+  // Fraser extras: wrinkles + smile lines.
+  if (o.wrinkles) {
+    for (const yy of [HCY - 14, HCY - 11]) for (let x = HCX - 9; x <= HCX + 9; x++) if (Math.abs(x - HCX) > 1 && (x + yy) % 5 !== 0) P.set(x, yy, skin[2]);
+    for (const s of [-1, 1]) {
+      for (let i = 0; i < 6; i++) P.set(HCX + s * (5 + i * 0.7), HCY + 8 + i * 1.5, skin[2]);   // nasolabial
+      P.set(HCX + s * 14, HCY - 1, skin[2]); P.set(HCX + s * 15, HCY + 1, skin[2]); P.set(HCX + s * 14, HCY + 3, skin[2]); // crow's feet
+    }
+  }
+  // Hair front.
+  if (o.style === 'bob') {
+    const fringeY = x => HCY - RY + 9 - 5 * ((x - HCX) / RX);
+    P.paint(HCX - RX - 6, HCY - RY - 5, HCX + RX + 6, HCY + 30, (x, y) => {
+      const e2 = Math.pow((x - HCX) / (RX + 4), 2) + Math.pow((y - (HCY - 3)) / (RY + 4), 2) <= 1;
+      const side = Math.abs(x - HCX) >= RX - 3 && Math.abs(x - HCX) <= RX + 5 && y >= HCY - 8 && y <= HCY + 26 - Math.max(0, Math.abs(x - HCX) - (RX + 2)) * 3;
+      const top = e2 && (y < fringeY(x));
+      if (!(top || side)) return null;
+      const u = (x - HCX) / (RX + 5), v = (y - HCY) / (RY + 5);
+      const strand = 0.09 * Math.sin((x - HCX) * 1.35 + Math.sin(y * 0.35) * 2.2);
+      let l = lambert(u, v * 0.7, Math.sqrt(Math.max(0.05, 1 - u * u - v * v * 0.4))) + strand;
+      l += 0.3 * Math.exp(-Math.pow((v + 0.55) / 0.12, 2)) * (Math.abs(u) < 0.8 ? 1 : 0);
+      isHair.add(x + ',' + y);
+      return pick(l, hair, x, y);
+    });
+  } else { // grey side hair, bald dome
+    for (const s of [-1, 1]) P.paint(HCX + s * RX - 4, HCY - 7, HCX + s * RX + 5, HCY + 9, (x, y) => {
+      const dx = (x - (HCX + s * (RX + 0.5))) / 4.5, dy = (y - (HCY + 1)) / 8;
+      if (dx * dx + dy * dy > 1 || Math.abs(x - HCX) < RX - 2 - (y - HCY) * 0.1) return null;
+      isHair.add(x + ',' + y);
+      return pick(lambert(s * dx, dy, 0.6) + 0.07 * Math.sin(y * 1.9 + x), hair, x, y);
+    });
+  }
+  // Shadow cast by hair onto skin beneath it.
+  for (const k of faceMap) { const [x, y] = k.split(',').map(Number); if (isHair.has(x + ',' + y)) continue; if (isHair.has(x + ',' + (y - 1)) || isHair.has(x + ',' + (y - 2))) P.set(x, y, skin[1]); }
+  P.outline(isHair.size && o.style === 'bob' ? hairOut : skinOut);
+  return P.canvas();
+}
+
+// ---------- features -------------------------------------------------------------
+function buildEyes(o, kind, gaze) { // kind: open | blink
+  const P = new Pix(40, 14); const cx = 20, cy = 7;
+  const skin = ramp(o.skin, 6), dark = [24, 14, 22], lash = o.lash || dark;
+  for (const s of [-1, 1]) {
+    const ex = cx + s * FACE.eyeX, ey = cy;
+    if (kind === 'open') {
+      P.paint(ex - 6, ey - 4, ex + 6, ey + 4, (x, y) => {
+        const u = (x - ex) / 4.8, v = (y - ey) / 2.8; if (u * u + v * v > 1) return null;
+        return v < -0.4 ? [206, 196, 208] : [250, 246, 244];
+      });
+      const ix = ex + gaze * 1.2, iy = ey + 0.2;
+      P.paint(ex - 6, ey - 4, ex + 6, ey + 4, (x, y) => {
+        const u = (x - ex) / 4.8, v = (y - ey) / 2.8; if (u * u + v * v > 1) return null;
+        const r = Math.hypot(x - ix, (y - iy) * 0.95); if (r > 2.5) return null;
+        if (r < 1.1) return [10, 8, 14];
+        return (y > iy ? o.iris[1] : o.iris[0]);
+      });
+      P.set(ix - 1, iy - 1, [255, 255, 255]);
+      for (let x = -5; x <= 5; x++) { const yy = ey - 2.9 * Math.sqrt(Math.max(0, 1 - (x / 5.2) ** 2)) - 0.6; P.set(ex + x, yy, lash); if (x * s > 0) P.set(ex + x, yy - 1, lash); }
+      P.set(ex + s * 6, ey - 2, lash); if (o.lashes) { P.set(ex + s * 7, ey - 3, lash); P.set(ex + s * 6, ey - 3, lash); }
+      for (let x = -3; x <= 3; x++) P.set(ex + x, ey - 5.2 + Math.abs(x) * 0.25, skin[2]);              // lid crease
+      for (let x = -3; x <= 3; x++) P.set(ex + x, ey + 3.4, skin[2]);                                     // lower lid
+    } else {
+      for (let x = -5; x <= 5; x++) P.set(ex + x, ey + 1.0 * Math.sqrt(Math.max(0, 1 - (x / 5.4) ** 2)) - 0.3, lash);
+      if (o.lashes) { P.set(ex + s * 6, ey + 1, lash); P.set(ex + s * 7, ey + 2, lash); }
+    }
+  }
+  return P.canvas();
+}
+function buildBrows(o, raise) {
+  const P = new Pix(40, 12); const cx = 20, cy = 6 - raise;
+  const c = ramp(o.hair, 6)[1];
+  for (const s of [-1, 1]) for (let x = -5; x <= 5; x++) {
+    const t = x / 5.5, arch = -(1 - t * t) * (o.browArch || 1.5) + (s * x > 2 ? 1.2 * (s * x - 2) / 3 : 0);
+    const ey = Math.round(cy + arch - (s * x < 0 ? 0 : 0));
+    for (let k = 0; k < (o.browThick || 1); k++) P.set(cx + s * FACE.eyeX + x, ey + k, c);
+  }
+  return P.canvas();
+}
+function buildMouth(o, { hw = 6, open = 0, teeth = false, tongue = false, smile = 0 }) {
+  const P = new Pix(28, 16); const cx = 14, cy = 8;
+  const lip = ramp(o.lip, 6), inside = [58, 15, 24];
+  for (let x = -hw; x <= hw; x++) {
+    const t = x / hw, yc = cy - smile * t * t * 1.6, up = open * (1 - t * t);
+    const yT = Math.round(yc - up), yB = Math.round(yc + up);
+    for (let y = yT; y <= yB; y++) P.set(cx + x, y, tongue && y >= yB - 1 && open > 2 ? [196, 84, 98] : teeth && y <= yT + 1 && open >= 1.2 ? [246, 240, 232] : inside);
+    P.set(cx + x, yT - 1, lip[1]); if (Math.abs(x) <= 1) P.set(cx + x, yT - 2, lip[2]);
+    P.set(cx + x, yB + 1, lip[3]); if (Math.abs(x) < hw - 2) P.set(cx + x, yB + 2, lip[4]);
+    if (Math.abs(x) <= 2 && Math.abs(x) < hw - 1) P.set(cx + x, yB + 2, lip[5]);
+    if (open === 0) P.set(cx + x, yT, lip[0]);
+  }
+  P.set(cx - hw - 1, Math.round(cy - smile * 1.6), lip[0]); P.set(cx + hw + 1, Math.round(cy - smile * 1.6), lip[0]);
+  return P.canvas();
+}
+
+// ---------- body -------------------------------------------------------------
+// Body layer 130×120: neck top at y=0, shoulders widen to ±SW; desk hides everything below y≈ (190 − bodyTop).
+const BW = 130, BH = 120, BCX = 65;
+function buildBody(o) {
+  const P = new Pix(BW, BH);
+  const suit = ramp(o.suit, 6, [0.45, 0.4, 0.7]).map((c, i) => i >= 3 ? mix(c, hex(o.suit), 0.55) : c), skin = ramp(o.skin, 6), shirt = ramp('#f2efe6', 6, [0.6, 0.6, 0.85], [255, 255, 245]);
+  const SW = o.shoulder, dark = mix(hex(o.suit), [10, 8, 20], 0.7);
+  // Neck with a soft chin shadow.
+  P.paint(BCX - 8, 0, BCX + 8, 24, (x, y) => { const u = (x - BCX) / 8; const l = lambert(u * 0.8, 0, Math.sqrt(1 - u * u)) - 0.28 * (1 - smooth(0, 9, y)); return pick(l, skin, x, y); });
+  // Torso (sloped shoulders) + sleeves.
+  const W = y => { const t = clamp((y - 12) / 20); return 9 + (SW - 9) * (1 - (1 - t) * (1 - t)); };
+  P.paint(0, 12, BW - 1, BH - 1, (x, y) => {
+    const dx = x - BCX, w = W(y); if (Math.abs(dx) > w) return null;
+    const adx = Math.abs(dx);
+    if (y >= 38 && adx >= SW - 14) { // sleeve cylinder
+      if (adx === SW - 14) return suit[0];
+      const u2 = clamp((adx - (SW - 7)) / 7, -1, 1);
+      return pick(lambert(Math.sign(dx) * u2, 0, Math.sqrt(1 - u2 * u2)) - 0.03, suit, x, y);
+    }
+    const u = dx / w;
+    let l = lambert(u * 0.9, 0, Math.sqrt(1 - u * u * 0.8)) + 0.05 * Math.sin(y * 0.6 + x * 0.2);
+    return pick(l, suit, x, y);
+  });
+  // Shoulder rim light, left side.
+  for (let y = 12; y < 40; y++) { const w = W(y); P.set(BCX - w, y, suit[5]); P.set(BCX - w + 1, y, suit[4]); }
+  // Shirt V + collar.
+  const apex = o.tie ? 50 : 58, vHalf = y => 10 * (1 - (y - 14) / (apex - 14));
+  P.paint(0, 14, BW - 1, apex, (x, y) => { const dx = Math.abs(x - BCX); return dx <= vHalf(y) ? pick(lambert((x - BCX) / 14, 0.2, 0.9) - 0.05 + (y < 22 ? -0.15 : 0), shirt, x, y) : null; });
+  // Lapels (lighter jacket) with a dark inner edge + highlight edge.
+  P.paint(0, 14, BW - 1, apex + 4, (x, y) => {
+    const dx = Math.abs(x - BCX), vh = vHalf(y), lw = 9 - (y - 14) * 0.1; if (dx <= vh || dx > vh + lw) return null;
+    const s = Math.sign(x - BCX);
+    if (dx <= vh + 1) return suit[0]; if (dx >= vh + lw - 0.5) return suit[5 - (s > 0 ? 2 : 0)];
+    return pick(lambert(s * 0.4, -0.1, 0.9) + 0.18, suit, x, y);
+  });
+  for (const s of [-1, 1]) for (let x = 0; x < 6; x++) P.set(BCX + s * (vHalf(16) + 4 + x), 16 + Math.round(x * 0.6), suit[0]); // notch
+  // Collar points.
+  for (const s of [-1, 1]) for (let i = 0; i < 6; i++) for (let j = 0; j <= i / 2 + 1; j++) P.set(BCX + s * (9 - j + 1), 14 + i, shirt[i % 2 ? 5 : 4]);
+  if (o.tie) {
+    // Tie: knot, then body with diagonal stripes.
+    const tie = ramp(o.tie, 6);
+    P.paint(BCX - 4, 18, BCX + 4, 49, (x, y) => {
+      const knot = y < 25, w = knot ? 3.5 : 2.2 + (y - 25) * 0.1 * (y < 44 ? 1 : -2.5), dx = x - BCX; if (Math.abs(dx) > w) return null;
+      let c = pick(lambert(dx / w * 0.9, 0, 0.8) + (knot && y < 21 ? -0.1 : 0), tie, x, y);
+      if (!knot && ((x + y) % 7 === 0)) c = hex('#e0b13a');
+      return c;
+    });
+    P.set(BCX, 49, tie[0]);
+  } else if (o.pendant) {
+    for (let y = 16; y < 38; y++) { const v = vHalf(y); if (y % 2 === 0) { P.set(BCX - v + 1, y, hex('#e0b13a')); P.set(BCX + v - 1, y, hex('#e0b13a')); } }
+    P.rect(BCX - 1, 40, 3, 3, hex('#e0b13a')); P.set(BCX, 41, hex('#c0392b')); P.set(BCX - 1, 40, hex('#fff3b0'));
+  }
+  // Lapel pin, jacket opening line + button.
+  const pin = o.pin; if (pin) { P.rect(BCX - 21, 36, 4, 4, hex('#6d1a2a')); P.set(BCX - 21, 36, hex('#c0394e')); P.set(BCX - 20, 36, hex('#e0b13a')); }
+  for (let y = apex + 4; y < BH; y++) P.set(BCX, y, suit[0]);
+  for (const y of [apex + 10, apex + 24]) { P.rect(BCX + 3, y, 3, 3, suit[1]); P.set(BCX + 3, y, suit[5]); }
+  // Fold wrinkles at the elbow area.
+  for (const s of [-1, 1]) for (let i = 0; i < 5; i++) { P.set(BCX + s * (SW - 11 - i), 60 + i * 2, suit[1]); P.set(BCX + s * (SW - 9 - i), 70 + i * 2, suit[1]); }
+  P.outline(dark);
+  return P.canvas();
+}
+
+// ---------- hands ------------------------------------------------------------
+function handPix(o, raised) {
+  const skin = ramp(o.skin, 6), suit = ramp(o.suit, 6, [0.45, 0.4, 0.7]), cuff = ramp('#f2efe6', 6, [0.6, 0.6, 0.85], [255, 255, 245]);
+  const skinOut = mix(hex(o.skin), [40, 18, 30], 0.78);
+  if (!raised) { // resting: foreshortened sleeve, cuff, hand on the desk
+    const P = new Pix(22, 22);
+    P.paint(2, 0, 19, 9, (x, y) => { const u = (x - 10.5) / 8.5; return pick(lambert(u, 0, Math.sqrt(1 - Math.min(1, u * u))) - 0.05, suit, x, y); });
+    P.rect(3, 9, 16, 2, cuff[5]); P.rect(3, 11, 16, 1, cuff[3]);
+    P.paint(3, 12, 18, 21, (x, y) => { const u = (x - 10.5) / 7.5, v = (y - 15) / 4.4; const r = u * u + v * v; if (r > 1) return null; return pick(lambert(u, v, Math.sqrt(1 - r)) + 0.05, skin, x, y); });
+    for (const x of [7, 10, 13]) for (let y = 17; y < 21; y++) P.set(x, y, skin[1]);
+    P.outline(mix(hex(o.suit), [10, 8, 20], 0.7));
+    return P.canvas();
+  }
+  const P = new Pix(30, 74); // raised: forearm upright, open palm, fingers + thumb
+  P.paint(8, 36, 21, 73, (x, y) => { const u = (x - 14.5) / 6.5; return pick(lambert(u, 0, Math.sqrt(1 - Math.min(1, u * u))) - 0.04, suit, x, y); });
+  P.rect(8, 33, 14, 3, cuff[5]); P.rect(8, 36, 14, 1, cuff[3]);
+  P.paint(8, 20, 21, 33, (x, y) => { const u = (x - 14.5) / 6.5, v = (y - 27) / 7; const r = u * u + v * v * 0.5; if (r > 1) return null; return pick(lambert(u, v, Math.sqrt(1 - r)) + 0.05, skin, x, y); });
+  for (const [fx, top] of [[8, 11], [11.5, 8], [15, 7], [18.5, 9]]) P.paint(fx, top, fx + 2, 23, (x, y) => { const u = (x - (fx + 1.2)) / 1.6; if (y < top + 1 && (x === fx || x === fx + 2)) return null; return pick(lambert(u, 0, 0.8) + 0.1, skin, x, y); });
+  P.paint(2, 20, 9, 28, (x, y) => { const u = (x - 6) / 3.4, v = (y - 24) / 4.4; return u * u + v * v <= 1 && x + (y - 20) * 0.4 < 10 ? pick(lambert(u, v, 0.8) + 0.08, skin, x, y) : null; });
+  P.outline(skinOut);
+  return P.canvas();
+}
+
+// ---------- props --------------------------------------------------------------
+function buildMug(label) {
+  const P = new Pix(14, 14); const c = ramp('#f2efe6', 6, [0.6, 0.55, 0.85], [255, 255, 240]);
+  P.paint(1, 1, 10, 12, (x, y) => { const u = (x - 5.5) / 5; return pick(lambert(u, 0, Math.sqrt(1 - u * u)) + 0.05, c, x, y); });
+  for (let y = 4; y < 10; y++) { P.set(11, y, c[4]); P.set(12, y, c[3]); } P.set(11, 4, c[3]); P.set(11, 9, c[3]);
+  P.set(5, 6, hex('#6d1a2a')); P.set(6, 6, hex('#6d1a2a')); P.set(4, 5, hex('#6d1a2a')); P.set(7, 5, hex('#6d1a2a')); P.set(4, 6, hex('#9b2d40')); P.set(7, 6, hex('#9b2d40')); P.set(5, 7, hex('#6d1a2a')); P.set(6, 7, hex('#6d1a2a'));
+  P.outline([40, 24, 34]); return P.canvas();
+}
+function buildTablet() {
+  const P = new Pix(40, 22); const bez = ramp('#2b3160', 6);
+  P.paint(0, 0, 39, 21, (x, y) => (x < 1 || y < 1 || x > 37 || y > 20) ? bez[1] : null);
+  P.paint(2, 2, 37, 19, (x, y) => pick(0.55 + (y < 8 ? 0.2 : 0) + 0.15 * Math.sin(x * 0.15), ramp('#3fa7d6', 6), x, y));
+  for (let i = 0; i < 4; i++) P.rect(5, 5 + i * 3, 12 + (i * 7) % 14, 1, [240, 244, 250]);
+  P.rect(24, 5, 11, 8, hex('#e0b13a')); P.outline([18, 12, 24]); return P.canvas();
+}
+function buildPapers() {
+  const P = new Pix(34, 16); const c = ramp('#f2efe6', 6, [0.6, 0.6, 0.85], [255, 255, 245]);
+  for (let k = 0; k < 3; k++) P.paint(k, 8 - k * 2, 30 + k, 14 - k * 2, (x, y) => pick(0.7 + k * 0.1 + (y % 3 === 0 ? -0.1 : 0), c, x, y));
+  P.rect(5, 3, 12, 1, [120, 120, 140]); P.rect(5, 5, 18, 1, [120, 120, 140]);
+  P.outline([40, 30, 40]); return P.canvas();
+}
+
+// ---------- desk ---------------------------------------------------------------
+const DESK_Y = 186, DESK_H = 84;
+function buildDesk(badgeImg) {
+  const P = new Pix(GW, DESK_H);
+  const top = ramp('#f2efe6', 6, [0.55, 0.55, 0.85], [255, 255, 248]), face = ramp('#6d1a2a', 6, [0.4, 0.3, 0.6], [255, 190, 170]);
+  const gold = ramp('#e0b13a', 6, [0.45, 0.35, 0.5], [255, 250, 190]), navy = ramp('#1b1f3a', 6);
+  const streaks = [64, 128, 192, 256, 320, 384];
+  // Top surface: glossy, gradient from bright back edge, reflecting the ceiling lights.
+  P.paint(0, 0, GW - 1, 19, (x, y) => {
+    const t = y / 18, left = 40 - t * 10, right = 440 + t * 10; if (x < left || x > right) return null;
+    let l = 0.92 - t * 0.36;
+    for (const sx of streaks) { const d = Math.abs(x - (sx + (t * 6))) / 5; l += 0.14 * Math.max(0, 1 - d) * (1 - t * 0.4); }
+    if (x < left + 2 || x > right - 2) l -= 0.3;
+    return pick(l, top, x, y);
+  });
+  // Gold edge + shadow lip.
+  P.paint(0, 18, GW - 1, 22, (x, y) => { const t = 1, left = 30, right = 450; if (x < left || x > right) return null; return y < 20 ? gold[y === 18 ? 5 : 4] : y < 21 ? gold[2] : gold[0]; });
+  // Front: three bevelled panels with gradient, diagonal glass streaks.
+  const panels = [[34, 156], [162, 318], [324, 446]];
+  P.paint(0, 21, GW - 1, DESK_H - 1, (x, y) => {
+    if (x < 30 || x > 450) return null;
+    const yy = y - 21;
+    if (yy > 56) return yy > 59 ? navy[1 + ((x >> 3) & 1) * 0] : navy[0];
+    const inPanel = panels.find(([a, b]) => x >= a && x <= b);
+    if (!inPanel) return face[0];
+    const [a, b] = inPanel; let l = 0.62 - yy / 56 * 0.28;
+    if (x === a || yy === 0) l += 0.18; if (x === b || yy >= 55) l -= 0.2;
+    const diag = ((x - yy * 0.9) % 52 + 52) % 52; if (diag < 6 && yy > 3 && yy < 52) l += 0.14;
+    return pick(l, face, x, y);
+  });
+  // Gold inlay line near the bottom of the panels.
+  for (let x = 34; x <= 446; x++) if (!(x > 156 && x < 162) && !(x > 318 && x < 324)) P.set(x, 21 + 49, gold[3]);
+  // Badge medallion in the centre panel.
+  const bx = 240, by = 21 + 28;
+  P.paint(bx - 24, by - 24, bx + 24, by + 24, (x, y) => { const r = Math.hypot(x - bx, y - by); return r <= 24 ? (r > 22 ? gold[4] : r > 21 ? gold[1] : navy[1]) : null; });
+  if (badgeImg) { const c = document.createElement('canvas'); c.width = c.height = 36; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(badgeImg, 0, 0, 36, 36); const d = g.getImageData(0, 0, 36, 36).data; for (let j = 0; j < 36; j++) for (let i = 0; i < 36; i++) { const k = (j * 36 + i) * 4; if (d[k + 3] > 140) P.set(bx - 18 + i, by - 18 + j, [Math.round(d[k] / 24) * 24, Math.round(d[k + 1] / 24) * 24, Math.round(d[k + 2] / 24) * 24]); } }
+  P.outline([20, 10, 16]);
+  return P.canvas();
+}
+
+// ---------- backdrop: existing studio art, downsampled + posterised with dither ----------
+function bakeBackdrop(img) {
+  const c = document.createElement('canvas'); c.width = GW; c.height = GH; const g = c.getContext('2d');
+  g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, GW, GH);
+  const id = g.getImageData(0, 0, GW, GH), d = id.data, L = 14;
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) { const i = (y * GW + x) * 4, b = BAYER[y & 3][x & 3] - 0.5; for (let k = 0; k < 3; k++) d[i + k] = clamp(Math.round((d[i + k] / 255 + b / L) * L) / L * 255, 0, 255) | 0; }
+  g.putImageData(id, 0, 0); return c;
+}
+
+// ===== Build everything: Isla from the generated art ======================================
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+const ART = './public/spike/isla/';
+const NAMES = ['master', 'mouth-smile', 'mouth-parted', 'mouth-ee', 'mouth-oh', 'mouth-ah', 'mouth-closed', 'eyes-blink', 'eyes-gaze-right-a', 'brows-raised', 'hand-raised'];
+const [studioImg, badgeImg, ...artImgs] = await Promise.all([load('./public/spike/studio.jpg'), load('./public/badges/heart-of-midlothian.png'), ...NAMES.map(n => load(ART + (n === 'master' ? 'master' : 'variants/' + n) + '.jpg'))]);
+const A = Object.fromEntries(NAMES.map((n, i) => [n, artImgs[i]]));
+if (NAMES.some(n => !A[n])) document.body.insertAdjacentHTML('beforeend', '<pre style="color:#fff;position:fixed;top:40px;left:10px">missing: ' + NAMES.filter(n => !A[n]).join(', ') + '</pre>');
+
+// The generated art sits on a clean 5.865 px block grid (≈240×131 native pixels). Sample each block's centre
+// (3×3 average to shrug off JPEG noise), key out the magenta, and we have true 1:1 pixel art.
+const BLK = 5.865, OX = 0.25, OY = 0.25, GI_W = 240, GI_H = 131;
+function toGrid(img) {
+  const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data, P = new Pix(GI_W, GI_H);
+  for (let j = 0; j < GI_H; j++) for (let i = 0; i < GI_W; i++) {
+    const cx = Math.round(OX + (i + 0.5) * BLK), cy = Math.round(OY + (j + 0.5) * BLK);
+    let r = 0, gg = 0, b = 0, n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = ((cy + dy) * c.width + cx + dx) * 4; r += d[k]; gg += d[k + 1]; b += d[k + 2]; n++; }
+    r /= n; gg /= n; b /= n;
+    if (r > 170 && b > 170 && gg < 130 && r - gg > 80 && b - gg > 80) continue;       // magenta background
+    P.set(i, j, [r, gg, b]);
+  }
+  // Fringe pass: drop pinkish pixels that touch the background.
+  const kill = [];
+  for (let y = 0; y < GI_H; y++) for (let x = 0; x < GI_W; x++) if (P.has(x, y)) {
+    const [r, g, b] = P.get(x, y);
+    if (r > 150 && b > 120 && b - g > 40 && r - g > 40 && (!P.has(x - 1, y) || !P.has(x + 1, y) || !P.has(x, y - 1) || !P.has(x, y + 1))) kill.push([x, y]);
+  }
+  for (const [x, y] of kill) P.d[P.idx(x, y) + 3] = 0;
+  return P;
+}
+/** Copy a rectangle out of a gridded variant (optionally mirrored about the face centre) as a patch canvas. */
+function crop(P, x0, y0, x1, y1, mirror = false) {
+  const out = new Pix(x1 - x0 + 1, y1 - y0 + 1);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const sx = mirror ? GI_W - 1 - x : x; if (P.has(sx, y)) out.set(x - x0, y - y0, P.get(sx, y)); }
+  return out.canvas();
+}
+const G = Object.fromEntries(NAMES.map(n => [n, toGrid(A[n])]));
+const EYE = { x0: 100, y0: 26, x1: 139, y1: 48 }, MOU = { x0: 108, y0: 50, x1: 132, y1: 66 };
+const eyePatch = (n, mirror) => crop(G[n], EYE.x0, EYE.y0, EYE.x1, EYE.y1, mirror);
+const mouthPatch = n => crop(G[n], MOU.x0, MOU.y0, MOU.x1, MOU.y1);
+/** Look-left stand-in: start from the master and mirror ONLY the two eyes of a look-right frame, so hair and skin never flip. */
+function mirroredGaze(n) {
+  const out = new Pix(EYE.x1 - EYE.x0 + 1, EYE.y1 - EYE.y0 + 1);
+  for (let y = EYE.y0; y <= EYE.y1; y++) for (let x = EYE.x0; x <= EYE.x1; x++) if (G.master.has(x, y)) out.set(x - EYE.x0, y - EYE.y0, G.master.get(x, y));
+  for (const [bx0, bx1] of [[105, 116], [123, 134]]) for (let y = 36; y <= 46; y++) for (let x = bx0; x <= bx1; x++) { const sx = GI_W - 1 - x; if (G[n].has(sx, y)) out.set(x - EYE.x0, y - EYE.y0, G[n].get(sx, y)); }
+  return out.canvas();
+}
+const isla = {
+  base: G.master.canvas(), handBase: G['hand-raised'].canvas(),
+  eyes: { blink: eyePatch('eyes-blink'), gazeR: eyePatch('eyes-gaze-right-a'), gazeL: mirroredGaze('eyes-gaze-right-a'), brows: eyePatch('brows-raised') },
+  mouth: { smile: mouthPatch('mouth-smile'), small: mouthPatch('mouth-parted'), wide: mouthPatch('mouth-ee'), O: mouthPatch('mouth-oh'), A: mouthPatch('mouth-ah'), closed: mouthPatch('mouth-closed') },
+};
+// The new backdrop is already a true 480-column pixel picture (2.867 px blocks), so recover its real pixels by sampling block centres.
+function backdropFromGrid(img) {
+  const BB = 1376 / 480, c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const sg = c.getContext('2d', { willReadFrequently: true }); sg.drawImage(img, 0, 0);
+  const d = sg.getImageData(0, 0, c.width, c.height).data, rows = Math.floor(c.height / BB);
+  const out = document.createElement('canvas'); out.width = GW; out.height = GH; const og = out.getContext('2d');
+  const id = og.createImageData(GW, GH);
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const j = Math.min(rows - 1, Math.max(0, y - Math.floor((GH - rows) / 2)));
+    const sx = Math.min(c.width - 1, Math.round((x + 0.5) * BB)), sy = Math.min(c.height - 1, Math.round((j + 0.5) * BB));
+    const k = (sy * c.width + sx) * 4, o = (y * GW + x) * 4;
+    id.data[o] = d[k]; id.data[o + 1] = d[k + 1]; id.data[o + 2] = d[k + 2]; id.data[o + 3] = 255;
+  }
+  og.putImageData(id, 0, 0); return out;
+}
+/** The generated desk is also on the 480-column grid. Key it, drop the floor reflection, and draw the real badge into the blank medallion. */
+function deskFromGrid(img, badge) {
+  // This desk's blocks measure ~3.48 × 3.58 px (a touch chunkier than the backdrop), starting at its own bounding box.
+  const BX = 3.482, BY = 3.582, PX0 = 100, PY0 = 352, W = img.naturalWidth, H = img.naturalHeight;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const sg = c.getContext('2d', { willReadFrequently: true }); sg.drawImage(img, 0, 0);
+  const d = sg.getImageData(0, 0, W, H).data;
+  const cols = Math.floor((1274 - PX0) / BX), rows = Math.floor((712 - PY0) / BY);
+  const P = new Pix(cols, rows);
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const k = (Math.round(PY0 + (j + 0.5) * BY) * W + Math.round(PX0 + (i + 0.5) * BX)) * 4, r = d[k], g = d[k + 1], b = d[k + 2];
+    if (r > 150 && b > 150 && g < 120 && r - g > 70 && b - g > 70) continue;
+    P.set(i, j, [r, g, b]);
+  }
+  const kill = [];
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.has(x, y)) { const [r, g, b] = P.get(x, y); if (r > 150 && b > 120 && b - g > 40 && r - g > 40 && (!P.has(x - 1, y) || !P.has(x + 1, y) || !P.has(x, y - 1) || !P.has(x, y + 1))) kill.push([x, y]); }
+  for (const [x, y] of kill) P.d[P.idx(x, y) + 3] = 0;
+  if (badge) {
+    const S = 36, bc = document.createElement('canvas'); bc.width = bc.height = S; const bg2 = bc.getContext('2d'); bg2.imageSmoothingQuality = 'high'; bg2.drawImage(badge, 0, 0, S, S);
+    const bd = bg2.getImageData(0, 0, S, S).data, cx = Math.round((688 - PX0) / BX), cy = Math.round((568 - PY0) / BY);
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const k = (j * S + i) * 4; if (bd[k + 3] > 140) P.set(cx - S / 2 + i, cy - S / 2 + j, [Math.round(bd[k] / 24) * 24, Math.round(bd[k + 1] / 24) * 24, Math.round(bd[k + 2] / 24) * 24]); }
+  }
+  return P.canvas();
+}
+const deskImg = await load('./public/spike/desk-pixel.jpg');
+const bgImg = await load('./public/spike/studio-pixel.jpg');
+const deskGen = deskImg ? deskFromGrid(deskImg, badgeImg) : null, desk = buildDesk(badgeImg), backdrop = bgImg ? backdropFromGrid(bgImg) : studioImg ? bakeBackdrop(studioImg) : null;
+// ---- Fraser: real Gemini mouth frames + hand, blink and glances derived from his master in code (no generator needed) ----
+const FEYE = { x0: 100, y0: 34, x1: 139, y1: 46 }, FMOU = { x0: 106, y0: 55, x1: 134, y1: 70 };
+const FRASER_S = parseFloat(new URLSearchParams(location.search).get('sf')) || 0.7;   // same scale as Isla by default (?sf= to change)
+const FNAMES = ['master', 'mouth-smile', 'mouth-parted', 'mouth-ee', 'mouth-oh', 'mouth-ah', 'mouth-closed', 'hand-raised'];
+const fImgs = await Promise.all(FNAMES.map(n => load('./public/spike/fraser/' + n + '.jpg')));
+let fraser = null;
+if (fImgs.every(Boolean)) {
+  const FG = Object.fromEntries(FNAMES.map((n, i) => [n, toGridLib(fImgs[i])]));
+  const fe = detectEyes(FG.master, [98, 30, 144, 52]);
+  const ep = P => crop(P, FEYE.x0, FEYE.y0, FEYE.x1, FEYE.y1), mp = n => crop(FG[n], FMOU.x0, FMOU.y0, FMOU.x1, FMOU.y1);
+  fraser = {
+    base: FG.master.canvas(), handBase: FG['hand-raised'].canvas(),
+    eyes: { blink: ep(blinkEyes(FG.master, fe)), gazeL: ep(gazeShift(FG.master, fe, -3)), gazeR: ep(gazeShift(FG.master, fe, 3)) },
+    mouth: { smile: mp('mouth-smile'), small: mp('mouth-parted'), wide: mp('mouth-ee'), O: mp('mouth-oh'), A: mp('mouth-ah'), closed: mp('mouth-closed') },
+  };
+}
+const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
+
+// ===== Runtime =========================================================================
+const cv = document.getElementById('cv'); cv.width = GW; cv.height = GH;
+const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+const LOOP = 13;
+const SCRIPT = [
+  { a: 0.4, b: 4.2, by: 'a', text: 'Good evening, and welcome to Hearts News 24.' },
+  { a: 4.4, b: 8.8, by: 'a', text: 'Top story: Vrancken has the squad high-pressure proofed for Rangers.' },
+  { a: 9.0, b: 12.6, by: 'b', text: "More on that after the break, but first, the team news." },
+];
+const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+const easeOut = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+const VIS = ['rest', 'small', 'wide', 'O', 'A', 'closed', 'small', 'A', 'wide', 'smile'];
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+const ISLA_S = parseFloat(new URLSearchParams(location.search).get("s")) || 0.7;   // shrink her to fit the set (?s=0.8 to compare): composite at native res, then scale once
+const ISLA_DY = Number(new URLSearchParams(location.search).get("dy") ?? 14);   // lift her so more of her torso shows above the desk (?dy=)
+const TWO = new URLSearchParams(location.search).get("two") !== "0";   // second presenter reuses Isla as a Fraser stand-in (?two=0 for one)
+const IY = deskGen ? Math.round(170 - 95 * ISLA_S) - ISLA_DY : 69;
+const ic = document.createElement("canvas"); ic.width = GI_W; ic.height = GI_H; const ig = ic.getContext("2d"); ig.imageSmoothingEnabled = false;
+
+function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo = MOU) {
+  const t = t0 + ph, IX = Math.round(cx - 120 * S), IYp = deskGen ? Math.round(170 - 95 * S) - ISLA_DY : 69;
+  const breath = Math.round(Math.sin(t * 1.9) * 0.5 + 0.5);
+  const gesture = talking && Math.sin(t * 1.7 + 0.5) > 0.35;
+  const emphasis = talking && Math.sin(t * 2.3) > 0.55;
+  ig.clearRect(0, 0, GI_W, GI_H); ig.drawImage(gesture ? pres.handBase : pres.base, 0, 0);
+  const blink = (t % 3.4) > 3.28;
+  const glance = location.hash === '#gazeL' ? -1 : location.hash === '#gazeR' ? 1 : !talking ? 0 : (t % 6.1 > 5.5 ? -1 : t % 7.3 > 6.7 ? 1 : 0);
+  const eye = blink ? pres.eyes.blink : emphasis ? pres.eyes.brows : glance < 0 ? pres.eyes.gazeL : glance > 0 ? pres.eyes.gazeR : null;
+  if (eye) ig.drawImage(eye, E.x0, E.y0);
+  const key = talking ? VIS[Math.floor(t * 11 + hash(Math.floor(t * 11))) % VIS.length] : (t % 5 < 1.2 ? 'smile' : 'rest');
+  if (key !== "rest") ig.drawImage(pres.mouth[key], Mo.x0, Mo.y0);
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(ic, IX, IYp + breath, Math.round(GI_W * S), Math.round(GI_H * S)); g.imageSmoothingEnabled = false;
+}
+
+const tag = document.getElementById('tag'), bar = document.getElementById('bar'), who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
+function tick(ms) {
+  const t = (ms / 1000) % LOOP, cur = SCRIPT.find(s => t >= s.a && t < s.b);
+  if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
+  const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
+  if (TWO) { drawIsla(t, aTalk, 168); drawIsla(t, bTalk, 312, 1.9, fraser || isla, fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU); } else drawIsla(t, !!cur, 240);
+  if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
+  g.drawImage(desk, 0, DESK_Y);
+  g.drawImage(mug, 70, DESK_Y + 1); g.drawImage(mug, 398, DESK_Y + 1);
+  for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
+  g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
+  }
+
+  const tk = easeOut(seg(t, 4.5, 5.0)), bk = easeOut(seg(t, 4.8, 5.6)), out = easeOut(seg(t, 12.2, 12.8));
+  tag.style.transform = `translateX(${(1 - tk + out) * -130}%)`;
+  bar.style.clipPath = `inset(0 ${(1 - bk + out) * 100}% 0 0)`;
+  cap.style.visibility = cur ? 'visible' : 'hidden';
+  if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; line.textContent = cur.text.slice(0, Math.floor(seg(t, cur.a + 0.1, cur.b - 0.5) * cur.text.length) + 1); }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
