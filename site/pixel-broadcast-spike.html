@@ -556,7 +556,7 @@ if (propSheet) { const PG = toGrid(propSheet); for (const [n, d] of Object.entri
 function drawProp(name, cx, t, k = 1) {
   const p = PROPS[name]; if (!p) return;
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  const w = Math.round(p.img.width * p.s * k), h = Math.round(p.img.height * p.s * k), x = Math.round(cx - w / 2), y = PROP_BASE + Math.round((k - 1) * 26) - (k > 1 && p.side ? 4 : 0) - h - (name === 'laptop' ? 2 : 0);
+  const kk = name === 'laptop' && k > 1 ? k * 1.15 : k, w = Math.round(p.img.width * p.s * kk), h = Math.round(p.img.height * p.s * kk), x = Math.round(cx - w / 2), y = PROP_BASE + Math.round((k - 1) * 26) - (k > 1 && p.side ? 4 : 0) - h - (name === 'laptop' ? 2 : 0);
   g.drawImage(p.img, x, y, w, h);
   if (name === 'mug') for (let i = 0; i < 3; i++) { const ph = (t * 7 + i * 5) % 15, a = 1 - ph / 15; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(x + Math.round(w / 2 - 3 + Math.sin(ph * 0.6 + i) * 2), y - 1 - Math.round(ph), 1, 2); }
   g.imageSmoothingEnabled = false;
