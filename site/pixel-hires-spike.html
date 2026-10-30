@@ -11,22 +11,9 @@
   #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
   .px { box-shadow: 0 -.2em 0 0 #0e0c10, 0 .2em 0 0 #0e0c10, -.2em 0 0 0 #0e0c10, .2em 0 0 0 #0e0c10; }
-  /* Broadcast stack: bottom 48 art px (10em). Brand block + headline above, ticker strip under. */
-  #stack { position: absolute; left: 0; right: 0; bottom: 0; height: 10em; display: grid; grid-template-rows: 7.4em 2.6em; }
-  #top { display: grid; grid-template-columns: 19em 1fr; min-width: 0; }
-  #brand { background: #e0b13a; color: #3d0d17; display: flex; align-items: center; gap: .9em; padding: 0 1em; border-top: .4em solid #f6dc8a; }
-  #brand .mark { width: 4em; height: 4em; flex: none; background: #3d0d17; color: #e0b13a; display: grid; place-items: center; font-size: 1.1em; }
-  #brand .name { font-size: 1em; line-height: 1.5; white-space: nowrap; }
-  #brand .name i { font-style: normal; font-size: 1.5em; display: block; line-height: 1.1; }
-  #head { position: relative; background: #6d1a2a; color: #f2efe6; overflow: hidden; border-top: .4em solid #4a0f1b; }
-  #headin { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 1.6em; font-size: 1.75em; line-height: 1.35; clip-path: inset(0 100% 0 0); }
-  #tick { display: grid; grid-template-columns: auto auto 1fr; background: #120f22; color: #f2efe6; font-size: .85em; border-top: .35em solid #e0b13a; }
-  #tick .logo { background: #e0b13a; color: #3d0d17; padding: 0 1em; display: grid; place-items: center; }
-  #tick .clock { background: #3d0d17; color: #f2efe6; padding: 0 1em; display: grid; place-items: center; }
-  #tick .win { overflow: hidden; position: relative; }
-  #track { position: absolute; left: 0; top: 0; bottom: 0; display: flex; align-items: center; white-space: nowrap; will-change: transform; }
-  #track span { padding-right: 3em; } #track b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
-  #cap { position: absolute; left: 4em; right: 4em; bottom: 23em; background: #120f22; color: #f2efe6; padding: .6em 1.2em; font-size: .95em; line-height: 1.6; }
+  #tag { position: absolute; left: 4em; bottom: 12.6em; background: #e0b13a; color: #3d0d17; padding: .7em 1em; font-size: 1em; transform: translateX(-130%); }
+  #bar { position: absolute; left: 4em; right: 4em; bottom: 8em; background: #6d1a2a; color: #f2efe6; padding: .8em 1.2em; font-size: 1.15em; border-left: .6em solid #e0b13a; clip-path: inset(0 100% 0 0); }
+  #cap { position: absolute; left: 4em; right: 4em; bottom: 2.2em; background: #120f22; color: #f2efe6; padding: .7em 1.2em; font-size: .95em; line-height: 1.7; }
   #cap b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
   #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font: 12px sans-serif; }
 </style>
@@ -34,19 +21,11 @@
 <body>
 <div id="stage"><div id="frame">
   <canvas id="cv"></canvas>
+  <div id="tag" class="px">TOP STORY</div>
+  <div id="bar" class="px">VRANCKEN HAS HEARTS HIGH-PRESSURE PROOFED FOR RANGERS</div>
   <div id="cap" class="px"><b id="who"></b><span id="line"></span></div>
-  <div id="stack">
-    <div id="top">
-      <div id="brand"><div class="mark">H24</div><div class="name">HEARTS<i>NEWS 24</i></div></div>
-      <div id="head"><div id="headin">VRANCKEN HAS HEARTS HIGH-PRESSURE PROOFED FOR RANGERS</div></div>
-    </div>
-    <div id="tick">
-      <div class="logo">H24</div><div class="clock" id="clock">00:00</div>
-      <div class="win"><div id="track"></div></div>
-    </div>
-  </div>
 </div></div>
-<div id="hint">480×270 art grid, shown 3× at 1440×810 · 13s loop · bottom stack + ticker</div>
+<div id="hint">480×270 art grid, shown 3× at 1440×810 · 13s loop</div>
 
 <script type="module">
 // ===== Hi-res pixel art, built from layered sprites ==========================
@@ -467,16 +446,10 @@ function drawPresenter(p, who, t, cur) {
   g.drawImage(p.mouth[key], headX + HCX - 14, headY + HCY + FACE.mouthY - 8);
 }
 
-const STACK = 48;   // art px taken by the bottom stack; the scene is lifted by this much so the desk front stays clear
-const TICKER = [['HT', 'HEARTS 2-1 DUNDEE UTD'], ['RESULT', 'MOTHERWELL 0-2 HIBERNIAN'], ['NEXT', 'HEARTS V RANGERS, SATURDAY 12:30'], ['NEWS', 'MATO RULED OUT WITH HAMSTRING'], ['TABLE', 'HEARTS THIRD, TWO POINTS CLEAR OF HIBS'], ['NEWS', 'VRANCKEN: "THE BELIEF IS THERE"']];
-const track = document.getElementById('track'), clock = document.getElementById('clock'), frame = document.getElementById('frame'), headin = document.getElementById('headin');
-const itemsHtml = TICKER.map(([k, v]) => `<span><b>${k}</b>${v}</span>`).join('');
-track.innerHTML = `<div style="display:flex">${itemsHtml}</div><div style="display:flex">${itemsHtml}</div>`;
-const who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
+const tag = document.getElementById('tag'), bar = document.getElementById('bar'), who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
 
 function tick(ms) {
   const t = (ms / 1000) % LOOP, cur = SCRIPT.find(s => t >= s.a && t < s.b);
-  g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   drawPresenter(isla, 'isla', t, cur); drawPresenter(fraser, 'fraser', t, cur);
   g.drawImage(desk, 0, DESK_Y);
@@ -487,14 +460,10 @@ function tick(ms) {
   g.drawImage(isla.hands.rest, 112, DESK_Y + 2); g.drawImage(fraser.hands.rest, 350, DESK_Y + 2);
   if (!(cur && cur.by === 'isla' && Math.sin(t * 1.7 + 0.5) > 0.2)) g.drawImage(isla.hands.rest, 160, DESK_Y + 2);
   g.drawImage(fraser.hands.rest, 300, DESK_Y + 2);
-  g.restore();
 
-  const bk = easeOut(seg(t, 4.8, 5.6)), out = easeOut(seg(t, 12.2, 12.8));
-  headin.style.clipPath = `inset(0 ${(1 - bk + out) * 100}% 0 0)`;
-  // Ticker scrolls 30 art px/s in whole-art-pixel steps; clock is real time.
-  const u = frame.clientWidth / GW, w1 = track.firstChild.offsetWidth / u;
-  track.style.transform = `translateX(${-Math.floor((ms / 1000 * 30) % w1) * u}px)`;
-  const d = new Date(); clock.textContent = String(d.getHours()).padStart(2, '0') + (d.getSeconds() % 2 ? ' ' : ':') + String(d.getMinutes()).padStart(2, '0');
+  const tk = easeOut(seg(t, 4.5, 5.0)), bk = easeOut(seg(t, 4.8, 5.6)), out = easeOut(seg(t, 12.2, 12.8));
+  tag.style.transform = `translateX(${(1 - tk + out) * -130}%)`;
+  bar.style.clipPath = `inset(0 ${(1 - bk + out) * 100}% 0 0)`;
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.who; line.textContent = cur.text.slice(0, Math.floor(seg(t, cur.a + 0.1, cur.b - 0.5) * cur.text.length) + 1); }
   requestAnimationFrame(tick);
