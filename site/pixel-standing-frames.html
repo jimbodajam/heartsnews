@@ -14,16 +14,17 @@
 </div>
 <script type="module">
 const { toGrid } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
-const { headOffsets, composeFace } = await import('./spike-lib/head-faces.js?v=' + Date.now());
+const { headOffsets, composeFace, fitEye, composeEyesWarped } = await import('./spike-lib/head-faces.js?v=' + Date.now());
 const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
 const G = {}; for (const n of ['b1','h1','h2','h3','h4','h5','f1','f2','f3','h1v1','h1v2','h1v3','h1v4','h1v5','h1v6']) G[n] = toGrid(await load('./public/spike/isla/standing/' + n + '.jpg'), { w: 145, h: 216 });
 const vs = await Promise.all(Array.from({ length: 9 }, (_, i) => load('./public/spike/isla/standing/v' + (i + 1) + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }))));
 const V = { base: G.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
 // face: which head frames can take generated eyes / mouths laid over them (h1 is a different angle so it has its own generated mouth frames h1v1-h1v6, h5's tilt breaks the eye patches)
-const HEADS = [['b1','centre',1,1],['h1','turn right',0,1],['h2','turn left',1,1],['h3','nod down',1,1],['h4','nod up',1,1],['h5','tilt',0,1]];
+const HEADS = [['b1','centre',1,1],['h1','turn right',1,1],['h2','turn left',1,1],['h3','nod down',1,1],['h4','nod up',1,1],['h5','tilt',1,1]];
 const FEET = [['b1','together'],['f1','weight right leg'],['f2','weight left leg'],['f3','apart']];
 const EYES = ['open','blink','gazeL','gazeR'], MOUTHS = ['rest','smile','small','wide','O','A','press'];
 const ADJ = {}; for (const [n] of HEADS) ADJ[n] = { eye: 0, mouth: 0 }; ADJ.h2 = { eye: -1, mouth: 0 };   // hand tweaks on top of the detected offsets (x pixels)
+const WARP = {}; for (const n of ['h1', 'h5']) WARP[n] = { L: fitEye(G.b1, G[n], 'L'), R: fitEye(G.b1, G[n], 'R') };   // plain shifts break on the big turn and the tilt, so those get fitted warps
 const BASEOFF = {}; for (const [n] of HEADS) BASEOFF[n] = headOffsets(G.b1, G[n], vs[5]);
 const offFor = n => { const o = BASEOFF[n], a = ADJ[n]; return { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; };
 const S = 4, cv = document.getElementById('cv'); cv.width = 145 * S; cv.height = 216 * S; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
@@ -31,8 +32,9 @@ let h = 0, f = 0, e = 0, m = 0;
 function draw() {
   const [hn, , eyeOk, mouthOk] = HEADS[h], H = G[hn], F = G[FEET[f][0]];
   const H1M = { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', press: 'h1v6' };   // h1 has its own generated mouth frames (whole head per mouth), so no laying over
-  const face = hn === 'h1' ? G[H1M[MOUTHS[m]] || 'h1'] : hn === 'b1' ? composeFace(H, offFor(hn), V, EYES[e] === 'open' ? null : EYES[e], MOUTHS[m] === 'rest' ? null : MOUTHS[m])
-    : composeFace(H, offFor(hn), V, eyeOk && EYES[e] !== 'open' ? EYES[e] : null, mouthOk && MOUTHS[m] !== 'rest' ? MOUTHS[m] : null);
+  let face = hn === 'h1' ? G[H1M[MOUTHS[m]] || 'h1'] : hn === 'b1' ? composeFace(H, offFor(hn), V, EYES[e] === 'open' ? null : EYES[e], MOUTHS[m] === 'rest' ? null : MOUTHS[m])
+    : composeFace(H, offFor(hn), V, !WARP[hn] && eyeOk && EYES[e] !== 'open' ? EYES[e] : null, mouthOk && MOUTHS[m] !== 'rest' ? MOUTHS[m] : null);
+  if (WARP[hn] && EYES[e] !== 'open') face = composeEyesWarped(face, V, WARP[hn], EYES[e]);
   const P = G.b1.clone();
   for (let y = 0; y < 216; y++) for (let x = 0; x < 145; x++) { const src = y < 58 ? face : y >= 119 ? F : null; if (!src) continue; if (src.has(x, y)) P.set(x, y, src.get(x, y)); else P.d[P.idx(x, y) + 3] = 0; }
   g.clearRect(0, 0, cv.width, cv.height); g.drawImage(P.canvas(), 0, 0, cv.width, cv.height);

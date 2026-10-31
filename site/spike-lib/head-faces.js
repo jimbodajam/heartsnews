@@ -75,3 +75,49 @@ export function composeFace(head, off, V, eye, mouthKey) {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Eyes with a fitted warp (shift, rotation, horizontal squeeze) for heads that are turned or tilted, where a plain shift is not enough.
+// ---------------------------------------------------------------------------------------------
+const EYE_C = { L: [67, 29], R: [78, 29] };
+
+/** forward: target = C + d + Rot(rot) * diag(sx, 1) * (src - C). Returns the source coordinate a target pixel samples. */
+const toSrc = (C, t, x, y) => {
+  const px = x - C[0] - t.dx, py = y - C[1] - t.dy, c = Math.cos(t.rot), s = Math.sin(t.rot);
+  return [C[0] + (c * px + s * py) / t.sx, C[1] + (-s * px + c * py)];
+};
+
+/** Fit the warp that carries the master's open eye (`base`) onto the head's own open eye. Luminance with the window mean removed. */
+export function fitEye(base, head, side, { rots = [-0.14, -0.1, -0.05, 0, 0.05, 0.1, 0.14], sxs = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1], R = [8, 3], W = [5, 4] } = {}) {
+  const C = EYE_C[side]; let best = null;
+  for (const rot of rots) for (const sx of sxs) for (let dx = -R[0]; dx <= R[0]; dx++) for (let dy = -R[1]; dy <= R[1]; dy++) {
+    const t = { dx, dy, rot, sx }, a = [], b = [];
+    for (let y = -W[1]; y <= W[1]; y++) for (let x = -W[0]; x <= W[0]; x++) {
+      const tx = C[0] + x + dx, ty = C[1] + y + dy; if (!head.has(tx, ty)) continue;
+      const [sx_, sy_] = toSrc(C, t, tx, ty), qx = Math.round(sx_), qy = Math.round(sy_); if (!base.has(qx, qy)) continue;
+      a.push(lum(head.get(tx, ty))); b.push(lum(base.get(qx, qy)));
+    }
+    if (a.length < W[0] * W[1]) continue;
+    const ma = a.reduce((s, v) => s + v, 0) / a.length, mb = b.reduce((s, v) => s + v, 0) / b.length;
+    let e = 0; for (let i = 0; i < a.length; i++) e += Math.abs((a[i] - ma) - (b[i] - mb));
+    e /= a.length; if (!best || e < best.e) best = { e, dx, dy, rot, sx };
+  }
+  return best;
+}
+
+/** Lay a blink/glance patch onto one eye of `head` through the fitted warp `t`. `box` is the eye box in master coordinates. */
+export function warpEye(out, head, base, eyeSrc, side, t, box) {
+  const C = EYE_C[side], mask = dilate(new Set([...diffPixels(eyeSrc, base, box), ...featurePixels(base, box)]));
+  const pad = 6;
+  for (let y = C[1] - pad + t.dy; y <= C[1] + pad + t.dy; y++) for (let x = C[0] - 8 + t.dx; x <= C[0] + 8 + t.dx; x++) {
+    const [fx, fy] = toSrc(C, t, x, y), qx = Math.round(fx), qy = Math.round(fy);
+    if (mask.has(qx + ',' + qy) && eyeSrc.has(qx, qy)) out.set(x, y, eyeSrc.get(qx, qy));
+  }
+}
+
+/** Like composeFace's eye step but warped per eye. `fits` = { L, R } from fitEye. */
+export function composeEyesWarped(head, V, fits, eye) {
+  const out = head.clone(), src = eye && V[eye]; if (!src) return out;
+  warpEye(out, head, V.base, src, 'L', fits.L, EBL); warpEye(out, head, V.base, src, 'R', fits.R, EBR);
+  return out;
+}

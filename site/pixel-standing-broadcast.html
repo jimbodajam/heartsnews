@@ -45,14 +45,15 @@ const bgImg = await load('./public/spike/studio-pixel.jpg');
 const backdrop = bgImg ? backdropFromGrid(bgImg) : null;
 
 // ---- standing Isla, new frames: arm poses (b2-b8 over the old master) + head frames (h1-h5, centre = b1) + feet frames (f1-f3), faces laid over the heads ----
-const { headOffsets, composeFace } = await import('./spike-lib/head-faces.js?v=' + Date.now());
+const { headOffsets, composeFace, fitEye, composeEyesWarped } = await import('./spike-lib/head-faces.js?v=' + Date.now());
 const gridOf = n => load('./public/spike/isla/standing/' + n + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }));
 const PALM = toGrid(await load('./public/spike/isla/standing-master.jpg'), { w: 145, h: 216 });
 const NAMES = ['b1', 'h1', 'h2', 'h3', 'h4', 'h5', 'f1', 'f2', 'f3', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', ...Array.from({ length: 9 }, (_, i) => 'v' + (i + 1)), ...Array.from({ length: 7 }, (_, i) => 'b' + (i + 2))];
 const Gm = {}; await Promise.all(NAMES.map(async n => { Gm[n] = await gridOf(n); }));
 const vs = Array.from({ length: 9 }, (_, i) => Gm['v' + (i + 1)]);
 const V = { base: Gm.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
-const HEADS = { b1: [1, 1], h1: [0, 1], h2: [1, 1], h3: [1, 1], h4: [1, 1], h5: [0, 1] };   // [eyes laid over, mouth laid over]; h1 uses its own mouth frames, h5 holds its eyes
+const HEADS = { b1: [1, 1], h1: [1, 1], h2: [1, 1], h3: [1, 1], h4: [1, 1], h5: [1, 1] };   // [eyes, mouth]; h1 uses its own mouth frames, and h1 and h5 get warped eyes (fitted shift, tilt and squeeze) because a plain shift breaks on them
+const WARP = {}; for (const n of ['h1', 'h5']) WARP[n] = { L: fitEye(Gm.b1, Gm[n], 'L'), R: fitEye(Gm.b1, Gm[n], 'R') };
 const OFF = {}; for (const n of Object.keys(HEADS)) OFF[n] = headOffsets(Gm.b1, Gm[n], vs[5]);
 const NUDGE = { h2: { eye: -1, mouth: 0 } }; for (const [n, a] of Object.entries(NUDGE)) { const o = OFF[n]; OFF[n] = { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; }
 const H1M = { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', press: 'h1v6' };
@@ -64,7 +65,8 @@ const cache = new Map();
 const frame = (eye, mouthKey, pose = 'idle') => {
   const k = [pose, headNow, feetNow, eye, mouthKey].join('|'); if (cache.has(k)) return cache.get(k);
   const [eyeOk, mouthOk] = HEADS[headNow], mk = mouthKey === 'closed' ? 'smile' : mouthKey === 'rest' ? null : mouthKey, ek = eyeOk && eye !== 'open' ? eye : null;
-  const head = headNow === 'h1' ? Gm[H1M[mk] || 'h1'] : headNow === 'b1' ? composeFace(Gm.b1, OFF.b1, V, eye === 'open' ? null : eye, mk) : composeFace(Gm[headNow], OFF[headNow], V, ek, mouthOk ? mk : null);
+  let head = headNow === 'h1' ? Gm[H1M[mk] || 'h1'] : headNow === 'b1' ? composeFace(Gm.b1, OFF.b1, V, eye === 'open' ? null : eye, mk) : composeFace(Gm[headNow], OFF[headNow], V, WARP[headNow] ? null : ek, mouthOk ? mk : null);
+  if (WARP[headNow] && eye !== 'open') head = composeEyesWarped(head, V, WARP[headNow], eye);
   const PO = POSES[pose] || Gm.b1, X = PO.clone(), F = Gm[feetNow], B = Gm.b1;
   // below the split the feet frame supplies the legs, but where the arm pose changed something (a hand lifted off the skirt, or still low) the pose wins
   const poseChanged = (x, y) => PO.has(x, y) !== B.has(x, y) || (PO.has(x, y) && Math.abs(PO.get(x, y)[0] - B.get(x, y)[0]) + Math.abs(PO.get(x, y)[1] - B.get(x, y)[1]) + Math.abs(PO.get(x, y)[2] - B.get(x, y)[2]) > 40);
