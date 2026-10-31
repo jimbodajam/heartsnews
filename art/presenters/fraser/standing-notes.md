@@ -27,3 +27,8 @@ On `h1`/`h2` the eyes and mouth are found on the turned head itself (windows in 
 
 ## Nods and tilts generated too (31 Oct)
 `h3`-`h6` were generated from `standing-head-prompts.md` and now replace the code warps (the warp is kept as a fallback for any head that is not generated). The generated heads move the face by several rows (nod up lifts it about 5), so fixed eye and mouth windows do not work: `findFace` in `fraser-frames.js` finds the eyes in a wide window and puts the mouth window about 11 rows below them, perpendicular to the eye line, which follows the tilt. Mouths land well on all four. Blinks on `h4` and `h6` use hand-placed eye centres (`BLINK_AT` in `fraser-frames.js`), because the far eye's white is only a pixel or two and `detectEyes` misses it; `h3`, `h5`, `h1`, `h2` and the master use the detected eyes.
+
+## Generated mouths and eyes (v1-v9, 31 Oct)
+`v1`-`v6` (smile, parted, ee, oh, ah, pressed), `v7` blink and `v9` glance right are generated and laid over the master head and the nod and tilt heads (`h3`-`h6`) with `composeFace` from `head-faces.js`, using Fraser's own eye and mouth boxes (`FACE_BOXES`) and offsets worked out from where each head's eyes and mouth are found. The turned heads `h1`/`h2` keep code-drawn faces: a patch cut for the front view does not fit a three-quarter turn (Isla needed `h1v1`-`h1v6` for that, Fraser has no equivalent yet).
+- `v8` (asked for a glance left) came out looking right, like `v9`; the image generator struggles to tell left from right on glances. It is not used. Glance left is the code glance (a one-pixel move, his irises are small).
+- Prompts for `v1`-`v9` ran in the order of `standing-face-prompts.md`, so the files were named by creation time.

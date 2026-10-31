@@ -59,17 +59,17 @@ const dilate = set => { const o = new Set(set); for (const k of set) { const [x,
  * the master head the eye frames were cut for and `mouthBase` the closed-mouth frame. `eye`/`mouthKey` null leaves the head's own.
  */
 export function composeFace(head, off, V, eye, mouthKey) {
-  const out = head.clone(), eyeSrc = eye && V[eye], mSrc = mouthKey && V.mouths[mouthKey];
+  const out = head.clone(), eyeSrc = eye && V[eye], mSrc = mouthKey && V.mouths[mouthKey], BX = V.boxes || { EBL, EBR, MB };   // V.boxes lets another presenter give their own eye and mouth boxes
   const put = (src, mask, dx, dy) => { for (const k of mask) { const [x, y] = k.split(',').map(Number); if (src.has(x, y)) out.set(x + dx, y + dy, src.get(x, y)); } };
-  if (eyeSrc) for (const [box, o] of [[EBL, off.eyeL], [EBR, off.eyeR]]) {
+  if (eyeSrc) for (const [box, o] of [[BX.EBL, off.eyeL], [BX.EBR, off.eyeR]]) {
     // Mask in master coordinates: whatever the new eye differs by, plus the master's open eye (to wipe it); offsets register the iris so it lands on the head's own eye.
     const mask = dilate(new Set([...diffPixels(eyeSrc, V.base, box), ...featurePixels(V.base, box)]));
     put(eyeSrc, mask, o[0], o[1]);
   }
   if (mSrc) {
-    const mask = dilate(new Set([...diffPixels(mSrc, V.mouthBase, MB), ...featurePixels(V.mouthBase, MB, 90)]));
+    const mask = dilate(new Set([...diffPixels(mSrc, V.mouthBase, BX.MB), ...featurePixels(V.mouthBase, BX.MB, 90)]));
     // Wipe the head's own (neutral) mouth too, where it sits after the shift.
-    const own = featurePixels(head, [MB[0] + off.mouth[0], MB[1] + off.mouth[1], MB[2] + off.mouth[0], MB[3] + off.mouth[1]], 90);
+    const own = featurePixels(head, [BX.MB[0] + off.mouth[0], BX.MB[1] + off.mouth[1], BX.MB[2] + off.mouth[0], BX.MB[3] + off.mouth[1]], 90);
     for (const k of own) { const [x, y] = k.split(',').map(Number); mask.add((x - off.mouth[0]) + ',' + (y - off.mouth[1])); }
     put(mSrc, mask, off.mouth[0], off.mouth[1]);
   }

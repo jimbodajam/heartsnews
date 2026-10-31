@@ -3,10 +3,12 @@
 // Faces use pixel-derive.js on each head's own eyes and mouth; head moves and weight shifts use body-warps.js.
 import { toGrid, detectEyes, detectMouth, gaze, blink, mouth } from './pixel-derive.js';
 import { warpHead, warpLegs } from './body-warps.js';
+import { composeFace } from './head-faces.js';
 
 export const FRASER_GRID = { w: 145, h: 216, bg: [184, 52, 137] };
 // rough windows round the eyes and mouth of each generated head (the turned heads see the face at an angle)
 const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [58, 36, 71, 41] } };
+const FACE_BOXES = { EBL: [61, 25, 71, 31], EBR: [73, 25, 83, 31], MB: [64, 35, 80, 43] };   // eye and mouth boxes on the master head, for the generated v frames
 const HEAD = { piv: [72, 46], rows: 45 };
 const SEAM = 40;       // above this row everything is the head's (hair, face, ears, neck)
 const HEAD_CUT = 46;   // rows above come from the head frame, below from the arm pose
@@ -21,10 +23,15 @@ export const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'];
 export async function loadFraser(dir) {
   const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
   const G = {};
-  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, FRASER_GRID); }));
+  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, FRASER_GRID); }));
   const face = {};
   for (const n of Object.keys(G)) if (n[0] === 'h' || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
-  return { G, face };
+  // generated mouth and eye frames (v1-v9) cut for the master head, laid over the master and the nod and tilt heads by registered offsets (not the turned heads, the angle is wrong)
+  const V = G.v1 && G.v7 ? { base: G.b1, mouthBase: G.b1, mouths: { smile: G.v1, small: G.v2, wide: G.v3, O: G.v4, A: G.v5, closed: G.v6 }, blink: G.v7, gazeR: G.v9, boxes: FACE_BOXES } : null;
+  const centres = n => BLINK_AT[n] || face[n].eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
+  const off = {}, c0 = centres('b1'), m0 = face.b1.mouthFit;
+  for (const n of ['b1', 'h3', 'h4', 'h5', 'h6']) if (G[n]) { const c = centres(n), m = face[n].mouthFit; off[n] = { eyeL: [Math.round(c[0][0] - c0[0][0]), Math.round(c[0][1] - c0[0][1])], eyeR: [Math.round(c[1][0] - c0[1][0]), Math.round(c[1][1] - c0[1][1])], mouth: [Math.round(m.cx - m0.cx), Math.round(m.yc - m0.yc)] }; }
+  return { G, face, V, off };
 }
 
 /** One full frame: head pose (face drawn on the head first, then warped with it), arm pose, feet pose. */
@@ -32,8 +39,14 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const src = F.G[head] ? head : 'b1';   // a head frame that is not generated yet falls back to the master head
   let h = F.G[src];
   const { eyes, mouthFit } = F.face[src];
-  if (eye === 'blink') h = BLINK_AT[src] ? blinkAt(h, BLINK_AT[src]) : blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
-  if (mouthKey !== 'rest') h = mouth(h, mouthFit, mouthKey);
+  if (F.V && F.off[src]) {
+    // v8 (asked for a left glance) came out looking right like v9, so the generated glance is right only; left is the code glance
+    h = composeFace(h, F.off[src], F.V, eye === 'blink' || eye === 'gazeR' ? eye : null, mouthKey === 'rest' ? null : mouthKey);
+    if (eye === 'gazeL') h = gaze(h, eyes, -1);
+  } else {
+    if (eye === 'blink') h = BLINK_AT[src] ? blinkAt(h, BLINK_AT[src]) : blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
+    if (mouthKey !== 'rest') h = mouth(h, mouthFit, mouthKey);
+  }
   const hp = HEADS.find(x => x[0] === head)[2];
   if (src !== head && hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);   // only a head that is not generated is warped from the master
   const out = (F.G[pose] || F.G.b1).clone();
