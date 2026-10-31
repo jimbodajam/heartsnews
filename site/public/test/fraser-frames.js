@@ -21,9 +21,9 @@ export const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'];
 export async function loadFraser(dir) {
   const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
   const G = {};
-  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, FRASER_GRID); }));
+  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, FRASER_GRID); }));
   const face = {};
-  for (const n of ['b1', 'h1', 'h2']) if (G[n]) face[n] = { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) };
+  for (const n of Object.keys(G)) if (n[0] === 'h' || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
   return { G, face };
 }
 
@@ -35,7 +35,7 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   if (eye === 'blink') h = blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
   if (mouthKey !== 'rest') h = mouth(h, mouthFit, mouthKey);
   const hp = HEADS.find(x => x[0] === head)[2];
-  if (hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);
+  if (src !== head && hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);   // only a head that is not generated is warped from the master
   const out = (F.G[pose] || F.G.b1).clone();
   // Head pixels only near the seam: below SEAM the head frame carries a strip of its own jacket (recoloured in the generated turns, rotated in the tilts), so take just skin from it and keep the pose's jacket, collar and tie.
   const skin = c => c[0] > 150 && c[0] > c[1] + 10 && c[1] >= c[2] - 8;
@@ -46,4 +46,13 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const fp = FEET.find(x => x[0] === feet)[2];
   if (fp) { const legs = warpLegs(F.G.b1, fp, LEGS); for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (legs.has(x, y)) out.set(x, y, legs.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; } }
   return out;
+}
+
+/** Face of a head that has moved (nods and tilts shift it by several rows): eyes from a wide window, then the mouth window sits about 11 rows below the eyes, perpendicular to the line between them, so it follows a tilt. */
+function findFace(P) {
+  const eyes = detectEyes(P, [56, 16, 92, 38]);
+  const c = eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
+  const mid = [(c[0][0] + c[1][0]) / 2, (c[0][1] + c[1][1]) / 2], dx = c[1][0] - c[0][0], dy = c[1][1] - c[0][1], len = Math.hypot(dx, dy) || 1;
+  const m = [mid[0] - dy / len * 11, mid[1] + dx / len * 11];
+  return { eyes, mouthFit: detectMouth(P, [Math.round(m[0] - 6), Math.round(m[1] - 3), Math.round(m[0] + 6), Math.round(m[1] + 3)]) };
 }

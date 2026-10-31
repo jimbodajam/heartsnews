@@ -24,3 +24,6 @@ On `h1`/`h2` the eyes and mouth are found on the turned head itself (windows in 
 ## What we learned
 - Validating on Isla first: a plain global shift or rotation cannot match her generated head frames pixel for pixel (they are re-drawn, not moved), so a changed-pixel score is noisy and misleading. Judge by eye on the zoomed frames. Only tilt and the small nods are close to code-made.
 - Frame names are shared between presenters (`b1`-`b8`, `h1`-`h5`, `f1`-`f3`), so a broadcast can pick frames by name. Fraser uses `h3` (nod down), `h4` (nod up), `h5` (tilt left, as Isla's), `h6` (tilt right, new), `f1`-`f3`.
+
+## Nods and tilts generated too (31 Oct)
+`h3`-`h6` were generated from `standing-head-prompts.md` and now replace the code warps (the warp is kept as a fallback for any head that is not generated). The generated heads move the face by several rows (nod up lifts it about 5), so fixed eye and mouth windows do not work: `findFace` in `fraser-frames.js` finds the eyes in a wide window and puts the mouth window about 11 rows below them, perpendicular to the eye line, which follows the tilt. Mouths land well on all four. Blinks close one eye cleanly on `h4` and `h6`, because the far eye's white is too small for `detectEyes`; a fix is to find that eye by hand or lower the brightness threshold for Fraser's grey-blue eyes.
