@@ -1,39 +1,41 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>Standing Fraser frames (all made in code)</title>
+<title>Standing Fraser frames (generated master, poses and turns, the rest made in code)</title>
 <style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:13px sans-serif;display:flex;gap:16px;padding:10px} canvas{image-rendering:pixelated;background:#2b3050} button{margin:2px;padding:4px 8px;font:inherit} button.on{background:#e0b13a} #ui{max-width:360px} #ui div.t{margin-top:8px;color:#9aa}</style>
 <canvas id="cv"></canvas>
 <div id="ui">
   <div class="t">Head</div><div id="hb"></div>
   <div class="t">Feet</div><div id="fb"></div>
+  <div class="t">Arms</div><div id="pb"></div>
   <div class="t">Eyes</div><div id="eb"></div>
   <div class="t">Mouth</div><div id="mb"></div>
   <br><label><input type="checkbox" id="auto" checked> auto cycle head and feet</label><br>
   <label><input type="checkbox" id="talk" checked> auto blink, glance and talk</label>
-  <div class="t">No turn left or right yet: that needs a generated head frame.</div>
+  <div class="t">Generated: arms down (b1), turns (h1, h2), arm poses (b2-b8). Everything else is made in code.</div>
 </div>
 <script type="module">
-const { loadFraser, composeFraser, HEADS, FEET, EYES, MOUTHS } = await import('./spike-lib/fraser-frames.js?v=' + Date.now());
-const F = await loadFraser('./public/spike/fraser/standing/b1.jpg');
+const { loadFraser, composeFraser, HEADS, FEET, POSES, EYES, MOUTHS } = await import('./spike-lib/fraser-frames.js?v=' + Date.now());
+const F = await loadFraser('./public/spike/fraser/standing/');
 const S = 4, cv = document.getElementById('cv'); cv.width = 145 * S; cv.height = 216 * S; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
-let h = 0, f = 0, e = 0, m = 0;
+let h = 0, f = 0, p = 0, e = 0, m = 0;
 function draw() {
-  const P = composeFraser(F, { head: HEADS[h][0], feet: FEET[f][0], eye: EYES[e], mouthKey: MOUTHS[m] });
+  const P = composeFraser(F, { head: HEADS[h][0], pose: POSES[p][0], feet: FEET[f][0], eye: EYES[e], mouthKey: MOUTHS[m] });
   g.clearRect(0, 0, cv.width, cv.height); g.drawImage(P.canvas(), 0, 0, cv.width, cv.height);
   const sync = (id, i) => document.querySelectorAll('#' + id + ' button').forEach((b, k) => b.classList.toggle('on', k === i));
-  sync('hb', h); sync('fb', f); sync('eb', e); sync('mb', m);
+  sync('hb', h); sync('fb', f); sync('pb', p); sync('eb', e); sync('mb', m);
 }
 const mk = (id, list, label, set) => list.forEach((it, i) => { const b = document.createElement('button'); b.textContent = label(it); b.onclick = () => { set(i); draw(); }; document.getElementById(id).append(b); });
 mk('hb', HEADS, x => x[1], i => { auto.checked = false; h = i; });
 mk('fb', FEET, x => x[1], i => { auto.checked = false; f = i; });
+mk('pb', POSES, x => x[1], i => { auto.checked = false; p = i; });
 mk('eb', EYES, x => x, i => { talk.checked = false; e = i; });
 mk('mb', MOUTHS, x => x, i => { talk.checked = false; m = i; });
-const p = new URLSearchParams(location.search); if (p.get('hold') !== null) { h = +p.get('hold'); auto.checked = false; } if (p.get('feet') !== null) { f = +p.get('feet'); auto.checked = false; }
+const q = new URLSearchParams(location.search); if (q.get('hold') !== null) { h = +q.get('hold'); auto.checked = false; } if (q.get('feet') !== null) { f = +q.get('feet'); auto.checked = false; }
 draw();
 let t = 0, blinkAt = 3, eyeUntil = 0;
 setInterval(() => {
   t++;
-  if (auto.checked) { h = Math.floor(t / 12) % HEADS.length; f = Math.floor(t / 33) % FEET.length; }
+  if (auto.checked) { h = Math.floor(t / 12) % HEADS.length; f = Math.floor(t / 33) % FEET.length; p = Math.floor(t / 25) % POSES.length; }
   if (talk.checked) {
     if (t >= blinkAt) { e = 1; eyeUntil = t + 1; blinkAt = t + 8 + Math.floor(Math.random() * 10); } else if (t >= eyeUntil) { e = Math.random() < 0.05 ? (Math.random() < 0.5 ? 2 : 3) : 0; if (e) eyeUntil = t + 3; }
     m = t % 40 < 30 ? 1 + Math.floor(t / 2 * 6) % 6 : 0;

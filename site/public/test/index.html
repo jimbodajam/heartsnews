@@ -75,10 +75,10 @@ const frame = (eye, mouthKey, pose = 'idle') => {
 };
 const DERIVED = false;
 // ---- standing Fraser: one generated master, every other frame made in code (head nods and tilts, weight shifts, blinks, glances, mouths) ----
-const { loadFraser, composeFraser, HEADS: FHEADS, FEET: FFEET } = await import('./fraser-frames.js');
-const FRA = await loadFraser('../spike/fraser/standing/b1.jpg');
+const { loadFraser, composeFraser } = await import('./fraser-frames.js');
+const FRA = await loadFraser('../spike/fraser/standing/');
 const fcache = new Map();
-const fraserFrame = (head, feet, eye, mouthKey) => { const k = [head, feet, eye, mouthKey].join('|'); if (!fcache.has(k)) fcache.set(k, composeFraser(FRA, { head, feet, eye, mouthKey }).canvas()); return fcache.get(k); };
+const fraserFrame = (head, pose, feet, eye, mouthKey) => { const k = [head, pose, feet, eye, mouthKey].join('|'); if (!fcache.has(k)) fcache.set(k, composeFraser(FRA, { head, pose, feet, eye, mouthKey }).canvas()); return fcache.get(k); };
 const FXF = -10, FYF = 40;   // Fraser stands to the left of Isla
 // ---- audio: the same Kokoro lines as the broadcast spike, level drives the mouth ----
 const ACX = new (window.AudioContext || window.webkitAudioContext)();
@@ -155,10 +155,11 @@ function tick(ms) {
   if (BLEND && prevPose && ms - blendAt < 110) { g.drawImage(frame(eye, key, prevPose), FX, FY); g.globalAlpha = (ms - blendAt) / 110; g.drawImage(frame(eye, key, poseCur), FX, FY); g.globalAlpha = 1; }
   else g.drawImage(frame(eye, key, poseCur), FX, FY);
   // Fraser: drifts between head and weight poses on a slow timer, blinks on his own beat, mouth follows the loudness while he speaks.
-  { const hp = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'b1'], fp = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'];
+  { const hp = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'h2', 'b1'], fp = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'], gp = ['b2', 'b3', 'b4', 'b8', 'b3'];
     const fh = hp[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * hp.length)], ff = fp[Math.floor(hash(Math.floor(t / 7) * 3.3) * fp.length)];
+    const fpose = talkingF ? gp[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * gp.length)] : (Math.floor(t / 6) % 3 === 0 ? 'b6' : 'b1');
     const fe = ((t + 1.3) % 4.2) > 4.08 ? 'blink' : 'open', fm = talkingF ? shape : (t % 9 < 1 ? 'smile' : 'rest');
-    g.drawImage(fraserFrame(fh, ff, fe, fm === 'closed' ? 'closed' : fm), FXF, FYF); }
+    g.drawImage(fraserFrame(fh, fpose, ff, fe, fm === 'closed' ? 'closed' : fm), FXF, FYF); }
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
   if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }

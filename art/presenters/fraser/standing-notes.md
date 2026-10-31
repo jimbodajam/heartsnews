@@ -15,11 +15,11 @@ Start here for the next presenter (#13 plans a third). Code is `site/spike-lib/f
 | Six mouths (smile, closed, small, wide, O, A) | `pixel-derive` `detectMouth` and `mouth` (window 66,37,80,42), his own lip colours | works; shapes are small because his mouth is thin |
 | Eyes and mouths on moved heads | drawn on the master head first, then the whole head is warped | no registration step needed, unlike Isla's generated head frames |
 
-## Still to generate (`standing-gap-prompts.md`)
-- Head turn right and left (`h1`, `h2`): a turn changes the nose and ear, a warp cannot fake it.
-- Arm poses `b2` to `b8`: arms are new pixels.
+## Generated after the first pass (`standing-gap-prompts.md`)
+- Head turn right and left (`h1`, `h2`): a turn changes the nose and ear, a warp cannot fake it. Both came out as a firm three-quarter turn, bigger than the 8 degrees asked for.
+- Arm poses `b2` to `b8`: arms are new pixels. They register on `b1` to within about 15 changed pixels outside the arms, so they drop straight in. `b7` was asked for the viewer's left arm but came out on the right (same side as `b3`), so it is a second right-arm pose; regenerate if a left-arm one is wanted.
 
-Once `h1`/`h2` exist, the face on them needs the same treatment as Isla's `h1v1`-`h1v6` (own mouth frames) or a fitted warp (`fitEye` in `head-faces.js`).
+On `h1`/`h2` the eyes and mouth are found on the turned head itself (windows in `FACE` in `fraser-frames.js`) and drawn with the same `blink`, `gaze` and `mouth`, so no extra frames are needed. Blinks close the near eye cleanly but the far eye is a sliver and barely changes.
 
 ## What we learned
 - Validating on Isla first: a plain global shift or rotation cannot match her generated head frames pixel for pixel (they are re-drawn, not moved), so a changed-pixel score is noisy and misleading. Judge by eye on the zoomed frames. Only tilt and the small nods are close to code-made.
