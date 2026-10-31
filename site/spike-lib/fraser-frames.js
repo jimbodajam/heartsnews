@@ -12,7 +12,7 @@ const SEAM = 40;       // above this row everything is the head's (hair, face, e
 const HEAD_CUT = 46;   // rows above come from the head frame, below from the arm pose
 const LEGS = { cx: 72, top: 138, foot: 210, fill: [40, 36, 60] };
 
-export const HEADS = [['b1', 'centre', {}], ['h1', 'turn right', null], ['h2', 'turn left', null], ['h3', 'nod down', { dy: 1, sy: 0.96 }], ['h4', 'nod up', { dy: -1, sy: 1.03 }], ['h5', 'tilt right', { rot: 0.12, dx: 1 }], ['h6', 'tilt left', { rot: -0.12, dx: -1 }]];
+export const HEADS = [['b1', 'centre', {}], ['h1', 'turn right', null], ['h2', 'turn left', null], ['h3', 'nod down', { dy: 1, sy: 0.96 }], ['h4', 'nod up', { dy: -1, sy: 1.03 }], ['h5', 'tilt left', { rot: -0.12, dx: -1 }], ['h6', 'tilt right', { rot: 0.12, dx: 1 }]];
 export const FEET = [['b1', 'together', null], ['f1', 'weight right leg', { L: { dx: -4, lift: 2 }, R: { dx: 0, lift: 0 } }], ['f2', 'weight left leg', { L: { dx: 0, lift: 0 }, R: { dx: 4, lift: 2 } }], ['f3', 'apart', { L: { dx: -3, lift: 0 }, R: { dx: 3, lift: 0 } }]];
 export const POSES = [['b1', 'arms down'], ['b2', 'point'], ['b3', 'open palm'], ['b4', 'hands together'], ['b5', 'tablet'], ['b6', 'hand on hip'], ['b7', 'arm out'], ['b8', 'welcome']];
 export const EYES = ['open', 'blink', 'gazeL', 'gazeR'];

@@ -23,4 +23,4 @@ On `h1`/`h2` the eyes and mouth are found on the turned head itself (windows in 
 
 ## What we learned
 - Validating on Isla first: a plain global shift or rotation cannot match her generated head frames pixel for pixel (they are re-drawn, not moved), so a changed-pixel score is noisy and misleading. Judge by eye on the zoomed frames. Only tilt and the small nods are close to code-made.
-- Frame names are shared between presenters (`b1`-`b8`, `h1`-`h5`, `f1`-`f3`), so a broadcast can pick frames by name. Fraser uses `h3` (nod down), `h4` (nod up), `h5` (tilt right), `h6` (tilt left, new), `f1`-`f3`.
+- Frame names are shared between presenters (`b1`-`b8`, `h1`-`h5`, `f1`-`f3`), so a broadcast can pick frames by name. Fraser uses `h3` (nod down), `h4` (nod up), `h5` (tilt left, as Isla's), `h6` (tilt right, new), `f1`-`f3`.
