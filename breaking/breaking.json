@@ -1,0 +1,657 @@
+{
+  "version": 1,
+  "updated": "2026-10-28T21:58:57.789Z",
+  "packages": [
+    {
+      "id": "2026-10-28T20:00:00.000Z|period:ht",
+      "kind": "ht",
+      "publishedAt": "2026-10-28T20:54:28.071Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "HALF TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 0-1 Rangers",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's half-time in Hearts against Rangers. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/71b375b36c0f.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 0-1 Rangers",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It is half-time here at a fiery Tynecastle Park and the score is Hearts 0, Rangers 1 as Derek McInnes leads his men back to Gorgie. Rangers capitalised on slack play from the Jambos with Kevin Kelsy finishing off the move. Hearts have had 55 per cent of the ball. On shots it's Hearts 9, Rangers 4, and 3 to 2 on target. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 0,
+                "awayScore": 1,
+                "competition": "Scottish Premiership",
+                "status": "HALF TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 55,
+                    "away": 45,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 9,
+                    "away": 4
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 3,
+                    "away": 2
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 2,
+                    "away": 1
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 1,
+                    "away": 3
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 3,
+                    "away": 12
+                  }
+                ]
+              },
+              "audio": "audio/fc1b3322fdd5.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-10-28T20:00:00.000Z|period:ko2",
+      "kind": "ko2",
+      "publishedAt": "2026-10-28T21:07:44.978Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "SECOND HALF",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 0-1 Rangers",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "The second half is under way in Hearts against Rangers. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/92e9aa228e05.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 0-1 Rangers",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "We are back under way for the second half here at Tynecastle with Hearts 0, Rangers 1, and neither manager has made any changes during the break. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 0,
+                "awayScore": 1,
+                "competition": "Scottish Premiership",
+                "status": "SECOND HALF",
+                "homeScorers": [],
+                "awayScorers": [
+                  "Kelsy 16'"
+                ]
+              },
+              "audio": "audio/9178944a8999.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-10-28T20:00:00.000Z|goal:home:Cláudio Braga:1",
+      "kind": "goal",
+      "publishedAt": "2026-10-28T21:12:45.908Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:home:Cláudio Braga:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - Cláudio Braga 48'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Rangers. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/a9b2ba5a7d5d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:home:Cláudio Braga:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - Cláudio Braga 48'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Oh, he's caught that sweetly! Malachi Fagan-Walcott heads across for Cláudio Braga to help it over the line, a deserved equaliser on 48 minutes for the birthday boy. Hearts 0, Rangers 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "Scottish Premiership",
+                "status": "LIVE 48'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/325a07fa8581.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-10-28T20:00:00.000Z|goal:home:C. Miller:1",
+      "kind": "goal",
+      "publishedAt": "2026-10-28T21:19:47.096Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:home:C. Miller:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - C. Miller 57'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Rangers. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/a9b2ba5a7d5d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:home:C. Miller:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - C. Miller 57'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Tynecastle is bouncing as Braga drives into the box and his deflected strike bobbles to C. Miller to smash home! The score is now Hearts 0, Rangers 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "Scottish Premiership",
+                "status": "LIVE 57'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/62b3c31354e2.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-10-28T20:00:00.000Z|goal:away:O. Makhanya:1",
+      "kind": "goal",
+      "publishedAt": "2026-10-28T21:54:52.388Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:away:O. Makhanya:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - O. Makhanya 89'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Rangers. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/a9b2ba5a7d5d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:away:O. Makhanya:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Rangers - O. Makhanya 89'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Tynecastle falls silent as a header from O. Makhanya loops in! Hearts 0, Rangers 0. The Rangers goalkeeper has been kept busy, with four saves. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "Scottish Premiership",
+                "status": "LIVE 89'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/5bb63dee2657.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-10-28T20:00:00.000Z|period:ft",
+      "kind": "ft",
+      "publishedAt": "2026-10-28T21:58:57.789Z",
+      "kickOff": "2026-10-28T20:00:00.000Z",
+      "flash": "FULL TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 2-2 Rangers",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's full time in Hearts against Rangers. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/f00e04db9ea3.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 2-2 Rangers",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It's full time here, and it's Hearts 2, Rangers 2. Rangers have had 53 per cent of the ball. On shots it's Hearts seventeen, Rangers fourteen, and six to six on target. The Hearts goalkeeper has been kept busy, with four saves. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Rangers",
+                "homeScore": 2,
+                "awayScore": 2,
+                "competition": "Scottish Premiership",
+                "status": "FULL TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 47,
+                    "away": 53,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 17,
+                    "away": 14
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 6,
+                    "away": 6
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 4,
+                    "away": 4
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 4,
+                    "away": 4
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 12,
+                    "away": 20
+                  }
+                ]
+              },
+              "audio": "audio/a5941d7b1fd0.mp3"
+            }
+          ]
+        }
+      ],
+      "weather": {
+        "sky": "overcast",
+        "windy": false,
+        "tempC": 11.5,
+        "place": "Tynecastle Park",
+        "at": "2026-10-28T21:58:57.048Z",
+        "phrase": "grey and overcast, 12 degrees",
+        "numbers": [
+          12
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — standing Isla test</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; font-family: 'Press Start 2P', monospace; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); font-size: calc(min(100vw, 100vh * 16 / 9) / 100); }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  #start { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); background: #e0b13a; color: #3d0d17; border: 0; padding: 1em 1.4em; font: inherit; font-size: 1.3em; cursor: pointer; }
+  #cap { position: absolute; left: 3em; right: 3em; bottom: 2em; background: #120f22; color: #f2efe6; padding: .6em 1.2em; font-size: .95em; line-height: 1.6; visibility: hidden; }
+  #cap b { color: #e0b13a; font-weight: normal; margin-right: .8em; }
+  #hint { position: fixed; right: 12px; top: 10px; color: #f2efe6aa; font: 12px sans-serif; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame">
+  <canvas id="cv"></canvas>
+  <button id="start">CLICK TO START (SOUND ON)</button>
+  <div id="cap"><b id="who"></b><span id="line"></span></div>
+</div></div>
+<div id="hint">standing Isla · 1 palm · 2 idle · 3 point · 4 open · 5 explain · 6 tablet · 7 hip · 8 left · 9 welcome · 0 auto · M mouth test · B blink · G glance</div>
+<script type="module">
+const { toGrid, detectEyes, detectMouth, mouth, blink, gaze, MOUTH_PRESETS } = await import('./pixel-derive.js');
+const GW = 480, GH = 270;
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+
+// ---- backdrop: the generated studio on its 480-column grid ----
+function backdropFromGrid(img) {
+  const BB = 1376 / 480, c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const sg = c.getContext('2d', { willReadFrequently: true }); sg.drawImage(img, 0, 0);
+  const d = sg.getImageData(0, 0, c.width, c.height).data, rows = Math.floor(c.height / BB);
+  const out = document.createElement('canvas'); out.width = GW; out.height = GH; const og = out.getContext('2d'), id = og.createImageData(GW, GH);
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const j = Math.min(rows - 1, Math.max(0, y - Math.floor((GH - rows) / 2)));
+    const sx = Math.min(c.width - 1, Math.round((x + 0.5) * BB)), sy = Math.min(c.height - 1, Math.round((j + 0.5) * BB)), k = (sy * c.width + sx) * 4, o = (y * GW + x) * 4;
+    id.data[o] = d[k]; id.data[o + 1] = d[k + 1]; id.data[o + 2] = d[k + 2]; id.data[o + 3] = 255;
+  }
+  og.putImageData(id, 0, 0); return out;
+}
+const bgImg = await load('../spike/studio-pixel.jpg');
+const backdrop = bgImg ? backdropFromGrid(bgImg) : null;
+
+// ---- standing Isla, new frames: arm poses (b2-b8 over the old master) + head frames (h1-h5, centre = b1) + feet frames (f1-f3), faces laid over the heads ----
+const { headOffsets, composeFace, fitEye, composeEyesWarped } = await import('./head-faces.js');
+const gridOf = n => load('../spike/isla/standing/' + n + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }));
+const PALM = toGrid(await load('../spike/isla/standing-master.jpg'), { w: 145, h: 216 });
+const NAMES = ['b1', 'h1', 'h2', 'h3', 'h4', 'h5', 'f1', 'f2', 'f3', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', ...Array.from({ length: 9 }, (_, i) => 'v' + (i + 1)), ...Array.from({ length: 7 }, (_, i) => 'b' + (i + 2))];
+const Gm = {}; await Promise.all(NAMES.map(async n => { Gm[n] = await gridOf(n); }));
+const vs = Array.from({ length: 9 }, (_, i) => Gm['v' + (i + 1)]);
+const V = { base: Gm.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
+const HEADS = { b1: [1, 1], h1: [1, 1], h2: [1, 1], h3: [1, 1], h4: [1, 1], h5: [1, 1] };   // [eyes, mouth]; h1 uses its own mouth frames, and h1 and h5 get warped eyes (fitted shift, tilt and squeeze) because a plain shift breaks on them
+const WARP = {}; for (const n of ['h1', 'h5']) WARP[n] = { L: fitEye(Gm.b1, Gm[n], 'L'), R: fitEye(Gm.b1, Gm[n], 'R') };
+const OFF = {}; for (const n of Object.keys(HEADS)) OFF[n] = headOffsets(Gm.b1, Gm[n], vs[5]);
+const NUDGE = { h2: { eye: -1, mouth: 0 } }; for (const [n, a] of Object.entries(NUDGE)) { const o = OFF[n]; OFF[n] = { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; }
+const H1M = { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', press: 'h1v6' };
+const POSES = { palm: PALM, idle: Gm.b1, point: Gm.b2, open: Gm.b3, explain: Gm.b4, tablet: Gm.b5, hip: Gm.b6, left: Gm.b7, welcome: Gm.b8 };
+const POSE_NAMES = Object.keys(POSES), MOUTHS = ['rest', 'closed', 'small', 'wide', 'O', 'A', 'press', 'smile'];
+const HEAD_CUT = 49;   // rows above this come from the head frame, below from the arm pose, from row 119 the feet frame
+let headNow = 'b1', feetNow = 'b1';
+const cache = new Map();
+const frame = (eye, mouthKey, pose = 'idle') => {
+  const k = [pose, headNow, feetNow, eye, mouthKey].join('|'); if (cache.has(k)) return cache.get(k);
+  const [eyeOk, mouthOk] = HEADS[headNow], mk = mouthKey === 'closed' ? 'smile' : mouthKey === 'rest' ? null : mouthKey, ek = eyeOk && eye !== 'open' ? eye : null;
+  let head = headNow === 'h1' ? Gm[H1M[mk] || 'h1'] : headNow === 'b1' ? composeFace(Gm.b1, OFF.b1, V, eye === 'open' ? null : eye, mk) : composeFace(Gm[headNow], OFF[headNow], V, WARP[headNow] ? null : ek, mouthOk ? mk : null);
+  if (WARP[headNow] && eye !== 'open') head = composeEyesWarped(head, V, WARP[headNow], eye);
+  const PO = POSES[pose] || Gm.b1, X = PO.clone(), F = Gm[feetNow], B = Gm.b1;
+  // below the split the feet frame supplies the legs, but where the arm pose changed something (a hand lifted off the skirt, or still low) the pose wins
+  const poseChanged = (x, y) => PO.has(x, y) !== B.has(x, y) || (PO.has(x, y) && Math.abs(PO.get(x, y)[0] - B.get(x, y)[0]) + Math.abs(PO.get(x, y)[1] - B.get(x, y)[1]) + Math.abs(PO.get(x, y)[2] - B.get(x, y)[2]) > 40);
+  for (let y = 0; y < 216; y++) for (let x = 0; x < 145; x++) { const src = y < HEAD_CUT ? head : y >= 119 && !poseChanged(x, y) ? F : null; if (!src) continue; if (src.has(x, y)) X.set(x, y, src.get(x, y)); else X.d[X.idx(x, y) + 3] = 0; }
+  const c = X.canvas(); cache.set(k, c); return c;
+};
+const DERIVED = false;
+// ---- audio: the same Kokoro lines as the broadcast spike, level drives the mouth ----
+const ACX = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = ACX.createAnalyser(); analyser.fftSize = 512; analyser.connect(ACX.destination);
+const spec = new Uint8Array(analyser.fftSize);
+const SCRIPT = await (await fetch('../spike/audio/lines.json')).json();
+await Promise.all(SCRIPT.map(s => new Promise(res => {
+  s.el = new Audio('../spike/audio/' + s.file); s.el.preload = 'auto';
+  ACX.createMediaElementSource(s.el).connect(analyser);
+  s.el.addEventListener('loadedmetadata', res); s.el.addEventListener('error', res);
+})));
+let started = false, idx = -1, cur = null, LEVEL = 0, mTest = -1;
+const who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
+function next() {
+  idx = (idx + 1) % SCRIPT.length; cur = SCRIPT[idx]; cur.t0 = performance.now(); cur.el.currentTime = 0; cur.el.play().catch(() => {});
+  cur.el.onended = () => { cur = null; setTimeout(next, 450); };
+}
+document.getElementById('start').onclick = e => { ACX.resume(); e.target.remove(); started = true; next(); };
+
+// ---- runtime ----
+const cv = document.getElementById('cv'); cv.width = GW; cv.height = GH;
+const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+const VIS = ['small', 'wide', 'O', 'A', 'closed', 'small', 'A', 'wide', 'smile'];
+const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+let forceBlink = 0, forceGlance = 0, env = 0, shape = 'closed', shapeAt = 0, forcedPose = new URLSearchParams(location.search).get('pose') || '';
+const BLEND = new URLSearchParams(location.search).get('blend') === '1';   // ?blend=1: 110 ms crossfade between poses
+const GESTURES = ['palm', 'point', 'open', 'explain', 'welcome'], POSE_ACTIVE = new Set(GESTURES), TO_SCREEN = new Set(['point', 'palm', 'open']);
+let feetAt = 0, lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseCur = 'idle', prevPose = null, poseAt = 0, blendAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
+/** Pick the next gesture (never the same twice), blink on the cut, and look at the screen if the gesture points at it. */
+function nextGesture(ms) {
+  let n; do { n = GESTURES[Math.floor(hash(ms * 0.001 + gi++) * GESTURES.length)]; } while (n === poseTarget);
+  poseTarget = n; poseAt = ms; forceBlink = ms + 150; if (TO_SCREEN.has(n)) glanceUntil = ms + 1300;
+  const pool = TO_SCREEN.has(n) ? ['h1', 'h1', 'h2', 'b1'] : ['b1', 'h2', 'h3', 'h4', 'h5', 'b1']; headNow = pool[Math.floor(hash(ms * 0.003 + gi) * pool.length)];
+  if (ms - feetAt > 7000) { const fp = ['b1', 'f1', 'f2', 'f3', 'b1']; feetNow = fp[Math.floor(hash(ms * 0.007 + gi) * fp.length)]; feetAt = ms; }
+}
+addEventListener('keydown', e => { if (e.key === '0') forcedPose = ''; else if (/^[1-9]$/.test(e.key)) forcedPose = POSE_NAMES[+e.key - 1] || ''; });
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm') mTest = (mTest + 1) % MOUTHS.length; else if (k === 'b') forceBlink = performance.now() + 160; else if (k === 'g') forceGlance = performance.now() + 900; else if (k === 'escape') mTest = -1; });
+const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
+const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
+
+function tick(ms) {
+  const dt = Math.min(100, ms - (lastMs || ms)); lastMs = ms;
+  const t = ms / 1000, talking = !!cur && cur.by === 'a';
+  analyser.getByteTimeDomainData(spec); { let mx = 0; for (const v of spec) mx = Math.max(mx, Math.abs(v - 128)); LEVEL = mx / 128; }
+  g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH);
+  if (backdrop) g.drawImage(backdrop, 0, 0);
+  // Screen to point at: bezel, panel, placeholder content.
+  g.fillStyle = '#0e0c10'; g.fillRect(SCREEN.x - 3, SCREEN.y - 3, SCREEN.w + 6, SCREEN.h + 6);
+  g.fillStyle = '#6d1a2a'; g.fillRect(SCREEN.x, SCREEN.y, SCREEN.w, SCREEN.h);
+  g.fillStyle = '#e0b13a'; g.fillRect(SCREEN.x, SCREEN.y, SCREEN.w, 4);
+  g.fillStyle = '#f2efe6'; g.font = '8px "Press Start 2P", monospace'; g.fillText('HEARTS 2-1 DUNDEE UTD', SCREEN.x + 10, SCREEN.y + 26);
+  g.fillStyle = '#e0b13a'; g.fillText('FULL TIME', SCREEN.x + 10, SCREEN.y + 44);
+  // Eye state: periodic blink, occasional glance at the screen while talking.
+  const blinking = (t % 3.6) > 3.48 || ms < forceBlink;
+  const glance = ms < forceGlance || ms < glanceUntil ? 1 : talking && (t % 6.7) > 6.0 ? 1 : 0;
+  const eye = blinking ? 'blink' : glance ? 'gazeR' : 'open';
+  // Mouth: level-driven visemes while talking, a smile now and then at rest. M cycles through every shape for inspection.
+  // Mouth: follow a smoothed loudness envelope (fast attack, slow release) and hold each shape for a moment so it does not flicker.
+  env += (LEVEL > env ? 0.5 : 0.12) * (LEVEL - env);
+  if (talking && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
+  const key = mTest >= 0 ? MOUTHS[mTest] : talking ? shape : (t % 5 < 1.2 ? 'smile' : 'rest');
+  // Pose: while she talks, cut to a new gesture every few seconds; while Fraser talks she listens (idle or hand on hip). 1-9 force a pose, 0 goes back to automatic.
+  // Gestures change on phrase starts (a pause, then speech), not on a timer, with a blink and a look at the screen on the cut.
+  if (env < 0.04) quietFor += dt; else { if (quietFor > 220 && talking && !forcedPose && ms - poseAt > 2000) nextGesture(ms); quietFor = 0; }
+  if (!talking && !forcedPose && ms - poseAt > 5200) { poseTarget = poseTarget === 'idle' ? (hash(ms) > 0.45 ? 'hip' : 'idle') : 'idle'; poseAt = ms; }   // listening: drift between the two resting poses
+  if (talking) lastTalk = ms;
+  if (talking && !wasTalking && !forcedPose && ms - poseAt > 600) nextGesture(ms);                                                                   // her line has just started: gesture straight away
+  wasTalking = talking;
+  if (!talking && POSE_ACTIVE.has(poseTarget) && !forcedPose && ms - lastTalk > 900) { poseTarget = 'idle'; poseAt = ms; }                                   // she finished speaking: hold the gesture a moment, then lower her arms
+
+  const want = forcedPose || (DERIVED ? 'palm' : poseTarget);
+  if (want !== poseCur) { prevPose = poseCur; poseCur = want; blendAt = ms; }
+  if (BLEND && prevPose && ms - blendAt < 110) { g.drawImage(frame(eye, key, prevPose), FX, FY); g.globalAlpha = (ms - blendAt) / 110; g.drawImage(frame(eye, key, poseCur), FX, FY); g.globalAlpha = 1; }
+  else g.drawImage(frame(eye, key, poseCur), FX, FY);
+  cap.style.visibility = cur ? 'visible' : 'hidden';
+  if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
+  if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,0 +1,1608 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-31T17:30:55.979Z",
+  "generatedBy": "Gemini (gemini-flash-lite-latest), checked by Gemini (gemini-flash-lite-latest)",
+  "channel": {
+    "name": "HEARTS NEWS 24",
+    "club": "Heart of Midlothian",
+    "colours": {
+      "primary": "#6d1a2a",
+      "secondary": "#f2efe6",
+      "accent": "#e0b13a"
+    }
+  },
+  "presenters": [
+    {
+      "id": "isla",
+      "name": "Isla Brodie",
+      "role": "Presenter",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_emma"
+      },
+      "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+      "look": {
+        "build": "female",
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "fraser",
+      "name": "Fraser Lennox",
+      "role": "Presenter",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_george"
+      },
+      "persona": "Co-anchor and resident old-timer, 61. Came through the Hearts youth ranks in the 1980s but never made the first team, and has watched from the Wheatfield Stand ever since. Old school: hates VAR with a passion, distrusts xG and 'laptop football', rates grit, wingers who beat their man, and centre-halves who head it. Nostalgic about the Jim Jefferies era and the 1998 Scottish Cup. Gruff but warm, prone to 'in my day'. Reads the news straight; his opinions come out in discussion.",
+      "leanings": [
+        "always backs the academy players and anyone who came through the ranks",
+        "sceptical of the manager's in-game changes and late substitutions",
+        "rates a centre-half who heads it over one who plays it out from the back",
+        "VAR is ruining the game"
+      ],
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#b9b4ad",
+        "hairStyle": "bald",
+        "glasses": true,
+        "suit": "#26262e",
+        "shirt": "#f2efe6",
+        "tie": "#6d1a2a"
+      }
+    },
+    {
+      "id": "ross",
+      "formerIds": [
+        "ally"
+      ],
+      "name": "Ross Dunbar",
+      "role": "Transfer Centre",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_lewis"
+      },
+      "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
+      "leanings": [
+        "trusts the numbers over reputation, when there are numbers to go on",
+        "gets excited by every new signing and is quick to call a rumour a done deal",
+        "backs the manager's tactical ideas, especially the press and the inverted full-backs"
+      ],
+      "look": {
+        "skin": "#c98e6a",
+        "hair": "#1a1416",
+        "hairStyle": "quiff",
+        "suit": "#3a3d4a",
+        "shirt": "#c9d6ea",
+        "tie": "#e0b13a"
+      }
+    },
+    {
+      "id": "kirsty",
+      "name": "Kirsty Reid",
+      "role": "Match Analyst",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_isabella"
+      },
+      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the women's team, and is the voice of reason between Fraser and Ross.",
+      "leanings": [
+        "evidence first: won't judge a player on one game",
+        "cautious about rushing players back from injury",
+        "always makes the case for Hearts Women getting more attention"
+      ],
+      "look": {
+        "build": "female",
+        "skin": "#8d5a3b",
+        "hair": "#2a1a14",
+        "hairStyle": "long",
+        "glasses": true,
+        "suit": "#6d1a2a",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "gregor",
+      "name": "Gregor Moffat",
+      "role": "At the ground",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel",
+        "speed": 1.1
+      },
+      "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+      "look": {
+        "skin": "#e6ad8c",
+        "hair": "#a39d94",
+        "hairStyle": "short",
+        "suit": "#3c5068",
+        "shirt": "#c9d6ea",
+        "tie": "#26262e",
+        "coat": true,
+        "scarf": "#6d1a2a",
+        "headset": true
+      }
+    },
+    {
+      "id": "vo-lily",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_lily"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "long",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-alice",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_alice"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#2a1a14",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-daniel",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-fable",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_fable"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    }
+  ],
+  "ticker": [
+    "Hearts v Hibernian - Daily Record",
+    "Who will win Hearts vs Hibs? Our writers make their predictions for Premier Sports Cup semi-final clash - Daily Record",
+    "12 pundits predict Hearts vs Hibs: Jambos handed major Hampden backing but Reedijk has huge endearment chance - Edinburgh Evening News",
+    "Matchday: Boroughmuir Thistle (A), A Semi-Final awaits - Hearts TV (YouTube)",
+    "Hearts: Josh McPake eyes another Hampden high in semi-final - BBC",
+    "Thun v Hearts - Daily Record",
+    "Eduardo Ageu injury - Daily Record",
+    "Martin Boyle Return - BBC Sport",
+    "Next: Hearts v Hibernian - Sunday"
+  ],
+  "segments": [
+    {
+      "id": "headlines",
+      "kind": "headlines",
+      "title": "The Headlines",
+      "strap": "Hearts v Hibernian",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Good afternoon, and welcome to Hearts News 24. It is Saturday, thirty-first of October 2026, and all eyes are on the national stadium as the Edinburgh derby approaches. Let us take a look at the headlines.",
+          "link": "welcome",
+          "audio": "audio/6d6815e5d0b2.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Wouter Vrancken has described the upcoming Premier Sports Cup semi-final against Hibernian as an all-or-nothing encounter. The Hearts manager admits he does not yet know his full available squad, while Hibs boss Marink Reedijk expects tactical surprises at Hampden tomorrow.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts v Hibernian",
+            "source": "Daily Record",
+            "icon": "ball",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/01684f4e24f8.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Twelve pundits have been having their say on tomorrow's big derby clash at Hampden. The Jambos have been handed major backing from the tipsters, while Marink Reedijk faces a huge opportunity to turn his side's fortunes around.",
+          "graphic": {
+            "type": "headline",
+            "title": "12 pundits predict Hearts vs Hibs: Jambos handed major Hampden backing but Reedijk has huge endearment chance",
+            "source": "Edinburgh Evening News",
+            "icon": "ball"
+          },
+          "audio": "audio/f01b02bb8860.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Heart of Midlothian have confirmed that left-back Harry Milne suffered an anterior cruciate ligament injury in training last week. Head coach Wouter Vrancken announced that the defender's season is now over.",
+          "graphic": {
+            "type": "headline",
+            "title": "Harry Milne injury",
+            "source": "Daily Record",
+            "icon": "medical",
+            "face": "faces/harry-milne.png"
+          },
+          "audio": "audio/ca7cb62ed18e.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "BBC Sport reports that Martin Boyle is set to make his return for Hibernian in tomorrow's semi-final match. Hibs head into the fixture looking for a spark despite sitting second-bottom of the Premiership table.",
+          "graphic": {
+            "type": "headline",
+            "title": "Martin Boyle Return",
+            "source": "BBC Sport",
+            "icon": "mic"
+          },
+          "audio": "audio/7056987654ae.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Later today, Ross and Fraser go head to head with their derby predictions, and we will hear from the supporters in the Fan Zone.",
+          "link": "comingUp",
+          "audio": "audio/0b3312ef848d.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Let us take a deeper look at the build-up now. Ross is standing by at the touchscreen to break down the key details.",
+          "link": "handover",
+          "audio": "audio/e626b06b3b3e.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l31",
+      "kind": "story",
+      "title": "Hearts v Hibernian",
+      "strap": "Hearts v Hibernian",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Back to our top story, and there is no let up in the build-up to tomorrow's League Cup semi-final against Hibernian at Hampden. Ross, we have got all the latest team news and the tactical picture for this huge derby.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts v Hibernian",
+            "source": "Daily Record",
+            "icon": "ball",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/b2d1db78d285.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That is right Isla. Wouter Vrancken says he does not yet know who will be fully available for Sunday, and Josh McPake's injury still needs to be assessed before kick-off. Meanwhile, Marink Reedijk says we can expect some surprises.",
+          "graphic": {
+            "type": "quote",
+            "text": "It's a totally different game. New manager, new style, new competition.",
+            "author": "Wouter Vrancken",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/95dad125ecca.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "The Daily Record reports that ticket demand has been huge, with Hearts selling out their initial allocation and pushing total attendance past twenty-three thousand, alongside over eighteen thousand Hibs fans.",
+          "audio": "audio/18f9d55b6a7b.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "The numbers back up our tactical control, Isla. Vrancken wants to replicate past success here and called it an all-or-nothing game.",
+          "audio": "audio/d19069d3bcdf.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Hibs come into this sitting second-bottom of the Premiership with only two points from their last eight games, and they have not kept a league clean sheet this season.",
+          "audio": "audio/c48a4b54e168.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Reedijk's side have struggled for goals, scoring just once in their recent draw at Saint Mirren, though Martin Boyle does return for them with five derby goals historically under his belt.",
+          "audio": "audio/ec81df3e301c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And looking at the officials for tomorrow, David Dickinson is the referee, assisted by David McGeachie and Douglas Ross, with Calum Scott fourth official, Andrew Dallas on VAR, and Nick Walsh as AVAR.",
+          "audio": "audio/60c587931e3c.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Now let us check the wider picture in the Match Centre with Kirsty, before we look ahead to tomorrow.",
+          "link": "handover",
+          "audio": "audio/011050e57f2c.mp3"
+        }
+      ]
+    },
+    {
+      "id": "match",
+      "kind": "match",
+      "title": "Match Centre",
+      "strap": "Hearts v Hibernian - Sunday",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Hearts drew two-two at home to Rangers in the Scottish Premiership three days ago, with Cláudio Braga and Cameron Miller on the scoresheet.",
+          "graphic": {
+            "type": "result",
+            "home": "Hearts",
+            "away": "Rangers",
+            "homeScore": 2,
+            "awayScore": 2,
+            "competition": "Scottish Premiership",
+            "status": "FULL TIME",
+            "homeScorers": [
+              "Cláudio Braga 48'",
+              "Miller 57'"
+            ],
+            "awayScorers": [
+              "Kelsy 16'",
+              "Makhanya 89'"
+            ]
+          },
+          "audio": "audio/aa04b6abe1bb.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Harry Milne is one short of fifty appearances for Hearts ahead of this derby, while Elton Kabangu is one goal away from ten for the club, and Blair Spittal needs two more.",
+          "audio": "audio/94f853a74048.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts sit third in the Scottish Premiership on twenty points from eleven games, four points behind Rangers in second and three ahead of Dundee in fourth.",
+          "graphic": {
+            "type": "table",
+            "title": "League Table",
+            "highlight": "Hearts",
+            "rows": [
+              {
+                "pos": 1,
+                "team": "Celtic",
+                "played": 11,
+                "gd": 19,
+                "pts": 28
+              },
+              {
+                "pos": 2,
+                "team": "Rangers",
+                "played": 11,
+                "gd": 10,
+                "pts": 24
+              },
+              {
+                "pos": 3,
+                "team": "Hearts",
+                "played": 11,
+                "gd": 7,
+                "pts": 20
+              },
+              {
+                "pos": 4,
+                "team": "Dundee",
+                "played": 11,
+                "gd": 4,
+                "pts": 17
+              },
+              {
+                "pos": 5,
+                "team": "Dundee Utd",
+                "played": 11,
+                "gd": 0,
+                "pts": 16
+              },
+              {
+                "pos": 6,
+                "team": "Falkirk",
+                "played": 11,
+                "gd": 1,
+                "pts": 15
+              }
+            ]
+          },
+          "audio": "audio/1bdd32f21435.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts face Hibernian in the League Cup tomorrow with kick-off at three pm.",
+          "graphic": {
+            "type": "fixtures",
+            "title": "Next Match",
+            "fixtures": [
+              {
+                "date": "2026-11-01T15:00:00.000Z",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "competition": "League Cup"
+              }
+            ]
+          },
+          "audio": "audio/b2137ff68e2f.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Staying with the numbers, let us examine our opponents closely to see how Hibernian are shaping up.",
+          "link": "handover",
+          "audio": "audio/2e072dc7e894.mp3"
+        }
+      ]
+    },
+    {
+      "id": "opponent",
+      "kind": "opponent",
+      "title": "Focus on Hibernian",
+      "strap": "Hearts v Hibernian: the opposition",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Hibernian come into the derby sitting twelfth in the Premiership on eight points, looking to turn around a recent run that includes three defeats and a draw against St Mirren.",
+          "graphic": {
+            "type": "form",
+            "team": "Hibernian",
+            "results": [
+              {
+                "against": "St. Mirren",
+                "score": "1-1",
+                "outcome": "D",
+                "venue": "A"
+              },
+              {
+                "against": "Celtic",
+                "score": "1-2",
+                "outcome": "L",
+                "venue": "H"
+              },
+              {
+                "against": "Falkirk",
+                "score": "1-2",
+                "outcome": "L",
+                "venue": "H"
+              },
+              {
+                "against": "Dundee Utd",
+                "score": "0-1",
+                "outcome": "L",
+                "venue": "A"
+              }
+            ]
+          },
+          "audio": "audio/dc56dee7414e.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Head to head, in 343 league and cup meetings Hearts have won 153, drawn 102 and lost 88. At home it's 79 wins, 52 draws and 36 defeats. The last time Hearts beat Hibernian was in September twenty twenty-six, three-one away. The biggest win was eight-three, in September nineteen thirty-five.",
+          "graphic": {
+            "type": "headtohead",
+            "team": "Hibernian",
+            "venue": "H",
+            "all": {
+              "played": 343,
+              "won": 153,
+              "drawn": 102,
+              "lost": 88
+            },
+            "atVenue": {
+              "played": 167,
+              "won": 79,
+              "drawn": 52,
+              "lost": 36
+            },
+            "lastWin": {
+              "date": "SEP 2026",
+              "score": "3-1",
+              "venue": "A"
+            },
+            "biggestWin": {
+              "date": "SEP 1935",
+              "score": "8-3",
+              "venue": "H"
+            },
+            "recent": [
+              {
+                "outcome": "W",
+                "score": "3-1",
+                "venue": "A"
+              },
+              {
+                "outcome": "W",
+                "score": "2-1",
+                "venue": "A"
+              },
+              {
+                "outcome": "W",
+                "score": "1-0",
+                "venue": "H"
+              },
+              {
+                "outcome": "L",
+                "score": "2-3",
+                "venue": "A"
+              },
+              {
+                "outcome": "W",
+                "score": "1-0",
+                "venue": "H"
+              }
+            ]
+          },
+          "audio": "audio/80551def42c4.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hibernian lined up in a four-two-three-one shape in their last outing, with Sallinger in goal behind a back four of Passlack, Kerr, Ivezic, and Mayor.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Hibernian",
+            "formation": "4-2-3-1",
+            "rows": [
+              [
+                "Sallinger"
+              ],
+              [
+                "Passlack",
+                "Kerr",
+                "Ivezic",
+                "Mayor"
+              ],
+              [
+                "Chaiwa",
+                "Newell"
+              ],
+              [
+                "McGrath",
+                "Mulligan",
+                "Cadden"
+              ],
+              [
+                "Elding"
+              ]
+            ],
+            "ours": false
+          },
+          "audio": "audio/b9b6803c492b.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts lined up in a four-two-three-one formation in their last match featuring Reus in goal, alongside Altena, Fagan-Walcott, McCart, and Mato, with Mendy and Magnússon holding the midfield.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Hearts",
+            "formation": "4-2-3-1",
+            "rows": [
+              [
+                "Reus"
+              ],
+              [
+                "Altena",
+                "Fagan-Walcott",
+                "McCart",
+                "Mato"
+              ],
+              [
+                "Mendy",
+                "Magnússon"
+              ],
+              [
+                "Kerjota",
+                "Miller",
+                "McPake"
+              ],
+              [
+                "Cláudio Braga"
+              ]
+            ],
+            "ours": true
+          },
+          "audio": "audio/7325bd3d7402.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Let us return to the main semi-final build-up now with Ross, who has been looking at some interesting player connections.",
+          "link": "handover",
+          "audio": "audio/d6aa001d4293.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l34",
+      "kind": "story",
+      "title": "Thun v Hearts",
+      "strap": "Thun v Hearts",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "More now on the build-up to tomorrow's League Cup semi-final at Hampden, and Ross, Jamie McCart has been talking about his friendship with Hibs defender Jason Kerr.",
+          "graphic": {
+            "type": "headline",
+            "title": "Thun v Hearts",
+            "source": "Daily Record",
+            "icon": "ball"
+          },
+          "audio": "audio/91b7dabca742.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That is right Isla, and the Daily Record reports that despite crossing the Edinburgh divide, their bond remains strong from their time winning the double together at St Johnstone in twenty twenty-one.",
+          "graphic": {
+            "type": "result",
+            "home": "Hearts",
+            "away": "Hibs",
+            "homeScore": 3,
+            "awayScore": 1,
+            "competition": "Scottish Premiership",
+            "homeScorers": [],
+            "awayScorers": []
+          },
+          "audio": "audio/42f658839bc6.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "McCart has certainly seen a shift in his own fortunes this season, hasn't he?",
+          "audio": "audio/e8dceecbca4f.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "He really has, jumping from under seven hundred minutes last term under Derek McInnes to over sixteen hundred minutes already under Wouter Vrancken, and his physical metrics prove he is vital for our defensive press tomorrow.",
+          "graphic": {
+            "type": "quote",
+            "text": "I’ve reiterated that to the boys about my memories in 2021. It's such a good feeling",
+            "author": "Jamie McCart"
+          },
+          "audio": "audio/e103e1785ed6.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And he has had to deal with quite a few defensive partner changes alongside him.",
+          "audio": "audio/e2c987b5be9a.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Indeed, but with Malachi Fagan-Walcott back from injury, McCart feels the current setup and Vrancken's coaching style suit him down to the ground as they chase a first League Cup win since nineteen sixty-two.",
+          "audio": "audio/0dc008262cdf.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That tactical picture brings us straight into the debate. Fraser is ready with his match predictions.",
+          "link": "handover",
+          "audio": "audio/4b2cb6d44c54.mp3"
+        }
+      ]
+    },
+    {
+      "id": "debate",
+      "kind": "debate",
+      "title": "Edinburgh Derby semi final tactics",
+      "strap": "Edinburgh Derby semi final tactics",
+      "scene": "desk",
+      "presenters": [
+        "fraser",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "fraser",
+          "text": "Ross, you keep talking about your laptop analytics and pressing triggers, but this is the Edinburgh derby at Hampden. Our front four speed can dismantle Hibs if we manage the fatigue properly, exactly as I said yesterday.",
+          "graphic": {
+            "type": "headline",
+            "title": "Edinburgh Derby semi final tactics",
+            "icon": "mic"
+          },
+          "audio": "audio/c9e7d68c23f9.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Fraser, it is not just a hunch, it is about Vrancken's attacking metrics and tactical control proving decisive. My prediction record of two right from three speaks for itself compared to your one from three.",
+          "audio": "audio/fc7198a7dcaf.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Your metrics do not win local derbies on the Hampden turf, grit and physical presence do. Jamie McCart needs to win his headers against their front line, and we need proper fighters on the pitch, not spreadsheet analysts.",
+          "audio": "audio/d58f24c7a8ef.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Jamie McCart physical numbers prove he is vital for the derby press, Fraser. The analytics firmly justify us being favourites, and I am sticking to my comfortable three-nil win for Hearts.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Hearts v Hibernian",
+            "picks": [
+              {
+                "name": "Fraser",
+                "pick": "2-1",
+                "record": "1 right from 3"
+              },
+              {
+                "name": "Ross",
+                "pick": "3-0",
+                "record": "2 right (1 exact) from 3"
+              }
+            ]
+          },
+          "audio": "audio/1d04ee9f49c5.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Three nil is living in a dream world when Martin Boyle is back to threaten us. I am predicting a narrow two-one victory for Hearts over Hibernian because our momentum will carry us through.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Hearts v Hibernian",
+            "picks": [
+              {
+                "name": "Fraser",
+                "pick": "2-1",
+                "record": "1 right from 3"
+              },
+              {
+                "name": "Ross",
+                "pick": "3-0",
+                "record": "2 right (1 exact) from 3"
+              }
+            ]
+          },
+          "audio": "audio/12930c74c32c.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "We'll take a short break now. Stay with us.",
+          "audio": "audio/fb7b5591f16b.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-1",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-lily",
+          "text": "Fancy a day out in Gorgie that doesn't involve a forty-minute queue for a pie?",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/d9cbb1c00301.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Come and meet the pigs, the goats and the rest of the gang at Gorgie Farm, a proper community farm right here in the city.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-1.png"
+          },
+          "audio": "audio/60081b798db6.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Gorgie Farm. The only kids in Gorgie who are happy on a Monday.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/6e0a309a65e2.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Ninety minutes of shouting at the referee builds up an appetite.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/4a6f35de793d.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Whether it's a fish supper after the final whistle or a chippy on a cold Tuesday night, Gorgie Fish Bar has got you covered.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/dbd330f5a1cf.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Salt and sauce? Of course. This is Edinburgh.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/97bba4694c68.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Gorgie Fish Bar. Battered, never beaten.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/89f1ec84edc6.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l25",
+      "kind": "story",
+      "title": "Eduardo Ageu injury",
+      "strap": "Eduardo Ageu injury",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let's return to the defensive situation at Hearts, Kirsty, and the latest on Eduardo Ageu.",
+          "graphic": {
+            "type": "headline",
+            "title": "Eduardo Ageu injury",
+            "source": "Daily Record",
+            "icon": "medical",
+            "face": "faces/eduardo-ageu.png"
+          },
+          "audio": "audio/5d064e6cfaa7.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "We were expecting him back next week to help ease our defensive selection issues.",
+          "audio": "audio/4e2664e4a23d.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Has something changed with that timeline?",
+          "audio": "audio/4d0cba6673b3.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Unfortunately yes, as a muscle injury setback now keeps him out for weeks, making rushing defensive returns even more risky.",
+          "audio": "audio/6737f529d0f7.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And how does that impact the squad given the current injury list?",
+          "audio": "audio/772445f710fe.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "With Harry Milne ruled out for the season and others like Craig Halkett and Stuart Findlay sidelined, our options at the back are severely stretched.",
+          "audio": "audio/0ce37c7eaa78.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Let us head over to the Transfer Centre now for the latest news from Ross.",
+          "link": "handover",
+          "audio": "audio/78c4e2f9e787.mp3"
+        }
+      ]
+    },
+    {
+      "id": "transfers",
+      "kind": "transfers",
+      "title": "Transfer Centre",
+      "strap": "Transfer window opens in 62 days",
+      "scene": "transfer",
+      "presenters": [
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "ross",
+          "text": "Welcome to the Transfer Centre. The transfer window is currently closed and reopens in sixty-two days.",
+          "graphic": {
+            "type": "headline",
+            "title": "Transfer window opens in 62 days",
+            "icon": "contract"
+          },
+          "audio": "audio/dd39926f5ae8.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That is the Transfer Centre for now. Let us turn back the clock with Fraser for On This Day.",
+          "link": "handover",
+          "audio": "audio/e72919c9f0fa.mp3"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "kind": "history",
+      "title": "31st October",
+      "strap": "On this day in Hearts history - stats from London Hearts",
+      "scene": "museum",
+      "presenters": [
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "fraser",
+          "text": "Time for On This Day, our look back through the Hearts history books, and it's the 31st of October.",
+          "audio": "audio/d5966170aff6.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Former Hearts players born on this day include Ricardo Fuller and Kevin Twaddle.",
+          "graphic": {
+            "type": "birthdays",
+            "title": "Born on this day",
+            "rows": [
+              {
+                "name": "Ricardo Fuller",
+                "years": "2001-02",
+                "apps": 29,
+                "goals": 9,
+                "star": false
+              },
+              {
+                "name": "Kevin Twaddle",
+                "years": "2002",
+                "apps": 9,
+                "goals": 0,
+                "star": false
+              }
+            ]
+          },
+          "audio": "audio/6fcfac3f74da.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And on this day in twenty twenty, Hearts beat Hibernian two-one in the Scottish Cup semi-final, at Hampden. The goals came from Craig Wighton and Liam Boyce.",
+          "graphic": {
+            "type": "result",
+            "home": "Hearts",
+            "away": "Hibernian",
+            "homeScore": 2,
+            "awayScore": 1,
+            "competition": "Scottish Cup SF",
+            "status": "31 OCT 2020",
+            "homeScorers": [
+              "Wighton 60'",
+              "Boyce 111'"
+            ],
+            "awayScorers": [
+              "Doidge 67'"
+            ]
+          },
+          "audio": "audio/b44ac5042327.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "On this date in two thousand and seven, Hearts beat Celtic two-nil in the League Cup quarter-final.",
+          "graphic": {
+            "type": "result",
+            "home": "Celtic",
+            "away": "Hearts",
+            "homeScore": 0,
+            "awayScore": 2,
+            "competition": "League Cup QF",
+            "status": "31 OCT 2007",
+            "homeScorers": [],
+            "awayScorers": [
+              "Velicka 77' 86'"
+            ]
+          },
+          "audio": "audio/312b5747a96b.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And in twenty fifteen, Hearts beat Partick Thistle four-nil.",
+          "graphic": {
+            "type": "result",
+            "home": "Partick Thistle",
+            "away": "Hearts",
+            "homeScore": 0,
+            "awayScore": 4,
+            "competition": "Premiership",
+            "status": "31 OCT 2015",
+            "homeScorers": [],
+            "awayScorers": [
+              "Juanma 38' 64'",
+              "Sow 51' 86'"
+            ]
+          },
+          "audio": "audio/a154371499be.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And across the city, on this day in nineteen eighty-nine, Hibs lost one-nil to Liegeois (Liege) in the UEFA Cup. Not that anyone here is counting.",
+          "graphic": {
+            "type": "result",
+            "home": "Liegeois (Liege)",
+            "away": "Hibernian",
+            "homeScore": 1,
+            "awayScore": 0,
+            "competition": "UEFA Cup R2",
+            "status": "31 OCT 1989"
+          },
+          "audio": "audio/84598185ec33.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Back to the present day and tomorrow's threat. Isla is ready to examine the return of Martin Boyle.",
+          "link": "handover",
+          "audio": "audio/84d32d209363.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l33",
+      "kind": "story",
+      "title": "Martin Boyle Return",
+      "strap": "Martin Boyle Return",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Staying with the build-up to tomorrow's semi-final at Hampden, let's look at the threat posed by Martin Boyle's return for Hibs, Fraser.",
+          "graphic": {
+            "type": "headline",
+            "title": "Martin Boyle Return",
+            "source": "BBC Sport",
+            "icon": "mic"
+          },
+          "audio": "audio/7e0ed6f51a6b.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And how do you view Wouter Vrancken's approach to this all-or-nothing fixture compared to their previous meeting this season?",
+          "audio": "audio/efef05e6ac98.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Vrancken is right to say the first game doesn't matter anymore. Marink Reedijk's side have struggled for clean sheets and goals lately, whereas our momentum and over twenty-three thousand fans making the trip will secure the win.",
+          "audio": "audio/24de28e824cc.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Let us trace our path to this stage now, looking at how the team has progressed in the competition so far.",
+          "link": "handover",
+          "audio": "audio/4a6292c458e3.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l32",
+      "kind": "story",
+      "title": "League Cup progress",
+      "strap": "League Cup progress",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Another story we have been following today is Hearts and their progress in the League Cup.",
+          "graphic": {
+            "type": "headline",
+            "title": "League Cup progress",
+            "source": "Daily Record",
+            "icon": "mic"
+          },
+          "audio": "audio/fb11e53cb76d.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Fraser, Wouter Vrancken has been speaking ahead of tomorrow afternoon's semi-final against Hibernian at Hampden. How are you assessing his approach?",
+          "audio": "audio/231b6fbd114e.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "As the Daily Record reports, Vrancken has been keen to keep the squad grounded despite his past trophy wins in Belgium giving him the right mentality for Hampden.",
+          "graphic": {
+            "type": "quote",
+            "text": "It's always the form of the day so you have to prepare well as an individual also",
+            "author": "Wouter Vrancken",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/d39ea9ef2bba.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "He knows all about pressure from the Conference League group stage and his time abroad, and over twenty-three thousand Hearts supporters will be right behind them.",
+          "audio": "audio/528259bdb54a.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "He is certainly playing down past successes and focusing entirely on tomorrow.",
+          "audio": "audio/8b07e103e574.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Time for a quick break. Don't go anywhere.",
+          "audio": "audio/c7bef062bb81.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-2",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-alice",
+          "text": "From the Wheatfield to the Roseburn, look the part on matchday.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/5794e725d5ef.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "Shirts, scarves, hats and gifts for every Jambo, young and old. Find them at the Hearts Club Store at Tynecastle Park, or online any time.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/a16a662cd46b.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "The Hearts Club Store. Wear your heart on your sleeve.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/40edbf8660ce.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "Between two cemeteries on Angle Park Terrace, there's a pub that's been pouring pints since Victorian times.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/877e22afb2f9.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The sign says the Athletic Arms. But nobody in Gorgie calls it that. It's the Diggers, after the gravediggers who used to stop in for one after a shift.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/2d0d8bc78c3e.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The Diggers. Dead good pints.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-1.png"
+          },
+          "audio": "audio/f3aba3cd2cd6.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "One city. Two clubs. One place in the final.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/7717098c3dbd.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Hearts against Hibs in the League Cup semi-final at Hampden Park. Sunday the first of November, three o'clock.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/7e2f050e43c2.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Be there. Be loud. Turn Hampden maroon. For tickets, visit the Hearts website.",
+          "graphic": {
+            "type": "advert",
+            "id": "hampden-tickets",
+            "brand": "Hearts v Hibs",
+            "tagline": "Turn Hampden maroon",
+            "small": "League Cup semi-final, Sun 1 Nov, 3pm, Hampden Park",
+            "art": "ticket",
+            "colours": {
+              "bg": "#3d0d17",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/5197537acc2e.mp3"
+        }
+      ]
+    },
+    {
+      "id": "fans",
+      "kind": "fans",
+      "title": "Fan Zone",
+      "strap": "What the supporters are saying",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "The fans are absolutely buzzing for Hampden tomorrow with massive ticket demand and high expectations for the derby.",
+          "graphic": {
+            "type": "sentiment",
+            "score": 0.8,
+            "topics": [
+              "Hampden ticket demand",
+              "Derby atmosphere",
+              "Team selection"
+            ]
+          },
+          "audio": "audio/0d5784e1977c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let us head over to the fan zone now and see what the supporters are saying on Jambos Kickback ahead of tomorrow.",
+          "graphic": {
+            "type": "headline",
+            "title": "League Cup semi-final tickets",
+            "source": "Jambos Kickback: 2000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/dd17fc5a7537.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Well Isla, the ticket thread is flooded with fans sorting out spares and making travel plans, and you can just feel the anticipation building.",
+          "graphic": {
+            "type": "headline",
+            "title": "League Cup semi-final tickets",
+            "source": "Jambos Kickback: 2000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/b0c0d97a88fd.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "There is also plenty of discussion about the women side after their five-goal win against Boroughmuir at Meadowbank last night.",
+          "graphic": {
+            "type": "headline",
+            "title": "Heart of Midlothian Women",
+            "source": "Jambos Kickback: 2100 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/5586f05d0644.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Brilliant result for the ladies, absolutely terrific. And over on the Hearts Standard preview show, the lads were right into the tactical side of things against Hibs.",
+          "graphic": {
+            "type": "headline",
+            "title": "PREVIEW | Will Hearts make it 5 from 5 at Hampden v Hibs? | Premier Sports Cup",
+            "source": "Hearts Standard",
+            "icon": "mic"
+          },
+          "audio": "audio/fead44070a3c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Though some supporters on the forum are still debating whether our front four can keep up the intensity without picking up more fatigue issues.",
+          "graphic": {
+            "type": "headline",
+            "title": "*** Other Scottish football match thread, for anyone who gives a ****",
+            "source": "Jambos Kickback: 131500 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/0a36500ca539.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Rubbish, our supporters will create an unbeatable atmosphere at Hampden and the pace we have got will blow them away if we get it right.",
+          "graphic": {
+            "type": "headline",
+            "title": "League Cup semi-final tickets",
+            "source": "Jambos Kickback: 2000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/8d9c11cc0882.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Our rolling news coverage of the Hearts build-up continues right here on Hearts News Twenty Four.",
+          "link": "outro",
+          "audio": "audio/c87525c441a0.mp3"
+        }
+      ]
+    }
+  ],
+  "sidebar": {
+    "highlight": "Hearts",
+    "next": {
+      "date": "2026-11-01T15:00:00.000Z",
+      "home": "Hearts",
+      "away": "Hibernian",
+      "competition": "League Cup"
+    },
+    "last": {
+      "home": "Hearts",
+      "away": "Rangers",
+      "homeScore": 2,
+      "awayScore": 2,
+      "competition": "Scottish Premiership"
+    },
+    "table": [
+      {
+        "pos": 1,
+        "team": "Celtic",
+        "played": 11,
+        "gd": 19,
+        "pts": 28
+      },
+      {
+        "pos": 2,
+        "team": "Rangers",
+        "played": 11,
+        "gd": 10,
+        "pts": 24
+      },
+      {
+        "pos": 3,
+        "team": "Hearts",
+        "played": 11,
+        "gd": 7,
+        "pts": 20
+      },
+      {
+        "pos": 4,
+        "team": "Dundee",
+        "played": 11,
+        "gd": 4,
+        "pts": 17
+      },
+      {
+        "pos": 5,
+        "team": "Dundee Utd",
+        "played": 11,
+        "gd": 0,
+        "pts": 16
+      }
+    ]
+  },
+  "desk": {
+    "features": [
+      "l31",
+      "l34",
+      "l25",
+      "l33",
+      "l32"
+    ],
+    "top": [
+      "l31",
+      "s905240",
+      "s1c25fe",
+      "s703d78"
+    ],
+    "lead": "l31",
+    "transfers": [],
+    "aired": [
+      "l31",
+      "s1c25fe",
+      "l14",
+      "l33",
+      "l34",
+      "l25",
+      "l32"
+    ],
+    "phase": "preview 2026-11-01T15:00:00.000Z Hearts v Hibernian",
+    "day": "2026-10-31",
+    "kind": "full"
+  }
+}
