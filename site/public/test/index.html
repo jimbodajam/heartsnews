@@ -104,14 +104,13 @@ const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
 const VIS = ['small', 'wide', 'O', 'A', 'closed', 'small', 'A', 'wide', 'smile'];
 const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
 let forceBlink = 0, forceGlance = 0, env = 0, shape = 'closed', shapeAt = 0, forcedPose = new URLSearchParams(location.search).get('pose') || '';
-const BLEND = new URLSearchParams(location.search).get('blend') === '1';   // ?blend=1: 110 ms crossfade between poses
 const GESTURES = ['palm', 'point', 'open', 'explain', 'welcome'], POSE_ACTIVE = new Set(GESTURES), TO_SCREEN = new Set(['point', 'palm', 'open']);
-let feetAt = 0, lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseCur = 'idle', prevPose = null, poseAt = 0, blendAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
+let feetAt = 0, lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
 /** Pick the next gesture (never the same twice), blink on the cut, and look at the screen if the gesture points at it. */
 function nextGesture(ms) {
   let n; do { n = GESTURES[Math.floor(hash(ms * 0.001 + gi++) * GESTURES.length)]; } while (n === poseTarget);
   poseTarget = n; poseAt = ms; forceBlink = ms + 150; if (TO_SCREEN.has(n)) glanceUntil = ms + 1300;
-  const pool = TO_SCREEN.has(n) ? ['h1', 'h1', 'h2', 'b1'] : ['b1', 'h2', 'h3', 'h4', 'h5', 'b1']; headNow = pool[Math.floor(hash(ms * 0.003 + gi) * pool.length)];
+  const pool = ['b1', 'h2', 'h3', 'h4', 'h5', 'b1']; headNow = TO_SCREEN.has(n) ? 'h1' : pool[Math.floor(hash(ms * 0.003 + gi) * pool.length)];   // pointing turns her head to the screen (h1 is right)
   if (ms - feetAt > 7000) { const fp = ['b1', 'f1', 'f2', 'f3', 'b1']; feetNow = fp[Math.floor(hash(ms * 0.007 + gi) * fp.length)]; feetAt = ms; }
 }
 addEventListener('keydown', e => { if (e.key === '0') forcedPose = ''; else if (/^[1-9]$/.test(e.key)) forcedPose = POSE_NAMES[+e.key - 1] || ''; });
@@ -119,9 +118,44 @@ addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm')
 const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
 const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
 
+// ---- motion: arm changes trail the head by a beat, dissolve through two in-betweens, and the upper body breathes 1 px ----
+const STAGGER = 150, STEP = 80, STEPS = 2;   // ms: head-to-arms lag, then ms per in-between
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+const mixOut = document.createElement('canvas');
+/** Pixel dissolve from canvas a to b: a 4x4 Bayer threshold decides which pixels have switched, a fraction k of them. */
+function dissolve(a, b, k) {
+  const w = a.width, h = a.height, og = mixOut.getContext('2d'); mixOut.width = w; mixOut.height = h;
+  const A = a.getContext('2d').getImageData(0, 0, w, h), B = b.getContext('2d').getImageData(0, 0, w, h), O = og.createImageData(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, s = BAYER[(y & 3) * 4 + (x & 3)] < k ? B.data : A.data; O.data.set(s.subarray(i, i + 4), i); }
+  og.putImageData(O, 0, 0); return mixOut;
+}
+/** Arm motion for one presenter. `compose(pose, ...rest)` draws a frame; the head is already in `rest`, so it changes at once while the arms wait STAGGER ms. */
+function armMotion(compose) {
+  let shown = null, from = null, to = null, at = 0;
+  return (ms, want, ...rest) => {
+    if (shown === null) shown = want;
+    if (to !== null && (ms >= at + STEP * (STEPS + 1) || want !== to)) { shown = to; to = null; }
+    if (to === null && want !== shown) { from = shown; to = want; at = ms + STAGGER; }
+    if (to === null) return compose(shown, ...rest);
+    const s = ms < at ? 0 : Math.floor((ms - at) / STEP) + 1;   // 0 = waiting, 1..STEPS = in-betweens
+    if (s === 0) return compose(from, ...rest);
+    return dissolve(compose(from, ...rest), compose(to, ...rest), s / (STEPS + 1));
+  };
+}
+/** Draws a sprite at (x, y). With `up`, everything above row `cut` sits 1 px higher and the legs stay put; the hem row is doubled to close the gap. */
+function drawBody(c, x, y, cut, up) {
+  if (!up) { g.drawImage(c, x, y); return; }
+  g.drawImage(c, 0, 0, c.width, cut, x, y - 1, c.width, cut);
+  g.drawImage(c, 0, cut - 1, c.width, 1, x, y + cut - 1, c.width, 1);
+  g.drawImage(c, 0, cut, c.width, c.height - cut, x, y + cut, c.width, c.height - cut);
+}
+const islaArms = armMotion((pose, eye, key) => frame(eye, key, pose));
+const fraserArms = armMotion((pose, head, feet, eye, mouthKey) => fraserFrame(head, pose, feet, eye, mouthKey));
+
 function tick(ms) {
   const dt = Math.min(100, ms - (lastMs || ms)); lastMs = ms;
   const t = ms / 1000, talking = !!cur && cur.by === 'a';
+  const breathing = Math.sin(t * 1.85) > 0.6;   // idle breath: upper body 1 px higher for about 30% of each 3.4 s cycle
   analyser.getByteTimeDomainData(spec); { let mx = 0; for (const v of spec) mx = Math.max(mx, Math.abs(v - 128)); LEVEL = mx / 128; }
   g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH);
   if (backdrop) g.drawImage(backdrop, 0, 0);
@@ -151,15 +185,14 @@ function tick(ms) {
   if (!talking && POSE_ACTIVE.has(poseTarget) && !forcedPose && ms - lastTalk > 900) { poseTarget = 'idle'; poseAt = ms; }                                   // she finished speaking: hold the gesture a moment, then lower her arms
 
   const want = forcedPose || (DERIVED ? 'palm' : poseTarget);
-  if (want !== poseCur) { prevPose = poseCur; poseCur = want; blendAt = ms; }
-  if (BLEND && prevPose && ms - blendAt < 110) { g.drawImage(frame(eye, key, prevPose), FX, FY); g.globalAlpha = (ms - blendAt) / 110; g.drawImage(frame(eye, key, poseCur), FX, FY); g.globalAlpha = 1; }
-  else g.drawImage(frame(eye, key, poseCur), FX, FY);
+  drawBody(islaArms(ms, want, eye, key), FX, FY, 119, breathing);
   // Fraser: drifts between head and weight poses on a slow timer, blinks on his own beat, mouth follows the loudness while he speaks.
   { const hp = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'h2', 'b1'], fp = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'], gp = ['b2', 'b3', 'b4', 'b8', 'b3'];
-    const fh = hp[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * hp.length)], ff = fp[Math.floor(hash(Math.floor(t / 7) * 3.3) * fp.length)];
     const fpose = talkingF ? gp[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * gp.length)] : (Math.floor(t / 6) % 3 === 0 ? 'b6' : 'b1');
+    const fh = fpose === 'b2' || fpose === 'b3' ? 'h1' : hp[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * hp.length)];   // pointing or palm out: head turns to the screen
+    const ff = fp[Math.floor(hash(Math.floor(t / 7) * 3.3) * fp.length)];
     const fe = ((t + 1.3) % 4.2) > 4.08 ? 'blink' : 'open', fm = talkingF ? shape : (t % 9 < 1 ? 'smile' : 'rest');
-    g.drawImage(fraserFrame(fh, fpose, ff, fe, fm === 'closed' ? 'closed' : fm), FXF, FYF); }
+    drawBody(fraserArms(ms, fpose, fh, ff, fe, fm === 'closed' ? 'closed' : fm), FXF, FYF, 138, breathing); }
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
   if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }
