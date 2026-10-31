@@ -118,16 +118,15 @@ addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm')
 const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
 const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
 
-// ---- motion: arm changes trail the head by a beat, dissolve through two in-betweens, and the upper body breathes 1 px ----
+// ---- motion: arm changes trail the head by a beat, wipe through two in-betweens, and the upper body breathes 1 px ----
 const STAGGER = 150, STEP = 80, STEPS = 2;   // ms: head-to-arms lag, then ms per in-between
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
 const mixOut = document.createElement('canvas');
-/** Pixel dissolve from canvas a to b: a 4x4 Bayer threshold decides which pixels have switched, a fraction k of them. */
-function dissolve(a, b, k) {
+/** Wipe from canvas a to b, top to bottom across the arm band (rows 40-120): rows above the wipe line show b, the rest show a. */
+function wipe(a, b, k) {
   const w = a.width, h = a.height, og = mixOut.getContext('2d'); mixOut.width = w; mixOut.height = h;
-  const A = a.getContext('2d').getImageData(0, 0, w, h), B = b.getContext('2d').getImageData(0, 0, w, h), O = og.createImageData(w, h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, s = BAYER[(y & 3) * 4 + (x & 3)] < k ? B.data : A.data; O.data.set(s.subarray(i, i + 4), i); }
-  og.putImageData(O, 0, 0); return mixOut;
+  const line = Math.round(40 + k * 80);
+  og.drawImage(a, 0, 0); og.drawImage(b, 0, 0, w, line, 0, 0, w, line);
+  return mixOut;
 }
 /** Arm motion for one presenter. `compose(pose, ...rest)` draws a frame; the head is already in `rest`, so it changes at once while the arms wait STAGGER ms. */
 function armMotion(compose) {
@@ -139,7 +138,7 @@ function armMotion(compose) {
     if (to === null) return compose(shown, ...rest);
     const s = ms < at ? 0 : Math.floor((ms - at) / STEP) + 1;   // 0 = waiting, 1..STEPS = in-betweens
     if (s === 0) return compose(from, ...rest);
-    return dissolve(compose(from, ...rest), compose(to, ...rest), s / (STEPS + 1));
+    return wipe(compose(from, ...rest), compose(to, ...rest), s / (STEPS + 1));
   };
 }
 /** Draws a sprite at (x, y). With `up`, everything above row `cut` sits 1 px higher and the legs stay put; the hem row is doubled to close the gap. */
