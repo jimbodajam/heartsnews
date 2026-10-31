@@ -23,7 +23,9 @@ export const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'];
 export async function loadFraser(dir) {
   const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
   const G = {};
-  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, FRASER_GRID); }));
+  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', 'h1v7'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, { ...FRASER_GRID, bg: cornerColour(im) }); }));
+  // the turn-right mouth frames came back in slightly different skin tones; match each to h1 so switching mouths does not flicker the colour
+  for (const n of Object.keys(G)) if (/^h1v\d$/.test(n) && G.h1) G[n] = matchColour(G[n], G.h1);
   const face = {};
   for (const n of Object.keys(G)) if (n[0] === 'h' || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
   // generated mouth and eye frames (v1-v9) cut for the master head, laid over the master and the nod and tilt heads by registered offsets (not the turned heads, the angle is wrong)
@@ -39,7 +41,12 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const src = F.G[head] ? head : 'b1';   // a head frame that is not generated yet falls back to the master head
   let h = F.G[src];
   const { eyes, mouthFit } = F.face[src];
-  if (F.V && F.off[src]) {
+  if (src === 'h1' && F.G.h1v1) {
+    // turn right has its own generated mouth frames (the whole head per mouth, as with Isla's h1v1-h1v6) and a blink frame; a glance is the code glance on whichever frame is showing
+    const key = eye === 'blink' ? 'h1v7' : { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', closed: 'h1v6' }[mouthKey];
+    h = F.G[key] || h;
+    if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
+  } else if (F.V && F.off[src]) {
     // v8 (asked for a left glance) came out looking right like v9, so the generated glance is right only; left is the code glance
     h = composeFace(h, F.off[src], F.V, eye === 'blink' || eye === 'gazeR' ? eye : null, mouthKey === 'rest' ? null : mouthKey);
     if (eye === 'gazeL') h = gaze(h, eyes, -1);
@@ -86,4 +93,21 @@ function blinkAt(P, centres) {
     for (let dx = -3; dx <= 3; dx++) out.set(cx + dx, cy + (Math.abs(dx) <= 1 ? 1 : 0), lash);
   }
   return out;
+}
+
+/** Per-channel gain and offset that bring the mean and spread of `P` (head region, face window left out) to those of `ref`, applied to every pixel of `P`. */
+function matchColour(P, ref) {
+  const stat = Q => { const s = [0, 0, 0], s2 = [0, 0, 0]; let n = 0; for (let y = 2; y < 44; y++) for (let x = 40; x < 110; x++) { if (y >= 22 && x >= 72 && x <= 94) continue; if (!Q.has(x, y)) continue; const c = Q.get(x, y); for (let i = 0; i < 3; i++) { s[i] += c[i]; s2[i] += c[i] * c[i]; } n++; } const m = s.map(v => v / n); return { m, sd: s2.map((v, i) => Math.sqrt(Math.max(1, v / n - m[i] * m[i]))) }; };
+  const a = stat(P), b = stat(ref), out = P.clone();
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.has(x, y)) { const c = P.get(x, y); out.set(x, y, c.map((v, i) => Math.max(0, Math.min(255, Math.round(b.m[i] + (v - a.m[i]) * b.sd[i] / a.sd[i]))))); }
+  return out;
+}
+
+/** The background colour of a generated image, from its four corners (the generator does not return exactly the same background twice). */
+function cornerColour(im) {
+  const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
+  const pts = [[8, 8], [c.width - 9, 8], [8, c.height - 9], [c.width - 9, c.height - 9]], s = [0, 0, 0];
+  for (const [x, y] of pts) { const d = g.getImageData(x, y, 1, 1).data; for (let i = 0; i < 3; i++) s[i] += d[i] / pts.length; }
+  return s.map(Math.round);
 }
