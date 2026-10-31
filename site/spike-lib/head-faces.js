@@ -71,7 +71,15 @@ export function composeFace(head, off, V, eye, mouthKey) {
     // Wipe the head's own (neutral) mouth too, where it sits after the shift.
     const own = featurePixels(head, [BX.MB[0] + off.mouth[0], BX.MB[1] + off.mouth[1], BX.MB[2] + off.mouth[0], BX.MB[3] + off.mouth[1]], 90);
     for (const k of own) { const [x, y] = k.split(',').map(Number); mask.add((x - off.mouth[0]) + ',' + (y - off.mouth[1])); }
-    put(mSrc, mask, off.mouth[0], off.mouth[1]);
+    if (off.mouthNudge || off.mouthRot) {
+      // A hand nudge (and a small rotation about the mouth centre) on top of the registered offset: wipe the head's own mouth to its skin first, since the patch no longer lands exactly on it.
+      const nd = off.mouthNudge || [0, 0], rot = off.mouthRot || 0, c = Math.cos(rot), s = Math.sin(rot);
+      const ring = []; for (let y = BX.MB[1] + off.mouth[1]; y <= BX.MB[3] + off.mouth[1]; y++) for (let x = BX.MB[0] + off.mouth[0]; x <= BX.MB[2] + off.mouth[0]; x++) if (head.has(x, y) && !own.has(x + ',' + y)) ring.push(head.get(x, y));
+      const med = i => ring.map(v => v[i]).sort((a, b) => a - b)[ring.length >> 1], skin = ring.length ? [med(0), med(1), med(2)] : null;
+      if (skin) for (const k of own) { const [x, y] = k.split(',').map(Number); out.set(x, y, skin); }
+      const mcx = (BX.MB[0] + BX.MB[2]) / 2, mcy = (BX.MB[1] + BX.MB[3]) / 2;
+      for (const k of mask) { const [x, y] = k.split(',').map(Number); if (!mSrc.has(x, y)) continue; const rx = x - mcx, ry = y - mcy; out.set(mcx + off.mouth[0] + nd[0] + rx * c - ry * s, mcy + off.mouth[1] + nd[1] + rx * s + ry * c, mSrc.get(x, y)); }
+    } else put(mSrc, mask, off.mouth[0], off.mouth[1]);
   }
   return out;
 }

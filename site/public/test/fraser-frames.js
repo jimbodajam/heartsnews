@@ -1,14 +1,18 @@
 // Standing Fraser. Generated: the hands-down master b1, the two head turns h1 (right) and h2 (left), and the arm poses b2-b8.
 // Made in code from b1: head nods and tilts (h3-h6), weight shifts (f1-f3), blinks, glances and mouths. Frame names match Isla's.
 // Faces use pixel-derive.js on each head's own eyes and mouth; head moves and weight shifts use body-warps.js.
-import { toGrid, detectEyes, detectMouth, gaze, blink, mouth } from './pixel-derive.js';
+import { toGrid, detectEyes, detectMouth, gaze, blink, mouth, MOUTH_PRESETS } from './pixel-derive.js';
 import { warpHead, warpLegs } from './body-warps.js';
 import { composeFace } from './head-faces.js';
 
 export const FRASER_GRID = { w: 145, h: 216, bg: [184, 52, 137] };
 // rough windows round the eyes and mouth of each generated head (the turned heads see the face at an angle)
-const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [58, 36, 71, 41] } };
+const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [60, 36, 69, 40] } };
 const FACE_BOXES = { EBL: [61, 25, 71, 31], EBR: [73, 25, 83, 31], MB: [64, 35, 80, 43] };   // eye and mouth boxes on the master head, for the generated v frames
+// hand nudges on top of the registered mouth position, checked by eye: nod down sits a little low and right and is tilted a few degrees, nod up sits low on every mouth shape
+const MOUTH_NUDGE = { h3: { mouthNudge: [-1, 1], mouthRot: 0.06 }, h4: { mouthNudge: [0, -3] } };
+// the turned-left head sees the mouth foreshortened (about half the width), so the code-drawn shapes are scaled down for it
+const MOUTH_SCALE = { h2: { w: 0.55, open: 0.6 } };
 const HEAD = { piv: [72, 46], rows: 45 };
 const HEAD_CUT = 48;   // rows above come from the head frame, below from the arm pose (48 keeps the chin of every head, including the open mouths)
 const LEGS = { cx: 72, top: 138, foot: 210, fill: [40, 36, 60] };
@@ -31,7 +35,7 @@ export async function loadFraser(dir) {
   const V = G.v1 && G.v7 ? { base: G.b1, mouthBase: G.b1, mouths: { smile: G.v1, small: G.v2, wide: G.v3, O: G.v4, A: G.v5, closed: G.v6 }, blink: G.v7, gazeR: G.v9, boxes: FACE_BOXES } : null;
   const centres = n => BLINK_AT[n] || face[n].eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
   const off = {}, c0 = centres('b1'), m0 = face.b1.mouthFit;
-  for (const n of ['b1', 'h3', 'h4', 'h5', 'h6']) if (G[n]) { const c = centres(n), m = face[n].mouthFit; off[n] = { eyeL: [Math.round(c[0][0] - c0[0][0]), Math.round(c[0][1] - c0[0][1])], eyeR: [Math.round(c[1][0] - c0[1][0]), Math.round(c[1][1] - c0[1][1])], mouth: [Math.round(m.cx - m0.cx), Math.round(m.yc - m0.yc)] }; }
+  for (const n of ['b1', 'h3', 'h4', 'h5', 'h6']) if (G[n]) { const c = centres(n), m = face[n].mouthFit; off[n] = { eyeL: [Math.round(c[0][0] - c0[0][0]), Math.round(c[0][1] - c0[0][1])], eyeR: [Math.round(c[1][0] - c0[1][0]), Math.round(c[1][1] - c0[1][1])], mouth: [Math.round(m.cx - m0.cx), Math.round(m.yc - m0.yc)], ...MOUTH_NUDGE[n] }; }
   return { G, face, V, off };
 }
 
@@ -51,7 +55,7 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
     if (eye === 'gazeL') h = gaze(h, eyes, -1);
   } else {
     if (eye === 'blink') h = BLINK_AT[src] ? blinkAt(h, BLINK_AT[src]) : blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
-    if (mouthKey !== 'rest') h = mouth(h, mouthFit, mouthKey);
+    if (mouthKey !== 'rest') { const sc = MOUTH_SCALE[src], pre = MOUTH_PRESETS[mouthKey]; h = mouth(h, mouthFit, sc && pre ? { ...pre, w: (pre.w ?? 1) * sc.w, open: (pre.open ?? 0) * sc.open } : mouthKey); }
   }
   const hp = HEADS.find(x => x[0] === head)[2];
   if (src !== head && hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);   // only a head that is not generated is warped from the master
