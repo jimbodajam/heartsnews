@@ -32,7 +32,7 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const src = F.G[head] ? head : 'b1';   // a head frame that is not generated yet falls back to the master head
   let h = F.G[src];
   const { eyes, mouthFit } = F.face[src];
-  if (eye === 'blink') h = blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
+  if (eye === 'blink') h = BLINK_AT[src] ? blinkAt(h, BLINK_AT[src]) : blink(h, eyes); else if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
   if (mouthKey !== 'rest') h = mouth(h, mouthFit, mouthKey);
   const hp = HEADS.find(x => x[0] === head)[2];
   if (src !== head && hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);   // only a head that is not generated is warped from the master
@@ -55,4 +55,22 @@ function findFace(P) {
   const mid = [(c[0][0] + c[1][0]) / 2, (c[0][1] + c[1][1]) / 2], dx = c[1][0] - c[0][0], dy = c[1][1] - c[0][1], len = Math.hypot(dx, dy) || 1;
   const m = [mid[0] - dy / len * 11, mid[1] + dx / len * 11];
   return { eyes, mouthFit: detectMouth(P, [Math.round(m[0] - 6), Math.round(m[1] - 3), Math.round(m[0] + 6), Math.round(m[1] + 3)]) };
+}
+
+// Eye centres for heads where the eye whites are too small for detectEyes to find the far eye (checked by eye on the 145x216 grid).
+const BLINK_AT = { h4: [[64.5, 22], [77.5, 22]], h6: [[73.5, 25], [82.5, 29.5]] };
+
+/** Blink by hand: wipe a small box round each eye to the skin round it and draw a two-pixel lid line, bowed down in the middle. */
+function blinkAt(P, centres) {
+  const out = P.clone(), lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2], skinLike = c => c[0] > 150 && c[0] > c[1] + 10 && c[1] >= c[2] - 8;
+  for (const [cx0, cy0] of centres) {
+    const cx = Math.round(cx0), cy = Math.round(cy0), ring = [];
+    for (let y = cy - 4; y <= cy + 4; y++) for (let x = cx - 6; x <= cx + 6; x++) if (P.has(x, y) && skinLike(P.get(x, y)) && (Math.abs(x - cx) > 3 || Math.abs(y - cy) > 2)) ring.push(P.get(x, y));
+    const med = i => ring.map(c => c[i]).sort((a, b) => a - b)[ring.length >> 1], skin = ring.length ? [med(0), med(1), med(2)] : [230, 170, 130];
+    let lash = [40, 24, 36], best = 999;
+    for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 3; x <= cx + 3; x++) if (P.has(x, y)) { const l = lum(P.get(x, y)); if (l < best) { best = l; lash = P.get(x, y); } }
+    for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 3; x <= cx + 3; x++) if (P.has(x, y)) out.set(x, y, skin);
+    for (let dx = -3; dx <= 3; dx++) out.set(cx + dx, cy + (Math.abs(dx) <= 1 ? 1 : 0), lash);
+  }
+  return out;
 }
