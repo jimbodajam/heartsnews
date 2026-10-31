@@ -59,9 +59,11 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const out = (F.G[pose] || F.G.b1).clone();
   // Head pixels only near the seam: below SEAM the head frame carries a strip of its own jacket (recoloured in the generated turns, rotated in the tilts), so take just skin from it and keep the pose's jacket, collar and tie.
   const skin = c => c[0] > 150 && c[0] > c[1] + 10 && c[1] >= c[2] - 8;
+  const jacketLike = c => Math.max(...c) - Math.min(...c) < 40 && 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] < 130;
   for (let y = 0; y < HEAD_CUT; y++) for (let x = 0; x < out.w; x++) {
     const q = h.has(x, y) ? h.get(x, y) : null, p = out.has(x, y) ? out.get(x, y) : null;
-    if (y < SEAM || (q && (skin(q) || (p && skin(p))))) { if (q) out.set(x, y, q); else out.d[out.idx(x, y) + 3] = 0; }
+    // keep every head pixel except grey jacket-coloured ones that sit on the pose's own jacket (the shaded under-jaw and chin edge are not skin-coloured, and where the pose has nothing the head must fill it)
+    if (y < SEAM || (q && (!p || skin(q) || skin(p) || !jacketLike(q)))) { if (q) out.set(x, y, q); else out.d[out.idx(x, y) + 3] = 0; }
   }
   const fp = FEET.find(x => x[0] === feet)[2];
   if (fp) { const legs = warpLegs(F.G.b1, fp, LEGS); for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (legs.has(x, y)) out.set(x, y, legs.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; } }
