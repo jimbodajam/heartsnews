@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hearts News 24 — standing Isla test</title>
+<title>Hearts News 24 — standing Isla and Fraser test</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
 <style>
   html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; font-family: 'Press Start 2P', monospace; }
@@ -74,6 +74,12 @@ const frame = (eye, mouthKey, pose = 'idle') => {
   const c = X.canvas(); cache.set(k, c); return c;
 };
 const DERIVED = false;
+// ---- standing Fraser: one generated master, every other frame made in code (head nods and tilts, weight shifts, blinks, glances, mouths) ----
+const { loadFraser, composeFraser, HEADS: FHEADS, FEET: FFEET } = await import('./fraser-frames.js');
+const FRA = await loadFraser('../spike/fraser/standing/b1.jpg');
+const fcache = new Map();
+const fraserFrame = (head, feet, eye, mouthKey) => { const k = [head, feet, eye, mouthKey].join('|'); if (!fcache.has(k)) fcache.set(k, composeFraser(FRA, { head, feet, eye, mouthKey }).canvas()); return fcache.get(k); };
+const FXF = -10, FYF = 40;   // Fraser stands to the left of Isla
 // ---- audio: the same Kokoro lines as the broadcast spike, level drives the mouth ----
 const ACX = new (window.AudioContext || window.webkitAudioContext)();
 const analyser = ACX.createAnalyser(); analyser.fftSize = 512; analyser.connect(ACX.destination);
@@ -132,7 +138,8 @@ function tick(ms) {
   // Mouth: level-driven visemes while talking, a smile now and then at rest. M cycles through every shape for inspection.
   // Mouth: follow a smoothed loudness envelope (fast attack, slow release) and hold each shape for a moment so it does not flicker.
   env += (LEVEL > env ? 0.5 : 0.12) * (LEVEL - env);
-  if (talking && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
+  const talkingF = !!cur && cur.by === 'b';
+  if ((talking || talkingF) && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
   const key = mTest >= 0 ? MOUTHS[mTest] : talking ? shape : (t % 5 < 1.2 ? 'smile' : 'rest');
   // Pose: while she talks, cut to a new gesture every few seconds; while Fraser talks she listens (idle or hand on hip). 1-9 force a pose, 0 goes back to automatic.
   // Gestures change on phrase starts (a pause, then speech), not on a timer, with a blink and a look at the screen on the cut.
@@ -147,6 +154,11 @@ function tick(ms) {
   if (want !== poseCur) { prevPose = poseCur; poseCur = want; blendAt = ms; }
   if (BLEND && prevPose && ms - blendAt < 110) { g.drawImage(frame(eye, key, prevPose), FX, FY); g.globalAlpha = (ms - blendAt) / 110; g.drawImage(frame(eye, key, poseCur), FX, FY); g.globalAlpha = 1; }
   else g.drawImage(frame(eye, key, poseCur), FX, FY);
+  // Fraser: drifts between head and weight poses on a slow timer, blinks on his own beat, mouth follows the loudness while he speaks.
+  { const hp = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'b1'], fp = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'];
+    const fh = hp[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * hp.length)], ff = fp[Math.floor(hash(Math.floor(t / 7) * 3.3) * fp.length)];
+    const fe = ((t + 1.3) % 4.2) > 4.08 ? 'blink' : 'open', fm = talkingF ? shape : (t % 9 < 1 ? 'smile' : 'rest');
+    g.drawImage(fraserFrame(fh, ff, fe, fm === 'closed' ? 'closed' : fm), FXF, FYF); }
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
   if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }

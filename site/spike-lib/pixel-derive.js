@@ -12,7 +12,7 @@ export class Pix {
 }
 
 /** Sample a generated image on its block grid (block centres) and key the magenta out. */
-export function toGrid(img, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 131 } = {}) {
+export function toGrid(img, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 131, bg = null } = {}) {
   const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
   const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
   const d = g.getImageData(0, 0, c.width, c.height).data, P = new Pix(w, h);
@@ -22,6 +22,7 @@ export function toGrid(img, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 13
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = ((cy + dy) * c.width + cx + dx) * 4; r += d[k]; gg += d[k + 1]; b += d[k + 2]; n++; }
     r /= n; gg /= n; b /= n;
     if (r > 170 && b > 170 && gg < 130 && r - gg > 80 && b - gg > 80) continue;
+    if (bg && Math.hypot(r - bg[0], gg - bg[1], b - bg[2]) < 45) continue;   // a generated background that is not flat magenta (Fraser's standing master is a dull purple-pink)
     P.set(i, j, [r, gg, b]);
   }
   const kill = [];
