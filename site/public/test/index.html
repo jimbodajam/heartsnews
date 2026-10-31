@@ -44,50 +44,36 @@ function backdropFromGrid(img) {
 const bgImg = await load('../spike/studio-pixel.jpg');
 const backdrop = bgImg ? backdropFromGrid(bgImg) : null;
 
-// ---- standing Isla: the master plus generated mouth and eye variants (?derived=1 uses the code-drawn ones instead) ----
-const img = await load('../spike/isla/standing-master.jpg');
-const P = toGrid(img, { w: 145, h: 216 });
-const DERIVED = new URLSearchParams(location.search).get('derived') === '1';
-const MB = [64, 35, 86, 47], EB = [60, 24, 92, 36];   // mouth and eye patch boxes on the 145x216 grid
-const patch = (V, [x0, y0, x1, y1]) => { const c = document.createElement('canvas'); c.width = x1 - x0 + 1; c.height = y1 - y0 + 1; c.getContext('2d').drawImage(V.canvas(), -x0, -y0); return c; };
-let MOUTHS, frame, POSE_NAMES = ['palm'];
-if (!DERIVED) {
-  const V = await Promise.all(Array.from({ length: 9 }, (_, i) => load('../spike/isla/standing/v' + (i + 1) + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }))));
-  const MP = { smile: patch(V[0], MB), closed: patch(V[0], MB), small: patch(V[1], MB), wide: patch(V[2], MB), O: patch(V[3], MB), A: patch(V[4], MB), press: patch(V[5], MB) };
-  const EP = { blink: patch(V[6], EB), gazeL: patch(V[7], EB), gazeR: patch(V[8], EB) };
-  MOUTHS = ['rest', ...Object.keys(MP)];
-  const POSES = { palm: null, idle: 1, point: 2, open: 3, explain: 4, tablet: 5, hip: 6, left: 7, welcome: 8 };
-  const PB = {}; for (const [n, i] of Object.entries(POSES)) PB[n] = i ? (await load('../spike/isla/standing/b' + i + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }).canvas())) : P.canvas();
-  POSE_NAMES = Object.keys(POSES);
-  const cache = new Map();
-  frame = (eye, mouthKey, pose = 'palm') => {
-    const k = pose + '|' + eye + '|' + mouthKey; if (cache.has(k)) return cache.get(k);
-    const c = document.createElement('canvas'); c.width = 145; c.height = 216; const x = c.getContext('2d'); x.drawImage(PB[pose], 0, 0);
-    if (EP[eye]) x.drawImage(EP[eye], EB[0], EB[1]);
-    if (MP[mouthKey]) x.drawImage(MP[mouthKey], MB[0], MB[1]);
-    cache.set(k, c); return c;
-  };
-} else {
-  const eyes = detectEyes(P, [62, 24, 90, 38]), m = detectMouth(P, [70, 38, 78, 42]);
-  const EYES = { open: P, blink: blink(P, eyes), gazeL: gaze(P, eyes, -1), gazeR: gaze(P, eyes, 1) };
-  MOUTHS = ['rest', ...Object.keys(MOUTH_PRESETS)];
-  const cache = new Map();
-  frame = (eye, mouthKey) => {
-    const k = eye + '|' + mouthKey; if (cache.has(k)) return cache.get(k);
-    let X = EYES[eye];
-    if (mouthKey !== 'rest') { const s = MOUTH_PRESETS[mouthKey]; X = mouth(X, m, { ...s, w: (s.w ?? 1) * 0.72, open: (s.open ?? 0) * 0.7 }); }
-    const c = X.canvas(); cache.set(k, c); return c;
-  };
-}
-
-// ?sheet=1: lay every composited frame out at high zoom (head only) for inspection, then stop.
-if (new URLSearchParams(location.search).get('sheet') === '1') {
-  document.body.innerHTML = ''; document.body.style.cssText = 'background:#1b1f3a;color:#f2efe6;font:11px sans-serif;overflow:auto;height:auto'; const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;padding:6px'; document.body.append(row);
-  const add = (label, c) => { const o = document.createElement('canvas'); o.width = 40; o.height = 30; o.getContext('2d').drawImage(c, -52, -22); o.style.cssText = 'width:180px;image-rendering:pixelated;background:#444;display:block'; const f = document.createElement('figure'); f.style.margin = 0; f.append(o, label); row.append(f); };
-  for (const k of MOUTHS) add('mouth ' + k, frame('open', k));
-  for (const e of ['blink', 'gazeL', 'gazeR']) add('eyes ' + e, frame(e, 'rest'));
-  throw new Error('sheet mode: stopped on purpose');
-}
+// ---- standing Isla, new frames: arm poses (b2-b8 over the old master) + head frames (h1-h5, centre = b1) + feet frames (f1-f3), faces laid over the heads ----
+const { headOffsets, composeFace, fitEye, composeEyesWarped } = await import('./head-faces.js');
+const gridOf = n => load('../spike/isla/standing/' + n + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }));
+const PALM = toGrid(await load('../spike/isla/standing-master.jpg'), { w: 145, h: 216 });
+const NAMES = ['b1', 'h1', 'h2', 'h3', 'h4', 'h5', 'f1', 'f2', 'f3', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', ...Array.from({ length: 9 }, (_, i) => 'v' + (i + 1)), ...Array.from({ length: 7 }, (_, i) => 'b' + (i + 2))];
+const Gm = {}; await Promise.all(NAMES.map(async n => { Gm[n] = await gridOf(n); }));
+const vs = Array.from({ length: 9 }, (_, i) => Gm['v' + (i + 1)]);
+const V = { base: Gm.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
+const HEADS = { b1: [1, 1], h1: [1, 1], h2: [1, 1], h3: [1, 1], h4: [1, 1], h5: [1, 1] };   // [eyes, mouth]; h1 uses its own mouth frames, and h1 and h5 get warped eyes (fitted shift, tilt and squeeze) because a plain shift breaks on them
+const WARP = {}; for (const n of ['h1', 'h5']) WARP[n] = { L: fitEye(Gm.b1, Gm[n], 'L'), R: fitEye(Gm.b1, Gm[n], 'R') };
+const OFF = {}; for (const n of Object.keys(HEADS)) OFF[n] = headOffsets(Gm.b1, Gm[n], vs[5]);
+const NUDGE = { h2: { eye: -1, mouth: 0 } }; for (const [n, a] of Object.entries(NUDGE)) { const o = OFF[n]; OFF[n] = { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; }
+const H1M = { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', press: 'h1v6' };
+const POSES = { palm: PALM, idle: Gm.b1, point: Gm.b2, open: Gm.b3, explain: Gm.b4, tablet: Gm.b5, hip: Gm.b6, left: Gm.b7, welcome: Gm.b8 };
+const POSE_NAMES = Object.keys(POSES), MOUTHS = ['rest', 'closed', 'small', 'wide', 'O', 'A', 'press', 'smile'];
+const HEAD_CUT = 49;   // rows above this come from the head frame, below from the arm pose, from row 119 the feet frame
+let headNow = 'b1', feetNow = 'b1';
+const cache = new Map();
+const frame = (eye, mouthKey, pose = 'idle') => {
+  const k = [pose, headNow, feetNow, eye, mouthKey].join('|'); if (cache.has(k)) return cache.get(k);
+  const [eyeOk, mouthOk] = HEADS[headNow], mk = mouthKey === 'closed' ? 'smile' : mouthKey === 'rest' ? null : mouthKey, ek = eyeOk && eye !== 'open' ? eye : null;
+  let head = headNow === 'h1' ? Gm[H1M[mk] || 'h1'] : headNow === 'b1' ? composeFace(Gm.b1, OFF.b1, V, eye === 'open' ? null : eye, mk) : composeFace(Gm[headNow], OFF[headNow], V, WARP[headNow] ? null : ek, mouthOk ? mk : null);
+  if (WARP[headNow] && eye !== 'open') head = composeEyesWarped(head, V, WARP[headNow], eye);
+  const PO = POSES[pose] || Gm.b1, X = PO.clone(), F = Gm[feetNow], B = Gm.b1;
+  // below the split the feet frame supplies the legs, but where the arm pose changed something (a hand lifted off the skirt, or still low) the pose wins
+  const poseChanged = (x, y) => PO.has(x, y) !== B.has(x, y) || (PO.has(x, y) && Math.abs(PO.get(x, y)[0] - B.get(x, y)[0]) + Math.abs(PO.get(x, y)[1] - B.get(x, y)[1]) + Math.abs(PO.get(x, y)[2] - B.get(x, y)[2]) > 40);
+  for (let y = 0; y < 216; y++) for (let x = 0; x < 145; x++) { const src = y < HEAD_CUT ? head : y >= 119 && !poseChanged(x, y) ? F : null; if (!src) continue; if (src.has(x, y)) X.set(x, y, src.get(x, y)); else X.d[X.idx(x, y) + 3] = 0; }
+  const c = X.canvas(); cache.set(k, c); return c;
+};
+const DERIVED = false;
 // ---- audio: the same Kokoro lines as the broadcast spike, level drives the mouth ----
 const ACX = new (window.AudioContext || window.webkitAudioContext)();
 const analyser = ACX.createAnalyser(); analyser.fftSize = 512; analyser.connect(ACX.destination);
@@ -114,11 +100,13 @@ const hash = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.
 let forceBlink = 0, forceGlance = 0, env = 0, shape = 'closed', shapeAt = 0, forcedPose = new URLSearchParams(location.search).get('pose') || '';
 const BLEND = new URLSearchParams(location.search).get('blend') === '1';   // ?blend=1: 110 ms crossfade between poses
 const GESTURES = ['palm', 'point', 'open', 'explain', 'welcome'], POSE_ACTIVE = new Set(GESTURES), TO_SCREEN = new Set(['point', 'palm', 'open']);
-let lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseCur = 'idle', prevPose = null, poseAt = 0, blendAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
+let feetAt = 0, lastTalk = 0, wasTalking = false, poseTarget = 'idle', poseCur = 'idle', prevPose = null, poseAt = 0, blendAt = 0, quietFor = 0, glanceUntil = 0, lastMs = 0, gi = 0;
 /** Pick the next gesture (never the same twice), blink on the cut, and look at the screen if the gesture points at it. */
 function nextGesture(ms) {
   let n; do { n = GESTURES[Math.floor(hash(ms * 0.001 + gi++) * GESTURES.length)]; } while (n === poseTarget);
   poseTarget = n; poseAt = ms; forceBlink = ms + 150; if (TO_SCREEN.has(n)) glanceUntil = ms + 1300;
+  const pool = TO_SCREEN.has(n) ? ['h1', 'h1', 'h2', 'b1'] : ['b1', 'h2', 'h3', 'h4', 'h5', 'b1']; headNow = pool[Math.floor(hash(ms * 0.003 + gi) * pool.length)];
+  if (ms - feetAt > 7000) { const fp = ['b1', 'f1', 'f2', 'f3', 'b1']; feetNow = fp[Math.floor(hash(ms * 0.007 + gi) * fp.length)]; feetAt = ms; }
 }
 addEventListener('keydown', e => { if (e.key === '0') forcedPose = ''; else if (/^[1-9]$/.test(e.key)) forcedPose = POSE_NAMES[+e.key - 1] || ''; });
 addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm') mTest = (mTest + 1) % MOUTHS.length; else if (k === 'b') forceBlink = performance.now() + 160; else if (k === 'g') forceGlance = performance.now() + 900; else if (k === 'escape') mTest = -1; });
