@@ -118,27 +118,16 @@ addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm')
 const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
 const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
 
-// ---- motion: arm changes trail the head by a beat, wipe through two in-betweens, and the upper body breathes 1 px ----
-const STAGGER = 150, STEP = 80, STEPS = 2;   // ms: head-to-arms lag, then ms per in-between
-const mixOut = document.createElement('canvas');
-/** Wipe from canvas a to b, top to bottom across the arm band (rows 40-120): rows above the wipe line show b, the rest show a. */
-function wipe(a, b, k) {
-  const w = a.width, h = a.height, og = mixOut.getContext('2d'); mixOut.width = w; mixOut.height = h;
-  const line = Math.round(40 + k * 80);
-  og.drawImage(a, 0, 0); og.drawImage(b, 0, 0, w, line, 0, 0, w, line);
-  return mixOut;
-}
-/** Arm motion for one presenter. `compose(pose, ...rest)` draws a frame; the head is already in `rest`, so it changes at once while the arms wait STAGGER ms. */
+// ---- motion: arm changes trail the head by 150 ms, and the upper body breathes 1 px ----
+const STAGGER = 150;   // ms the arms wait behind the head
+/** Arm motion for one presenter. `compose(pose, ...rest)` draws a frame; the head is already in `rest`, so it changes at once while the arms hold the old pose for STAGGER ms, then cut to the new one. */
 function armMotion(compose) {
   let shown = null, from = null, to = null, at = 0;
   return (ms, want, ...rest) => {
     if (shown === null) shown = want;
-    if (to !== null && (ms >= at + STEP * (STEPS + 1) || want !== to)) { shown = to; to = null; }
+    if (to !== null && (ms >= at || want !== to)) { shown = to; to = null; }
     if (to === null && want !== shown) { from = shown; to = want; at = ms + STAGGER; }
-    if (to === null) return compose(shown, ...rest);
-    const s = ms < at ? 0 : Math.floor((ms - at) / STEP) + 1;   // 0 = waiting, 1..STEPS = in-betweens
-    if (s === 0) return compose(from, ...rest);
-    return wipe(compose(from, ...rest), compose(to, ...rest), s / (STEPS + 1));
+    return compose(to !== null ? from : shown, ...rest);
   };
 }
 /** Draws a sprite at (x, y). With `up`, everything above row `cut` sits 1 px higher and the legs stay put; the hem row is doubled to close the gap. */
