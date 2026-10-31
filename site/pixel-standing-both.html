@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Standing Fraser and Isla together</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:13px sans-serif;padding:10px} canvas{image-rendering:pixelated;background:#2b3050;display:block;width:100%;max-width:1100px} button{margin:2px;padding:4px 8px;font:inherit} button.on{background:#e0b13a} #ui{display:flex;gap:18px;flex-wrap:wrap;max-width:1100px} #ui div.t{margin-top:6px;color:#9aa} #note{color:#9aa;margin:6px 0}</style>
+<canvas id="cv"></canvas>
+<div id="note">Fraser left, Isla right. Every button moves both of them together; a name one of them does not have (Isla has no tilt right) shows her centre head. Mouths and blinks are the same step for both.</div>
+<div id="ui">
+  <div><div class="t">Head</div><div id="hb"></div></div>
+  <div><div class="t">Feet</div><div id="fb"></div></div>
+  <div><div class="t">Arms</div><div id="pb"></div></div>
+  <div><div class="t">Eyes</div><div id="eb"></div></div>
+  <div><div class="t">Mouth</div><div id="mb"></div></div>
+  <div><br><label><input type="checkbox" id="auto" checked> auto cycle head, feet and arms</label><br><label><input type="checkbox" id="talk" checked> auto blink, glance and talk</label></div>
+</div>
+<script type="module">
+const v = '?v=' + Date.now();
+const { toGrid } = await import('./spike-lib/pixel-derive.js' + v);
+const { composeFace, fitEye, composeEyesWarped } = await import('./spike-lib/head-faces.js' + v);
+const { headOffsets } = await import('./spike-lib/head-faces.js' + v);
+const FR = await import('./spike-lib/fraser-frames.js' + v);
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+
+// ---- shared lists: Fraser's names; Isla is looked up by the same names ----
+const HEADS = FR.HEADS.map(x => x[0]), FEET = FR.FEET.map(x => x[0]), POSES = FR.POSES.map(x => x[0]);
+const HLAB = Object.fromEntries(FR.HEADS), FLAB = Object.fromEntries(FR.FEET), PLAB = Object.fromEntries(FR.POSES);
+const EYES = ['open', 'blink', 'gazeL', 'gazeR'], MOUTHS = ['rest', 'smile', 'small', 'wide', 'O', 'A', 'closed'];
+
+// ---- Fraser ----
+const F = await FR.loadFraser('./public/spike/fraser/standing/');
+
+// ---- Isla (same set-up as pixel-standing-frames.html and /test) ----
+const gridOf = n => load('./public/spike/isla/standing/' + n + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }));
+const NAMES = ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'f1', 'f2', 'f3', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', ...Array.from({ length: 9 }, (_, i) => 'v' + (i + 1))];
+const G = {}; await Promise.all(NAMES.map(async n => { G[n] = await gridOf(n); }));
+const vs = Array.from({ length: 9 }, (_, i) => G['v' + (i + 1)]);
+const V = { base: G.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
+const IHEADS = ['b1', 'h1', 'h2', 'h3', 'h4', 'h5'];
+const WARP = {}; for (const n of ['h1', 'h5']) WARP[n] = { L: fitEye(G.b1, G[n], 'L'), R: fitEye(G.b1, G[n], 'R') };
+const OFF = {}; for (const n of IHEADS) OFF[n] = headOffsets(G.b1, G[n], vs[5]);
+{ const o = OFF.h2; OFF.h2 = { eyeL: [o.eyeL[0] - 1, o.eyeL[1]], eyeR: [o.eyeR[0] - 1, o.eyeR[1]], mouth: o.mouth }; }
+const H1M = { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', press: 'h1v6' };
+const islaFrame = (head, pose, feet, eye, mouthKey) => {
+  const hn = IHEADS.includes(head) ? head : 'b1', mk = mouthKey === 'closed' ? 'press' : mouthKey === 'rest' ? null : mouthKey, ek = eye === 'open' ? null : eye;
+  let h = hn === 'h1' ? G[H1M[mk] || 'h1'] : hn === 'b1' ? composeFace(G.b1, OFF.b1, V, ek, mk) : composeFace(G[hn], OFF[hn], V, WARP[hn] ? null : ek, mk);
+  if (WARP[hn] && ek) h = composeEyesWarped(h, V, WARP[hn], ek);
+  const PO = G[pose] || G.b1, X = PO.clone(), B = G.b1, FT = G[feet] || G.b1;
+  const changed = (x, y) => { const a = PO.has(x, y), b = B.has(x, y); if (a !== b) return true; if (!a) return false; const c = PO.get(x, y), d = B.get(x, y); return Math.abs(c[0] - d[0]) + Math.abs(c[1] - d[1]) + Math.abs(c[2] - d[2]) > 40; };
+  for (let y = 0; y < 216; y++) for (let x = 0; x < 145; x++) { const src = y < 49 ? h : y >= 119 && !changed(x, y) ? FT : null; if (!src) continue; if (src.has(x, y)) X.set(x, y, src.get(x, y)); else X.d[X.idx(x, y) + 3] = 0; }
+  return X;
+};
+
+// ---- draw both ----
+const S = 3, GAP = 20, W = 145 * 2 + GAP, cv = document.getElementById('cv'); cv.width = W * S; cv.height = 216 * S; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+let h = 0, f = 0, p = 0, e = 0, m = 0;
+function draw() {
+  const a = { head: HEADS[h], pose: POSES[p], feet: FEET[f], eye: EYES[e], mouthKey: MOUTHS[m] };
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.drawImage(FR.composeFraser(F, a).canvas(), 0, 0, 145 * S, 216 * S);
+  g.drawImage(islaFrame(a.head, a.pose, a.feet, a.eye, a.mouthKey).canvas(), (145 + GAP) * S, 0, 145 * S, 216 * S);
+  const sync = (id, i) => document.querySelectorAll('#' + id + ' button').forEach((b, k) => b.classList.toggle('on', k === i));
+  sync('hb', h); sync('fb', f); sync('pb', p); sync('eb', e); sync('mb', m);
+}
+const mk = (id, list, label, set) => list.forEach((it, i) => { const b = document.createElement('button'); b.textContent = label(it); b.onclick = () => { set(i); draw(); }; document.getElementById(id).append(b); });
+mk('hb', HEADS, n => HLAB[n], i => { auto.checked = false; h = i; });
+mk('fb', FEET, n => FLAB[n], i => { auto.checked = false; f = i; });
+mk('pb', POSES, n => PLAB[n], i => { auto.checked = false; p = i; });
+mk('eb', EYES, x => x, i => { talk.checked = false; e = i; });
+mk('mb', MOUTHS, x => x, i => { talk.checked = false; m = i; });
+draw();
+let t = 0, blinkAt = 3, eyeUntil = 0;
+setInterval(() => {
+  t++;
+  if (auto.checked) { h = Math.floor(t / 12) % HEADS.length; f = Math.floor(t / 33) % FEET.length; p = Math.floor(t / 25) % POSES.length; }
+  if (talk.checked) {
+    if (t >= blinkAt) { e = 1; eyeUntil = t + 1; blinkAt = t + 8 + Math.floor(Math.random() * 10); } else if (t >= eyeUntil) { e = Math.random() < 0.05 ? (Math.random() < 0.5 ? 2 : 3) : 0; if (e) eyeUntil = t + 3; }
+    m = t % 40 < 30 ? 1 + Math.floor(t / 2 * 6) % 6 : 0;
+  }
+  draw();
+}, 150);
+</script>
