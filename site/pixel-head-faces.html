@@ -13,7 +13,7 @@ const V = { base: b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wi
 const names = new URLSearchParams(location.search).get('h') ? [new URLSearchParams(location.search).get('h')] : ['b1', 'h1', 'h2', 'h3', 'h4', 'h5'], log = [];
 const crop = P => { const c = document.createElement('canvas'); c.width = 52; c.height = 34; c.getContext('2d').drawImage(P.canvas(), -48, -12); return c; };
 for (const n of names) {
-  const H = n === 'b1' ? b1 : await g(n), off = headOffsets(b1, H, vs[0]); log.push(n + ' ' + JSON.stringify(off));
+  const H = n === 'b1' ? b1 : await g(n), off = headOffsets(b1, H, vs[5]); log.push(n + ' ' + JSON.stringify(off));
   const row = document.createElement('div'); row.className = 'row';
   const combos = [['open', 'rest'], ['blink', 'rest'], ['gazeL', 'rest'], ['gazeR', 'rest'], ['open', 'smile'], ['open', 'small'], ['open', 'wide'], ['open', 'O'], ['open', 'A'], ['open', 'press']];
   for (const [e, m] of combos) { const f = document.createElement('figure'); f.append(crop(composeFace(H, off, V, e === 'open' ? null : e, m === 'rest' ? null : m)), n + ' ' + e + '/' + m); row.append(f); }

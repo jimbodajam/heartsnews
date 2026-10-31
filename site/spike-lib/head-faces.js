@@ -2,7 +2,7 @@
 // Each feature is registered by a landmark (iris centroid per eye, dark lip-line centroid for the mouth), then only the
 // feature's own pixels are pasted, so skin and hair on the moved head are left alone.
 
-const EYE_WIN = [54, 20, 100, 40], MOUTH_WIN = [66, 37, 82, 43], EYE_SPLIT = 72;
+const EYE_WIN = [54, 20, 100, 40], EYE_SPLIT = 72;
 const EBL = [62, 24, 71, 35], EBR = [74, 24, 82, 35], MB = [65, 35, 85, 47];   // one box per eye, mouth box
 
 const lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
@@ -13,19 +13,27 @@ const greenIris = (P, x0, x1) => {
   for (let y = EYE_WIN[1]; y <= EYE_WIN[3]; y++) for (let x = x0; x <= x1; x++) if (P.has(x, y)) { const c = P.get(x, y); if (c[1] > c[0] + 12 && c[1] > c[2] - 10) { sx += x; sy += y; n++; } }
   return n ? [sx / n, sy / n] : null;
 };
-const lipLine = P => {
-  const [x0, y0, x1, y1] = MOUTH_WIN; let sx = 0, sy = 0, n = 0;
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (P.has(x, y) && lum(P.get(x, y)) < 135) { sx += x; sy += y; n++; }
-  return n ? [sx / n, sy / n] : null;
-};
+/** Best whole-pixel shift of `src` onto `tgt` around centre SC (luminance with the window mean removed, so skin tone differences between frames do not matter). */
+function fitShift(src, tgt, SC, W, R) {
+  let best = null;
+  for (let dx = -R[0]; dx <= R[0]; dx++) for (let dy = -R[1]; dy <= R[1]; dy++) {
+    const a = [], b = [];
+    for (let y = -W[1]; y <= W[1]; y++) for (let x = -W[0]; x <= W[0]; x++) { const px = SC[0] + x + dx, py = SC[1] + y + dy, qx = SC[0] + x, qy = SC[1] + y; if (tgt.has(px, py) && src.has(qx, qy)) { a.push(lum(tgt.get(px, py))); b.push(lum(src.get(qx, qy))); } }
+    if (a.length < W[0] * W[1]) continue;
+    const ma = a.reduce((s, v) => s + v, 0) / a.length, mb = b.reduce((s, v) => s + v, 0) / b.length;
+    let e = 0; for (let i = 0; i < a.length; i++) e += Math.abs((a[i] - ma) - (b[i] - mb));
+    if (!best || e < best.e) best = { e, dx, dy };
+  }
+  return best ? [best.dx, best.dy] : [0, 0];
+}
 
-/** Landmark offsets of `head` relative to `base` (both Pix, same grid). `baseMouth` is the frame the mouth patches were cut for. */
+/** Offsets of `head` relative to `base` (both Pix, same grid): iris landmark per eye, image fit for the mouth. `baseMouth` is a closed-mouth frame (the pressed lips) cut for the master. */
 export function headOffsets(base, head, baseMouth = base) {
   const sub = (a, b) => a && b ? [Math.round(a[0] - b[0]), Math.round(a[1] - b[1])] : [0, 0];
   return {
     eyeL: sub(greenIris(head, 0, EYE_SPLIT), greenIris(base, 0, EYE_SPLIT)),
     eyeR: sub(greenIris(head, EYE_SPLIT + 1, 144), greenIris(base, EYE_SPLIT + 1, 144)),
-    mouth: sub(lipLine(head), lipLine(baseMouth)),
+    mouth: fitShift(baseMouth, head, [75, 41], [8, 4], [8, 3]),   // validated on the six generated h1 mouths, which land at +4/+5
   };
 }
 
