@@ -30,6 +30,18 @@ export function toGrid(img, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 13
     if (r > 150 && b > 120 && b - g2 > 40 && r - g2 > 40 && (!P.has(x - 1, y) || !P.has(x + 1, y) || !P.has(x, y - 1) || !P.has(x, y + 1))) kill.push([x, y]);
   }
   for (const [x, y] of kill) P.d[P.idx(x, y) + 3] = 0;
+  // What is left on the silhouette is mostly keyed-magenta bleeding into the dark outline (r and b both well above g, but not skin or hair): repaint those from their clean neighbours, or drop them when they have none.
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (P.has(x, y)) { const [r, g2, b] = P.get(x, y); if (r > 140 && b > 140 && r - g2 > 100 && b - g2 > 100) P.d[P.idx(x, y) + 3] = 0; }   // pure magenta slivers the key missed (a one-pixel gap between the legs)
+  const fringe = (x, y) => { if (!P.has(x, y)) return false; const [r, g2, b] = P.get(x, y); return r - g2 > 50 && b - g2 > 50 && b > 55; };
+  const onEdge = (x, y) => !P.has(x - 1, y) || !P.has(x + 1, y) || !P.has(x, y - 1) || !P.has(x, y + 1);
+  for (let pass = 0; pass < 3; pass++) {
+    const fix = [];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (fringe(x, y) && onEdge(x, y)) {
+      const ns = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && P.has(x + dx, y + dy) && !fringe(x + dx, y + dy)) ns.push(P.get(x + dx, y + dy));
+      fix.push([x, y, ns.length ? [0, 1, 2].map(i => Math.round(ns.reduce((s, c) => s + c[i], 0) / ns.length)) : null]);
+    }
+    for (const [x, y, c] of fix) { if (c) P.set(x, y, c); else P.d[P.idx(x, y) + 3] = 0; }
+  }
   return P;
 }
 
