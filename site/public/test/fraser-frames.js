@@ -10,7 +10,7 @@ export const FRASER_GRID = { w: 145, h: 216, bg: [184, 52, 137] };
 const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [58, 36, 71, 41] } };
 const FACE_BOXES = { EBL: [61, 25, 71, 31], EBR: [73, 25, 83, 31], MB: [64, 35, 80, 43] };   // eye and mouth boxes on the master head, for the generated v frames
 const HEAD = { piv: [72, 46], rows: 45 };
-const HEAD_CUT = 46;   // rows above come from the head frame, below from the arm pose
+const HEAD_CUT = 48;   // rows above come from the head frame, below from the arm pose (48 keeps the chin of every head, including the open mouths)
 const LEGS = { cx: 72, top: 138, foot: 210, fill: [40, 36, 60] };
 
 export const HEADS = [['b1', 'centre', {}], ['h1', 'turn right', null], ['h2', 'turn left', null], ['h3', 'nod down', { dy: 1, sy: 0.96 }], ['h4', 'nod up', { dy: -1, sy: 1.03 }], ['h5', 'tilt left', { rot: -0.12, dx: -1 }], ['h6', 'tilt right', { rot: 0.12, dx: 1 }]];
