@@ -8,6 +8,7 @@ export const FRASER_GRID = { w: 145, h: 216, bg: [184, 52, 137] };
 // rough windows round the eyes and mouth of each generated head (the turned heads see the face at an angle)
 const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [58, 36, 71, 41] } };
 const HEAD = { piv: [72, 46], rows: 45 };
+const SEAM = 40;       // above this row everything is the head's (hair, face, ears, neck)
 const HEAD_CUT = 46;   // rows above come from the head frame, below from the arm pose
 const LEGS = { cx: 72, top: 138, foot: 210, fill: [40, 36, 60] };
 
@@ -36,7 +37,12 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const hp = HEADS.find(x => x[0] === head)[2];
   if (hp && Object.keys(hp).length) h = warpHead(h, hp, HEAD);
   const out = (F.G[pose] || F.G.b1).clone();
-  for (let y = 0; y < HEAD_CUT; y++) for (let x = 0; x < out.w; x++) { if (h.has(x, y)) out.set(x, y, h.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; }
+  // Head pixels only near the seam: below SEAM the head frame carries a strip of its own jacket (recoloured in the generated turns, rotated in the tilts), so take just skin from it and keep the pose's jacket, collar and tie.
+  const skin = c => c[0] > 150 && c[0] > c[1] + 10 && c[1] >= c[2] - 8;
+  for (let y = 0; y < HEAD_CUT; y++) for (let x = 0; x < out.w; x++) {
+    const q = h.has(x, y) ? h.get(x, y) : null, p = out.has(x, y) ? out.get(x, y) : null;
+    if (y < SEAM || (q && (skin(q) || (p && skin(p))))) { if (q) out.set(x, y, q); else out.d[out.idx(x, y) + 3] = 0; }
+  }
   const fp = FEET.find(x => x[0] === feet)[2];
   if (fp) { const legs = warpLegs(F.G.b1, fp, LEGS); for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (legs.has(x, y)) out.set(x, y, legs.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; } }
   return out;
