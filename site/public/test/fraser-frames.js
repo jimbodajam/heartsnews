@@ -5,9 +5,12 @@ import { toGrid, detectEyes, detectMouth, gaze, blink, mouth, MOUTH_PRESETS } fr
 import { warpHead, warpLegs } from './body-warps.js';
 import { composeFace } from './head-faces.js';
 
+// heads with their own generated mouth set (h1v1-h1v7 style: the whole head per mouth, 7 is the blink); the other heads still get code-drawn mouths
+const MOUTH_SETS = ['h1', 'h3', 'h4'];
+const MOUTH_FRAME = { smile: 'v1', small: 'v2', wide: 'v3', O: 'v4', A: 'v5', closed: 'v6' };
 export const FRASER_GRID = { w: 145, h: 216, bg: [184, 52, 137] };
 // rough windows round the eyes and mouth of each generated head (the turned heads see the face at an angle)
-const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [60, 36, 69, 40] } };
+const FACE = { b1: { eye: [58, 20, 90, 36], mouth: [66, 37, 80, 42] }, h1: { eye: [72, 22, 92, 32], mouth: [75, 36, 88, 41] }, h2: { eye: [56, 22, 76, 32], mouth: [60, 36, 69, 40] }, h6: { eye: [58, 20, 92, 38], mouth: [66, 37, 82, 44] } };
 const FACE_BOXES = { EBL: [61, 25, 71, 31], EBR: [73, 25, 83, 31], MB: [64, 35, 80, 43] };   // eye and mouth boxes on the master head, for the generated v frames
 // hand nudges on top of the registered mouth position, checked by eye: nod down sits a little low and right and is tilted a few degrees, nod up sits low on every mouth shape
 const MOUTH_NUDGE = { h3: { mouthNudge: [-1, 1], mouthRot: 0.06 }, h4: { mouthNudge: [0, -3] } };
@@ -26,11 +29,13 @@ export const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'];
 export async function loadFraser(dir) {
   const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
   const G = {};
-  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', 'h1v7'].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, { ...FRASER_GRID, bg: cornerColour(im) }); }));
-  // the turn-right mouth frames came back in slightly different skin tones; match each to h1 so switching mouths does not flicker the colour
-  for (const n of Object.keys(G)) if (/^h1v\d$/.test(n) && G.h1) G[n] = matchColour(G[n], G.h1);
+  await Promise.all(['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'h1v1', 'h1v2', 'h1v3', 'h1v4', 'h1v5', 'h1v6', 'h1v7', 'f1', 'f2', 'f3', 'h6-redo', ...MOUTH_SETS.flatMap(h => Array.from({ length: 7 }, (_, i) => h + 'v' + (i + 1)))].map(async n => { const im = await load(dir + n + '.jpg'); if (im) G[n] = toGrid(im, { ...FRASER_GRID, bg: cornerColour(im) }); }));
+  // the h6 redo (a gentler tilt) replaces the first h6, which came out far too big
+  if (G['h6-redo']) { G.h6 = G['h6-redo']; delete G['h6-redo']; }
+  // the generated mouth frames came back in slightly different skin tones; match each to its own head so switching mouths does not flicker the colour
+  for (const n of Object.keys(G)) { const m = /^(h\d)v\d$/.exec(n); if (m && G[m[1]]) G[n] = matchColour(G[n], G[m[1]]); }
   const face = {};
-  for (const n of Object.keys(G)) if (n[0] === 'h' || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
+  for (const n of Object.keys(G)) if ((n[0] === 'h' && !/v[0-9]$/.test(n)) || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
   // generated mouth and eye frames (v1-v9) cut for the master head, laid over the master and the nod and tilt heads by registered offsets (not the turned heads, the angle is wrong)
   const V = G.v1 && G.v7 ? { base: G.b1, mouthBase: G.b1, mouths: { smile: G.v1, small: G.v2, wide: G.v3, O: G.v4, A: G.v5, closed: G.v6 }, blink: G.v7, gazeR: G.v9, boxes: FACE_BOXES } : null;
   const centres = n => BLINK_AT[n] || face[n].eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
@@ -44,9 +49,9 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const src = F.G[head] ? head : 'b1';   // a head frame that is not generated yet falls back to the master head
   let h = F.G[src];
   const { eyes, mouthFit } = F.face[src];
-  if (src === 'h1' && F.G.h1v1) {
-    // turn right has its own generated mouth frames (the whole head per mouth, as with Isla's h1v1-h1v6) and a blink frame; a glance is the code glance on whichever frame is showing
-    const key = eye === 'blink' ? 'h1v7' : { smile: 'h1v1', small: 'h1v2', wide: 'h1v3', O: 'h1v4', A: 'h1v5', closed: 'h1v6' }[mouthKey];
+  if (MOUTH_SETS.includes(src) && F.G[src + 'v1']) {
+    // these heads have their own generated mouth frames (the whole head per mouth, as with Isla's h1v1-h1v6) and a blink frame; a glance is the code glance on whichever frame is showing
+    const key = eye === 'blink' ? src + 'v7' : MOUTH_FRAME[mouthKey] && src + MOUTH_FRAME[mouthKey];
     h = F.G[key] || h;
     if (eye === 'gazeL') h = gaze(h, eyes, -1); else if (eye === 'gazeR') h = gaze(h, eyes, 1);
   } else if (F.V && F.off[src]) {
@@ -62,7 +67,11 @@ export function composeFraser(F, { head = 'b1', pose = 'b1', feet = 'b1', eye = 
   const out = (F.G[pose] || F.G.b1).clone();
   for (let y = 0; y < HEAD_CUT; y++) for (let x = 0; x < out.w; x++) { if (h.has(x, y)) out.set(x, y, h.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; }
   const fp = FEET.find(x => x[0] === feet)[2];
-  if (fp) { const legs = warpLegs(F.G.b1, fp, LEGS); for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (legs.has(x, y)) out.set(x, y, legs.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; } }
+  if (fp && F.G[feet]) {
+    // generated feet frame: everything from the jacket hem down comes from it
+    const g = F.G[feet];
+    for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (g.has(x, y)) out.set(x, y, g.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; }
+  } else if (fp) { const legs = warpLegs(F.G.b1, fp, LEGS); for (let y = LEGS.top; y < out.h; y++) for (let x = 0; x < out.w; x++) { if (legs.has(x, y)) out.set(x, y, legs.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; } }
   return out;
 }
 
@@ -76,7 +85,7 @@ function findFace(P) {
 }
 
 // Eye centres for heads where the eye whites are too small for detectEyes to find the far eye (checked by eye on the 145x216 grid).
-const BLINK_AT = { h4: [[64.5, 22], [77.5, 22]], h6: [[73.5, 25], [82.5, 29.5]] };
+const BLINK_AT = { h4: [[64.5, 22], [77.5, 22]] };
 
 /** Blink by hand: wipe a small box round each eye to the skin round it and draw a two-pixel lid line, bowed down in the middle. */
 function blinkAt(P, centres) {
