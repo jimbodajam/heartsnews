@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Head frame faces</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:11px sans-serif} .row{display:flex;flex-wrap:wrap;gap:4px;padding:4px;align-items:flex-end} figure{margin:0} canvas{image-rendering:pixelated;background:#444;display:block;width:150px}</style>
+<div id="out"></div><pre id="log" style="padding:6px"></pre>
+<script type="module">
+const { toGrid } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
+const { headOffsets, composeFace } = await import('./spike-lib/head-faces.js?v=' + Date.now());
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+const g = n => load('./public/spike/isla/standing/' + n + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }));
+const [b1, ...vs] = await Promise.all(['b1', ...Array.from({ length: 9 }, (_, i) => 'v' + (i + 1))].map(g));
+const V = { base: b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
+const names = new URLSearchParams(location.search).get('h') ? [new URLSearchParams(location.search).get('h')] : ['b1', 'h1', 'h2', 'h3', 'h4', 'h5'], log = [];
+const crop = P => { const c = document.createElement('canvas'); c.width = 52; c.height = 34; c.getContext('2d').drawImage(P.canvas(), -48, -12); return c; };
+for (const n of names) {
+  const H = n === 'b1' ? b1 : await g(n), off = headOffsets(b1, H, vs[0]); log.push(n + ' ' + JSON.stringify(off));
+  const row = document.createElement('div'); row.className = 'row';
+  const combos = [['open', 'rest'], ['blink', 'rest'], ['gazeL', 'rest'], ['gazeR', 'rest'], ['open', 'smile'], ['open', 'small'], ['open', 'wide'], ['open', 'O'], ['open', 'A'], ['open', 'press']];
+  for (const [e, m] of combos) { const f = document.createElement('figure'); f.append(crop(composeFace(H, off, V, e === 'open' ? null : e, m === 'rest' ? null : m)), n + ' ' + e + '/' + m); row.append(f); }
+  document.getElementById('out').append(row);
+}
+document.getElementById('log').textContent = log.join('\n');
+</script>

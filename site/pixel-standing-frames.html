@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Standing Isla head and feet frames</title>
+<style>body{margin:0;background:#1b1f3a;color:#f2efe6;font:13px sans-serif;display:flex;gap:16px;padding:10px} canvas{image-rendering:pixelated;background:#2b3050} button{margin:2px;padding:4px 8px;font:inherit} button.on{background:#e0b13a} #ui{max-width:360px} #ui div.t{margin-top:8px;color:#9aa}</style>
+<canvas id="cv"></canvas>
+<div id="ui">
+  <div class="t">Head (rows 0-58 from the frame, the rest from b1)</div><div id="hb"></div>
+  <div class="t">Feet (rows 119+ from the frame)</div><div id="fb"></div>
+  <div class="t">Eyes</div><div id="eb"></div>
+  <div class="t">Mouth</div><div id="mb"></div>
+  <div class="t">Nudge this head (x pixels, on top of the detected offset)</div><div>eyes <input type="range" id="se" min="-5" max="5" step="1" value="0"> <b id="ve"></b></div><div>mouth <input type="range" id="sm" min="-5" max="8" step="1" value="0"> <b id="vm"></b></div><br><label><input type="checkbox" id="auto" checked> auto cycle head and feet</label><br>
+  <label><input type="checkbox" id="talk" checked> auto blink, glance and talk</label>
+  <div class="t" id="note"></div>
+</div>
+<script type="module">
+const { toGrid } = await import('./spike-lib/pixel-derive.js?v=' + Date.now());
+const { headOffsets, composeFace } = await import('./spike-lib/head-faces.js?v=' + Date.now());
+const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+const G = {}; for (const n of ['b1','h1','h2','h3','h4','h5','f1','f2','f3']) G[n] = toGrid(await load('./public/spike/isla/standing/' + n + '.jpg'), { w: 145, h: 216 });
+const vs = await Promise.all(Array.from({ length: 9 }, (_, i) => load('./public/spike/isla/standing/v' + (i + 1) + '.jpg').then(im => toGrid(im, { w: 145, h: 216 }))));
+const V = { base: G.b1, mouthBase: vs[0], mouths: { smile: vs[0], small: vs[1], wide: vs[2], O: vs[3], A: vs[4], press: vs[5] }, blink: vs[6], gazeL: vs[7], gazeR: vs[8] };
+// face: which head frames can take generated eyes / mouths laid over them (h1 is a different angle, h5's tilt breaks the eye patches)
+const HEADS = [['b1','centre',1,1],['h1','turn right',0,0],['h2','turn left',1,1],['h3','nod down',1,1],['h4','nod up',1,1],['h5','tilt',0,1]];
+const FEET = [['b1','together'],['f1','weight right leg'],['f2','weight left leg'],['f3','apart']];
+const EYES = ['open','blink','gazeL','gazeR'], MOUTHS = ['rest','smile','small','wide','O','A','press'];
+const ADJ = {}; for (const [n] of HEADS) ADJ[n] = { eye: 0, mouth: 0 }; ADJ.h2 = { eye: -1, mouth: 3 };   // hand tweaks on top of the detected offsets (x pixels)
+const BASEOFF = {}; for (const [n] of HEADS) BASEOFF[n] = headOffsets(G.b1, G[n], vs[0]);
+const offFor = n => { const o = BASEOFF[n], a = ADJ[n]; return { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; };
+const S = 4, cv = document.getElementById('cv'); cv.width = 145 * S; cv.height = 216 * S; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+let h = 0, f = 0, e = 0, m = 0;
+function draw() {
+  const [hn, , eyeOk, mouthOk] = HEADS[h], H = G[hn], F = G[FEET[f][0]];
+  const face = hn === 'b1' ? composeFace(H, offFor(hn), V, EYES[e] === 'open' ? null : EYES[e], MOUTHS[m] === 'rest' ? null : MOUTHS[m])
+    : composeFace(H, offFor(hn), V, eyeOk && EYES[e] !== 'open' ? EYES[e] : null, mouthOk && MOUTHS[m] !== 'rest' ? MOUTHS[m] : null);
+  const P = G.b1.clone();
+  for (let y = 0; y < 216; y++) for (let x = 0; x < 145; x++) { const src = y < 58 ? face : y >= 119 ? F : null; if (!src) continue; if (src.has(x, y)) P.set(x, y, src.get(x, y)); else P.d[P.idx(x, y) + 3] = 0; }
+  g.clearRect(0, 0, cv.width, cv.height); g.drawImage(P.canvas(), 0, 0, cv.width, cv.height);
+  const sync = (id, i) => document.querySelectorAll('#' + id + ' button').forEach((b, k) => b.classList.toggle('on', k === i));
+  sync('hb', h); sync('fb', f); sync('eb', e); sync('mb', m);
+  syncSliders();
+  note.textContent = !eyeOk || !mouthOk ? HEADS[h][1] + ': ' + (!eyeOk && !mouthOk ? 'eyes and mouth held (own face)' : 'eyes held (own face), mouth laid over') : '';
+}
+const mk = (id, list, label, set) => list.forEach((it, i) => { const b = document.createElement('button'); b.textContent = label(it); b.onclick = () => { set(i); draw(); }; document.getElementById(id).append(b); });
+mk('hb', HEADS, x => x[1], i => { auto.checked = false; h = i; });
+mk('fb', FEET, x => x[1], i => { auto.checked = false; f = i; });
+mk('eb', EYES, x => x, i => { talk.checked = false; e = i; });
+mk('mb', MOUTHS, x => x, i => { talk.checked = false; m = i; });
+const syncSliders = () => { const a = ADJ[HEADS[h][0]]; se.value = a.eye; sm.value = a.mouth; ve.textContent = a.eye; vm.textContent = a.mouth; };
+se.oninput = () => { auto.checked = false; ADJ[HEADS[h][0]].eye = +se.value; syncSliders(); draw(); };
+sm.oninput = () => { auto.checked = false; ADJ[HEADS[h][0]].mouth = +sm.value; syncSliders(); draw(); };
+const hold = new URLSearchParams(location.search).get('hold'); if (hold !== null) { h = +hold; auto.checked = false; }
+draw();
+// idle loop: head and feet drift slowly; blink every few seconds, glance now and then, mouth flaps while "talking"
+let t = 0, blinkAt = 3, eyeUntil = 0;
+setInterval(() => {
+  t++;
+  if (auto.checked) { h = Math.floor(t / 12) % HEADS.length; f = Math.floor(t / 33) % FEET.length; }
+  if (talk.checked) {
+    if (t >= blinkAt) { e = 1; eyeUntil = t + 1; blinkAt = t + 8 + Math.floor(Math.random() * 10); } else if (t >= eyeUntil) { e = Math.random() < 0.05 ? (Math.random() < 0.5 ? 2 : 3) : 0; if (e) eyeUntil = t + 3; }
+    m = t % 40 < 30 ? 1 + Math.floor(t / 2 * 7) % 6 : 0;
+  }
+  syncSliders(); draw();
+}, 150);
+</script>
