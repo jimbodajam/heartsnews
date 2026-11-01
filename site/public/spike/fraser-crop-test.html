@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fraser head crop test (#71)</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; background: #1c1b22; color: #eee; margin: 16px; }
+  h1 { font-size: 20px; } h2 { font-size: 16px; margin: 28px 0 6px; }
+  p { max-width: 70ch; color: #bbb; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; }
+  figure { margin: 0; }
+  figcaption { font-size: 12px; color: #aaa; margin-top: 2px; }
+  .v { width: 376px; height: 300px; background-repeat: no-repeat; background-position: -236px -30px; image-rendering: pixelated; }
+  .z { width: 752px; max-width: 100%; height: 600px; background-size: 1696px 2528px; background-position: -472px -60px; image-rendering: pixelated; }
+  table { border-collapse: collapse; margin-top: 8px; } td, th { border: 1px solid #444; padding: 3px 8px; text-align: right; }
+</style>
+<h1>Fraser head crops vs full figure (#71)</h1>
+<p>Each row: the master, the existing full-figure frame, and the frame made from an enlarged head crop pasted back on the master. Crop results are pasted over the face window only (nod: the whole head). 1x is broadcast size.</p>
+<div id="out"></div>
+<script>
+const T = [['v1', 'Smile'], ['v7', 'Blink'], ['h3', 'Nod down']];
+const base = 'fraser/crop-test/';
+const bg = f => `style="background-image:url(${base}${f})"`;
+document.getElementById('out').innerHTML = T.map(([n, t]) => `
+<h2>${n}: ${t}</h2>
+<div class="row">
+  <figure><div class="v" ${bg('master.jpg')}></div><figcaption>master</figcaption></figure>
+  <figure><div class="v" ${bg('full-' + n + '.jpg')}></div><figcaption>full-figure (current)</figcaption></figure>
+  <figure><div class="v" ${bg('paste-' + n + '.png')}></div><figcaption>head crop, pasted back</figcaption></figure>
+</div>
+<div class="row" style="margin-top:12px">
+  <figure><div class="v z" ${bg('full-' + n + '.jpg')}></div><figcaption>full-figure, 2x</figcaption></figure>
+  <figure><div class="v z" ${bg('paste-' + n + '.png')}></div><figcaption>head crop, 2x</figcaption></figure>
+</div>`).join('');
+</script>

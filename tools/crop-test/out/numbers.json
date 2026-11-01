@@ -1,0 +1,38 @@
+[
+ {
+  "name": "v1",
+  "cells": 945,
+  "changedCrop": 26,
+  "changedFull": 72,
+  "coloursMaster": 367,
+  "coloursCrop": 349,
+  "coloursFull": 409,
+  "driftCrop": 42,
+  "driftFull": 98,
+  "areaCells": 3328
+ },
+ {
+  "name": "v7",
+  "cells": 945,
+  "changedCrop": 48,
+  "changedFull": 137,
+  "coloursMaster": 367,
+  "coloursCrop": 337,
+  "coloursFull": 389,
+  "driftCrop": 66,
+  "driftFull": 161,
+  "areaCells": 3328
+ },
+ {
+  "name": "h3",
+  "cells": 2816,
+  "changedCrop": 201,
+  "changedFull": 754,
+  "coloursMaster": 442,
+  "coloursCrop": 414,
+  "coloursFull": 483,
+  "driftCrop": 212,
+  "driftFull": 776,
+  "areaCells": 3328
+ }
+]
