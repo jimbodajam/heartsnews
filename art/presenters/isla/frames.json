@@ -1,0 +1,28 @@
+{
+  "src": "site/public/spike/isla/standing/",
+  "grid": { "w": 145, "h": 216 },
+  "bg": "none",
+  "matchColour": false,
+  "headCut": 49,
+  "feetTop": 119,
+  "heads": ["b1", "h1", "h2", "h3", "h4", "h5"],
+  "poses": ["b1", "palm", "b2", "b3", "b4", "b5", "b6", "b7", "b8"],
+  "feet": ["b1", "f1", "f2", "f3"],
+  "eyes": ["blink", "gazeL", "gazeR"],
+  "mouths": ["smile", "closed", "small", "wide", "O", "A", "press"],
+  "boxes": {
+    "h1": { "mouth": [[68, 35, 90, 48]] }
+  },
+  "frames": [
+    { "name": "b1", "area": "master" },
+    { "name": "palm", "file": "../standing-master.jpg", "parent": "b1", "area": "arm" },
+    { "name": "b2", "parent": "b1", "area": "arm" }, { "name": "b3", "parent": "b1", "area": "arm" }, { "name": "b4", "parent": "b1", "area": "arm" }, { "name": "b5", "parent": "b1", "area": "arm" },
+    { "name": "b6", "parent": "b1", "area": "arm" }, { "name": "b7", "parent": "b1", "area": "arm" }, { "name": "b8", "parent": "b1", "area": "arm" },
+    { "name": "f1", "parent": "b1", "area": "legs" }, { "name": "f2", "parent": "b1", "area": "legs" }, { "name": "f3", "parent": "b1", "area": "legs" },
+    { "name": "h1", "parent": "b1", "area": "head" }, { "name": "h2", "parent": "b1", "area": "head" }, { "name": "h3", "parent": "b1", "area": "head" }, { "name": "h4", "parent": "b1", "area": "head" }, { "name": "h5", "parent": "b1", "area": "head" },
+    { "name": "v1", "parent": "b1", "area": "patch" }, { "name": "v2", "parent": "b1", "area": "patch" }, { "name": "v3", "parent": "b1", "area": "patch" }, { "name": "v4", "parent": "b1", "area": "patch" }, { "name": "v5", "parent": "b1", "area": "patch" },
+    { "name": "v6", "parent": "b1", "area": "patch" }, { "name": "v7", "parent": "b1", "area": "patch" }, { "name": "v8", "parent": "b1", "area": "patch" }, { "name": "v9", "parent": "b1", "area": "patch" },
+    { "name": "h1v1", "parent": "h1", "area": "mouth" }, { "name": "h1v2", "parent": "h1", "area": "mouth" }, { "name": "h1v3", "parent": "h1", "area": "mouth" }, { "name": "h1v4", "parent": "h1", "area": "mouth" },
+    { "name": "h1v5", "parent": "h1", "area": "mouth" }, { "name": "h1v6", "parent": "h1", "area": "mouth" }
+  ]
+}

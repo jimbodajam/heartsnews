@@ -34,8 +34,13 @@ export async function loadFraser(dir) {
   if (G['h6-redo']) { G.h6 = G['h6-redo']; delete G['h6-redo']; }
   // the generated mouth frames came back in slightly different skin tones; match each to its own head so switching mouths does not flicker the colour
   for (const n of Object.keys(G)) { const m = /^(h\d)v\d$/.exec(n); if (m && G[m[1]]) G[n] = matchColour(G[n], G[m[1]]); }
+  return buildFraser(G);
+}
+
+/** Works out faces and offsets from `ref` (the frames before any palette snap, detection thresholds were set on those) and composes from `G`. */
+export function buildFraser(G, ref = G) {
   const face = {};
-  for (const n of Object.keys(G)) if ((n[0] === 'h' && !/v[0-9]$/.test(n)) || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(G[n], FACE[n].eye), mouthFit: detectMouth(G[n], FACE[n].mouth) } : findFace(G[n]);
+  for (const n of Object.keys(ref)) if ((n[0] === 'h' && !/v[0-9]$/.test(n)) || n === 'b1') face[n] = FACE[n] ? { eyes: detectEyes(ref[n], FACE[n].eye), mouthFit: detectMouth(ref[n], FACE[n].mouth) } : findFace(ref[n]);
   // generated mouth and eye frames (v1-v9) cut for the master head, laid over the master and the nod and tilt heads by registered offsets (not the turned heads, the angle is wrong)
   const V = G.v1 && G.v7 ? { base: G.b1, mouthBase: G.b1, mouths: { smile: G.v1, small: G.v2, wide: G.v3, O: G.v4, A: G.v5, closed: G.v6 }, blink: G.v7, gazeR: G.v9, boxes: FACE_BOXES } : null;
   const centres = n => BLINK_AT[n] || face[n].eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
@@ -103,7 +108,7 @@ function blinkAt(P, centres) {
 }
 
 /** Per-channel gain and offset that bring the mean and spread of `P` (head region, face window left out) to those of `ref`, applied to every pixel of `P`. */
-function matchColour(P, ref) {
+export function matchColour(P, ref) {
   const stat = Q => { const s = [0, 0, 0], s2 = [0, 0, 0]; let n = 0; for (let y = 2; y < 44; y++) for (let x = 40; x < 110; x++) { if (y >= 22 && x >= 72 && x <= 94) continue; if (!Q.has(x, y)) continue; const c = Q.get(x, y); for (let i = 0; i < 3; i++) { s[i] += c[i]; s2[i] += c[i] * c[i]; } n++; } const m = s.map(v => v / n); return { m, sd: s2.map((v, i) => Math.sqrt(Math.max(1, v / n - m[i] * m[i]))) }; };
   const a = stat(P), b = stat(ref), out = P.clone();
   for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.has(x, y)) { const c = P.get(x, y); out.set(x, y, c.map((v, i) => Math.max(0, Math.min(255, Math.round(b.m[i] + (v - a.m[i]) * b.sd[i] / a.sd[i]))))); }

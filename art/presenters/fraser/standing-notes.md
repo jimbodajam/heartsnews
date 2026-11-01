@@ -1,6 +1,6 @@
 # Standing Fraser: what was made in code and what was generated (#68)
 
-Start here for the next presenter (#13 plans a third). Code is `site/spike-lib/fraser-frames.js` (the Fraser set), `body-warps.js` (head and leg warps) and `pixel-derive.js` (eyes, mouths, keying). Preview: `site/pixel-standing-fraser.html`; showcase: `/test`.
+Start here for the next presenter (#13 plans a third). `/test` now plays baked sheets, see `tools/bake/README.md` (#69); after adding a frame, list it in `frames.json` and rebake. Code is `site/spike-lib/fraser-frames.js` (the Fraser set), `body-warps.js` (head and leg warps) and `pixel-derive.js` (eyes, mouths, keying). Preview: `site/pixel-standing-fraser.html`; showcase: `/test`.
 
 ## Generated
 - `b1` the full-length hands-down master (`standing-prompts.md`, 848 x 1264). Its background came out dull purple-pink (184, 52, 137), not flat magenta, so `toGrid` takes `bg` and keys that colour. Use `bg` for any master whose background is off.

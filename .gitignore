@@ -21,3 +21,6 @@ tools/gpu/bakeoff/out/
 tools/gpu/bakeoff/refs/
 site/public/bulletins/clone-test/
 __pycache__/
+
+# presenter bake previews
+tools/bake/out/

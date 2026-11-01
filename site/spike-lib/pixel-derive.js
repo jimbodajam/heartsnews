@@ -12,14 +12,19 @@ export class Pix {
 }
 
 /** Sample a generated image on its block grid (block centres) and key the magenta out. */
-export function toGrid(img, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 131, bg = null } = {}) {
+export function toGrid(img, opts) {
   const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
   const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
-  const d = g.getImageData(0, 0, c.width, c.height).data, P = new Pix(w, h);
+  return gridRGBA(g.getImageData(0, 0, c.width, c.height).data, c.width, opts);
+}
+
+/** The same from raw RGBA pixels, so the offline bake gets the same grid and the same key as the browser. */
+export function gridRGBA(d, width, { blk = 5.865, ox = 0.25, oy = 0.25, w = 240, h = 131, bg = null } = {}) {
+  const P = new Pix(w, h);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const cx = Math.round(ox + (i + 0.5) * blk), cy = Math.round(oy + (j + 0.5) * blk);
     let r = 0, gg = 0, b = 0, n = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = ((cy + dy) * c.width + cx + dx) * 4; r += d[k]; gg += d[k + 1]; b += d[k + 2]; n++; }
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = ((cy + dy) * width + cx + dx) * 4; r += d[k]; gg += d[k + 1]; b += d[k + 2]; n++; }
     r /= n; gg /= n; b /= n;
     if (r > 170 && b > 170 && gg < 130 && r - gg > 80 && b - gg > 80) continue;
     if (bg && Math.hypot(r - bg[0], gg - bg[1], b - bg[2]) < 45) continue;   // a generated background that is not flat magenta (Fraser's standing master is a dull purple-pink)
