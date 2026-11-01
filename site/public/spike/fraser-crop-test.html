@@ -17,7 +17,7 @@
 <p>Each row: the master, the existing full-figure frame, and the frame made from an enlarged head crop pasted back on the master. Crop results are pasted over the face window only (nod: the whole head). 1x is broadcast size.</p>
 <div id="out"></div>
 <script>
-const T = [['v1', 'Smile'], ['v7', 'Blink'], ['h3', 'Nod down']];
+const T = [['v1', 'Smile'], ['v7', 'Blink'], ['h3', 'Nod down'], ['h4', 'Nod up']];
 const base = 'fraser/crop-test/';
 const bg = f => `style="background-image:url(${base}${f})"`;
 document.getElementById('out').innerHTML = T.map(([n, t]) => `

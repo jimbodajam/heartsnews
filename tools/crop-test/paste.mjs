@@ -7,7 +7,7 @@ const D = 'site/public/spike/fraser/standing/', OUT = 'tools/crop-test/out/', PU
 const CELL = 848 / 144;                         // one grid cell in master pixels
 const FACE = [336, 124, 536, 278];              // eyes and mouth window, master pixels (grid 57-91 x 21-47)
 const HEAD = [236, 30, 612, 283];               // whole head above the collar (grid row 48)
-const TESTS = [['v1', FACE], ['v7', FACE], ['h3', HEAD]];
+const TESTS = [['v1', FACE], ['v7', FACE], ['h3', HEAD], ['h4', HEAD]];
 
 const raw = async f => { const { data, info } = await sharp(f).removeAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, w: info.width, h: info.height }; };
 const master = await raw(D + 'b1.jpg');
