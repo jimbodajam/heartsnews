@@ -22,7 +22,7 @@
   <button id="start">CLICK TO START (SOUND ON)</button>
   <div id="cap"><b id="who"></b><span id="line"></span></div>
 </div></div>
-<div id="hint">standing Isla · 1 palm · 2 idle · 3 point · 4 open · 5 explain · 6 tablet · 7 hip · 8 left · 9 welcome · 0 auto · M mouth test · B blink · G glance</div>
+<div id="hint">standing Isla · 1 palm · 2 idle · 3 point · 4 open · 5 explain · 6 tablet · 7 hip · 8 left · 9 welcome · 0 auto · M mouth test · B blink · G glance · T timed/loud lips · R replay line</div>
 <script type="module">
 const { loadPresenter } = await import('./presenter-player.js');
 const GW = 480, GH = 270;
@@ -63,12 +63,22 @@ await Promise.all(SCRIPT.map(s => new Promise(res => {
   ACX.createMediaElementSource(s.el).connect(analyser);
   s.el.addEventListener('loadedmetadata', res); s.el.addEventListener('error', res);
 })));
+// Timed mouth shapes (#75): Rhubarb's cues from tools/lipsync, one file per clip. A clip without one falls back to loudness.
+await Promise.all(SCRIPT.map(async s => { try { s.cues = (await (await fetch('../spike/audio/' + s.file.replace(/\.\w+$/, '.mouth.json'))).json()).cues; } catch { s.cues = null; } }));
+// Rhubarb's shapes on to the presenters' mouths: A lips together (M B P), B slightly open, C open (EH), D wide open (AA), E rounded (AO), F puckered (OO W), G F and V, H L, X silence.
+const RHUBARB = { A: 'press', B: 'small', C: 'wide', D: 'A', E: 'O', F: 'O', G: 'small', H: 'wide', X: 'closed' };
+/** The shape at `sec` into the clip: each cue holds until the next one starts. */
+const cueAt = (cues, sec) => { let v = 'X'; for (const [at, c] of cues) { if (at > sec) break; v = c; } return RHUBARB[v] || 'closed'; };
+let mouthMode = new URLSearchParams(location.search).get('mouth') === 'loud' ? 'loud' : 'timed';
 let started = false, idx = -1, cur = null, LEVEL = 0, mTest = -1;
 const who = document.getElementById('who'), line = document.getElementById('line'), cap = document.getElementById('cap');
 function next() {
   idx = (idx + 1) % SCRIPT.length; cur = SCRIPT[idx]; cur.t0 = performance.now(); cur.el.currentTime = 0; cur.el.play().catch(() => {});
-  cur.el.onended = () => { cur = null; setTimeout(next, 450); };
+  cur.el.onended = () => { cur = null; gap = setTimeout(next, 450); };
 }
+let gap = 0;
+/** Play the current (or just finished) line again, to compare the two mouth modes on the same words. */
+function replay() { clearTimeout(gap); if (cur) { cur.el.onended = null; cur.el.pause(); } idx = (idx - 1 + SCRIPT.length) % SCRIPT.length; next(); }
 document.getElementById('start').onclick = e => { ACX.resume(); e.target.remove(); started = true; next(); };
 
 // ---- runtime ----
@@ -87,7 +97,7 @@ function nextGesture(ms) {
   if (ms - feetAt > 7000) { const fp = ['b1', 'f1', 'f2', 'f3', 'b1']; feetNow = fp[Math.floor(hash(ms * 0.007 + gi) * fp.length)]; feetAt = ms; }
 }
 addEventListener('keydown', e => { if (e.key === '0') forcedPose = ''; else if (/^[1-9]$/.test(e.key)) forcedPose = POSE_NAMES[+e.key - 1] || ''; });
-addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm') mTest = (mTest + 1) % MOUTHS.length; else if (k === 'b') forceBlink = performance.now() + 160; else if (k === 'g') forceGlance = performance.now() + 900; else if (k === 'escape') mTest = -1; });
+addEventListener('keydown', e => { const k = e.key.toLowerCase(); if (k === 'm') mTest = (mTest + 1) % MOUTHS.length; else if (k === 'b') forceBlink = performance.now() + 160; else if (k === 'g') forceGlance = performance.now() + 900; else if (k === 'escape') mTest = -1; else if (k === 't') mouthMode = mouthMode === 'timed' ? 'loud' : 'timed'; else if (k === 'r' && started) replay(); });
 const FX = 128, FY = 40;   // where the figure's top-left sits on the 480x270 canvas (feet end near the bottom)
 const SCREEN = { x: 262, y: 60, w: 190, h: 110 };
 
@@ -134,7 +144,9 @@ function tick(ms) {
   // Mouth: follow a smoothed loudness envelope (fast attack, slow release) and hold each shape for a moment so it does not flicker.
   env += (LEVEL > env ? 0.5 : 0.12) * (LEVEL - env);
   const talkingF = !!cur && cur.by === 'b';
-  if ((talking || talkingF) && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
+  const timed = mouthMode === 'timed' && cur?.cues;
+  if ((talking || talkingF) && timed) shape = cueAt(cur.cues, cur.el.currentTime);
+  else if ((talking || talkingF) && ms - shapeAt > 85) { const want = env < 0.04 ? 'closed' : env < 0.11 ? 'small' : env < 0.2 ? (hash(Math.floor(t * 4)) > 0.5 ? 'wide' : 'O') : 'A'; if (want !== shape) { shape = want; shapeAt = ms; } }
   const key = mTest >= 0 ? MOUTHS[mTest] : talking ? shape : (t % 5 < 1.2 ? 'smile' : 'rest');
   // Pose: while she talks, cut to a new gesture every few seconds; while Fraser talks she listens (idle or hand on hip). 1-9 force a pose, 0 goes back to automatic.
   // Gestures change on phrase starts (a pause, then speech), not on a timer, with a blink and a look at the screen on the cut.
@@ -157,6 +169,7 @@ function tick(ms) {
   cap.style.visibility = cur ? 'visible' : 'hidden';
   if (cur) { who.textContent = cur.by === 'b' ? 'FRASER' : 'ISLA'; const p = Math.min(1, (performance.now() - cur.t0) / 1000 / ((cur.el.duration || 4) + 0.1)); line.textContent = cur.text.slice(0, Math.floor(p * cur.text.length) + 1); }
   if (mTest >= 0) { g.fillStyle = '#e0b13a'; g.fillText('MOUTH: ' + MOUTHS[mTest], 8, 14); }
+  else { g.fillStyle = '#e0b13a'; g.fillText('LIPS: ' + (mouthMode === 'loud' ? 'LOUD' : cur && !cur.cues ? 'LOUD (NO CUES)' : 'TIMED'), 8, 14); }
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
