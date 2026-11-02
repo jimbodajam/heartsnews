@@ -1,4 +1,4 @@
-// Timed mouth shapes for pre-rendered clips (#75). Runs Rhubarb Lip Sync on each clip, with the line's text as a hint,
+// Timed mouth shapes for the /test spike lines (#75); bulletin clips get theirs in the pipeline (pipeline/src/lipsync.ts). Runs Rhubarb Lip Sync on each clip, with the line's text as a hint,
 // and writes `<clip>.mouth.json` beside it: Rhubarb's own shape letters (A-H, X) with start times, so the mapping on to a
 // presenter's mouths stays in the player. Usage, from the repo root in WSL:
 //   node tools/lipsync/lipsync.mjs site/public/spike/audio/lines.json

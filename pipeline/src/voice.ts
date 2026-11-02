@@ -12,6 +12,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
 import type { Bulletin, Line, Presenter } from '../../shared/bulletin.ts';
+import { lipSync, mouthFile } from './lipsync.ts';
 import { loadPronunciations, pronouncer } from './pronounce.ts';
 import { shortHash } from './text.ts';
 
@@ -209,13 +210,17 @@ export async function voiceLines(presenters: Presenter[], lines: Line[], dir: st
     await renderClip(tts, j.text, j.voice, j.speed, j.out, j.filter);
     console.log(`  ${j.voice.padEnd(12)} ${((Date.now() - started) / 1000).toFixed(1)}s  ${j.text.slice(0, 50)}…`);
   }
+
+  // Mouth timings for every clip that hasn't got them, from the words as spoken (#75).
+  const clips = new Map(lines.filter((l) => l.audio).map((l) => [resolve(dir, l.audio!), say(l.text)]));
+  await lipSync(clips).catch((err) => console.warn(`Lip sync failed, mouths follow loudness: ${(err as Error).message}`));
   return { rendered: jobs.length + cloned, reused };
 }
 
-/** Delete the clips in `<dir>/audio/` that none of these lines use, so the deployed site only holds what's playing. */
+/** Delete the clips in `<dir>/audio/` that none of these lines use, so the deployed site only holds what's playing. A clip's mouth timings stay with it. */
 export async function dropUnusedClips(lines: Line[], dir: string): Promise<number> {
   const outDir = resolve(dir, AUDIO_DIR);
-  const keep = new Set(lines.map((l) => l.audio?.split('/').pop()));
+  const keep = new Set(lines.flatMap((l) => (l.audio ? [l.audio, mouthFile(l.audio)] : [])).map((a) => a.split('/').pop()));
   const stale = (await readdir(outDir)).filter((f) => !keep.has(f));
   await Promise.all(stale.map((f) => rm(resolve(outDir, f))));
   return stale.length;

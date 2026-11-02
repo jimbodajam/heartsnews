@@ -70,6 +70,27 @@ jobs:
           fi
           if [ -x ~/ffmpeg/ffmpeg ]; then echo "$HOME/ffmpeg" >> "$GITHUB_PATH"; fi
 
+      # Rhubarb Lip Sync times the presenters' mouth shapes from each clip (pipeline/src/lipsync.ts, #75). Downloaded
+      # once and kept between runs. If the download fails, mouths follow loudness instead.
+      - name: Cache Rhubarb
+        uses: actions/cache@v5
+        with:
+          path: ~/rhubarb
+          key: rhubarb-1.14.0-linux
+
+      - name: Install Rhubarb
+        run: |
+          if [ ! -x ~/rhubarb/rhubarb ]; then
+            rm -rf /tmp/rhubarb && mkdir -p /tmp/rhubarb
+            if curl -fsSL --max-time 120 -o /tmp/rhubarb.zip https://github.com/DanielSWolf/rhubarb-lip-sync/releases/download/v1.14.0/Rhubarb-Lip-Sync-1.14.0-Linux.zip \
+                && unzip -q /tmp/rhubarb.zip -d /tmp/rhubarb && chmod +x /tmp/rhubarb/*/rhubarb && /tmp/rhubarb/*/rhubarb --version > /dev/null; then
+              rm -rf ~/rhubarb && mv /tmp/rhubarb/Rhubarb-Lip-Sync-1.14.0-Linux ~/rhubarb
+            else
+              echo "::warning::Couldn't download Rhubarb: mouths will follow loudness"
+            fi
+          fi
+          if [ -x ~/rhubarb/rhubarb ]; then echo "$HOME/rhubarb" >> "$GITHUB_PATH"; fi
+
       # Today's page from London Hearts (pipeline/src/collectors/londonhearts.ts), fetched by the day's first programme
       # and kept for the rest of the day: it's a fan-run site.
       - name: UK date
