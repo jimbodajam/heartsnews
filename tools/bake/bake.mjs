@@ -3,16 +3,14 @@
 // Frame lists: art/presenters/<name>/frames.json. Locked palette: art/presenters/<name>/palette.json. Touch-ups: art/presenters/<name>/touchups/<frame>.png (see README.md here).
 import fs from 'node:fs';
 import sharp from 'sharp';
-import { readRGBA, frameGrid, readTouchUp } from './grid.mjs';
+import { readRGBA, frameGrid, readTouchUp, matchColour } from './grid.mjs';
 import { buildPalette, snapper, snapPix, lab } from './palette.mjs';
 import { pack, indexedPNG } from './sheet.mjs';
-import { matchColour, buildFraser, composeFraser } from '../../site/spike-lib/fraser-frames.js';
-import { buildIsla, composeIsla } from '../../site/spike-lib/isla-frames.js';
+import { buildPresenter, composePresenter } from '../../site/spike-lib/compose.js';
 
-const RECIPES = { fraser: { build: buildFraser, compose: composeFraser }, isla: { build: buildIsla, compose: composeIsla } };
 const argv = process.argv.slice(2), flag = n => { const i = argv.indexOf(n); return i < 0 ? null : argv.splice(i, 2)[1]; }, sw = n => { const i = argv.indexOf(n); if (i >= 0) argv.splice(i, 1); return i >= 0; };
 const COLOURS = +(flag('--colours') || 0), OUT = flag('--out') || 'site/public/presenters', NEW_PALETTE = sw('--new-palette'), BOXES = sw('--boxes'), EXPORT = sw('--export');
-const NAMES = argv.length ? argv : Object.keys(RECIPES), PREVIEW = 'tools/bake/out/';
+const NAMES = argv.length ? argv : fs.readdirSync('art/presenters').filter(n => fs.existsSync(`art/presenters/${n}/frames.json`)), PREVIEW = 'tools/bake/out/';
 
 const l1 = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
 const same = (A, B, x, y) => A.has(x, y) === B.has(x, y) && (!A.has(x, y) || l1(A.get(x, y), B.get(x, y)) === 0);
@@ -108,7 +106,7 @@ function stack(baked, palette, { head = 'b1', pose = 'b1', feet = 'b1', eye = 'o
 const labError = (A, B) => { let e = 0, n = 0; for (let y = 0; y < A.h; y++) for (let x = 0; x < A.w; x++) if (A.has(x, y) && B.has(x, y)) { const a = lab(A.get(x, y).map(Math.round)), b = lab(B.get(x, y).map(Math.round)); e += Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); n++; } return e / n; };
 
 async function bake(name) {
-  const cfg = JSON.parse(fs.readFileSync(`art/presenters/${name}/frames.json`, 'utf8')), recipe = RECIPES[name];
+  const cfg = JSON.parse(fs.readFileSync(`art/presenters/${name}/frames.json`, 'utf8'));
   console.log(`\n${name}: ${cfg.frames.length} frames listed`);
   const raw = await loadFrames(name, cfg);
   if (BOXES) { boxReport(cfg, raw); return; }
@@ -126,7 +124,7 @@ async function bake(name) {
     fs.mkdirSync(`${PREVIEW}export/${name}`, { recursive: true });
     await Promise.all(Object.entries(G).map(([n, P]) => sharp(Buffer.from(P.d), { raw: { width: P.w, height: P.h, channels: 4 } }).png().toFile(`${PREVIEW}export/${name}/${n}.png`)));
   }
-  const F = recipe.build(G, raw), compose = o => snapPix(recipe.compose(F, o), palette, snap);
+  const F = buildPresenter(cfg, G, raw), compose = o => snapPix(composePresenter(F, o), palette, snap);
   const base = compose({}), L = [], { headCut: CUT, feetTop: TOP } = cfg, H = cfg.grid.h;
   const add = l => { if (!l.none) L.push(l); };
   const change = (n, P, y0, y1, over) => { add(eraseLayer('cut/' + n, P, y0, y1, over)); add(layer(n, P, y0, y1, snap, over)); };
@@ -159,9 +157,9 @@ async function bake(name) {
     let n = 0; for (let y = 0; y < H; y++) for (let x = 0; x < a.w; x++) if (!same(a, b, x, y)) n++;
     combos++; if (n) { wrong++; const k = eye !== 'open' && mouth !== 'rest' ? 'eye+mouth' : 'other'; mism[k] = (mism[k] || 0) + 1; if (n > (worst[k]?.[0] ?? 0)) worst[k] = [n, [head, pose, feet, eye, mouth].join(' ')]; }
   }
-  const before = recipe.build(raw), samples = sampleCombos(cfg);
-  const errs = samples.map(o => labError(recipe.compose(before, { ...o, mouthKey: o.mouth }), stack(baked, palette, o)));
-  await previewSheet(name, recipe, before, baked, palette, samples, cfg);
+  const before = buildPresenter(cfg, raw), samples = sampleCombos(cfg);
+  const errs = samples.map(o => labError(composePresenter(before, { ...o, mouthKey: o.mouth }), stack(baked, palette, o)));
+  await previewSheet(name, before, baked, palette, samples, cfg);
   const stats = { layers: L.length, unique, sheet: `${width}x${height}`, pngKB: +(png.length / 1024).toFixed(1), jsonKB: +(json.length / 1024).toFixed(1), colours: palette.length, combos, combosDiffer: wrong, differBy: mism, worst, labErr: +(errs.reduce((a, b) => a + b, 0) / errs.length).toFixed(4) };
   console.log(stats);
   return stats;
@@ -178,11 +176,11 @@ function sampleCombos(cfg) {
 }
 
 /** Before on the top row, baked below, at 2x, for looking at by eye. */
-async function previewSheet(name, recipe, before, baked, palette, samples, cfg) {
+async function previewSheet(name, before, baked, palette, samples, cfg) {
   const S = 2, W = cfg.grid.w, Hh = cfg.grid.h, cols = samples.length, buf = Buffer.alloc(cols * W * S * Hh * S * 2 * 4, 0);
   for (let i = 0; i < 4 * cols * W * S * Hh * S * 2; i += 4) { buf[i] = 40; buf[i + 1] = 46; buf[i + 2] = 80; buf[i + 3] = 255; }
   const put = (P, ox, oy) => { for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) if (P.has(x, y)) { const c = P.get(x, y).map(Math.round); for (let a = 0; a < S; a++) for (let b = 0; b < S; b++) { const k = ((oy + y * S + a) * cols * W * S + ox + x * S + b) * 4; buf[k] = c[0]; buf[k + 1] = c[1]; buf[k + 2] = c[2]; } } };
-  samples.forEach((o, i) => { put(recipe.compose(before, { ...o, mouthKey: o.mouth }), i * W * S, 0); put(stack(baked, palette, o), i * W * S, Hh * S); });
+  samples.forEach((o, i) => { put(composePresenter(before, { ...o, mouthKey: o.mouth }), i * W * S, 0); put(stack(baked, palette, o), i * W * S, Hh * S); });
   fs.mkdirSync(PREVIEW, { recursive: true });
   await sharp(buf, { raw: { width: cols * W * S, height: Hh * S * 2, channels: 4 } }).png().toFile(`${PREVIEW}${name}-before-after${COLOURS ? '-' + COLOURS : ''}.png`);
 }

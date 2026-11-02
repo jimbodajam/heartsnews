@@ -13,6 +13,56 @@
   "boxes": {
     "h1": { "mouth": [[68, 35, 90, 48]] }
   },
+  "face": {
+    "register": "iris",
+    "mouthAlias": {
+      "closed": "smile"
+    },
+    "patch": {
+      "base": "b1",
+      "mouthBase": "v1",
+      "registerMouth": "v6",
+      "mouths": {
+        "smile": "v1",
+        "small": "v2",
+        "wide": "v3",
+        "O": "v4",
+        "A": "v5",
+        "press": "v6"
+      },
+      "eyes": {
+        "blink": "v7",
+        "gazeL": "v8",
+        "gazeR": "v9"
+      }
+    },
+    "heads": {
+      "b1": {
+        "mode": "patch"
+      },
+      "h1": {
+        "mode": "set",
+        "warpEyes": true
+      },
+      "h2": {
+        "mode": "patch",
+        "nudge": {
+          "eye": -1,
+          "mouth": 0
+        }
+      },
+      "h3": {
+        "mode": "patch"
+      },
+      "h4": {
+        "mode": "patch"
+      },
+      "h5": {
+        "mode": "patch",
+        "warpEyes": true
+      }
+    }
+  },
   "frames": [
     { "name": "b1", "area": "master" },
     { "name": "palm", "file": "../standing-master.jpg", "parent": "b1", "area": "arm" },

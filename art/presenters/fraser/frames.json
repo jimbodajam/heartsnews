@@ -15,6 +15,120 @@
     "h3": { "eyes": [[62, 22, 90, 33]], "mouth": [[60, 34, 90, 47]] },
     "h4": { "eyes": [[58, 16, 90, 27]], "mouth": [[58, 28, 90, 47]] }
   },
+  "face": {
+    "register": "detect",
+    "patch": {
+      "base": "b1",
+      "mouthBase": "b1",
+      "mouths": {
+        "smile": "v1",
+        "small": "v2",
+        "wide": "v3",
+        "O": "v4",
+        "A": "v5",
+        "closed": "v6"
+      },
+      "eyes": {
+        "blink": "v7",
+        "gazeR": "v9"
+      },
+      "boxes": {
+        "EBL": [
+          61,
+          25,
+          71,
+          31
+        ],
+        "EBR": [
+          73,
+          25,
+          83,
+          31
+        ],
+        "MB": [
+          64,
+          35,
+          80,
+          43
+        ]
+      }
+    },
+    "heads": {
+      "b1": {
+        "mode": "patch",
+        "eyeWin": [
+          58,
+          20,
+          90,
+          36
+        ],
+        "mouthWin": [
+          66,
+          37,
+          80,
+          42
+        ]
+      },
+      "h1": {
+        "mode": "set",
+        "eyeWin": [
+          72,
+          22,
+          92,
+          32
+        ],
+        "mouthWin": [
+          75,
+          36,
+          88,
+          41
+        ]
+      },
+      "h2": {
+        "mode": "code",
+        "eyeWin": [
+          56,
+          22,
+          76,
+          32
+        ],
+        "mouthWin": [
+          60,
+          36,
+          69,
+          40
+        ],
+        "mouthScale": {
+          "w": 0.55,
+          "open": 0.6
+        }
+      },
+      "h3": {
+        "mode": "set"
+      },
+      "h4": {
+        "mode": "set"
+      },
+      "h5": {
+        "mode": "patch"
+      },
+      "h6": {
+        "mode": "patch",
+        "eyeWin": [
+          58,
+          20,
+          92,
+          38
+        ],
+        "mouthWin": [
+          66,
+          37,
+          82,
+          44
+        ]
+      }
+    }
+  },
   "frames": [
     { "name": "b1", "area": "master" },
     { "name": "b2", "parent": "b1", "area": "arm" }, { "name": "b3", "parent": "b1", "area": "arm" }, { "name": "b4", "parent": "b1", "area": "arm" }, { "name": "b5", "parent": "b1", "area": "arm" },

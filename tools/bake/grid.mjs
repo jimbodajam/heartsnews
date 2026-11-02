@@ -66,3 +66,11 @@ export function cropToGrid(img, fit, box, { w, h }) {
   }
   return P;
 }
+
+/** Per-channel gain and offset that bring the mean and spread of `P` (head region, face window left out) to those of `ref`, applied to every pixel of `P`. */
+export function matchColour(P, ref) {
+  const stat = Q => { const s = [0, 0, 0], s2 = [0, 0, 0]; let n = 0; for (let y = 2; y < 44; y++) for (let x = 40; x < 110; x++) { if (y >= 22 && x >= 72 && x <= 94) continue; if (!Q.has(x, y)) continue; const c = Q.get(x, y); for (let i = 0; i < 3; i++) { s[i] += c[i]; s2[i] += c[i] * c[i]; } n++; } const m = s.map(v => v / n); return { m, sd: s2.map((v, i) => Math.sqrt(Math.max(1, v / n - m[i] * m[i]))) }; };
+  const a = stat(P), b = stat(ref), out = P.clone();
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.has(x, y)) { const c = P.get(x, y); out.set(x, y, c.map((v, i) => Math.max(0, Math.min(255, Math.round(b.m[i] + (v - a.m[i]) * b.sd[i] / a.sd[i]))))); }
+  return out;
+}

@@ -30,7 +30,7 @@ Everything outside a frame's area goes back to its parent, so generator drift ca
 
 ## How layers are made
 
-The compose functions in `site/spike-lib/` (`isla-frames.js`, `fraser-frames.js`) run here as they did in the browser, once per head, eye, mouth, pose and feet choice. Each result is saved as a cropped layer, or as the cells that differ from its base. A `cut/` layer lists cells a change clears. The bake then compares every combination it checks against the composed frame and prints any that differ.
+`site/spike-lib/compose.js` is the one compose for every presenter (#70). It runs here, once per head, eye, mouth, pose and feet choice. Each result is saved as a cropped layer, or as the cells that differ from its base. A `cut/` layer lists cells a change clears. The bake then compares every combination it checks against the composed frame and prints any that differ.
 
 Expected differences: eyes and mouth changing together. On Fraser's mouth-set heads the old code lost the mouth during a blink, and the layers keep it. On Isla a few cells differ where the two patches touch.
 
@@ -46,3 +46,20 @@ Head crops do not land on the master's cells, so `registerCrop` fits scale and s
 |---|---|---|
 | Isla | 9.9MB of JPEGs | 33.5KB PNG + 3.7KB JSON |
 | Fraser | 18.7MB of JPEGs | 36.6KB PNG + 3.2KB JSON |
+
+## Face rules (`face` in `frames.json`)
+
+A new presenter needs `frames.json` and its frames, no code. The `face` block says how each head gets its eyes and mouth:
+
+| Key | Meaning |
+|---|---|
+| `register` | `iris` lines a patch head up by iris landmark and image fit; `detect` finds the eyes and mouth on the head itself |
+| `patch` | Generated eye and mouth frames cut for the master head: `base`, `mouthBase`, `registerMouth` (iris only), `mouths`, `eyes`, optional `boxes` |
+| `mouthAlias` | A mouth key that borrows another's frame, e.g. `closed` to `smile` |
+| `heads.<name>.mode` | `patch` lays the patch frames over the head by offset. `set` uses the head's own generated frames named `<head><patch frame>` (`h1v1`, blink `h1v7`). `code` draws eyes and mouth in code |
+| `eyeWin`, `mouthWin` | Rough windows round the eyes and mouth for detection. Without them the face is found in a wide window |
+| `warpEyes` | Patch eyes through a fitted shift, tilt and squeeze, for turned and tilted heads |
+| `nudge` | `{eye, mouth}` hand shift in x on top of the registered offset |
+| `mouthScale` | `code` mode only: `{w, open}` scale on the drawn mouth, for a foreshortened head |
+
+Keep the modes few. A one-off fix is a touch-up PNG, not a new mode.

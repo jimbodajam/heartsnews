@@ -1,6 +1,6 @@
 # Standing Fraser: what was made in code and what was generated (#68)
 
-Start here for the next presenter (#13 plans a third). `/test` now plays baked sheets, see `tools/bake/README.md` (#69); after adding a frame, list it in `frames.json` and rebake. Code is `site/spike-lib/fraser-frames.js` (the Fraser set), `body-warps.js` (head and leg warps) and `pixel-derive.js` (eyes, mouths, keying). Preview: `site/pixel-standing-fraser.html`; showcase: `/test`.
+Start here for the next presenter (#13 plans a third). `/test` now plays baked sheets, see `tools/bake/README.md` (#69); after adding a frame, list it in `frames.json` and rebake. Face rules are the `face` block of `frames.json`, composed by `site/spike-lib/compose.js` (#70); `pixel-derive.js` draws code eyes and mouths. Showcase: `/test`. The old `fraser-frames.js`, `body-warps.js` (head and leg warps, so a head that is not generated no longer warps from the master) and the browser preview were removed.
 
 ## Generated
 - `b1` the full-length hands-down master (`standing-prompts.md`, 848 x 1264). Its background came out dull purple-pink (184, 52, 137), not flat magenta, so `toGrid` takes `bg` and keys that colour. Use `bg` for any master whose background is off.
@@ -19,14 +19,14 @@ Start here for the next presenter (#13 plans a third). `/test` now plays baked s
 - Head turn right and left (`h1`, `h2`): a turn changes the nose and ear, a warp cannot fake it. Both came out as a firm three-quarter turn, bigger than the 8 degrees asked for.
 - Arm poses `b2` to `b8`: arms are new pixels. They register on `b1` to within about 15 changed pixels outside the arms, so they drop straight in. `b7` was asked for the viewer's left arm but came out on the right (same side as `b3`), so it is a second right-arm pose; regenerate if a left-arm one is wanted.
 
-On `h1`/`h2` the eyes and mouth are found on the turned head itself (windows in `FACE` in `fraser-frames.js`) and drawn with the same `blink`, `gaze` and `mouth`, so no extra frames are needed. Blinks close the near eye cleanly but the far eye is a sliver and barely changes.
+On `h1`/`h2` the eyes and mouth are found on the turned head itself (`eyeWin` and `mouthWin` on the head in `frames.json`) and drawn with the same `blink`, `gaze` and `mouth`, so no extra frames are needed. Blinks close the near eye cleanly but the far eye is a sliver and barely changes.
 
 ## What we learned
 - Validating on Isla first: a plain global shift or rotation cannot match her generated head frames pixel for pixel (they are re-drawn, not moved), so a changed-pixel score is noisy and misleading. Judge by eye on the zoomed frames. Only tilt and the small nods are close to code-made.
 - Frame names are shared between presenters (`b1`-`b8`, `h1`-`h5`, `f1`-`f3`), so a broadcast can pick frames by name. Fraser uses `h3` (nod down), `h4` (nod up), `h5` (tilt left, as Isla's), `h6` (tilt right, new), `f1`-`f3`.
 
 ## Nods and tilts generated too (31 Oct)
-`h3`-`h6` were generated from `standing-head-prompts.md` and now replace the code warps (the warp is kept as a fallback for any head that is not generated). The generated heads move the face by several rows (nod up lifts it about 5), so fixed eye and mouth windows do not work: `findFace` in `fraser-frames.js` finds the eyes in a wide window and puts the mouth window about 11 rows below them, perpendicular to the eye line, which follows the tilt. Mouths land well on all four. Blinks on `h4` and `h6` use hand-placed eye centres (`BLINK_AT` in `fraser-frames.js`), because the far eye's white is only a pixel or two and `detectEyes` misses it; `h3`, `h5`, `h1`, `h2` and the master use the detected eyes.
+`h3`-`h6` were generated from `standing-head-prompts.md` and now replace the code warps (the warp fallback was removed in #70). The generated heads move the face by several rows (nod up lifts it about 5), so fixed eye and mouth windows do not work: `findFace` in `site/spike-lib/compose.js` finds the eyes in a wide window and puts the mouth window about 11 rows below them, perpendicular to the eye line, which follows the tilt. Mouths land well on all four. Blinks on `h4` and `h6` use hand-placed eye centres (`BLINK_AT` in `fraser-frames.js`), because the far eye's white is only a pixel or two and `detectEyes` misses it; `h3`, `h5`, `h1`, `h2` and the master use the detected eyes.
 
 ## Generated mouths and eyes (v1-v9, 31 Oct)
 `v1`-`v6` (smile, parted, ee, oh, ah, pressed), `v7` blink and `v9` glance right are generated and laid over the master head and the nod and tilt heads (`h3`-`h6`) with `composeFace` from `head-faces.js`, using Fraser's own eye and mouth boxes (`FACE_BOXES`) and offsets worked out from where each head's eyes and mouth are found. The turned heads `h1`/`h2` keep code-drawn faces: a patch cut for the front view does not fit a three-quarter turn (Isla needed `h1v1`-`h1v6` for that, Fraser has no equivalent yet).
