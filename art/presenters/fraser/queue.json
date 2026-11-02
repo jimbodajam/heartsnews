@@ -7,7 +7,7 @@
    "source": "h4",
    "attach": "site/public/spike/fraser/standing/h4.jpg",
    "save": "h4v6.jpg",
-   "status": "passed",
+   "status": "baked",
    "attempts": 1,
    "reasons": [],
    "savedAt": "2026-11-02T12:16:25.440Z",
@@ -22,7 +22,7 @@
    "source": "h4",
    "attach": "site/public/spike/fraser/standing/h4.jpg",
    "save": "h4v7.jpg",
-   "status": "passed",
+   "status": "baked",
    "attempts": 1,
    "reasons": [],
    "savedAt": "2026-11-02T12:18:30.528Z",
@@ -33,7 +33,7 @@
    }
   }
  ],
- "updated": "2026-11-02T12:18:32.891Z",
+ "updated": "2026-11-02T12:57:09.093Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
