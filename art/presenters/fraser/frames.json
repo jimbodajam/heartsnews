@@ -13,7 +13,9 @@
   "boxes": {
     "h1": { "eyes": [[64, 20, 92, 32]], "mouth": [[66, 33, 92, 47]] },
     "h3": { "eyes": [[62, 22, 90, 33]], "mouth": [[60, 34, 90, 47]] },
-    "h4": { "eyes": [[58, 16, 90, 27]], "mouth": [[58, 28, 90, 47]] }
+    "h4": { "eyes": [[58, 16, 90, 27]], "mouth": [[58, 28, 90, 47]] },
+    "h5": { "eyes": [[58, 20, 90, 34]], "mouth": [[60, 34, 90, 47]] },
+    "h6": { "eyes": [[64, 20, 94, 37]], "mouth": [[62, 35, 92, 48]] }
   },
   "face": {
     "register": "detect",
@@ -143,6 +145,10 @@
     { "name": "h3v1", "parent": "h3", "area": "mouth" }, { "name": "h3v2", "parent": "h3", "area": "mouth" }, { "name": "h3v3", "parent": "h3", "area": "mouth" }, { "name": "h3v4", "parent": "h3", "area": "mouth" },
     { "name": "h3v5", "parent": "h3", "area": "mouth" }, { "name": "h3v6", "parent": "h3", "area": "mouth" }, { "name": "h3v7", "parent": "h3", "area": "eyes" },
     { "name": "h4v1", "parent": "h4", "area": "mouth" }, { "name": "h4v2", "parent": "h4", "area": "mouth" }, { "name": "h4v3", "parent": "h4", "area": "mouth" }, { "name": "h4v4", "parent": "h4", "area": "mouth" },
-    { "name": "h4v5", "parent": "h4", "area": "mouth" }, { "name": "h4v6", "parent": "h4", "area": "mouth" }, { "name": "h4v7", "parent": "h4", "area": "eyes" }
+    { "name": "h4v5", "parent": "h4", "area": "mouth" }, { "name": "h4v6", "parent": "h4", "area": "mouth" }, { "name": "h4v7", "parent": "h4", "area": "eyes" },
+    { "name": "h5v1", "parent": "h5", "area": "mouth" }, { "name": "h5v2", "parent": "h5", "area": "mouth" }, { "name": "h5v3", "parent": "h5", "area": "mouth" }, { "name": "h5v4", "parent": "h5", "area": "mouth" },
+    { "name": "h5v5", "parent": "h5", "area": "mouth" }, { "name": "h5v6", "parent": "h5", "area": "mouth" }, { "name": "h5v7", "parent": "h5", "area": "eyes" },
+    { "name": "h6v1", "parent": "h6", "area": "mouth" }, { "name": "h6v2", "parent": "h6", "area": "mouth" }, { "name": "h6v3", "parent": "h6", "area": "mouth" }, { "name": "h6v4", "parent": "h6", "area": "mouth" },
+    { "name": "h6v5", "parent": "h6", "area": "mouth" }, { "name": "h6v6", "parent": "h6", "area": "mouth" }, { "name": "h6v7", "parent": "h6", "area": "eyes" }
   ]
 }
