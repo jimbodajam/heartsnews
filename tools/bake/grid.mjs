@@ -53,7 +53,7 @@ export function registerCrop(img, master, box, nominal, skip) {
 }
 
 /** Reads a registered crop at the master's cells: a Pix on the master grid, holding only `box`, with the crop's background left out. */
-export function cropToGrid(img, fit, box, { w, h }) {
+export function cropToGrid(img, fit, box, { w, h }, thr = 70) {
   // a crop's lower corners are jacket, so the background comes from the top two only
   const top = i => (img.data[(8 * img.w + 8) * 4 + i] + img.data[(8 * img.w + img.w - 9) * 4 + i]) / 2, bg = [top(0), top(1), top(2)];
   const P = new Pix(w, h), [x0, y0, x1, y1] = box, Rx = Math.max(1, Math.round(fit.sx / 6)), Ry = Math.max(1, Math.round(fit.sy / 6));
@@ -62,7 +62,7 @@ export function cropToGrid(img, fit, box, { w, h }) {
     for (let dy = -Ry; dy <= Ry; dy++) for (let dx = -Rx; dx <= Rx; dx++) { const px = cx + dx, py = cy + dy; if (px < 0 || py < 0 || px >= img.w || py >= img.h) continue; const k = (py * img.w + px) * 4; for (let i = 0; i < 3; i++) c[i] += img.data[k + i]; n++; }
     if (!n) continue;
     const m = c.map(v => v / n);
-    if (Math.hypot(m[0] - bg[0], m[1] - bg[1], m[2] - bg[2]) >= 70) P.set(x, y, m);   // wider than a full frame's key: the crop's soft edges bleed background into the outline
+    if (Math.hypot(m[0] - bg[0], m[1] - bg[1], m[2] - bg[2]) >= thr) P.set(x, y, m);   // wider than a full frame's key: the crop's soft edges bleed background into the outline
   }
   return P;
 }

@@ -5,16 +5,28 @@
   {
    "frame": "h5v1",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:41:11.924Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v1.jpg",
+   "stats": {
+    "changed": 57,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 7.9
+    }
+   }
   },
   {
    "frame": "h5v2",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v2.jpg",
    "status": "pending",
    "attempts": 0,
@@ -23,7 +35,8 @@
   {
    "frame": "h5v3",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v3.jpg",
    "status": "pending",
    "attempts": 0,
@@ -32,7 +45,8 @@
   {
    "frame": "h5v4",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v4.jpg",
    "status": "pending",
    "attempts": 0,
@@ -41,7 +55,8 @@
   {
    "frame": "h5v5",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v5.jpg",
    "status": "pending",
    "attempts": 0,
@@ -50,7 +65,8 @@
   {
    "frame": "h5v6",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v6.jpg",
    "status": "pending",
    "attempts": 0,
@@ -59,7 +75,8 @@
   {
    "frame": "h5v7",
    "source": "h5",
-   "attach": "site/public/spike/fraser/standing/h5.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "crop": true,
    "save": "h5v7.jpg",
    "status": "pending",
    "attempts": 0,
@@ -68,7 +85,8 @@
   {
    "frame": "h6v1",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v1.jpg",
    "status": "pending",
    "attempts": 0,
@@ -77,7 +95,8 @@
   {
    "frame": "h6v2",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v2.jpg",
    "status": "pending",
    "attempts": 0,
@@ -86,7 +105,8 @@
   {
    "frame": "h6v3",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v3.jpg",
    "status": "pending",
    "attempts": 0,
@@ -95,7 +115,8 @@
   {
    "frame": "h6v4",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v4.jpg",
    "status": "pending",
    "attempts": 0,
@@ -104,7 +125,8 @@
   {
    "frame": "h6v5",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v5.jpg",
    "status": "pending",
    "attempts": 0,
@@ -113,7 +135,8 @@
   {
    "frame": "h6v6",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v6.jpg",
    "status": "pending",
    "attempts": 0,
@@ -122,17 +145,19 @@
   {
    "frame": "h6v7",
    "source": "h6",
-   "attach": "site/public/spike/fraser/standing/h6-redo.jpg",
+   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "crop": true,
    "save": "h6v7.jpg",
    "status": "pending",
    "attempts": 0,
    "reasons": []
   }
  ],
- "updated": "2026-11-02T14:19:45.962Z",
+ "updated": "2026-11-02T14:42:25.722Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
-  "Gemini_Generated_Image_nfu5pjnfu5pjnfu5.jpg@1793621899831.0793"
+  "Gemini_Generated_Image_nfu5pjnfu5pjnfu5.jpg@1793621899831.0793",
+  "h5v1.jpg@1793630481327.5278"
  ]
 }

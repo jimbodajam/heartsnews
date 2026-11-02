@@ -16,6 +16,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import sharp from 'sharp';
 import { frameGrid, matchColour } from '../bake/grid.mjs';
+import { frameFile, makeCrop, readCrop } from '../bake/crop.mjs';
 import { checkFrame, changedCells, inArea } from './check.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../..'), OUT = path.join(ROOT, 'tools/frames/out'), IMG = /\.(png|jpe?g|webp)$/i;
@@ -27,7 +28,7 @@ function load(name) {
   if (!name || !fs.existsSync(path.join(dir(name), 'frames.json'))) die(`No presenter "${name}" (art/presenters/<name>/frames.json)`);
   const cfg = readJSON(path.join(dir(name), 'frames.json')), pf = path.join(dir(name), 'prompts.json'), qf = path.join(dir(name), 'queue.json');
   const prompts = fs.existsSync(pf) ? readJSON(pf).frames : {}, queue = fs.existsSync(qf) ? readJSON(qf) : { presenter: name, limitHit: null, items: [] };
-  const fileOf = f => path.join(ROOT, cfg.src, f.file || f.name + '.jpg'), frame = n => cfg.frames.find(f => f.name === n);
+  const fileOf = f => path.join(ROOT, cfg.src, frameFile(f)), frame = n => cfg.frames.find(f => f.name === n);
   return { name, cfg, prompts, queue, fileOf, frame, save: () => fs.writeFileSync(qf, JSON.stringify({ ...queue, updated: now() }, null, 1) + '\n') };
 }
 function die(msg) { console.error(msg); process.exit(1); }
@@ -36,7 +37,7 @@ const staged = P => path.join(dir(P.name), 'queue/staged');
 /** A path the Windows side can open: Claude in Chrome uploads from Windows, the repo is reached from WSL. */
 const winPath = p => { if (!process.env.WSL_DISTRO_NAME) return p; try { return execFileSync('wslpath', ['-w', p]).toString().trim(); } catch { return p; } };
 
-function queue(P, args) {
+async function queue(P, args) {
   const redo = new Set((flag(args, '--redo') || '').split(',').filter(Boolean)), old = new Map(P.queue.items.map(i => [i.frame, i])), items = [], missingPrompt = [];
   for (const f of P.cfg.frames) {
     if (f.area === 'master') continue;
@@ -45,8 +46,13 @@ function queue(P, args) {
     if (!want) continue;
     if (!pr) { missingPrompt.push(f.name); continue; }
     const parent = P.frame(pr.source) || P.frame(f.parent);
-    const prev = old.get(f.name);
-    items.push({ frame: f.name, source: parent.name, attach: rel(P.fileOf(parent)), save: f.file || f.name + '.jpg',
+    const prev = old.get(f.name) && !!old.get(f.name).crop === !!f.crop ? old.get(f.name) : null;   // a frame that changes between full frame and crop starts again
+    let attach = rel(P.fileOf(parent));
+    if (f.crop) {   // the crop of the parent head is what gets attached (#71)
+      const to = path.join(dir(P.name), 'queue/crops', parent.name + '.png'); fs.mkdirSync(path.dirname(to), { recursive: true });
+      await makeCrop(P.cfg, P.fileOf(parent), to); attach = rel(to);
+    }
+    items.push({ frame: f.name, source: parent.name, attach, crop: f.crop || undefined, save: f.file || f.name + '.jpg',
       status: prev && !redo.has(f.name) && prev.status !== 'baked' ? prev.status : 'pending', attempts: prev?.attempts || 0, reasons: prev?.reasons || [], savedAt: prev?.savedAt, staged: prev?.staged });
   }
   P.queue.items = items; P.save();
@@ -123,18 +129,34 @@ async function collect(P, args) {
 }
 const today = () => now().slice(0, 10);
 
-async function checkItem(P, i, file) {
-  const f = P.frame(i.frame), parent = P.frame(f.parent), pf = P.fileOf(parent);
-  if (!fs.existsSync(pf)) return { ok: false, reasons: [`parent ${f.parent} has no image`], stats: {} };
-  const pm = await sharp(pf).metadata(), cm = await sharp(file).metadata();
-  if (Math.abs(cm.width / cm.height - pm.width / pm.height) > 0.01) return { ok: false, reasons: [`wrong shape: ${cm.width}x${cm.height}, wanted ${pm.width}x${pm.height}`], stats: {} };
-  const pImg = (await pix(P, pf)).img, cImg = (await pix(P, file, { w: pm.width, h: pm.height })).img, parentGrid = gridOf(P, pImg);
+/** A generated image read onto the parent's grid: `error` when it is the wrong shape or the parent is missing, else { cand, parentGrid, imgs, fit }. A crop frame is registered onto the parent head (tools/bake/crop.mjs). */
+async function candidate(P, f, file) {
+  const parent = P.frame(f.parent), pf = P.fileOf(parent);
+  if (!fs.existsSync(pf)) return { error: `parent ${f.parent} has no image` };
+  const pm = await sharp(pf).metadata(), cm = await sharp(file).metadata(), [, , bw, bh] = P.cfg.crop?.box || [], want = f.crop ? bw / bh : pm.width / pm.height;
+  if (Math.abs(cm.width / cm.height - want) > 0.01) return { error: `wrong shape: ${cm.width}x${cm.height}, wanted ${f.crop ? 'the head crop' : pm.width + 'x' + pm.height}` };
+  const pImg = (await pix(P, pf)).img, parentGrid = gridOf(P, pImg);
+  if (f.crop) {
+    const c = readCrop((await pix(P, file)).img, parentGrid, P.cfg, f);
+    return { cand: P.cfg.matchColour ? matchColour(c.P, parentGrid) : c.P, parentGrid, imgs: null, fit: { scale: +c.scale.toFixed(3), err: +c.err.toFixed(1) } };
+  }
+  const cImg = (await pix(P, file, { w: pm.width, h: pm.height })).img;
   let cand = gridOf(P, cImg);
   if (P.cfg.matchColour && f.area !== 'arm' && f.area !== 'legs') cand = matchColour(cand, parentGrid);
-  const expect = P.prompts[i.frame]?.expect || null;
-  const res = checkFrame(cand, parentGrid, f, P.cfg, expect, undefined, { cand: cImg, parent: pImg });
+  return { cand, parentGrid, imgs: { cand: cImg, parent: pImg } };
+}
+
+async function checkItem(P, i, file) {
+  const f = P.frame(i.frame), c = await candidate(P, f, file);
+  if (c.error) return { ok: false, reasons: [c.error], stats: {} };
+  const res = checkFrame(c.cand, c.parentGrid, f, P.cfg, P.prompts[i.frame]?.expect || null, undefined, c.imgs);
+  if (c.fit) {
+    res.stats.fit = c.fit;
+    if (c.fit.err > CROP_FIT_ERR) { res.ok = false; res.reasons.push(`the crop fitted its head badly (match error ${c.fit.err}, limit ${CROP_FIT_ERR}): it redrew more than the face`); }
+  }
   return res;
 }
+const CROP_FIT_ERR = 30;
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 async function gridPng(Q, mark) {
@@ -150,10 +172,7 @@ async function sheet(P) {
   const ok = P.queue.items.filter(i => i.status === 'passed'), bad = P.queue.items.filter(i => i.status === 'rejected' && i.staged);
   const cards = [];
   for (const i of ok) {
-    const f = P.frame(i.frame), file = path.join(ROOT, i.staged), pm = await sharp(P.fileOf(P.frame(f.parent))).metadata();
-    const pg = gridOf(P, (await pix(P, P.fileOf(P.frame(f.parent)))).img);
-    let cg = gridOf(P, (await pix(P, file, { w: pm.width, h: pm.height })).img);
-    if (P.cfg.matchColour && f.area !== 'arm' && f.area !== 'legs') cg = matchColour(cg, pg);
+    const f = P.frame(i.frame), { cand: cg, parentGrid: pg } = await candidate(P, f, path.join(ROOT, i.staged));
     const ch = new Set(changedCells(cg, pg).map(([x, y]) => x + ',' + y)), inside = inArea(P.cfg, f);
     const diff = await gridPng(cg, (x, y) => ch.has(x + ',' + y) ? (inside(x, y) ? [255, 210, 0] : [255, 0, 60]) : (cg.has(x, y) ? cg.get(x, y).map(v => v * 0.45) : null));
     cards.push(`<label class="card"><input type="checkbox" value="${esc(i.frame)}" checked><h3>${esc(i.frame)} <small>${esc(f.area)} of ${esc(f.parent)}${i.stats?.direction != null ? ', moved ' + i.stats.direction : ''}</small></h3><div class="row"><figure><img src="${await gridPng(pg)}"><figcaption>${esc(f.parent)}</figcaption></figure><figure><img src="${await gridPng(cg)}"><figcaption>new</figcaption></figure><figure><img src="${diff}"><figcaption>changed (yellow in area, red outside)</figcaption></figure></div></label>`);

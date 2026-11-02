@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { readRGBA, frameGrid, readTouchUp, matchColour } from './grid.mjs';
 import { buildPalette, snapper, snapPix, lab } from './palette.mjs';
 import { pack, indexedPNG } from './sheet.mjs';
+import { frameFile, readCrop } from './crop.mjs';
 import { buildPresenter, composePresenter } from '../../site/spike-lib/compose.js';
 
 const argv = process.argv.slice(2), flag = n => { const i = argv.indexOf(n); return i < 0 ? null : argv.splice(i, 2)[1]; }, sw = n => { const i = argv.indexOf(n); if (i >= 0) argv.splice(i, 1); return i >= 0; };
@@ -48,12 +49,20 @@ function clamp(P, parent, area, box, cfg) {
 
 async function loadFrames(name, cfg) {
   const raw = {}, touched = new Set();
-  await Promise.all(cfg.frames.map(async f => {
-    const touch = `art/presenters/${name}/touchups/${f.name}.png`, file = cfg.src + (f.file || f.name + '.jpg');
+  const load = async f => {
+    const touch = `art/presenters/${name}/touchups/${f.name}.png`, file = cfg.src + frameFile(f);
     if (fs.existsSync(touch)) { raw[f.name] = await readTouchUp(touch, cfg.grid); touched.add(f.name); return; }
     if (!fs.existsSync(file)) { console.log(`  ${f.name}: no image yet, skipped`); return; }
+    if (f.crop) {
+      if (!raw[f.parent]) { console.log(`  ${f.name}: parent ${f.parent} has no image, skipped`); return; }
+      const c = readCrop(await readRGBA(file), raw[f.parent], cfg, f);
+      raw[f.name] = c.P; console.log(`  ${f.name}: head crop registered, scale ${c.scale.toFixed(3)}, match error ${c.err.toFixed(1)}`);
+      return;
+    }
     raw[f.name] = frameGrid(await readRGBA(file), cfg.grid, cfg.bg);
-  }));
+  };
+  await Promise.all(cfg.frames.filter(f => !f.crop).map(load));
+  for (const f of cfg.frames.filter(f => f.crop)) await load(f);
   // the generated mouth frames came back in slightly different skin tones: match each to its own head so switching mouths does not flicker the colour
   if (cfg.matchColour) for (const f of cfg.frames) if (f.area === 'mouth' || f.area === 'eyes') if (raw[f.name] && !touched.has(f.name) && raw[f.parent]) raw[f.name] = matchColour(raw[f.name], raw[f.parent]);
   return raw;

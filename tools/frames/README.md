@@ -24,6 +24,15 @@ npm run frames -- bake fraser          # runs tools/bake/bake.mjs; commit the im
 
 Statuses: `pending` → `saved` → `passed` or `rejected` → `approved` → `baked`. A rejected frame goes back on the queue (`next` hands it out again) with the reason in `reasons`, so the next day's quota retries it. `reject <p> <frame> <why>` does the same for a frame rejected by eye on the contact sheet.
 
+## Head crops (#71)
+
+#71 decided that mouths and blinks come from an enlarged head crop (they change a third as many cells outside the face, and drift less), while nods, turns and tilts stay on full frames. A frame marked `"crop": true` in `frames.json` works that way:
+
+- `frames.json` has one `crop` block: `box` (left, top, width, height in image pixels, the head and collar) and `scale` (3, nearest-neighbour).
+- `queue` cuts the crop of the frame's parent head into `art/presenters/<name>/queue/crops/<parent>.png` (not committed) and that is what `next` hands out to attach. The prompt is the same.
+- The image Gemini returns is the crop. `collect` and the bake register it onto the parent's grid (`tools/bake/crop.mjs`: scale and shift by image match, then read at the parent's cells) and take only the frame's box from `boxes` in `frames.json`; everything else stays the parent's. `approve` saves it as `<frame>-crop.jpg`, so it cannot be mistaken for a full-frame image of the same name.
+- The checks add the fit: `stats.fit` is the scale (about 1) and the match error over what should not have changed. Over 30 means the crop redrew more than the face, and the frame is rejected. A typical good one is under 10.
+
 ## Checks (`check.mjs`)
 
 Each new frame is read on the presenter grid and compared with its parent:
@@ -42,8 +51,8 @@ Isla's `patch` frames (`v1` to `v9`) have no face boxes in `frames.json`, so the
 
 1. `npm run frames -- status <p>`. If `limitHit` is under a day old, stop: the quota has not reset.
 2. `npm run frames -- next <p> --json` for the frame: `attach` is a Windows path, `prompt` is the text, `saveAs` the name.
-3. In the signed-in Gemini (`gemini.google.com/images?dest=create`), start a fresh chat. Find "Upload & tools" and the prompt box by ref, click "Upload & tools" so the menu is open (the file input only exists in the page while it is), then `find` "input type=file" (layout banners shift the box, so never click by coordinates), upload `attach` with the file input, type the prompt, press Enter. Use the Chrome batch call for the fixed steps.
-4. When the image appears, download it (one download per frame) and run `mark <p> <frame> saved`.
+3. In the signed-in Gemini (`gemini.google.com/images?dest=create`), start a fresh chat. Find "Upload & tools" and the prompt box by ref, click "Upload & tools" so the menu is open (the file input only exists in the page while it is, and appears a moment after it opens), then `find` "Upload files menu item or file input" and use the ref whose name is "(file input)" (layout banners shift the box, so never click by coordinates), upload `attach` with the file input, type the prompt, press Enter. Use the Chrome batch call for the fixed steps.
+4. When the image appears, download it (one download per frame) and run `mark <p> <frame> saved`. If no image has appeared after about 2 minutes (a request can hang with no error), take a screenshot, and if Gemini is still working or shows nothing, run `mark <p> <frame> failed "no image after 2 minutes"`, open a fresh chat and go on to the next frame. Do not wait longer, and do not resend in the same chat.
 5. If Gemini says the daily limit is reached ("Image Edit Request Denied" or similar), run `mark <p> <frame> limit "<the message>"` and stop. Do not retry.
 6. Repeat from step 2 until `next` says nothing is left, then `collect <p>` and `sheet <p>`.
 
@@ -51,5 +60,5 @@ Without Chrome connected the same queue works by hand: `next` prints everything 
 
 ## Not done
 
-- Crop attachments (#71): a prompt's `source` is a whole frame. A cropped head still needs a crop entry in `frames.json` for the bake.
+- Crops only for mouths and blinks (`area` mouth or eyes): a head, arm or legs frame is still a whole frame.
 - Frames not listed in `frames.json` (Fraser's `h5v*`, `h6v*`, `h2v*`, `v8`) are not queued; add the frame to `frames.json` first, and its prompt is already in `prompts.json`.
