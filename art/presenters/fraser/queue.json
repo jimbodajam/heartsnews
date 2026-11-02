@@ -7,45 +7,75 @@
    "source": "h5",
    "attach": "site/public/spike/fraser/standing/h5.jpg",
    "save": "h5v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:22:43.659Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v1.jpg",
+   "stats": {
+    "changed": 87,
+    "outside": 0
+   }
   },
   {
    "frame": "h5v2",
    "source": "h5",
    "attach": "site/public/spike/fraser/standing/h5.jpg",
    "save": "h5v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:23:48.054Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v2.jpg",
+   "stats": {
+    "changed": 136,
+    "outside": 0
+   }
   },
   {
    "frame": "h5v3",
    "source": "h5",
    "attach": "site/public/spike/fraser/standing/h5.jpg",
    "save": "h5v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:24:46.931Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v3.jpg",
+   "stats": {
+    "changed": 71,
+    "outside": 0
+   }
   },
   {
    "frame": "h5v4",
    "source": "h5",
    "attach": "site/public/spike/fraser/standing/h5.jpg",
    "save": "h5v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:25:41.048Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v4.jpg",
+   "stats": {
+    "changed": 167,
+    "outside": 8
+   }
   },
   {
    "frame": "h5v5",
    "source": "h5",
    "attach": "site/public/spike/fraser/standing/h5.jpg",
    "save": "h5v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:26:37.587Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v5.jpg",
+   "stats": {
+    "changed": 201,
+    "outside": 29
+   }
   },
   {
    "frame": "h5v6",
@@ -129,10 +159,15 @@
    "reasons": []
   }
  ],
- "updated": "2026-11-02T14:19:45.962Z",
+ "updated": "2026-11-02T14:33:41.685Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
-  "Gemini_Generated_Image_nfu5pjnfu5pjnfu5.jpg@1793621899831.0793"
+  "Gemini_Generated_Image_nfu5pjnfu5pjnfu5.jpg@1793621899831.0793",
+  "Gemini_Generated_Image_klsr7yklsr7yklsr.jpg@1793629356445.0073",
+  "Gemini_Generated_Image_8tdgok8tdgok8tdg.jpg@1793629420963.5503",
+  "Gemini_Generated_Image_7n93ds7n93ds7n93.jpg@1793629479631.4087",
+  "Gemini_Generated_Image_grh7q4grh7q4grh7.jpg@1793629533883.9312",
+  "Gemini_Generated_Image_pb2db9pb2db9pb2d.jpg@1793629590237.678"
  ]
 }
