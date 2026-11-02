@@ -11,7 +11,7 @@ import { headOffsets, composeFace, fitEye, composeEyesWarped } from './head-face
 /** Offsets and eye warps are fitted on `ref` (the frames before any palette snap, detection thresholds were set on those); frames are composed from `G`. */
 export function buildPresenter(cfg, G, ref = G) {
   const fc = cfg.face, P = fc.patch, heads = fc.heads;
-  const faces = {}, faceOf = n => faces[n] ??= heads[n].eyeWin ? { eyes: detectEyes(ref[n], heads[n].eyeWin), mouthFit: detectMouth(ref[n], heads[n].mouthWin) } : findFace(ref[n]);
+  const faces = {}, faceOf = n => faces[n] ??= heads[n].eyeWin ? { eyes: detectEyes(ref[n], heads[n].eyeWin), mouthFit: detectMouth(ref[n], heads[n].mouthWin) } : findFace(ref[n], heads[P.base]);
   const centres = n => faceOf(n).eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
   const off = {}, warp = {};
   for (const [n, s] of Object.entries(heads)) {
@@ -74,10 +74,12 @@ export function composePresenter(F, { head = 'b1', pose = 'b1', feet = 'b1', eye
 }
 
 /** Face of a head that has moved (nods and tilts shift it by several rows): eyes from a wide window, then the mouth window sits about 11 rows below the eyes, perpendicular to the line between them, so it follows a tilt. */
-function findFace(P) {
-  const eyes = detectEyes(P, [56, 16, 92, 38]);
+function findFace(P, base = {}) {
+  // seated sets give the master's windows: the search goes a little wider than the master's eye window, the mouth sits as far below the eyes as it does on the master
+  const ew = base.eyeWin, mw = base.mouthWin, drop = ew && mw ? (mw[1] + mw[3]) / 2 - (ew[1] + ew[3]) / 2 : 11, [mx, my] = mw ? [(mw[2] - mw[0]) / 2, (mw[3] - mw[1]) / 2] : [6, 3];
+  const eyes = detectEyes(P, ew ? [ew[0] - 8, ew[1] - 8, ew[2] + 8, ew[3] + 8] : [56, 16, 92, 38]);
   const c = eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
   const mid = [(c[0][0] + c[1][0]) / 2, (c[0][1] + c[1][1]) / 2], dx = c[1][0] - c[0][0], dy = c[1][1] - c[0][1], len = Math.hypot(dx, dy) || 1;
-  const m = [mid[0] - dy / len * 11, mid[1] + dx / len * 11];
-  return { eyes, mouthFit: detectMouth(P, [Math.round(m[0] - 6), Math.round(m[1] - 3), Math.round(m[0] + 6), Math.round(m[1] + 3)]) };
+  const m = [mid[0] - dy / len * drop, mid[1] + dx / len * drop];
+  return { eyes, mouthFit: detectMouth(P, [Math.round(m[0] - mx), Math.round(m[1] - my), Math.round(m[0] + mx), Math.round(m[1] + my)]) };
 }

@@ -21,8 +21,8 @@ export async function makeCrop(cfg, parentFile, to) {
   await sharp(parentFile).extract({ left, top, width, height }).resize(width * s, height * s, { kernel: 'nearest' }).png().toFile(to);
 }
 
-/** The boxes (inclusive grid cells) a mouth or eyes frame may change. */
-export const editBoxes = (cfg, f) => cfg.boxes?.[f.parent]?.[f.area] || [];
+/** The boxes (inclusive grid cells) a mouth or eyes frame may change; a `patch` frame (seated sets) falls back to the windows round the master's eyes and mouth. */
+export const editBoxes = (cfg, f) => cfg.boxes?.[f.parent]?.[f.area] || (f.area === 'patch' ? [cfg.face?.heads?.[cfg.face?.patch?.base || 'b1']?.eyeWin, cfg.face?.heads?.[cfg.face?.patch?.base || 'b1']?.mouthWin].filter(Boolean) : []);
 
 /**
  * Reads a generated crop for `f` onto the parent's grid. `img` is the crop as raw RGBA ({ data, w, h }), `parentGrid` the parent frame's grid.

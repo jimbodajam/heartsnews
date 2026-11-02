@@ -5,8 +5,9 @@
 //   next    <p> [--json]         the next frame to generate: what to attach, the prompt, the name to save as
 //   mark    <p> <frame> saved|failed|limit [note]   the generation run reports back
 //   collect <p> [--from dir] [--force]   pick the saved downloads up, stage them, run the checks
-//   sheet   <p>                  contact sheet of the frames that passed → tools/frames/out/<p>-contact.html
-//   approve <p> <frame...|--all> copy approved frames to the standing folder
+//   recheck <p> [frame...]       run the checks again on the staged images
+//   sheet   <p>                contact sheet of the frames that passed → tools/frames/out/<p>-contact.html
+//   approve <p> <frame...|--all> [--force]  copy approved frames to the standing folder (--force: also a rejected frame you accept by eye)
 //   reject  <p> <frame> <reason> back on the queue for the next day
 //   bake    <p>                  run the bake for the approved frames
 //   status  <p>
@@ -131,6 +132,17 @@ async function collect(P, args) {
 }
 const today = () => now().slice(0, 10);
 
+/** Runs the checks again on the staged images of the frames named (all passed or rejected ones when none are), for after the frames.json boxes or the checks changed. */
+async function recheck(P, args) {
+  const items = P.queue.items.filter(i => i.staged && (i.status === 'passed' || i.status === 'rejected') && (!args.length || args.includes(i.frame)));
+  for (const i of items) {
+    const res = await checkItem(P, i, path.join(ROOT, i.staged));
+    i.status = res.ok ? 'passed' : 'rejected'; i.stats = res.stats; if (!res.ok) i.reasons.push(`${today()}: ${res.reasons.join('; ')} (recheck)`);
+    console.log(`${i.frame}: ${res.ok ? 'passed' : 'REJECTED, ' + res.reasons.join('; ')}  ${JSON.stringify(res.stats)}`);
+  }
+  P.save();
+}
+
 /** A generated image read onto the parent's grid: `error` when it is the wrong shape or the parent is missing, else { cand, parentGrid, imgs, fit }. A crop frame is registered onto the parent head (tools/bake/crop.mjs). */
 async function candidate(P, f, file) {
   const parent = P.frame(f.parent), pf = P.fileOf(parent);
@@ -184,7 +196,7 @@ body{font:14px system-ui;background:#161922;color:#eee;margin:16px}h1{font-size:
 <h1>${esc(P.name)}: ${ok.length} frames passed the checks</h1><p>Untick any you do not want. Nothing is baked until you run the command below.</p>
 <div class="grid">${cards.join('\n') || '<p>No frames passed yet. Run <code>collect</code>.</p>'}</div>
 <h2>Run</h2><pre id="cmd"></pre><button onclick="navigator.clipboard.writeText(cmd.textContent)">Copy</button>
-${bad.length ? `<h2>Rejected, back on the queue</h2><ul>${bad.map(i => `<li><b>${esc(i.frame)}</b>: ${esc(i.reasons.at(-1) || '')}</li>`).join('')}</ul>` : ''}
+${bad.length ? `<h2>Rejected, back on the queue</h2><div class="grid">${bad.map(i => `<div class="card"><h3>${esc(i.frame)}</h3><a href="${esc(rel(path.join(ROOT, i.staged)).replace(/^/, '../../../'))}"><img style="width:420px" src="${esc(rel(path.join(ROOT, i.staged)).replace(/^/, '../../../'))}"></a><p style="max-width:420px">${esc(i.reasons.at(-1) || '')}</p></div>`).join('')}</div>` : ''}
 <script>const boxes=[...document.querySelectorAll('input[type=checkbox]')];function upd(){const on=boxes.filter(b=>b.checked).map(b=>b.value),off=boxes.filter(b=>!b.checked).map(b=>b.value);document.getElementById('cmd').textContent='npm run frames -- approve ${esc(P.name)} '+(on.length?on.join(' '):'--none')+(off.length?'\\nnpm run frames -- reject ${esc(P.name)} <frame> "<why>"   # for: '+off.join(' '):'')+'\\nnpm run frames -- bake ${esc(P.name)}'}boxes.forEach(b=>b.onchange=upd);upd()</script>`;
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, `${P.name}-contact.html`); fs.writeFileSync(file, html);
@@ -195,7 +207,7 @@ async function approve(P, args) {
   const names = args.includes('--all') ? P.queue.items.filter(i => i.status === 'passed').map(i => i.frame) : args.filter(a => !a.startsWith('--'));
   for (const n of names) {
     const i = item(P, n), f = P.frame(n);
-    if (i.status !== 'passed') { console.log(`${n}: ${i.status}, not passed, skipped`); continue; }
+    if (i.status !== 'passed' && !(args.includes('--force') && i.status === 'rejected' && i.staged)) { console.log(`${n}: ${i.status}, not passed, skipped`); continue; }
     const to = P.fileOf(f), from = path.join(ROOT, i.staged);
     if (/\.jpe?g$/i.test(from)) fs.copyFileSync(from, to); else await sharp(from).jpeg({ quality: 95 }).toFile(to);
     i.status = 'approved'; console.log(`${n}: approved → ${rel(to)}`);
@@ -223,6 +235,6 @@ function status(P) {
 
 function flag(args, n) { const k = args.indexOf(n); return k < 0 ? null : args.splice(k, 2)[1]; }
 
-const [cmd, name, ...args] = process.argv.slice(2), table = { queue, next, mark, collect, sheet, approve, reject, bake, status };
+const [cmd, name, ...args] = process.argv.slice(2), table = { queue, next, mark, collect, recheck, sheet, approve, reject, bake, status };
 if (!table[cmd]) die(`Usage: frames <${Object.keys(table).join('|')}> <presenter> ...  (see the top of tools/frames/frames.mjs)`);
 await table[cmd](load(name), args);

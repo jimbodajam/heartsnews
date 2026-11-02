@@ -21,7 +21,7 @@ const S = JSON.parse(fs.readFileSync(inFile, 'utf8')), P = S.pronoun === 'he' ? 
 const KEEP = `Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything`;
 const BODY = `Keep the body, the ${S.clothes}, both forearms and hands resting on the desk, and the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move ${P.p} shoulders. Keep the ${S.look} exactly as in the original, with the same neutral closed-mouth expression and the same eye style.`;
 const NECK = `The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.`;
-const ARMS = `Keep the head, face, hair, neck, ${S.clothes} and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure or ${P.p} shoulders. Keep ${P.p} expression exactly as in the original. Change only ${P.p} arms and hands, and nothing below the desk edge: the desk hides everything below it, so there are no legs, feet or lap.`;
+const ARMS = `Keep the head, face, hair, neck, ${S.clothes} and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure or ${P.p} shoulders. Keep ${P.p} expression exactly as in the original. Change only ${P.p} arms and hands, and nothing else. There is no desk in this image: do not draw a desk, table or any surface, and keep the flat background colour exactly the same everywhere. The image ends at the waist, so there are no legs, feet or lap.`;
 const MOUTH = (what, head) => `Edit this image. ${KEEP}, and do not change the pose, the body, the clothes or the ${head ? 'head' : 'hair'}. ${head ? `Keep the head ${head} exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. ` : 'Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. '}Keep the mouth in the same position on the face${head ? ', along the same angle as the original mouth,' : ','} with the same centre and no wider than the mouth in the original: ${S.mouth} Change only this one thing: ${what}`;
 const MOUTHS = [
   ['v1', 'the mouth is closed with a gentle slight smile.'],
@@ -54,11 +54,11 @@ for (const h of ['h1', 'h2']) {
 }
 
 const pose = (n, area, what, expect) => add(n, 'b1', area, 'b1', `Edit this image. ${ARMS} ${what}`, {}, expect);
-pose('d1', 'hands', `Both hands rest flat on the desk in front of ${P.o}, fingers relaxed, forearms level.`);
-pose('d2', 'hands', `Both hands are clasped together on the desk in front of ${P.o}, fingers interlaced, forearms resting on the desk.`);
-pose('d3', 'hands', `Both hands hold a few sheets of paper just above the desk in front of ${P.o}, as if checking notes. The paper is plain white with no writing.`);
-pose('d4', 'arm', `${P.s[0].toUpperCase() + P.s.slice(1)} makes a small open-hand gesture with the hand on the RIGHT edge of the image: the palm turned up and the hand lifted a little off the desk, fingers loose, as if making a point. The other hand rests on the desk.`, { dir: 'right', measure: 'changed' });
-pose('d5', 'arm', `One arm turns towards the LEFT edge of the image, the open hand held out low and flat towards the seat of the other presenter, as if handing over. The other hand rests on the desk.`, { dir: 'left', measure: 'changed' });
+pose('d1', 'hands', `Both hands rest flat, palms down, at the same height as the clasped hands in the original, in front of ${P.o}, fingers relaxed, forearms level.`);
+pose('d2', 'hands', `Both hands are clasped together in front of ${P.o}, fingers interlaced, forearms level.`);
+pose('d3', 'hands', `Both hands hold a few sheets of paper at waist height in front of ${P.o}, as if checking notes. The paper is plain white with no writing.`);
+pose('d4', 'arm', `${P.s[0].toUpperCase() + P.s.slice(1)} makes a small open-hand gesture with the hand on the RIGHT edge of the image: the palm turned up and the hand lifted a little, fingers loose, as if making a point. The other hand rests low, at the same height as in the original.`, { dir: 'right', measure: 'changed' });
+pose('d5', 'arm', `One arm turns towards the LEFT edge of the image, the open hand held out low and flat towards the seat of the other presenter, as if handing over. The other hand rests low, at the same height as in the original.`, { dir: 'left', measure: 'changed' });
 
 const cfg = {
   _note: 'Seated desk set (#78), scaffolded by tools/frames/seated.mjs. Grid, cut rows, boxes and the face block are provisional until the master is approved: tune them in this file by hand from then on.',

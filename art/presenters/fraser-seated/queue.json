@@ -7,170 +7,155 @@
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "h1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 769 cells changed outside its area (head), around x 81-137, y 102-129; moved -0.63 cells, too little to tell it went right",
+    "2026-11-02: 97 cells changed outside its area (head), around x 108-131, y 55-62; moved 0.11 cells, too little to tell it went right"
+   ],
+   "savedAt": "2026-11-02T21:44:28.859Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1.jpg",
+   "stats": {
+    "changed": 1087,
+    "outside": 97,
+    "direction": 0.11
+   }
   },
   {
    "frame": "h2",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "h2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 98 cells changed outside its area (head), around x 102-130, y 55-61; moved 0.20 cells, too little to tell it went left",
+    "2026-11-02: moved -0.17 cells, too little to tell it went left",
+    "2026-11-02: 581 cells changed outside its area (head), around x 98-136, y 55-128; moved -0.49 cells, too little to tell it went left (recheck)"
+   ],
+   "savedAt": "2026-11-02T21:45:50.692Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2.jpg",
+   "stats": {
+    "changed": 1626,
+    "outside": 581,
+    "direction": -0.49
+   }
   },
   {
    "frame": "h3",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "h3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "h4",
-   "source": "b1",
-   "attach": "site/public/spike/fraser/seated/b1.jpg",
-   "save": "h4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "h5",
-   "source": "b1",
-   "attach": "site/public/spike/fraser/seated/b1.jpg",
-   "save": "h5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "h6",
-   "source": "b1",
-   "attach": "site/public/spike/fraser/seated/b1.jpg",
-   "save": "h6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v1",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v2",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v3",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v4",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v5",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v6",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "v7",
-   "source": "b1",
-   "attach": "art/presenters/fraser-seated/queue/crops/b1.png",
-   "crop": true,
-   "save": "v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 122 cells changed outside its area (head), around x 107-132, y 55-65"
+   ],
+   "savedAt": "2026-11-02T21:47:01.534Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h3.jpg",
+   "stats": {
+    "changed": 903,
+    "outside": 76
+   }
   },
   {
    "frame": "d1",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "d1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 17478 cells changed outside its area (hands), around x 4-235, y 4-104"
+   ],
+   "savedAt": "2026-11-02T21:48:10.186Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/d1.jpg",
+   "stats": {
+    "changed": 1270,
+    "outside": 0
+   }
   },
   {
    "frame": "d2",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "d2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 16418 cells changed outside its area (hands), around x 4-235, y 4-104"
+   ],
+   "savedAt": "2026-11-02T21:49:20.377Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/d2.jpg",
+   "stats": {
+    "changed": 345,
+    "outside": 43
+   }
   },
   {
    "frame": "d3",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "d3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 17060 cells changed outside its area (hands), around x 4-235, y 4-104",
+    "2026-11-02: 586 cells changed outside its area (hands), around x 98-139, y 89-104"
+   ],
+   "savedAt": "2026-11-02T21:50:30.423Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/d3.jpg",
+   "stats": {
+    "changed": 1797,
+    "outside": 586
+   }
   },
   {
    "frame": "d4",
    "source": "b1",
    "attach": "site/public/spike/fraser/seated/b1.jpg",
    "save": "d4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
-  },
-  {
-   "frame": "d5",
-   "source": "b1",
-   "attach": "site/public/spike/fraser/seated/b1.jpg",
-   "save": "d5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 2,
+   "reasons": [
+    "2026-11-02: 9979 cells changed outside its area (arm), around x 4-235, y 4-54; moved 2.11 cells, too little to tell it went right"
+   ],
+   "savedAt": "2026-11-02T21:51:39.553Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/d4.jpg",
+   "stats": {
+    "changed": 1982,
+    "outside": 29,
+    "direction": 39.96
+   }
   }
  ],
- "updated": "2026-11-02T20:16:25.796Z"
+ "updated": "2026-11-02T22:14:24.077Z",
+ "downloads": "/mnt/d/Downloads",
+ "seen": [
+  "Gemini_Generated_Image_9ic0179ic0179ic0.jpg@1793651239935.587",
+  "Gemini_Generated_Image_9uveet9uveet9uve.jpg@1793651348709.587",
+  "Gemini_Generated_Image_g0e15hg0e15hg0e1.jpg@1793651454678.5876",
+  "Gemini_Generated_Image_z2y579z2y579z2y5.jpg@1793651550537.0872",
+  "Gemini_Generated_Image_d71wjud71wjud71w.jpg@1793651646070.587",
+  "Gemini_Generated_Image_xggnobxggnobxggn.jpg@1793651739746.5872",
+  "Gemini_Generated_Image_66yg4c66yg4c66yg.jpg@1793651841018.5876",
+  "Gemini_Generated_Image_p166n4p166n4p166.jpg@1793651936029.0876",
+  "Gemini_Generated_Image_ka70hdka70hdka70.jpg@1793652032990.589",
+  "Gemini_Generated_Image_dbldcmdbldcmdbld.jpg@1793652130672.0872",
+  "Gemini_Generated_Image_4utwkv4utwkv4utw.jpg@1793652228367.0881",
+  "Gemini_Generated_Image_rj4j2qrj4j2qrj4j.jpg@1793652326060.0862",
+  "Gemini_Generated_Image_dcww7ndcww7ndcww.jpg@1793652538786.5864",
+  "Gemini_Generated_Image_mmkv1vmmkv1vmmkv.jpg@1793652640421.5876",
+  "Gemini_Generated_Image_acws76acws76acws.jpg@1793652737138.5884",
+  "Gemini_Generated_Image_k8cysok8cysok8cy.jpg@1793652834886.0872",
+  "Gemini_Generated_Image_7ywptz7ywptz7ywp.jpg@1793652933059.588",
+  "Gemini_Generated_Image_3jzopt3jzopt3jzo.jpg@1793653017624.0884",
+  "Gemini_Generated_Image_c77xmic77xmic77x.jpg@1793655860122.5876",
+  "Gemini_Generated_Image_pvifk8pvifk8pvif.jpg@1793655942115.588",
+  "Gemini_Generated_Image_wnbd7vwnbd7vwnbd.jpg@1793656012833.5876",
+  "Gemini_Generated_Image_3am2ro3am2ro3am2.jpg@1793656081726.0874",
+  "Gemini_Generated_Image_7ro1gb7ro1gb7ro1.jpg@1793656151849.587",
+  "Gemini_Generated_Image_b5o2scb5o2scb5o2.jpg@1793656221366.5938",
+  "Gemini_Generated_Image_hwq0jjhwq0jjhwq0.jpg@1793656291517.0876"
+ ]
 }

@@ -13,8 +13,6 @@
  "feetTop": 131,
  "heads": [
   "b1",
-  "h1",
-  "h2",
   "h3",
   "h4",
   "h5",
@@ -84,14 +82,6 @@
      50
     ]
    },
-   "h1": {
-    "mode": "set",
-    "warpEyes": true
-   },
-   "h2": {
-    "mode": "set",
-    "warpEyes": true
-   },
    "h3": {
     "mode": "patch"
    },
@@ -99,12 +89,10 @@
     "mode": "patch"
    },
    "h5": {
-    "mode": "patch",
-    "warpEyes": true
+    "mode": "patch"
    },
    "h6": {
-    "mode": "patch",
-    "warpEyes": true
+    "mode": "patch"
    }
   }
  },
@@ -294,5 +282,6 @@
    "parent": "b1",
    "area": "arm"
   }
- ]
+ ],
+ "_turned": "h1/h2 are left out of heads until their own mouth and blink sets exist (round 2): the eye detector cannot find both eyes on a turned head, so they cannot be composed as patch heads. Add them back with { mode: \"set\", warpEyes: true } and boxes.h1/boxes.h2."
 }
