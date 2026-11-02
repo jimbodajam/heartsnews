@@ -42,7 +42,7 @@ Isla's `patch` frames (`v1` to `v9`) have no face boxes in `frames.json`, so the
 
 1. `npm run frames -- status <p>`. If `limitHit` is under a day old, stop: the quota has not reset.
 2. `npm run frames -- next <p> --json` for the frame: `attach` is a Windows path, `prompt` is the text, `saveAs` the name.
-3. In the signed-in Gemini (`gemini.google.com/images?dest=create`), start a fresh chat. Find "Upload & tools" and the prompt box by ref (layout banners shift the box, so never click by coordinates), upload `attach` with the file input, type the prompt, press Enter. Use the Chrome batch call for the fixed steps.
+3. In the signed-in Gemini (`gemini.google.com/images?dest=create`), start a fresh chat. Find "Upload & tools" and the prompt box by ref, click "Upload & tools" so the menu is open (the file input only exists in the page while it is), then `find` "input type=file" (layout banners shift the box, so never click by coordinates), upload `attach` with the file input, type the prompt, press Enter. Use the Chrome batch call for the fixed steps.
 4. When the image appears, download it (one download per frame) and run `mark <p> <frame> saved`.
 5. If Gemini says the daily limit is reached ("Image Edit Request Denied" or similar), run `mark <p> <frame> limit "<the message>"` and stop. Do not retry.
 6. Repeat from step 2 until `next` says nothing is left, then `collect <p>` and `sheet <p>`.
