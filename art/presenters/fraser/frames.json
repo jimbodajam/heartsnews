@@ -89,7 +89,7 @@
         ]
       },
       "h2": {
-        "mode": "code",
+        "mode": "set",
         "eyeWin": [
           56,
           22,
