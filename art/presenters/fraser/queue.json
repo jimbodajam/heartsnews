@@ -1,0 +1,25 @@
+{
+ "presenter": "fraser",
+ "limitHit": null,
+ "items": [
+  {
+   "frame": "h4v6",
+   "source": "h4",
+   "attach": "site/public/spike/fraser/standing/h4.jpg",
+   "save": "h4v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h4v7",
+   "source": "h4",
+   "attach": "site/public/spike/fraser/standing/h4.jpg",
+   "save": "h4v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  }
+ ],
+ "updated": "2026-11-02T10:40:08.275Z"
+}

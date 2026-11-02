@@ -24,3 +24,5 @@ __pycache__/
 
 # presenter bake previews
 tools/bake/out/
+art/presenters/*/queue/
+tools/frames/out/

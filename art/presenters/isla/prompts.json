@@ -1,0 +1,141 @@
+{
+ "_note": "Generation prompts for tools/frames. One entry per frame: source is the frame to attach, prompt is pasted as is. expect checks the direction of the change.",
+ "frames": {
+  "v1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the mouth is closed with a gentle slight smile.",
+   "from": "standing-prompts.md"
+  },
+  "v2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the lips are slightly parted, relaxed, a thin dark gap and no visible teeth.",
+   "from": "standing-prompts.md"
+  },
+  "v3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the mouth is a relaxed \"ee\" shape, only slightly wider than closed, with a thin strip of the top teeth visible.",
+   "from": "standing-prompts.md"
+  },
+  "v4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the mouth is a small round \"oh\", lips rounded and pushed forward, dark inside, no teeth.",
+   "from": "standing-prompts.md"
+  },
+  "v5": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the mouth is open about half as wide as in a shout, relaxed and mid-speech as if saying \"ah\" in a calm conversation, showing the top teeth and a little tongue.",
+   "from": "standing-prompts.md"
+  },
+  "v6": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: her mouth is small and her head is turned slightly, so keep it small and keep its angle. Change only this one thing: the lips are pressed together, closed and neutral, as if about to say \"m\" or \"b\".",
+   "from": "standing-prompts.md"
+  },
+  "v7": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are fully closed, as in a blink, with the upper lashes drawn as a curved dark line.",
+   "from": "standing-prompts.md"
+  },
+  "v8": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are open as before, but the irises look to the viewer's left (screen left), pupils shifted about two pixels.",
+   "from": "standing-prompts.md",
+   "expect": {
+    "dir": "left",
+    "measure": "dark"
+   }
+  },
+  "v9": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the hair. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are open as before, but the irises look to the viewer's right (screen right, towards the screen she is presenting), pupils shifted about two pixels.",
+   "from": "standing-prompts.md",
+   "expect": {
+    "dir": "right",
+    "measure": "dark"
+   }
+  },
+  "h1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the clasped hands, jacket, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet or shoulders. Keep the hairstyle, hair colour and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: turn it a few degrees (a small, subtle turn, about 8 degrees) so her nose and gaze point towards the RIGHT edge of the image (the right-hand side of the picture, as you look at it). Do not turn it towards the left edge. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "from": "standing-head-prompts.md"
+  },
+  "h2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the clasped hands, jacket, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet or shoulders. Keep the hairstyle, hair colour and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: turn it a few degrees (a small, subtle turn, about 8 degrees) so her nose and gaze point towards the LEFT edge of the image (the left-hand side of the picture, as you look at it). Do not turn it towards the right edge. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "from": "standing-head-prompts.md"
+  },
+  "h3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the clasped hands, jacket, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet or shoulders. Keep the hairstyle, hair colour and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: tilt it very slightly forward and down, as in a small nod, about 6 degrees, so the chin dips a little towards the chest and the top of the head tips forward. The neck stays attached at the same place on the shoulders, and the head stays the same size.",
+   "from": "standing-head-prompts.md"
+  },
+  "h4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the clasped hands, jacket, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet or shoulders. Keep the hairstyle, hair colour and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: tilt it very slightly back and up, as at the top of a small nod, about 5 degrees, so the chin lifts a little. The neck stays attached at the same place on the shoulders, and the head stays the same size.",
+   "from": "standing-head-prompts.md"
+  },
+  "h5": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the clasped hands, jacket, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet or shoulders. Keep the hairstyle, hair colour and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: tilt it sideways a small amount, about 5 degrees, so her head leans slightly towards her shoulder on the viewer's left, as if listening with interest. The neck stays attached at the same place on the shoulders, and the head stays the same size.",
+   "from": "standing-head-prompts.md"
+  },
+  "b2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: her arm on the viewer's right is extended out to the side and slightly up, with her index finger pointing clearly towards the right of the image, as if pointing at an item on a screen, the other fingers curled and the thumb tucked. Her other arm hangs relaxed at her side. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md",
+   "expect": {
+    "dir": "right",
+    "measure": "changed"
+   }
+  },
+  "b3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: her arm on the viewer's right is raised higher and a little further out than in the original, the open palm facing up and towards the right of the image, fingers together and slightly spread, in a wide, welcoming, emphasising gesture. Her other arm hangs relaxed at her side. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md"
+  },
+  "b4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: both elbows are bent and both hands are held together in front of her at lower chest height, fingertips lightly touching, as if making a point in a calm explanation. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md"
+  },
+  "b5": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: both arms are bent at the elbows and she holds a small dark navy tablet in front of her at waist height, one hand underneath and the other steadying it at the side, as if reading from it. Only the thin edge and the back of the tablet are visible to the viewer, with no text and no screen glow. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md"
+  },
+  "b6": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: her arm on the viewer's left is bent with the hand resting on her hip, elbow pointing out, and her other arm hangs relaxed at her side, a confident, attentive, listening pose. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md"
+  },
+  "b7": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: her arm on the viewer's left is raised out to the side with the open palm facing up and towards the left of the image, as if presenting something to the left, fingers together. Her other arm hangs relaxed at her side. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md",
+   "expect": {
+    "dir": "left",
+    "measure": "changed"
+   }
+  },
+  "b8": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, skirt, tights, shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Do not move or resize the figure, and do not move her feet. Keep her expression exactly as in the original. Change only her arms and hands: both arms are held out a little from her sides, elbows bent, both palms open and facing slightly upwards at waist height, in a warm, open, welcoming sign-off gesture. The jacket sleeves, cuffs and the cream blouse cuffs stay the same style and colours as in the original.",
+   "from": "standing-body-prompts.md"
+  },
+  "f1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, jacket, both arms and hands, and the skirt down to the hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Everything above the middle of the skirt (grid row 119 of 216, about 55% of the way down the image) must be unchanged. Do not move or resize the figure. Change only her legs, tights and shoes below that line: she shifts her weight onto the leg on the viewer's RIGHT, which stands straight and carries all her weight, while the leg on the viewer's LEFT relaxes: that knee is clearly bent, and that foot is placed visibly out to the viewer's left and a little forward, resting on the ball of the foot with the heel lifted off the floor, so the two feet are clearly in different positions. The skirt hem may sway slightly. A natural relaxed weight shift, not a step.",
+   "from": "standing-feet-prompts.md"
+  },
+  "f2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, jacket, both arms and hands, and the skirt down to the hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Everything above the middle of the skirt (grid row 119 of 216, about 55% of the way down the image) must be unchanged. Do not move or resize the figure. Change only her legs, tights and shoes below that line: she shifts her weight onto the leg on the viewer's LEFT, which stands straight and carries all her weight, while the leg on the viewer's RIGHT relaxes: that knee is clearly bent, and that foot is placed visibly out to the viewer's right and a little forward, resting on the ball of the foot with the heel lifted off the floor, so the two feet are clearly in different positions. The skirt hem may sway slightly. A natural relaxed weight shift, not a step.",
+   "from": "standing-feet-prompts.md"
+  },
+  "f3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, blouse, jacket, both arms and hands, and the skirt down to the hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat magenta background, the same pixel grid. Everything above the middle of the skirt (grid row 119 of 216, about 55% of the way down the image) must be unchanged. Do not move or resize the figure. Change only her legs, tights and shoes below that line, and only slightly: both legs stand straight with her weight even, and her feet are placed a little further apart than in the original, about shoulder width, both feet flat on the floor, toes pointing slightly outwards.",
+   "from": "standing-feet-prompts.md"
+  }
+ }
+}
