@@ -3,271 +3,91 @@
  "limitHit": null,
  "items": [
   {
-   "frame": "h5v2",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v1",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v2.jpg",
-   "status": "baked",
+   "save": "h2v1.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:47:18.182Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v2.jpg",
-   "stats": {
-    "changed": 42,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 7.7
-    }
-   }
+   "savedAt": "2026-11-02T15:25:07.953Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v1.jpg"
   },
   {
-   "frame": "h5v3",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v2",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v3.jpg",
-   "status": "baked",
+   "save": "h2v2.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:48:26.782Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v3.jpg",
-   "stats": {
-    "changed": 45,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 8
-    }
-   }
+   "savedAt": "2026-11-02T15:26:14.576Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v2.jpg"
   },
   {
-   "frame": "h5v4",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v3",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v4.jpg",
-   "status": "baked",
+   "save": "h2v3.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:49:31.565Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v4.jpg",
-   "stats": {
-    "changed": 55,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 9.4
-    }
-   }
+   "savedAt": "2026-11-02T15:27:17.504Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v3.jpg"
   },
   {
-   "frame": "h5v5",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v4",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v5.jpg",
-   "status": "baked",
+   "save": "h2v4.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:50:33.234Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v5.jpg",
-   "stats": {
-    "changed": 81,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 8
-    }
-   }
+   "savedAt": "2026-11-02T15:28:14.474Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v4.jpg"
   },
   {
-   "frame": "h5v6",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v5",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v6.jpg",
-   "status": "baked",
+   "save": "h2v5.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:51:29.608Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v6.jpg",
-   "stats": {
-    "changed": 28,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 8
-    }
-   }
+   "savedAt": "2026-11-02T15:29:08.164Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v5.jpg"
   },
   {
-   "frame": "h5v7",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
+   "frame": "h2v6",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h5v7.jpg",
-   "status": "baked",
+   "save": "h2v6.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:52:27.369Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v7.jpg",
-   "stats": {
-    "changed": 44,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 8.1
-    }
-   }
+   "savedAt": "2026-11-02T15:30:09.743Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v6.jpg"
   },
   {
-   "frame": "h6v1",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
+   "frame": "h2v7",
+   "source": "h2",
+   "attach": "art/presenters/fraser/queue/crops/h2.png",
    "crop": true,
-   "save": "h6v1.jpg",
-   "status": "baked",
+   "save": "h2v7.jpg",
+   "status": "passed",
    "attempts": 1,
    "reasons": [],
-   "savedAt": "2026-11-02T14:53:22.442Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v1.jpg",
-   "stats": {
-    "changed": 21,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 8.1
-    }
-   }
-  },
-  {
-   "frame": "h6v2",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v2.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-02T14:54:18.366Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v2.jpg",
-   "stats": {
-    "changed": 34,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 8
-    }
-   }
-  },
-  {
-   "frame": "h6v3",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v3.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-02T14:55:12.503Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v3.jpg",
-   "stats": {
-    "changed": 37,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 8.2
-    }
-   }
-  },
-  {
-   "frame": "h6v4",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v4.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-02T14:56:37.651Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v4.jpg",
-   "stats": {
-    "changed": 64,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 8
-    }
-   }
-  },
-  {
-   "frame": "h6v5",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v5.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-02T14:57:32.908Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v5.jpg",
-   "stats": {
-    "changed": 62,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 7.9
-    }
-   }
-  },
-  {
-   "frame": "h6v6",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v6.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-02: image was missing; the downloads had been paired one frame late (a stray file was taken for h5v2), re-paired by content"
-   ],
-   "savedAt": "2026-11-02T15:16:29.013Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v6.jpg",
-   "stats": {
-    "changed": 22,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 7.7
-    }
-   }
-  },
-  {
-   "frame": "h6v7",
-   "source": "h6",
-   "attach": "art/presenters/fraser/queue/crops/h6.png",
-   "crop": true,
-   "save": "h6v7.jpg",
-   "status": "baked",
-   "attempts": 1,
-   "reasons": [
-    "run failed: no image after 2 minutes"
-   ],
-   "savedAt": "2026-11-02T15:02:35.193Z",
-   "staged": "art/presenters/fraser/queue/staged/h6v7.jpg",
-   "stats": {
-    "changed": 46,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 7.7
-    }
-   }
+   "savedAt": "2026-11-02T15:30:58.769Z",
+   "staged": "art/presenters/fraser/queue/staged/h2v7.jpg"
   }
  ],
- "updated": "2026-11-02T15:18:20.906Z",
+ "updated": "2026-11-02T15:35:02.723Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
@@ -303,6 +123,14 @@
   "h6v4.jpg@1793632293152.1301",
   "h6v5.jpg@1793632293166.129",
   "h6v7.jpg@1793632293179.8872",
-  "h6v6.jpg@1793632585766.0408"
+  "h6v6.jpg@1793632585766.0408",
+  "h2v1.jpg@1793633106093.2412",
+  "h2v2.jpg@1793633172832.2402",
+  "h2v3.jpg@1793633235780.847",
+  "h2v4.jpg@1793633292583.3435",
+  "h2v5.jpg@1793633346212.3452",
+  "h2v6.jpg@1793633407683.3916",
+  "h2v7.jpg@1793633457160.3916",
+  "v8.jpg@1793633667550.3208"
  ]
 }

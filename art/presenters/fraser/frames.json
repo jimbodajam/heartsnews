@@ -16,7 +16,8 @@
     "h3": { "eyes": [[62, 22, 90, 33]], "mouth": [[60, 34, 90, 47]] },
     "h4": { "eyes": [[58, 16, 90, 27]], "mouth": [[58, 28, 90, 47]] },
     "h5": { "eyes": [[58, 20, 90, 34]], "mouth": [[60, 34, 90, 47]] },
-    "h6": { "eyes": [[64, 20, 94, 37]], "mouth": [[62, 35, 92, 48]] }
+    "h6": { "eyes": [[64, 20, 94, 37]], "mouth": [[62, 35, 92, 48]] },
+    "h2": { "eyes": [[52, 20, 80, 32]], "mouth": [[52, 33, 78, 47]] }
   },
   "face": {
     "register": "detect",
@@ -150,6 +151,11 @@
     { "name": "h5v1", "parent": "h5", "area": "mouth", "crop": true }, { "name": "h5v2", "parent": "h5", "area": "mouth", "crop": true }, { "name": "h5v3", "parent": "h5", "area": "mouth", "crop": true }, { "name": "h5v4", "parent": "h5", "area": "mouth", "crop": true },
     { "name": "h5v5", "parent": "h5", "area": "mouth", "crop": true }, { "name": "h5v6", "parent": "h5", "area": "mouth", "crop": true }, { "name": "h5v7", "parent": "h5", "area": "eyes", "crop": true },
     { "name": "h6v1", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v2", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v3", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v4", "parent": "h6", "area": "mouth", "crop": true },
-    { "name": "h6v5", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v6", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v7", "parent": "h6", "area": "eyes", "crop": true }
+    { "name": "h6v5", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v6", "parent": "h6", "area": "mouth", "crop": true }, { "name": "h6v7", "parent": "h6", "area": "eyes", "crop": true },
+    { "name": "h2v1", "parent": "h2", "area": "mouth", "crop": true }, { "name": "h2v2", "parent": "h2", "area": "mouth", "crop": true },
+    { "name": "h2v3", "parent": "h2", "area": "mouth", "crop": true }, { "name": "h2v4", "parent": "h2", "area": "mouth", "crop": true },
+    { "name": "h2v5", "parent": "h2", "area": "mouth", "crop": true }, { "name": "h2v6", "parent": "h2", "area": "mouth", "crop": true },
+    { "name": "h2v7", "parent": "h2", "area": "eyes", "crop": true },
+    { "name": "v8", "parent": "b1", "area": "patch" }
   ]
 }
