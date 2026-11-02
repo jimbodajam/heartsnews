@@ -38,7 +38,7 @@ const staged = P => path.join(dir(P.name), 'queue/staged');
 const winPath = p => { if (!process.env.WSL_DISTRO_NAME) return p; try { return execFileSync('wslpath', ['-w', p]).toString().trim(); } catch { return p; } };
 
 async function queue(P, args) {
-  const redo = new Set((flag(args, '--redo') || '').split(',').filter(Boolean)), old = new Map(P.queue.items.map(i => [i.frame, i])), items = [], missingPrompt = [];
+  const redo = new Set((flag(args, '--redo') || '').split(',').filter(Boolean)), old = new Map(P.queue.items.map(i => [i.frame, i])), items = [], missingPrompt = [], waitingOnParent = [];
   for (const f of P.cfg.frames) {
     if (f.area === 'master') continue;
     const want = redo.has(f.name) || !fs.existsSync(P.fileOf(f));
@@ -46,6 +46,7 @@ async function queue(P, args) {
     if (!want) continue;
     if (!pr) { missingPrompt.push(f.name); continue; }
     const parent = P.frame(pr.source) || P.frame(f.parent);
+    if (!fs.existsSync(P.fileOf(parent))) { waitingOnParent.push(`${f.name} (needs ${parent.name})`); continue; }   // e.g. h1v1 waits for h1 to be approved
     const prev = old.get(f.name) && !!old.get(f.name).crop === !!f.crop ? old.get(f.name) : null;   // a frame that changes between full frame and crop starts again
     let attach = rel(P.fileOf(parent));
     if (f.crop) {   // the crop of the parent head is what gets attached (#71)
@@ -58,6 +59,7 @@ async function queue(P, args) {
   P.queue.items = items; P.save();
   const by = s => items.filter(i => i.status === s).length;
   console.log(`${P.name}: ${items.length} in the queue (${by('pending')} pending, ${by('rejected')} rejected, ${by('saved')} saved, ${by('passed')} passed, ${by('approved')} approved)`);
+  if (waitingOnParent.length) console.log(`Waiting for a parent image: ${waitingOnParent.join(' ')}`);
   if (missingPrompt.length) console.log(`No prompt in prompts.json for: ${missingPrompt.join(' ')}`);
 }
 

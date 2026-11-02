@@ -32,11 +32,11 @@ function changedBlobs(P, parent, thr = 40) {
 /** Everything outside the frame's editable area goes back to its parent, so the generator's drift cannot flicker between frames. */
 function clamp(P, parent, area, box, cfg) {
   const copy = (out, x, y) => { if (P.has(x, y)) out.set(x, y, P.get(x, y)); else out.d[out.idx(x, y) + 3] = 0; };
-  if (area === 'arm') {
-    // an arm is new pixels in solid groups; specks of drift stay on the parent
-    const out = parent.clone(), keep = new Set();
+  if (area === 'arm' || area === 'hands') {
+    // an arm is new pixels in solid groups; specks of drift stay on the parent. Hands on a desk (seated sets) are the same from `handsTop` down
+    const top = area === 'hands' ? cfg.handsTop ?? cfg.headCut : cfg.headCut, out = parent.clone(), keep = new Set();
     for (const b of changedBlobs(P, parent)) if (b.length >= 12) for (const [x, y] of b) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) keep.add(key(x + dx, y + dy));
-    for (const k of keep) { const [x, y] = k.split(',').map(Number); if (y >= cfg.headCut && x >= 0 && y < P.h && x < P.w) copy(out, x, y); }
+    for (const k of keep) { const [x, y] = k.split(',').map(Number); if (y >= top && x >= 0 && y < P.h && x < P.w) copy(out, x, y); }
     return out;
   }
   if (area === 'box') {
@@ -118,11 +118,12 @@ async function bake(name) {
   const cfg = JSON.parse(fs.readFileSync(`art/presenters/${name}/frames.json`, 'utf8'));
   console.log(`\n${name}: ${cfg.frames.length} frames listed`);
   const raw = await loadFrames(name, cfg);
+  if (!raw[cfg.face?.patch?.base || 'b1']) { console.log('  no master image yet, nothing to bake'); return; }
   if (BOXES) { boxReport(cfg, raw); return; }
 
-  const palFile = `art/presenters/${name}/palette.json`, locked = fs.existsSync(palFile) && !NEW_PALETTE && !COLOURS ? JSON.parse(fs.readFileSync(palFile, 'utf8')) : null;
+  const palFile = `art/presenters/${cfg.paletteFrom || name}/palette.json`, locked = fs.existsSync(palFile) && !NEW_PALETTE && !COLOURS ? JSON.parse(fs.readFileSync(palFile, 'utf8')) : null;
   const palette = locked || buildPalette(cfg.frames.filter(f => raw[f.name]).map(f => clamp(raw[f.name], raw[f.parent] || raw[f.name], areaFor(f), boxFor(cfg, f), cfg)), COLOURS || 128);
-  if (!locked && OUT === 'site/public/presenters') fs.writeFileSync(palFile, JSON.stringify(palette) + '\n');
+  if (!locked && !cfg.paletteFrom && OUT ==='site/public/presenters') fs.writeFileSync(palFile, JSON.stringify(palette) + '\n');
   const snap = snapper(palette), G = {};
   for (const n of Object.keys(raw)) G[n] = snapPix(raw[n], palette, snap);
   // parents first: a frame's parent is clamped before the frame is compared with it
@@ -160,7 +161,7 @@ async function bake(name) {
   // checks: the stacked layers against the composed frame, and against the frame as it looked before baking
   const baked = { base, byName: Object.fromEntries(L.map(l => [l.name, l])) }, mism = {};
   let combos = 0, wrong = 0, worst = {};
-  for (const head of cfg.heads) for (const pose of cfg.poses) for (const feet of cfg.feet) for (const eye of ['open', ...cfg.eyes]) for (const mouth of ['rest', ...cfg.mouths]) {
+  for (const head of cfg.heads) for (const pose of cfg.poses) for (const feet of cfg.feet.length ? cfg.feet : [undefined]) for (const eye of ['open', ...cfg.eyes]) for (const mouth of ['rest', ...cfg.mouths]) {
     if (!(pose === 'b1' || (eye === 'open' && mouth === 'rest'))) continue;
     const a = stack(baked, palette, { head, pose, feet, eye, mouth }), b = compose({ head, pose, feet, eye, mouthKey: mouth });
     let n = 0; for (let y = 0; y < H; y++) for (let x = 0; x < a.w; x++) if (!same(a, b, x, y)) n++;

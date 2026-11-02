@@ -29,6 +29,7 @@ export function inArea(cfg, frame) {
     case 'head': return (x, y) => y < headCut;
     case 'legs': return (x, y) => y >= feetTop;
     case 'arm': return (x, y) => y >= headCut;
+    case 'hands': return (x, y) => y >= (cfg.handsTop ?? headCut);   // seated sets: hands on the desk, rows from the desk edge down
     case 'mouth': case 'eyes': return inBox(cfg.boxes?.[frame.parent]?.[frame.area] || [])
     case 'patch': { const b = patchBoxes(cfg); return b.length ? inBox(b) : () => true; }
     default: return () => true;

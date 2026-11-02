@@ -34,3 +34,8 @@ test('an arm that goes the wrong way is rejected', () => {
 test('an unchanged frame is rejected', () => {
   assert.equal(checkFrame(fig(), fig(), { name: 'b2', area: 'arm', parent: 'b1' }, cfg).ok, false);
 });
+test('hands frames may only change rows from the desk edge down', () => {
+  const f = { name: 'p1', area: 'hands', parent: 'b1' }, seated = { ...cfg, handsTop: 40 };
+  assert.equal(checkFrame(paint(fig(), 12, 42, 28, 55), fig(), f, seated).ok, true);
+  assert.equal(checkFrame(paint(fig(), 12, 20, 28, 55), fig(), f, seated).ok, false);
+});

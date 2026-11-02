@@ -540,6 +540,12 @@ if (fImgs.every(Boolean)) {
     mouth: { smile: mp('mouth-smile'), small: mp('mouth-parted'), wide: mp('mouth-ee'), O: mp('mouth-oh'), A: mp('mouth-ah'), closed: mp('mouth-closed') },
   };
 }
+// ?seated=1 plays the baked seated sets (#78) at 1:1 in place of the 30 Oct masters
+const SEATED = new URLSearchParams(location.search).get('seated') === '1', seatedSet = {};
+if (SEATED) {
+  const { loadPresenter } = await import('./public/test/presenter-player.js'), none = document.createElement('canvas'); none.width = none.height = 1;
+  for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { base: c, handBase: c, eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
+}
 const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
 // ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites. Each presenter has one slot in front of them; any prop can be put in it. ----
 // name: grid box on the sheet, scale on the canvas, and how far to the side of the presenter it sits (0 = straight in front)
@@ -656,8 +662,8 @@ function tick(ms) {
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
-  if (seated !== 'fraser' && (!big || big === 'isla')) drawIsla(t, aTalk, seatX('isla'), 0, isla, big ? 1 : ISLA_S);
-  if (seated !== 'isla' && (!big || big === 'fraser')) drawIsla(t, bTalk, seatX('fraser'), 1.9, fraser || isla, big ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
+  if (seated !== 'fraser' && (!big || big === 'isla')) drawIsla(t, aTalk, seatX('isla'), 0, SEATED ? seatedSet.isla : isla, SEATED || big ? 1 : ISLA_S);
+  if (seated !== 'isla' && (!big || big === 'fraser')) drawIsla(t, bTalk, seatX('fraser'), 1.9, SEATED ? seatedSet.fraser : fraser || isla, SEATED || big ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
   g.drawImage(desk, 0, DESK_Y);
   g.drawImage(mug, 70, DESK_Y + 1); g.drawImage(mug, 398, DESK_Y + 1);

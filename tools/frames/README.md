@@ -62,3 +62,17 @@ Without Chrome connected the same queue works by hand: `next` prints everything 
 
 - Crops only for mouths and blinks (`area` mouth or eyes): a head, arm or legs frame is still a whole frame.
 - Frames not listed in `frames.json` (Fraser's `h5v*`, `h6v*`, `h2v*`, `v8`) are not queued; add the frame to `frames.json` first, and its prompt is already in `prompts.json`.
+
+## Seated sets (#78)
+
+`isla-seated` and `fraser-seated` are queued like any presenter. `node tools/frames/seated.mjs <p>` wrote their `frames.json` and `prompts.json`; the masters are `site/public/spike/<name>/seated/b1.jpg`. Run in two rounds, because the turned-head mouths and blinks (`h1v1`-`h1v7`, `h2v1`-`h2v7`) are made from the turned head, so `queue` holds them back until `h1` and `h2` are approved (it prints "Waiting for a parent image").
+
+**Round 1** (18 frames each, about a day of free quota per presenter): `h1`-`h6`, `v1`-`v7`, `d1`-`d5`. Everything depends only on the master.
+
+**Between rounds**, by hand with James: approve `h1` and `h2` on the contact sheet, then add `boxes.h1` and `boxes.h2` (`eyes` and `mouth`, found with `node tools/bake/bake.mjs <p> --boxes`) to the seated `frames.json`, and re-run `queue`.
+
+**Round 2** (14 frames each): `h1v1`-`h1v7`, `h2v1`-`h2v7`.
+
+Frames to look at hardest on the contact sheet: `h1`/`h2` (direction, the check catches a wrong way), `d4`/`d5` (arm direction, and that nothing appears below the desk edge), and the `v` frames (the face must not move).
+
+Brief for a background Haiku run, per presenter (`isla-seated`, then `fraser-seated`): follow "Background run" above. Use `npm run frames -- next <p> --json` for each frame, never click by coordinates, one download per frame, stop at the daily limit with `mark ... limit`, and finish with `collect <p>` and `sheet <p>`. Do not approve, bake or commit; James approves from the contact sheet.
