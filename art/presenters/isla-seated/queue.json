@@ -3,44 +3,144 @@
  "limitHit": "2026-11-02T22:12:00.144Z",
  "items": [
   {
-   "frame": "h1",
-   "source": "b1",
-   "attach": "site/public/spike/isla/seated/b1.jpg",
-   "save": "h1.jpg",
-   "status": "approved",
-   "attempts": 2,
-   "reasons": [
-    "run failed: no image after 2 minutes",
-    "run failed: no image after 2 minutes (retry in fresh chat)",
-    "2026-11-02: moved -0.56 cells, too little to tell it went right",
-    "2026-11-02: 9447 cells changed outside its area (head), around x 2-239, y 55-130; moved 0.90 cells, too little to tell it went right"
-   ],
-   "savedAt": "2026-11-02T21:53:21.655Z",
-   "staged": "art/presenters/isla-seated/queue/staged/h1.jpg",
-   "stats": {
-    "changed": 14640,
-    "outside": 9447,
-    "direction": 0.9
-   }
+   "frame": "h1v1",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "h2",
-   "source": "b1",
-   "attach": "site/public/spike/isla/seated/b1.jpg",
-   "save": "h2.jpg",
-   "status": "approved",
-   "attempts": 2,
-   "reasons": [
-    "2026-11-02: moved 1.03 cells, too little to tell it went left",
-    "2026-11-02: moved -0.38 cells, too little to tell it went left"
-   ],
-   "savedAt": "2026-11-02T21:54:29.924Z",
-   "staged": "art/presenters/isla-seated/queue/staged/h2.jpg",
-   "stats": {
-    "changed": 998,
-    "outside": 0,
-    "direction": -0.38
-   }
+   "frame": "h1v2",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h1v3",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h1v4",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h1v5",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h1v6",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h1v7",
+   "source": "h1",
+   "attach": "art/presenters/isla-seated/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v1",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v2",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v3",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v4",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v5",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v6",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2v7",
+   "source": "h2",
+   "attach": "art/presenters/isla-seated/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
    "frame": "d3",
@@ -54,14 +154,10 @@
     "2026-11-02: 10987 cells changed outside its area (hands), around x 0-239, y 5-104"
    ],
    "savedAt": "2026-11-02T21:55:37.871Z",
-   "staged": "art/presenters/isla-seated/queue/staged/d3.jpg",
-   "stats": {
-    "changed": 15741,
-    "outside": 10987
-   }
+   "staged": "art/presenters/isla-seated/queue/staged/d3.jpg"
   }
  ],
- "updated": "2026-11-02T22:12:00.144Z",
+ "updated": "2026-11-02T22:22:46.715Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_bc9pwqbc9pwqbc9p.jpg@1793653156744.5872",
