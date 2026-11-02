@@ -3,34 +3,24 @@
  "limitHit": null,
  "items": [
   {
-   "frame": "h5v1",
-   "source": "h5",
-   "attach": "art/presenters/fraser/queue/crops/h5.png",
-   "crop": true,
-   "save": "h5v1.jpg",
-   "status": "approved",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-02T14:41:11.924Z",
-   "staged": "art/presenters/fraser/queue/staged/h5v1.jpg",
-   "stats": {
-    "changed": 57,
-    "outside": 0,
-    "fit": {
-     "scale": 1,
-     "err": 7.9
-    }
-   }
-  },
-  {
    "frame": "h5v2",
    "source": "h5",
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:47:18.182Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v2.jpg",
+   "stats": {
+    "changed": 42,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 7.7
+    }
+   }
   },
   {
    "frame": "h5v3",
@@ -38,9 +28,19 @@
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:48:26.782Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v3.jpg",
+   "stats": {
+    "changed": 45,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 8
+    }
+   }
   },
   {
    "frame": "h5v4",
@@ -48,9 +48,19 @@
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:49:31.565Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v4.jpg",
+   "stats": {
+    "changed": 55,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 9.4
+    }
+   }
   },
   {
    "frame": "h5v5",
@@ -58,9 +68,19 @@
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:50:33.234Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v5.jpg",
+   "stats": {
+    "changed": 81,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 8
+    }
+   }
   },
   {
    "frame": "h5v6",
@@ -68,9 +88,19 @@
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:51:29.608Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v6.jpg",
+   "stats": {
+    "changed": 28,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 8
+    }
+   }
   },
   {
    "frame": "h5v7",
@@ -78,9 +108,19 @@
    "attach": "art/presenters/fraser/queue/crops/h5.png",
    "crop": true,
    "save": "h5v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:52:27.369Z",
+   "staged": "art/presenters/fraser/queue/staged/h5v7.jpg",
+   "stats": {
+    "changed": 44,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 8.1
+    }
+   }
   },
   {
    "frame": "h6v1",
@@ -88,9 +128,19 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:53:22.442Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v1.jpg",
+   "stats": {
+    "changed": 21,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 8.1
+    }
+   }
   },
   {
    "frame": "h6v2",
@@ -98,9 +148,19 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:54:18.366Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v2.jpg",
+   "stats": {
+    "changed": 34,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 8
+    }
+   }
   },
   {
    "frame": "h6v3",
@@ -108,9 +168,19 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:55:12.503Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v3.jpg",
+   "stats": {
+    "changed": 37,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 8.2
+    }
+   }
   },
   {
    "frame": "h6v4",
@@ -118,9 +188,19 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:56:37.651Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v4.jpg",
+   "stats": {
+    "changed": 64,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 8
+    }
+   }
   },
   {
    "frame": "h6v5",
@@ -128,9 +208,19 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T14:57:32.908Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v5.jpg",
+   "stats": {
+    "changed": 62,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 7.9
+    }
+   }
   },
   {
    "frame": "h6v6",
@@ -138,9 +228,21 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-02: image was missing; the downloads had been paired one frame late (a stray file was taken for h5v2), re-paired by content"
+   ],
+   "savedAt": "2026-11-02T15:16:29.013Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v6.jpg",
+   "stats": {
+    "changed": 22,
+    "outside": 0,
+    "fit": {
+     "scale": 1,
+     "err": 7.7
+    }
+   }
   },
   {
    "frame": "h6v7",
@@ -148,12 +250,24 @@
    "attach": "art/presenters/fraser/queue/crops/h6.png",
    "crop": true,
    "save": "h6v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "run failed: no image after 2 minutes"
+   ],
+   "savedAt": "2026-11-02T15:02:35.193Z",
+   "staged": "art/presenters/fraser/queue/staged/h6v7.jpg",
+   "stats": {
+    "changed": 46,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 7.7
+    }
+   }
   }
  ],
- "updated": "2026-11-02T14:43:43.070Z",
+ "updated": "2026-11-02T15:18:20.906Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
@@ -163,6 +277,32 @@
   "Gemini_Generated_Image_7n93ds7n93ds7n93.jpg@1793629479631.4087",
   "Gemini_Generated_Image_grh7q4grh7q4grh7.jpg@1793629533883.9312",
   "Gemini_Generated_Image_pb2db9pb2db9pb2d.jpg@1793629590237.678",
-  "h5v1.jpg@1793630481327.5278"
+  "h5v1.jpg@1793630481327.5278",
+  "Gemini_Generated_Image_75e66o75e66o75e6.jpg@1793630449094.973",
+  "Gemini_Generated_Image_obxx6oobxx6oobxx.jpg@1793630827916.4255",
+  "Gemini_Generated_Image_bi8bgvbi8bgvbi8b.jpg@1793630901313.3093",
+  "Gemini_Generated_Image_en557uen557uen55.jpg@1793630966280.575",
+  "Gemini_Generated_Image_aorx35aorx35aorx.jpg@1793631027817.0354",
+  "Gemini_Generated_Image_csqe7pcsqe7pcsqe.jpg@1793631084374.579",
+  "Gemini_Generated_Image_pca1eopca1eopca1.jpg@1793631141885.4297",
+  "Gemini_Generated_Image_qfwmzmqfwmzmqfwm.jpg@1793631197031.0073",
+  "Gemini_Generated_Image_c2x9lkc2x9lkc2x9.jpg@1793631252970.954",
+  "Gemini_Generated_Image_rclchmrclchmrclc.jpg@1793631307317.3647",
+  "Gemini_Generated_Image_f8dtnsf8dtnsf8dt.jpg@1793631392555.0645",
+  "Gemini_Generated_Image_9syifn9syifn9syi.jpg@1793631447548.3926",
+  "Gemini_Generated_Image_v9nfh9v9nfh9v9nf.jpg@1793631750061.5364",
+  "h5v2.jpg@1793632293029.6267",
+  "h5v3.jpg@1793632293044.1306",
+  "h5v4.jpg@1793632293058.129",
+  "h5v5.jpg@1793632293071.1306",
+  "h5v6.jpg@1793632293084.63",
+  "h5v7.jpg@1793632293097.6267",
+  "h6v1.jpg@1793632293111.1282",
+  "h6v2.jpg@1793632293124.627",
+  "h6v3.jpg@1793632293138.1287",
+  "h6v4.jpg@1793632293152.1301",
+  "h6v5.jpg@1793632293166.129",
+  "h6v7.jpg@1793632293179.8872",
+  "h6v6.jpg@1793632585766.0408"
  ]
 }

@@ -113,10 +113,10 @@
         "mode": "set"
       },
       "h5": {
-        "mode": "patch"
+        "mode": "set"
       },
       "h6": {
-        "mode": "patch",
+        "mode": "set",
         "eyeWin": [
           58,
           20,
