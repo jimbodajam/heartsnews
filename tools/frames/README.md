@@ -36,7 +36,7 @@ Isla's `patch` frames (`v1` to `v9`) have no face boxes in `frames.json`, so the
 
 ## Collecting downloads
 
-`collect` reads `~/Downloads` (the Windows one when run in WSL; `--from <dir>` or `FRAMES_DOWNLOADS` to change it). A file named for its frame (`h4v6.png`) is matched by name. Gemini's own names (`Gemini_Generated_Image_...`) are paired with the frames marked `saved`, in the order they were saved: one download per frame, and it refuses if the counts differ (`--force` pairs them anyway).
+`collect` reads the Windows Downloads folder when run in WSL, or whatever `--from <dir>` last named (remembered in `queue.json`; Chrome on this machine saves to `D:Downloads`, so the first run is `collect <p> --from /mnt/d/Downloads`). Downloads up to 30 minutes older than the `saved` mark still count, so marking after the download is fine. A file named for its frame (`h4v6.png`) is matched by name. Gemini's own names (`Gemini_Generated_Image_...`) are paired with the frames marked `saved`, in the order they were saved: one download per frame, and it refuses if the counts differ (`--force` pairs them anyway).
 
 ## Background run (Claude in Chrome, Haiku is enough)
 

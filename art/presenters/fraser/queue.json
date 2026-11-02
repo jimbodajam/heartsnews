@@ -7,19 +7,36 @@
    "source": "h4",
    "attach": "site/public/spike/fraser/standing/h4.jpg",
    "save": "h4v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "passed",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T12:16:25.440Z",
+   "staged": "art/presenters/fraser/queue/staged/h4v6.jpg",
+   "stats": {
+    "changed": 38,
+    "outside": 0
+   }
   },
   {
    "frame": "h4v7",
    "source": "h4",
    "attach": "site/public/spike/fraser/standing/h4.jpg",
    "save": "h4v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "passed",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-02T12:18:30.528Z",
+   "staged": "art/presenters/fraser/queue/staged/h4v7.jpg",
+   "stats": {
+    "changed": 59,
+    "outside": 0
+   }
   }
  ],
- "updated": "2026-11-02T10:40:08.275Z"
+ "updated": "2026-11-02T12:18:32.891Z",
+ "downloads": "/mnt/d/Downloads",
+ "seen": [
+  "Gemini_Generated_Image_2yvsmu2yvsmu2yvs.jpg@1793621458907.7104",
+  "Gemini_Generated_Image_nfu5pjnfu5pjnfu5.jpg@1793621899831.0793"
+ ]
 }

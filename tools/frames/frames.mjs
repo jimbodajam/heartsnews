@@ -75,8 +75,10 @@ function mark(P, [frame, state, ...note]) {
   P.save(); console.log(`${frame}: ${state}`);
 }
 
-function downloads(args) {
-  const from = flag(args, '--from') || process.env.FRAMES_DOWNLOADS;
+function downloads(P, args) {
+  const given = flag(args, '--from');
+  if (given) P.queue.downloads = given;   // remembered: Chrome on this machine saves to D:\Downloads, not the profile folder
+  const from = given || P.queue.downloads || process.env.FRAMES_DOWNLOADS;
   if (from) return from;
   if (process.env.WSL_DISTRO_NAME) try { return execFileSync('wslpath', ['-u', execFileSync('cmd.exe', ['/c', 'echo %USERPROFILE%']).toString().trim() + '\\Downloads']).toString().trim(); } catch { /* fall through */ }
   return path.join(os.homedir(), 'Downloads');
@@ -91,9 +93,9 @@ const gridOf = (P, img) => frameGrid(img, P.cfg.grid, P.cfg.bg);
 
 /** Saved downloads → staged frames. Named files (`h4v6.png`) match by name; Gemini's own names match the saved frames in the order they were saved. */
 async function collect(P, args) {
-  const src = downloads(args), saved = P.queue.items.filter(i => i.status === 'saved').sort((a, b) => a.savedAt.localeCompare(b.savedAt));
+  const src = downloads(P, args), saved = P.queue.items.filter(i => i.status === 'saved').sort((a, b) => a.savedAt.localeCompare(b.savedAt));
   if (!fs.existsSync(src)) die(`No folder ${src}. Pass --from <dir>`);
-  const seen = new Set(P.queue.seen || []), since = saved.length ? Date.parse(saved[0].savedAt) - 120000 : 0;
+  const seen = new Set(P.queue.seen || []), since = saved.length ? Date.parse(saved[0].savedAt) - 30 * 60000 : 0;
   const files = fs.readdirSync(src).filter(f => IMG.test(f)).map(f => ({ f, p: path.join(src, f), t: fs.statSync(path.join(src, f)).mtimeMs })).filter(x => x.t >= since && !seen.has(x.f + '@' + x.t)).sort((a, b) => a.t - b.t);
   const take = new Map(), loose = [];
   for (const x of files) {
@@ -105,7 +107,7 @@ async function collect(P, args) {
     if (loose.length !== waiting.length && !args.includes('--force')) die(`${loose.length} unnamed downloads in ${src} but ${waiting.length} saved frames (${waiting.map(i => i.frame).join(' ')}). Name the files by frame, or pass --force to pair them in order.`);
     waiting.forEach((i, k) => loose[k] && take.set(i.frame, loose[k]));
   }
-  if (!take.size) return console.log(`Nothing new in ${src} for ${saved.length} saved frames.`);
+  if (!take.size) { P.save(); return console.log(`Nothing new in ${src} for ${saved.length} saved frames.`); }
   fs.mkdirSync(staged(P), { recursive: true });
   P.queue.seen = [...seen];
   for (const [frame, x] of take) {
