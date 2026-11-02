@@ -18,6 +18,7 @@ export function buildPresenter(cfg, G, ref = G) {
     if (!ref[n]) continue;
     if (s.mode === 'patch') {
       if (fc.register === 'iris') off[n] = headOffsets(ref[P.base], ref[n], ref[P.registerMouth]);
+      else if (fc.register === 'shift') { const B = P.boxes, fit = (box, m) => shiftFit(ref[P.base], ref[n], [box[0] - m, box[1] - m, box[2] + m, box[3] + m]); off[n] = { eyeL: fit(B.EBL, 3), eyeR: fit(B.EBR, 3), mouth: fit(B.MB, 3) }; }
       else { const c = centres(n), c0 = centres(P.base), m = faceOf(n).mouthFit, m0 = faceOf(P.base).mouthFit; off[n] = { eyeL: [Math.round(c[0][0] - c0[0][0]), Math.round(c[0][1] - c0[0][1])], eyeR: [Math.round(c[1][0] - c0[1][0]), Math.round(c[1][1] - c0[1][1])], mouth: [Math.round(m.cx - m0.cx), Math.round(m.yc - m0.yc)] }; }
       if (s.nudge) { const o = off[n], a = s.nudge; off[n] = { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; }
     }
@@ -71,6 +72,19 @@ export function composePresenter(F, { head = 'b1', pose = 'b1', feet = 'b1', eye
     if (src.has(x, y)) X.set(x, y, src.get(x, y)); else X.d[X.idx(x, y) + 3] = 0;
   }
   return X;
+}
+
+/** The shift [dx, dy] that lays `head` over `base` inside `win` (grid cells): head(x + dx, y + dy) matches base(x, y), by mean luminance difference. For heads that are tilted or nodded a little, where the eye and mouth detectors are not steady. */
+function shiftFit(base, head, win, R = 9) {
+  const lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+  let best = [0, 0], bestE = Infinity;
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    let e = 0, n = 0;
+    for (let y = win[1]; y <= win[3]; y++) for (let x = win[0]; x <= win[2]; x++) { if (!base.has(x, y)) continue; n++; e += head.has(x + dx, y + dy) ? Math.abs(lum(base.get(x, y)) - lum(head.get(x + dx, y + dy))) : 255; }
+    e = n ? e / n + (Math.abs(dx) + Math.abs(dy)) * 0.05 : Infinity;
+    if (e < bestE) { bestE = e; best = [dx, dy]; }
+  }
+  return best;
 }
 
 /** Face of a head that has moved (nods and tilts shift it by several rows): eyes from a wide window, then the mouth window sits about 11 rows below the eyes, perpendicular to the line between them, so it follows a tilt. */
