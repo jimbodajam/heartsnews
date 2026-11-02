@@ -101,7 +101,7 @@ const gridOf = (P, img) => frameGrid(img, P.cfg.grid, P.cfg.bg);
 async function collect(P, args) {
   const src = downloads(P, args), saved = P.queue.items.filter(i => i.status === 'saved').sort((a, b) => a.savedAt.localeCompare(b.savedAt));
   if (!fs.existsSync(src)) die(`No folder ${src}. Pass --from <dir>`);
-  const seen = new Set(P.queue.seen || []), since = saved.length ? Date.parse(saved[0].savedAt) - 30 * 60000 : 0;
+  const seen = new Set(P.queue.seen || []), since = saved.length ? Date.parse(saved[0].savedAt) - 5 * 60000 : 0;
   const files = fs.readdirSync(src).filter(f => IMG.test(f)).map(f => ({ f, p: path.join(src, f), t: fs.statSync(path.join(src, f)).mtimeMs })).filter(x => x.t >= since && !seen.has(x.f + '@' + x.t)).sort((a, b) => a.t - b.t);
   const take = new Map(), loose = [];
   for (const x of files) {
