@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — seated Isla and Fraser test</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; font: 13px system-ui, sans-serif; color: #f2efe6; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 100vh * 16 / 9); aspect-ratio: 16 / 9; image-rendering: pixelated; }
+  #hud { position: fixed; left: 12px; top: 10px; line-height: 1.6; background: #0e0c10cc; padding: 6px 10px; border-radius: 4px; }
+  #hud b { color: #e0b13a; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+<div id="hud"></div>
+<script type="module">
+// Seated Isla and Fraser from the baked sheets (#78): every head, desk pose, mouth and the blink, at the grid they were made on. The desk is drawn first, so the hands sit in front of it.
+const { loadPresenter } = await import('./presenter-player.js');
+const GW = 480, GH = 270;
+const [ISLA, FRA] = await Promise.all([loadPresenter('../presenters/isla-seated'), loadPresenter('../presenters/fraser-seated')]);
+const HEADS = ISLA.heads, POSES = ISLA.poses, MOUTHS = ['rest', ...ISLA.mouths];
+const cv = document.getElementById('cv'); cv.width = GW; cv.height = GH;
+const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+const st = { head: 0, pose: 0, mouth: 0, auto: true, blink: 0, ms: 0 };
+const hud = document.getElementById('hud');
+const q = new URLSearchParams(location.search);
+if (q.has('head')) st.head = Math.max(0, HEADS.indexOf(q.get('head'))), st.auto = false;
+if (q.has('pose')) st.pose = Math.max(0, POSES.indexOf(q.get('pose'))), st.auto = false;
+if (q.has('mouth')) st.mouth = Math.max(0, MOUTHS.indexOf(q.get('mouth'))), st.auto = false;
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'h') st.head = (st.head + 1) % HEADS.length, st.auto = false;
+  else if (k === 'p') st.pose = (st.pose + 1) % POSES.length, st.auto = false;
+  else if (k === 'm') st.mouth = (st.mouth + 1) % MOUTHS.length, st.auto = false;
+  else if (k === 'b') st.blink = performance.now() + 160;
+  else if (k === 'a') st.auto = true;
+});
+const DESK_Y = 100 + 105;   // handsTop: the desk edge sits at the first hands row
+function tick(ms) {
+  if (st.auto) { const s = Math.floor(ms / 1200); st.head = s % HEADS.length; st.pose = Math.floor(s / 2) % POSES.length; st.mouth = Math.floor(ms / 220) % MOUTHS.length; }
+  const blinking = ms < st.blink || (ms % 3600) > 3480;
+  g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH);
+  g.fillStyle = '#6d1a2a'; g.fillRect(0, 0, GW, DESK_Y - 4);
+  g.fillStyle = '#8a8d99'; g.fillRect(0, DESK_Y, GW, GH - DESK_Y); g.fillStyle = '#4a4d59'; g.fillRect(0, DESK_Y, GW, 1);
+  const o = { head: HEADS[st.head], pose: POSES[st.pose], eye: blinking ? 'blink' : 'open', mouth: MOUTHS[st.mouth] };
+  g.drawImage(FRA.frame(o), -10, 100); g.drawImage(ISLA.frame(o), 250, 100);
+  hud.innerHTML = `<b>head</b> ${o.head} (H) &nbsp; <b>pose</b> ${o.pose} (P) &nbsp; <b>mouth</b> ${o.mouth} (M) &nbsp; blink (B) &nbsp; auto (A)${st.auto ? ' — on' : ''}<br>URL: ?head=h3&amp;pose=d2&amp;mouth=O`;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
