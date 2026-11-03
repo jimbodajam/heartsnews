@@ -13,6 +13,8 @@ import { SdRenderer } from './render/sd';
 const params = new URLSearchParams(location.search);
 const BULLETIN_URL = params.get('bulletin') ?? 'bulletins/latest.json';
 let START_SEGMENT = params.get('segment') ?? undefined;
+// In dev, ?hd=1 plays in the HD renderer (#83), loaded on demand so SD viewers never download it.
+const HD = import.meta.env.DEV && params.get('hd') === '1';
 // In dev, ?scene=pitchside opens on a demo of our reporter at the ground (see pitchside-preview.ts).
 const PITCHSIDE = import.meta.env.DEV && params.get('scene') === 'pitchside';
 // ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`, or
@@ -42,23 +44,23 @@ async function fetchBulletin(): Promise<Bulletin> {
 }
 
 async function boot(): Promise<void> {
-  // The renderer puts its own canvas (#tv) in the screen.
+  // The renderer puts its own elements in the screen (the SD one its canvas, #tv).
   const screen = document.querySelector<HTMLElement>('#screen')!;
-  const sd = new SdRenderer();
-  sd.mount(screen);
+  const renderer = HD ? new (await import('./hd/renderer')).HdRenderer() : new SdRenderer();
+  renderer.mount(screen);
 
   let bulletin: Bulletin;
   try {
     bulletin = await fetchBulletin();
   } catch (err) {
     console.error(err);
-    sd.offAir();
+    renderer.offAir();
     return;
   }
 
   const voices = new Voices();
   // Between loops, pick up a newer bulletin if one has been published; keep the old one if that fails.
-  const player = new Player(screen, sd, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
+  const player = new Player(screen, renderer, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
     fetchBulletin().catch(() => undefined),
   );
 
@@ -140,7 +142,7 @@ async function boot(): Promise<void> {
         break;
     }
   });
-  sd.focus();
+  renderer.focus();
 }
 
 void boot();
