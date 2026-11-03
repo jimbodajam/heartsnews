@@ -1,11 +1,16 @@
 import type { Presenter } from '../../../shared/bulletin';
+import { type MouthCues, type MouthShape, parseMouthCues, shapeAt } from '../../../shared/mouth';
 import { audioContext } from './sting';
+
+export { type MouthShape, withoutPress } from '../../../shared/mouth';
 
 /** A line being spoken. The player reads level() for lip sync and progress() for captions. */
 export interface Speaking {
   done: Promise<void>;
   /** Mouth openness 0..1 at time `now` (performance.now ms). */
   level(now: number): number;
+  /** The timed mouth shape at `now`, from the clip's Rhubarb cues. Undefined when there are none (browser speech, no file, silent lines): use level() then. */
+  shape(now: number): MouthShape | undefined;
   /** Fraction of the text spoken so far. */
   progress(now: number): number;
   cancel(): void;
@@ -32,6 +37,7 @@ export class Voices {
   private voices: SpeechSynthesisVoice[] = [];
   private assigned = new Map<string, SpeechSynthesisVoice | undefined>();
   private clips = new Map<string, Promise<AudioBuffer>>();
+  private cues = new Map<string, Promise<MouthCues | undefined>>();
   private master?: GainNode;
   private isMuted = false;
 
@@ -57,6 +63,14 @@ export class Voices {
         .then((b) => audioContext().decodeAudioData(b));
       clip.catch(() => this.clips.delete(url));
       this.clips.set(url, clip);
+      // The cue file sits beside the clip (same rule as the pipeline's mouthFile). Missing or bad is fine: no cues.
+      this.cues.set(
+        url,
+        fetch(url.replace(/\.\w+(?=[?#]|$)/, '.mouth.json'))
+          .then((r) => (r.ok ? r.json() : undefined))
+          .then(parseMouthCues)
+          .catch(() => undefined),
+      );
     }
     return clip;
   }
@@ -108,6 +122,8 @@ export class Voices {
     let source: AudioBufferSourceNode | undefined;
     let fallback: Speaking | undefined;
     let startedAt = 0;
+    let startedCtx = 0;
+    let cues: MouthCues | undefined;
     let durationMs = 1;
     let ended = false;
     let cancelled = false;
@@ -123,11 +139,14 @@ export class Voices {
         return fallback.done;
       }
       if (cancelled) return;
+      cues = await this.cues.get(url);
+      if (cancelled) return;
       source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(analyser).connect(master);
       durationMs = buffer.duration * 1000;
       startedAt = performance.now();
+      startedCtx = ctx.currentTime;
       const src = source;
       await new Promise<void>((res) => {
         src.onended = () => res();
@@ -147,6 +166,11 @@ export class Voices {
         for (const s of samples) sum += s * s;
         const rms = Math.sqrt(sum / samples.length);
         return Math.min(1, Math.max(0, (rms - 0.012) * 7));
+      },
+      shape: (now) => {
+        if (fallback) return fallback.shape(now);
+        if (!cues || !source || ended) return undefined;
+        return shapeAt(cues, ctx.currentTime - startedCtx);
       },
       progress: (now) => {
         if (fallback) return fallback.progress(now);
@@ -218,6 +242,7 @@ export class Voices {
         const recent = lastBoundary === 0 || now - lastBoundary < 300;
         return flap(now) * (recent ? 1 : 0.35);
       },
+      shape: () => undefined,
       progress: (now) => (ended ? 1 : Math.max(charIndex / text.length, Math.min(0.98, (now - start) / est))),
       cancel: () => {
         synth.cancel();
@@ -242,6 +267,7 @@ export class Voices {
     return {
       done,
       level: (now) => (ended ? 0 : flap(now)),
+      shape: () => undefined,
       progress: (now) => Math.min(1, (now - start) / est),
       cancel: () => finish(),
     };
