@@ -28,12 +28,13 @@
     <label>Tilt <input id="deg" type="range" min="-25" max="25" step="0.5" value="8"> <output id="degv"></output></label>
     <label><input id="rs" type="checkbox" checked> RotSprite-style (clean down-sampling)</label>
     <label><input id="cyc" type="checkbox" checked> cycle mouths and blinks</label>
-    <label>Neck pivot x <input id="px" type="number" value="117" style="width:4em"> y <input id="py" type="number" value="46" style="width:4em"></label>
-    <label>Cut the head at row <input id="cut" type="number" value="47" style="width:4em"></label>
+    <label>Neck pivot x <input id="px" type="number" value="117" style="width:4em"> y <input id="py" type="number" value="52" style="width:4em"></label>
+    <label>Cut the head at row <input id="cut" type="number" value="53" style="width:4em"></label>
+    <label>Head half-width <input id="hw" type="number" value="26" style="width:4em"></label>
     <span id="state" class="note"></span>
   </div>
   <div class="row" id="views"></div>
-  <p class="note">Left: tilted head. Right: the same frame with no tilt, to compare against. Only the rows above the cut row (the neck, just above the collar) are rotated, so the jacket stays put; the pivot is where the neck meets the collar. Plain mode just rotates the pixels, RotSprite-style scales up 8x first and picks the most common colour in each cell on the way back.</p>
+  <p class="note">Left: tilted head. Right: the same frame with no tilt, to compare against. Only the rows above the cut row (the dashed line on the right, level with the chin) are rotated, so the neck, collar and jacket stay put (and only this many cells either side of the pivot, so the shoulders don't move); the pivot is just under the chin. Plain mode just rotates the pixels, RotSprite-style scales up 8x first and picks the most common colour in each cell on the way back.</p>
 </div>
 <script type="module">
 // Prototype for #78: instead of generating own mouths for the tilted heads (h5, h6), rotate the master head with each mouth and blink composed on it, about the neck.
@@ -57,7 +58,9 @@ const scratch = (w, h) => { const c = document.createElement('canvas'); c.width 
 /** The head rows of a composed frame, rotated `deg` about (px, py) in grid cells. */
 function rotateHead(P, frame, deg, px, py, rotsprite) {
   const cut = +$('cut').value, W = X1 - X0;
-  const src = scratch(W, cut); src.getContext('2d').drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+  const src = scratch(W, cut), sg = src.getContext('2d'), hw = +$('hw').value; sg.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+  // only the head: columns beside it (the shoulders slope up past the cut row there) stay out of the rotation
+  sg.clearRect(0, 0, Math.max(0, px - X0 - hw), cut); sg.clearRect(px - X0 + hw + 1, 0, W, cut);
   if (!deg) return src;
   const th = deg * Math.PI / 180, cx = px - X0, cy = py;
   if (!rotsprite) {
@@ -83,7 +86,7 @@ function rotateHead(P, frame, deg, px, py, rotsprite) {
 function draw(v, mouth, eye, deg) {
   const { P, cv, ref } = v, cut = +$('cut').value, W = X1 - X0;
   const frame = P.frame({ head: 'b1', mouth, eye });
-  const key = [mouth, eye, deg, $('px').value, $('py').value, cut, $('rs').checked].join('|');
+  const key = [mouth, eye, deg, $('px').value, $('py').value, cut, $('hw').value, $('rs').checked].join('|');
   let head = v.cache.get(key); if (!head) { head = rotateHead(P, frame, deg, +$('px').value, +$('py').value, $('rs').checked); if (v.cache.size > 400) v.cache.clear(); v.cache.set(key, head); }
   for (const [c, h, tilted] of [[cv, head, true], [ref, null, false]]) {
     const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0);
@@ -92,8 +95,14 @@ function draw(v, mouth, eye, deg) {
     g.save(); g.scale(SC, SC);
     // body first from the frame below the cut, then the head over it
     g.drawImage(frame, X0, cut, W, Y1 - cut, 0, cut, W, Y1 - cut);
-    if (tilted) g.drawImage(h, 0, 0); else g.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+    if (tilted) {
+      const hx0 = +$('px').value - X0 - +$('hw').value, hx1 = +$('px').value - X0 + +$('hw').value + 1;
+      if (hx0 > 0) g.drawImage(frame, X0, 0, hx0, cut, 0, 0, hx0, cut);
+      if (hx1 < W) g.drawImage(frame, X0 + hx1, 0, W - hx1, cut, hx1, 0, W - hx1, cut);
+      g.drawImage(h, 0, 0);
+    } else g.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
     g.restore();
+    if (!tilted) { g.strokeStyle = '#e0b13a'; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(0, cut * SC); g.lineTo(c.width, cut * SC); g.stroke(); g.setLineDash([]); }
     if (tilted) { g.strokeStyle = '#e0b13a'; g.lineWidth = 1; g.beginPath(); const x = ($('px').value - X0) * SC, y = $('py').value * SC; g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.stroke(); }
   }
   v.cap.textContent = `${v.name}: ${mouth}, ${eye}${eye === 'blink' ? ' (blink)' : ''}`;
