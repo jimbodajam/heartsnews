@@ -7,12 +7,22 @@
    "attach": "art/presenters/ross/queue/crops/b1.png",
    "crop": true,
    "save": "v2.jpg",
-   "status": "pending",
-   "attempts": 2,
+   "status": "approved",
+   "attempts": 3,
    "reasons": [
     "run failed: download lost to a connection error; no file in Downloads",
     "2026-11-03: no download, back on the queue"
-   ]
+   ],
+   "savedAt": "2026-11-03T21:27:05.691Z",
+   "staged": "art/presenters/ross/queue/staged/v2.jpg",
+   "stats": {
+    "changed": 19,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.6
+    }
+   }
   },
   {
    "frame": "h1v1",
@@ -20,9 +30,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:28:40.874Z",
+   "staged": "art/presenters/ross/queue/staged/h1v1.jpg",
+   "stats": {
+    "changed": 12,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.4
+    }
+   }
   },
   {
    "frame": "h1v2",
@@ -30,9 +52,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:30:03.342Z",
+   "staged": "art/presenters/ross/queue/staged/h1v2.jpg",
+   "stats": {
+    "changed": 31,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.3
+    }
+   }
   },
   {
    "frame": "h1v3",
@@ -40,9 +74,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:31:25.539Z",
+   "staged": "art/presenters/ross/queue/staged/h1v3.jpg",
+   "stats": {
+    "changed": 26,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.3
+    }
+   }
   },
   {
    "frame": "h1v4",
@@ -50,9 +96,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:32:53.325Z",
+   "staged": "art/presenters/ross/queue/staged/h1v4.jpg",
+   "stats": {
+    "changed": 21,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h1v5",
@@ -60,9 +118,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:34:16.018Z",
+   "staged": "art/presenters/ross/queue/staged/h1v5.jpg",
+   "stats": {
+    "changed": 69,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h1v6",
@@ -70,9 +140,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:35:47.774Z",
+   "staged": "art/presenters/ross/queue/staged/h1v6.jpg",
+   "stats": {
+    "changed": 10,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.2
+    }
+   }
   },
   {
    "frame": "h1v7",
@@ -80,9 +162,21 @@
    "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:37:12.877Z",
+   "staged": "art/presenters/ross/queue/staged/h1v7.jpg",
+   "stats": {
+    "changed": 46,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h2v1",
@@ -90,9 +184,21 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:38:43.071Z",
+   "staged": "art/presenters/ross/queue/staged/h2v1.jpg",
+   "stats": {
+    "changed": 9,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.2
+    }
+   }
   },
   {
    "frame": "h2v2",
@@ -100,9 +206,21 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:40:13.306Z",
+   "staged": "art/presenters/ross/queue/staged/h2v2.jpg",
+   "stats": {
+    "changed": 23,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.2
+    }
+   }
   },
   {
    "frame": "h2v3",
@@ -110,9 +228,21 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:41:36.968Z",
+   "staged": "art/presenters/ross/queue/staged/h2v3.jpg",
+   "stats": {
+    "changed": 13,
+    "outside": 0,
+    "fit": {
+     "scale": 1.002,
+     "err": 6.3
+    }
+   }
   },
   {
    "frame": "h2v4",
@@ -120,9 +250,21 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:43:06.841Z",
+   "staged": "art/presenters/ross/queue/staged/h2v4.jpg",
+   "stats": {
+    "changed": 23,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 6.2
+    }
+   }
   },
   {
    "frame": "h2v5",
@@ -130,9 +272,21 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:44:30.440Z",
+   "staged": "art/presenters/ross/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 40,
+    "outside": 0,
+    "fit": {
+     "scale": 1.002,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -140,9 +294,22 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area",
+    "2026-11-03: nothing changed inside its area (recheck)"
+   ],
+   "savedAt": "2026-11-03T21:45:53.544Z",
+   "staged": "art/presenters/ross/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 2,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 6.4
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -150,13 +317,25 @@
    "attach": "art/presenters/ross/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:47:15.727Z",
+   "staged": "art/presenters/ross/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 36,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 6.2
+    }
+   }
   }
  ],
- "updated": "2026-11-03T20:52:35.448Z",
- "downloads": "/mnt/c/Users/jimbo/AppData/Local/Temp/claude/C--Users-jimbo-Documents-code-heartsnews/ad3cdfa3-4b37-452a-bdef-c3a13312cf01/scratchpad/dl-ross3",
+ "updated": "2026-11-03T22:10:31.700Z",
+ "downloads": "/mnt/d/Downloads/ross-r2/ross",
  "seen": [
   "h1.jpg@1793738762921.8916",
   "h2.jpg@1793738763016.3945",
@@ -178,6 +357,21 @@
   "b8.jpg@1793738764526.892",
   "f1.jpg@1793738764625.8918",
   "f2.jpg@1793738764723.391",
-  "f3.jpg@1793738764814.393"
+  "f3.jpg@1793738764814.393",
+  "v2.jpg@1793741199823.8916",
+  "h1v1.jpg@1793741297100.8916",
+  "h1v2.jpg@1793741381353.8923",
+  "h1v3.jpg@1793741462055.8918",
+  "h1v4.jpg@1793741549867.3928",
+  "h1v5.jpg@1793741633805.8904",
+  "h1v6.jpg@1793741721413.3918",
+  "h1v7.jpg@1793741808346.891",
+  "h2v1.jpg@1793741897942.3926",
+  "h2v2.jpg@1793741988907.892",
+  "h2v3.jpg@1793742074046.3916",
+  "h2v4.jpg@1793742161548.8916",
+  "h2v5.jpg@1793742247412.3938",
+  "h2v6.jpg@1793742330011.892",
+  "h2v7.jpg@1793742411828.3914"
  ]
 }

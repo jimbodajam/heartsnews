@@ -10,7 +10,11 @@
    "attempts": 1,
    "reasons": [],
    "savedAt": "2026-11-03T20:11:59.617Z",
-   "staged": "art/presenters/ross-seated/queue/staged/h5.jpg"
+   "staged": "art/presenters/ross-seated/queue/staged/h5.jpg",
+   "stats": {
+    "changed": 945,
+    "outside": 0
+   }
   },
   {
    "frame": "h6",
@@ -21,7 +25,11 @@
    "attempts": 1,
    "reasons": [],
    "savedAt": "2026-11-03T20:14:00.242Z",
-   "staged": "art/presenters/ross-seated/queue/staged/h6.jpg"
+   "staged": "art/presenters/ross-seated/queue/staged/h6.jpg",
+   "stats": {
+    "changed": 1431,
+    "outside": 0
+   }
   },
   {
    "frame": "h1v1",
@@ -29,9 +37,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:48:44.003Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v1.jpg",
+   "stats": {
+    "changed": 20,
+    "outside": 0,
+    "fit": {
+     "scale": 0.99,
+     "err": 5.4
+    }
+   }
   },
   {
    "frame": "h1v2",
@@ -39,9 +59,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:49:52.347Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v2.jpg",
+   "stats": {
+    "changed": 24,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.5
+    }
+   }
   },
   {
    "frame": "h1v3",
@@ -49,9 +81,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:51:07.438Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v3.jpg",
+   "stats": {
+    "changed": 31,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "h1v4",
@@ -59,9 +103,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:52:32.209Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v4.jpg",
+   "stats": {
+    "changed": 29,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "h1v5",
@@ -69,9 +125,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:53:56.859Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v5.jpg",
+   "stats": {
+    "changed": 61,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.9
+    }
+   }
   },
   {
    "frame": "h1v6",
@@ -79,9 +147,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:55:26.379Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v6.jpg",
+   "stats": {
+    "changed": 5,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.5
+    }
+   }
   },
   {
    "frame": "h1v7",
@@ -89,9 +169,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:56:51.289Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h1v7.jpg",
+   "stats": {
+    "changed": 48,
+    "outside": 0,
+    "fit": {
+     "scale": 0.99,
+     "err": 5
+    }
+   }
   },
   {
    "frame": "h2v1",
@@ -99,9 +191,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:58:22.750Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v1.jpg",
+   "stats": {
+    "changed": 20,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5
+    }
+   }
   },
   {
    "frame": "h2v2",
@@ -109,9 +213,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T21:59:43.812Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v2.jpg",
+   "stats": {
+    "changed": 27,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5.1
+    }
+   }
   },
   {
    "frame": "h2v3",
@@ -119,9 +235,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T22:01:07.167Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v3.jpg",
+   "stats": {
+    "changed": 53,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.7
+    }
+   }
   },
   {
    "frame": "h2v4",
@@ -129,9 +257,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T22:02:32.023Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v4.jpg",
+   "stats": {
+    "changed": 32,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.7
+    }
+   }
   },
   {
    "frame": "h2v5",
@@ -139,9 +279,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T22:03:57.428Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 45,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 5
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -149,9 +301,21 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T22:05:20.352Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 10,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.9
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -159,13 +323,25 @@
    "attach": "art/presenters/ross-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-03: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-03T22:06:41.793Z",
+   "staged": "art/presenters/ross-seated/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 65,
+    "outside": 0,
+    "fit": {
+     "scale": 0.994,
+     "err": 4.9
+    }
+   }
   }
  ],
- "updated": "2026-11-03T20:52:43.096Z",
- "downloads": "/mnt/c/Users/jimbo/AppData/Local/Temp/claude/C--Users-jimbo-Documents-code-heartsnews/ad3cdfa3-4b37-452a-bdef-c3a13312cf01/scratchpad/dl-ross-seated",
+ "updated": "2026-11-03T22:10:36.788Z",
+ "downloads": "/mnt/d/Downloads/ross-r2/ross-seated",
  "seen": [
   "h1.jpg@1793738538202.3906",
   "h2.jpg@1793738538677.8916",
@@ -184,6 +360,20 @@
   "d2.jpg@1793738544257.891",
   "d3.jpg@1793738544720.3909",
   "d4.jpg@1793738545138.891",
-  "d5.jpg@1793738545573.3909"
+  "d5.jpg@1793738545573.3909",
+  "h1v1.jpg@1793742503544.8906",
+  "h1v2.jpg@1793742572464.8906",
+  "h1v3.jpg@1793742644659.3923",
+  "h1v4.jpg@1793742728625.3901",
+  "h1v5.jpg@1793742813930.8923",
+  "h1v6.jpg@1793742901080.3933",
+  "h1v7.jpg@1793742987386.392",
+  "h2v1.jpg@1793743079610.8904",
+  "h2v2.jpg@1793743160579.8906",
+  "h2v3.jpg@1793743243898.3916",
+  "h2v4.jpg@1793743329848.392",
+  "h2v5.jpg@1793743413105.3926",
+  "h2v6.jpg@1793743498606.3918",
+  "h2v7.jpg@1793743579717.3916"
  ]
 }
