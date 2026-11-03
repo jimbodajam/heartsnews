@@ -1,0 +1,115 @@
+/*
+ * HD full-screen moments (#86): splash, ident, Marshall's card, segment sting, breaking flash. Sized in em with 1em = frame
+ * width / 100 (the frame sets it), so the frame is 100em by 56.25em. Same colours and stepped motion as the furniture.
+ */
+.hdm {
+  --gold: #e0b13a;
+  --gold-light: #f6dc8a;
+  --card-gold: #c8932a;
+  --card-gold-light: #dcaa40;
+  --maroon: #6d1a2a;
+  --maroon-dark: #4a0f1b;
+  --maroon-deep: #3d0d17;
+  --maroon-light: #9b2d40;
+  --ink: #3d0d17;
+  --cream: #f2efe6;
+  --light: #c9c4e0;
+  --edge: #0e0c10;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 1em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.hdm .scr { position: absolute; inset: 0; overflow: hidden; }
+.hdm [hidden] { display: none !important; }
+.hdm .px { box-shadow: 0 -.2em 0 0 var(--edge), 0 .2em 0 0 var(--edge); }
+.hdm .heart { display: block; }
+
+/* The maroon of the SD ident: bands of dark, mid and light, in hard steps. */
+.hdm .maroon {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, .09) 0 .2em, transparent .2em .4em),
+    linear-gradient(180deg,
+      var(--maroon-deep) 0 12%, var(--maroon-dark) 12% 24%, var(--maroon) 24% 38%, var(--maroon-light) 38% 50%,
+      var(--maroon) 50% 62%, var(--maroon-dark) 62% 76%, var(--maroon-deep) 76% 100%);
+}
+
+/* The channel name: white, with the gold number. The ghost holds the place of what is still to be typed. */
+.hdm .name { position: absolute; left: 0; right: 0; text-align: center; white-space: pre; line-height: 1.2; }
+.hdm .name.big { font-size: 6.2em; top: 5em; text-shadow: .1em .1em 0 var(--maroon-deep); }
+.hdm .name .ghost { visibility: hidden; }
+.hdm .name .n { color: var(--gold); }
+
+/* Splash */
+.hdm .splash .heart { position: absolute; left: 50%; top: 5em; width: 14.4em; margin-left: -7.2em; }
+.hdm .splash .name.big { top: 3.87em; }
+.hdm .status { position: absolute; left: 0; right: 0; top: 10.3em; text-align: center; font-size: 3.4em; line-height: 1.2; }
+.hdm .keys { position: absolute; left: 0; right: 0; bottom: 4.4em; text-align: center; font-size: 1.25em; line-height: 2; color: var(--light); white-space: pre; }
+.hdm .heart.gold { color: var(--gold); }
+.hdm .heart.dark { color: var(--maroon-deep); }
+
+/* Ident: the heart is scaled from its middle so it pops in place. */
+.hdm .ident .heart { position: absolute; left: 50%; top: 19.4em; width: 17.5em; transform: translate(-50%, -50%); }
+.hdm .ident .name.big { top: 4.92em; }
+.hdm .tagline { position: absolute; left: 0; right: 0; top: 21.6em; text-align: center; font-size: 1.9em; line-height: 1.2; color: var(--light); visibility: hidden; }
+.hdm .fade { position: absolute; inset: 0; background: #000; opacity: 0; }
+
+/* Marshall's Chunky Chicken: the painted logo on its own deep red, rays turning behind it. */
+.hdm .sponsor { background: #8c0e0f; }
+.hdm.nologo .sponsor { background: #c8281e; }
+.hdm .rays {
+  position: absolute; left: 50%; top: 21.9em; width: 240em; height: 240em; will-change: transform;
+  transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(#9e1819 0 15deg, transparent 15deg 30deg);
+}
+.hdm.nologo .rays { background: repeating-conic-gradient(#d9473a 0 15deg, transparent 15deg 30deg); opacity: .5; }
+.hdm .bar { position: absolute; left: 0; right: 0; top: 0; height: 5em; background: #8c1a14; border-bottom: .3em solid #f6d630; display: grid; place-items: center; color: #f6d630; }
+.hdm .bar span { display: block; font-size: 1.9em; padding-top: .1em; }
+.hdm .logobox { position: absolute; left: 50%; top: 7.5em; width: 40em; height: 40em; transform: translate(-50%, 0); }
+.hdm .logo { display: block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(0 .8em 0 rgba(0, 0, 0, .25)); }
+.hdm .fallback { display: none; position: absolute; inset: 0; text-align: center; padding-top: 12em; }
+.hdm.nologo .fallback { display: block; }
+.hdm.nologo .logo { display: none; }
+.hdm .fallback .one { font-size: 5.6em; color: #f6d630; text-shadow: .1em .1em 0 #8c1a14; line-height: 1.2; }
+.hdm .fallback .two { font-size: 3.2em; margin-top: .6em; color: var(--cream); line-height: 1.2; }
+.hdm .champ { position: absolute; left: 0; right: 0; top: 22.55em; text-align: center; font-size: 2.2em; color: #f6d630; text-shadow: .1em .1em 0 #8c1a14; visibility: hidden; }
+
+/* Segment sting: a maroon band with gold rules sweeps over the picture. */
+.hdm .scrim { position: absolute; inset: 0; background: #120f22; opacity: 0; }
+.hdm .band {
+  position: absolute; left: 0; right: 0; top: 18.4em; height: 19.2em; will-change: transform;
+  background: linear-gradient(180deg, var(--maroon-dark) 0 15%, var(--maroon) 15% 50%, var(--maroon-dark) 50% 100%);
+  border-top: .6em solid var(--gold);
+  border-bottom: .6em solid var(--gold);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6em;
+  text-align: center;
+}
+.hdm .label { color: var(--gold); font-size: 1.9em; line-height: 1.2; }
+.hdm .title { color: var(--cream); line-height: 1.3; max-width: 92%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-shadow: .1em .1em 0 var(--maroon-deep); }
+
+/* Breaking flash: maroon card, the word big on the left, the gold diagonal panel and beating heart on the right. */
+.hdm .breaking .card { position: absolute; inset: 0; overflow: hidden; background: var(--maroon); }
+.hdm .shake { position: absolute; inset: 0; }
+.hdm .panel { position: absolute; inset: 0; }
+.hdm .panel > div { position: absolute; inset: 0; }
+.hdm .panel .edge { background: #fff; clip-path: polygon(84.75% 0, 110% 0, 110% 100%, 60.75% 100%); }
+.hdm .panel .gold { background: var(--card-gold); clip-path: polygon(86% 0, 110% 0, 110% 100%, 62% 100%); }
+.hdm .panel .shine { background: var(--card-gold-light); clip-path: polygon(91% 0, 93.2% 0, 69.2% 100%, 67% 100%); }
+.hdm .panel .hbox { position: absolute; inset: auto; left: 89%; top: 45.6%; width: 0; height: 0; }
+.hdm .hbox .heart { position: absolute; width: 10.9em; left: -5.45em; top: -4.7em; transform-origin: 50% 50%; transform: scale(.833); }
+.hdm .hbox.big .heart { transform: scale(1); }
+.hdm .word { position: absolute; left: 3.75%; top: 50%; transform: translateY(-50%); line-height: 1.15; white-space: pre; }
+.hdm .word .ln { color: #fff; text-shadow: .09em .09em 0 var(--maroon-deep); min-height: 1.15em; }
+.hdm .strip {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 7em; background: var(--maroon-deep); border-top: .3em solid var(--gold);
+  display: flex; align-items: center; gap: 1.5em; padding: 0 3.6em; line-height: 1;
+}
+.hdm .heart.tiny { width: 2.4em; }
+.hdm .strip span { padding-top: .15em; font-size: 1.5em; }
+.hdm .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.hdm .wipe-edge { position: absolute; top: 0; bottom: 0; width: 1em; background: #fff; opacity: 0; }

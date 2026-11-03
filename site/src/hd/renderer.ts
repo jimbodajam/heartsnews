@@ -4,6 +4,7 @@ import type { Graphic, Segment } from '../../../shared/bulletin';
 import { COLUMN_SHIFT, SideColumn } from './column';
 import { ASIDE, canSeat, drawDeskScene, drawStudioBackdrop, loadSeatedCast, type SeatedCast } from './desk';
 import { GraphicBox, isNative } from './graphics';
+import { HdMoments } from './moments';
 import { loadSet, type StudioSet } from './set';
 
 /** The HD art, once it has loaded. */
@@ -12,9 +13,10 @@ type Art = Readonly<{ set: StudioSet; cast: SeatedCast }>;
 /**
  * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
  * SD panel) or the side column. `hd-full`: a full-screen HD graphic over the dimmed studio (#87). `sd-scene`: the SD scene
- * without its bars (or an ad break's advert), under the HD furniture. `sd-frame`: the whole SD frame, bars and all.
+ * without its bars (or an ad break's advert), under the HD furniture. `moment`: no picture, for the full-screen moments
+ * (splash, ident, sponsor card: #86) that cover the frame, and a sting or break-in with nothing yet under it.
  */
-export type View = 'hd' | 'hd-full' | 'sd-scene' | 'sd-frame';
+export type View = 'hd' | 'hd-full' | 'sd-scene' | 'moment';
 
 /** The team sheet's cards: on the videowall, HD shows them full screen (teamNewsCard). */
 const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
@@ -35,14 +37,15 @@ export function teamNewsCard(s: FrameState): Graphic | undefined {
 const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
 
 /**
- * Which view this frame gets (#85, #87). The whole SD frame for anything but a show frame (splash, ident, sponsor, sting,
- * breaking flash) until #86. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
+ * Which view this frame gets (#85, #87, #86). `moment` for the moments that cover the frame (splash, ident, sponsor), and
+ * when there's no segment yet. The sting and the break-in flash play over the picture the segment would have had in a
+ * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
  * touchscreen, pitchside, museum, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
  * desk with someone who has no HD art (Ross in the debate), and anything until the art has loaded. `hd-full` for a
  * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). Otherwise HD.
  */
 export function chooseView(s: FrameState, art: Art | undefined): View {
-  if (s.mode !== 'show' || !s.seg) return 'sd-frame';
+  if (HdMoments.covers(s.mode) || !s.seg) return 'moment';
   if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
   if (teamNewsCard(s)) return 'hd-full';
   if (s.seg.scene !== 'desk') return 'sd-scene';
@@ -92,6 +95,8 @@ export class HdRenderer implements Renderer {
   private gfxResize?: ResizeObserver;
   private box?: GraphicBox;
   private column?: SideColumn;
+  /** The full-screen moments (#86), above everything else in the frame. */
+  private moments?: HdMoments;
   /** The S key's choice, kept over a remount. */
   private columnOn = true;
   private sdPanel = false;
@@ -138,8 +143,9 @@ export class HdRenderer implements Renderer {
     });
     this.gfxResize.observe(gfx);
     for (const l of this.layers) this.mountLayer(l);
+    this.moments = new HdMoments(frame);
     this.shown = undefined;
-    this.show('sd-frame');
+    this.show('moment');
 
     this.loading ??= this.load();
   }
@@ -152,10 +158,11 @@ export class HdRenderer implements Renderer {
     }
     this.sd.unmount();
     this.gfxResize?.disconnect();
+    this.moments?.remove();
     this.frame?.remove();
     this.style?.remove();
     this.frame = this.canvas = this.sdBox = this.g = this.style = this.shown = undefined;
-    this.gfxRoot = this.gfxResize = this.box = this.column = undefined;
+    this.gfxRoot = this.gfxResize = this.box = this.column = this.moments = undefined;
     this.transform = this.camKey = '';
     this.sdPanel = this.withColumn = false;
   }
@@ -180,8 +187,8 @@ export class HdRenderer implements Renderer {
 
   /** The bulletin couldn't be loaded: there's no programme to draw. */
   offAir(): void {
-    this.show('sd-frame');
-    this.sd.offAir();
+    this.show('moment');
+    this.moments?.offAir();
   }
 
   draw(s: FrameState, now: number): void {
@@ -197,12 +204,11 @@ export class HdRenderer implements Renderer {
     const cut = camKey !== this.camKey;
     this.camKey = camKey;
 
-    if (view === 'sd-frame' || view === 'sd-scene') {
+    if (view === 'moment' || view === 'sd-scene') {
       this.box!.clear();
       this.column!.hide(now);
       this.setColumnClass(false);
-      if (view === 'sd-frame') return this.sd.draw(s, now);
-      this.sd.drawSceneOnly(s, now);
+      if (view === 'sd-scene') this.sd.drawSceneOnly(s, now);
     } else if (view === 'hd-full') {
       this.column!.hide(now);
       this.setColumnClass(false);
@@ -225,6 +231,7 @@ export class HdRenderer implements Renderer {
       if (sdPanel) this.sd.drawPanelOnly(s, now);
     }
     for (const l of this.layers) l.layer.draw(s, now);
+    this.moments!.draw(s, now);
   }
 
   /** Load the HD art (once; mount does too) and say whether it's there. The toggle (#65) stays on SD when it isn't, and a retry loads again. */
@@ -248,7 +255,7 @@ export class HdRenderer implements Renderer {
   private mountLayer(l: { layer: Renderer; box?: HTMLDivElement }): void {
     const box = document.createElement('div');
     box.className = 'hd-layer';
-    box.hidden = !this.shown || this.shown.view === 'sd-frame';
+    box.hidden = !this.shown || this.shown.view === 'moment';
     this.frame!.append(box);
     l.layer.mount(box);
     l.box = box;
@@ -271,8 +278,8 @@ export class HdRenderer implements Renderer {
     if (this.canvas) this.canvas.hidden = !hd;
     if (this.sdBox) this.sdBox.hidden = hd;
     this.sdPanel = false;
-    if (this.gfxRoot) this.gfxRoot.hidden = view === 'sd-frame';
-    for (const l of this.layers) if (l.box) l.box.hidden = view === 'sd-frame';
+    if (this.gfxRoot) this.gfxRoot.hidden = view === 'moment';
+    for (const l of this.layers) if (l.box) l.box.hidden = view === 'moment';
     if (this.shown) this.shown.view = view;
   }
 }

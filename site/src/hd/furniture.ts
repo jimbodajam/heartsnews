@@ -158,7 +158,9 @@ export class HdFurniture implements Renderer {
     const root = this.root;
     if (!root) return;
     const seg = s.seg;
-    const off = s.mode !== 'show' || !seg;
+    // Up under the sting and the break-in flash, which play over the bars as SD's do (#86); the splash, ident and sponsor
+    // card cover the frame.
+    const off = s.mode === 'splash' || s.mode === 'ident' || s.mode === 'sponsor' || !seg;
     const ad = seg?.kind === 'adverts';
     this.flag(root, 'off', 'off', off);
     if (off) {
