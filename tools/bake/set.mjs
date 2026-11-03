@@ -98,10 +98,12 @@ const [bgImg, deskImg, propImg] = await Promise.all([read('site/public/spike/stu
 const backdrop = backdropFromGrid(bgImg);
 await png(backdrop, path.join(OUT, 'backdrop.png'));
 
-// On This Day's two scenes (#88): art/Museum, each a 240-block pixel picture (block 5.733 and 4.267 source px: width / 240), phases found by the edge energy at block boundaries.
+// On This Day's two scenes (#88): art/Museum, regenerated from the photos in art/Museum/photos. Mostly a 240-block grid (5.733 source px) with
+// finer detail (the sign, panel headings) drawn in between, so they are sampled at 480 (2.867 px, half a block): the 240 blocks stay exact
+// 2x2 and the finer parts keep their detail. Phases from the edge energy at the 240-block boundaries.
 const MUSEUM = {
-  front: { src: 'art/Museum/Gemini_Generated_Image_n2i954n2i954n2i9.jpg', file: 'museum-front.png', block: 1376 / 240, ox: 4.75, oy: 4.75 },
-  inside: { src: 'art/Museum/ff3cb19b-dcff-4933-bbb2-ddc15d6e4b10.jpg', file: 'museum.png', block: 1024 / 240, ox: 3.25, oy: 1.25 },
+  front: { src: 'art/Museum/front-hd.jpg', file: 'museum-front.png', block: 1376 / 480, ox: 0, oy: 2.75 },
+  inside: { src: 'art/Museum/gallery-hd.jpg', file: 'museum.png', block: 1376 / 480, ox: 0, oy: 2.75 },
 };
 for (const m of Object.values(MUSEUM)) await png(sceneFromGrid(await read(m.src), m.block, m.ox, m.oy), path.join(OUT, m.file));
 
