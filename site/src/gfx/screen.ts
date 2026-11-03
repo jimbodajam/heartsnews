@@ -3,8 +3,11 @@ export const H = 180;
 
 export type Ctx = CanvasRenderingContext2D;
 
-/** Set the canvas to the native 320×180 resolution and scale it up to fill the window with crisp pixels. */
-export function createScreen(canvas: HTMLCanvasElement): Ctx {
+/**
+ * Set the canvas to the native 320×180 resolution and scale it up to fill the window with crisp pixels.
+ * Aborting `signal` stops it following the window's size.
+ */
+export function createScreen(canvas: HTMLCanvasElement, signal?: AbortSignal): Ctx {
   canvas.width = W;
   canvas.height = H;
   const g = canvas.getContext('2d')!;
@@ -18,8 +21,8 @@ export function createScreen(canvas: HTMLCanvasElement): Ctx {
     canvas.style.height = `${H * s}px`;
   };
   fit();
-  addEventListener('resize', fit);
-  document.addEventListener('fullscreenchange', fit);
+  addEventListener('resize', fit, { signal });
+  document.addEventListener('fullscreenchange', fit, { signal });
   return g;
 }
 

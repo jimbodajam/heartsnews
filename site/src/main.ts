@@ -4,11 +4,10 @@ import { LIVE_URL } from '../../shared/live';
 import type { Weather } from '../../shared/weather';
 import { audioContext } from './audio/sting';
 import { Voices } from './audio/voice';
-import { drawSplash } from './gfx/overlay';
 import { BreakingNews } from './breaking';
-import { createScreen } from './gfx/screen';
 import { type FeedSource, LiveScore, workerSource } from './live';
 import { Player } from './player';
+import { SdRenderer } from './render/sd';
 
 // ?bulletin=bulletins/other.json plays a different file; ?segment=<id> jumps straight to a segment.
 const params = new URLSearchParams(location.search);
@@ -43,21 +42,23 @@ async function fetchBulletin(): Promise<Bulletin> {
 }
 
 async function boot(): Promise<void> {
-  const canvas = document.querySelector<HTMLCanvasElement>('#tv')!;
-  const g = createScreen(canvas);
+  // The renderer puts its own canvas (#tv) in the screen.
+  const screen = document.querySelector<HTMLElement>('#screen')!;
+  const sd = new SdRenderer();
+  sd.mount(screen);
 
   let bulletin: Bulletin;
   try {
     bulletin = await fetchBulletin();
   } catch (err) {
     console.error(err);
-    drawSplash(g, 0, 'HEARTS NEWS 24', 'OFF AIR');
+    sd.offAir();
     return;
   }
 
   const voices = new Voices();
   // Between loops, pick up a newer bulletin if one has been published; keep the old one if that fails.
-  const player = new Player(g, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
+  const player = new Player(screen, sd, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
     fetchBulletin().catch(() => undefined),
   );
 
@@ -81,7 +82,7 @@ async function boot(): Promise<void> {
   }
 
   // ?tv=1 starts with the retro TV filter on (T toggles it).
-  if (params.get('tv') === '1') document.querySelector('#screen')?.classList.add('crt');
+  if (params.get('tv') === '1') screen.classList.add('crt');
 
   // Painted studio background, if one has been made with `npm run pixelate`. ?bg=classic starts with the code-drawn set.
   player.classicStudio = params.get('bg') === 'classic';
@@ -108,7 +109,8 @@ async function boot(): Promise<void> {
     await voices.init();
     player.begin(START_SEGMENT);
   };
-  canvas.addEventListener('click', () => void start(), { once: true });
+  // On the screen rather than the canvas, so it still works whichever renderer is in it.
+  screen.addEventListener('click', () => void start(), { once: true });
 
   addEventListener('keydown', (e) => {
     switch (e.key.toLowerCase()) {
@@ -122,7 +124,7 @@ async function boot(): Promise<void> {
         player.classicStudio = !player.classicStudio;
         break;
       case 't':
-        document.querySelector('#screen')?.classList.toggle('crt');
+        screen.classList.toggle('crt');
         break;
       case 'arrowright':
       case 'n':
@@ -138,7 +140,7 @@ async function boot(): Promise<void> {
         break;
     }
   });
-  canvas.focus();
+  sd.focus();
 }
 
 void boot();

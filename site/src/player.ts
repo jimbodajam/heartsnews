@@ -1,30 +1,17 @@
 import type { BreakingPackage } from '../../shared/breaking';
 import type { Weather } from '../../shared/weather';
-import type { Bulletin, Graphic, Line, Presenter, Segment, SegmentKind } from '../../shared/bulletin';
+import type { Bulletin, Graphic, Line, Presenter, Segment } from '../../shared/bulletin';
 import { playSting } from './audio/sting';
 import type { Speaking, Voices } from './audio/voice';
 import { isFresh } from './breaking';
-import { drawGraphic, drawSidePanel } from './gfx/graphics';
-import {
-  BREAKING_MS, breakingLook, drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap, IDENT_MS,
-  STING_MS, Ticker, type BreakingLook, type TickerItem,
-  drawCallerBar,
-} from './gfx/overlay';
+import { BREAKING_MS, breakingLook, IDENT_MS, STING_MS, Ticker, type BreakingLook, type TickerItem } from './gfx/overlay';
 import { type LiveScore, scoreLine } from './live';
-import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from './gfx/presenter';
-import { drawAdvert, preloadAdvert } from './gfx/adverts';
-import { drawSponsor, type SponsorKind } from './gfx/sponsor';
+import { preloadAdvert } from './gfx/adverts';
+import type { SponsorKind } from './gfx/sponsor';
 import { C } from './gfx/palette';
-import type { Ctx } from './gfx/screen';
-import { H, rect, W } from './gfx/screen';
-import {
-  drawDesk, drawDeskBackground, drawGraphicBackground, drawImageStudio, drawStudioLife, drawHands, drawIdleScreen, drawPodium, drawTouchBackground,
-  drawTransferBackground, drawWallBackground, drawWallClock, drawWallSeams, sweep, WALL,
-} from './gfx/studio';
-import { drawPressDesk, drawStadium, type Ground, isDark } from './gfx/stadium';
+import { type Ground, isDark } from './gfx/stadium';
 import { kitColours } from '../../shared/kits';
-
-type Shot = 'wide' | 'single' | 'full';
+import type { FrameState, Mode, Renderer, Shot } from './render/state';
 
 /** The sponsor's announcer: a fixed line pre-rendered with Kokoro (`npm run sponsor-clip`), not one of the presenters. */
 const SPONSOR_LINE = "Hearts News 24, in association with Marshall's Chunky Chicken.";
@@ -42,20 +29,6 @@ const SCORE_EVERY = 3;
 
 const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'headtohead', 'formation'];
 
-const LABEL: Record<SegmentKind, string> = {
-  headlines: 'HEADLINES',
-  story: 'IN FOCUS',
-  transfers: 'TRANSFER CENTRE',
-  fans: 'FAN ZONE',
-  match: 'MATCH CENTRE',
-  debate: 'THE DEBATE',
-  phonein: 'PHONE-IN',
-  opponent: 'OPPOSITION FOCUS',
-  adverts: 'AD BREAK',
-  breaking: 'BREAKING',
-  history: 'ON THIS DAY',
-};
-
 /** The same graphic again (bulletin JSON has no shared objects): an advert by its id, anything else by content. */
 function sameGraphic(a?: Graphic, b?: Graphic): boolean {
   if (!a || !b) return a === b;
@@ -65,7 +38,7 @@ function sameGraphic(a?: Graphic, b?: Graphic): boolean {
 
 /**
  * Plays a bulletin on a loop: ident → for each segment, a sting then each line spoken by its presenter.
- * Playback runs as an async sequence; rendering runs separately every animation frame from the current state.
+ * Playback runs as an async sequence; every animation frame the renderer draws a snapshot of the current state.
  */
 export class Player {
   captions = true;
@@ -83,7 +56,7 @@ export class Player {
   weather?: Pick<Weather, 'sky' | 'windy'>;
 
   private ticker = new Ticker();
-  private mode: 'splash' | 'ident' | 'sting' | 'show' | 'breaking' | 'sponsor' = 'splash';
+  private mode: Mode = 'splash';
   private sponsorKind: SponsorKind = 'open';
   /** Marshall's logo (art/adverts/Marshalls, pixelated); the card draws its own badge without it. */
   sponsorLogo?: HTMLImageElement;
@@ -107,7 +80,10 @@ export class Player {
   private cancelWait?: () => void;
 
   constructor(
-    private g: Ctx,
+    /** The screen the renderer's elements live in. */
+    private screen: HTMLElement,
+    /** Already mounted in `screen`. */
+    private renderer: Renderer,
     private voices: Voices,
     private bulletin: Bulletin,
     /** Where the bulletin was loaded from; clip paths are relative to it. */
@@ -126,8 +102,12 @@ export class Player {
     this.cancelWait?.();
   }
 
-  private paintedStudio(): boolean {
-    return Boolean(this.studioImage) && !this.classicStudio;
+  /** Switch to another renderer, mid-show if need be: the old one's elements make way for the new one's. */
+  setRenderer(r: Renderer): void {
+    if (r === this.renderer) return;
+    this.renderer.unmount();
+    r.mount(this.screen);
+    this.renderer = r;
   }
 
   private presenter(id: string): Presenter {
@@ -167,7 +147,7 @@ export class Player {
     }
   }
 
-  private setMode(mode: Player['mode']): void {
+  private setMode(mode: Mode): void {
     this.mode = mode;
     this.modeAt = performance.now();
   }
@@ -310,44 +290,45 @@ export class Player {
   // ── rendering ────────────────────────────────────────────────────────────
 
   private frame = (now: number): void => {
-    this.render(now);
+    this.renderer.draw(this.state(now), now);
     requestAnimationFrame(this.frame);
   };
 
-  private render(now: number): void {
-    const { g, bulletin } = this;
-    const t = now / 1000;
-    const age = now - this.modeAt;
-    const name = bulletin.channel.name;
-
-    if (this.mode === 'splash') return drawSplash(g, t, name, this.status);
-    if (this.mode === 'ident') return drawIdent(g, age, name);
-    if (this.mode === 'sponsor') return drawSponsor(g, age, this.jingleAt ? now - this.jingleAt : -1, this.sponsorKind, this.sponsorLogo);
-    const seg = this.seg!;
-
-    // An ad break fills the screen: no channel logo, clock, straps or ticker, just the advert (and subtitles).
-    if (seg.kind === 'adverts') {
-      const ad = this.line?.graphic;
-      if (this.mode === 'show' && ad?.type === 'advert') drawAdvert(g, ad, now - this.graphicAt, t, now - this.lineAt);
-      else rect(g, 0, 0, W, H, C.black);
-      if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
-      if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
-      if (this.mode === 'breaking') drawBreaking(g, age, this.breaking?.flash ?? '');
-      return;
-    }
-
-    this.drawScene(seg, now);
-    drawBug(g, name, !!bulletin.demo);
-    drawClock(g, new Date(), t);
-    if (this.strap) drawStrap(g, this.strap.name, this.strap.role, now - this.strap.at, this.strap.hold ? Infinity : undefined);
-    if (this.captions && this.speaking && this.line) drawCaption(g, this.line.text, this.speaking.progress(now));
-    const graphic = this.line?.graphic;
-    if (graphic?.type === 'caller') drawCallerBar(g, graphic.name, graphic.from, graphic.topic, now, now - this.graphicAt);
-    else drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
-    this.ticker.draw(g, this.tickerItems(), now);
-
-    if (this.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
-    if (this.mode === 'breaking') drawBreaking(g, age, this.breaking?.flash ?? '');
+  /** This frame's snapshot for the renderer. */
+  private state(now: number): FrameState {
+    const { seg, line, strap, speaking } = this;
+    return {
+      mode: this.mode,
+      modeAge: now - this.modeAt,
+      status: this.status,
+      channel: this.bulletin.channel.name,
+      demo: !!this.bulletin.demo,
+      captions: this.captions,
+      seg,
+      line,
+      lineAge: now - this.lineAt,
+      shot: this.shot,
+      strap: strap && { name: strap.name, role: strap.role, age: now - strap.at, hold: strap.hold },
+      speaking,
+      talking: speaking ? line?.speaker : undefined,
+      graphic: line?.graphic,
+      graphicAge: now - this.graphicAt,
+      segGraphic: this.segGraphic,
+      sidebar: this.bulletin.sidebar,
+      ticker: this.ticker,
+      tickerItems: this.tickerItems(),
+      ground: this.ground(),
+      breakingFlash: this.breaking?.flash ?? '',
+      sponsorKind: this.sponsorKind,
+      jingleAge: this.jingleAt ? now - this.jingleAt : -1,
+      cast: this.bulletin.presenters,
+      onScreen: seg ? seg.presenters.map((id) => this.presenter(id)) : [],
+      speaker: line && this.presenter(line.speaker),
+      studioImage: this.studioImage,
+      classicStudio: this.classicStudio,
+      museum: this.museum,
+      sponsorLogo: this.sponsorLogo,
+    };
   }
 
   /** A goal: the ticker jumps to the score and flashes. */
@@ -378,132 +359,5 @@ export class Player {
       night: this.night ?? isDark(new Date()),
       weather: this.weather ?? this.breaking?.weather,
     };
-  }
-
-  private drawScene(seg: Segment, now: number): void {
-    const { g } = this;
-    const t = now / 1000;
-    const graphic = this.line?.graphic;
-    const graphicAge = now - this.graphicAt;
-    const talking = this.speaking ? this.line?.speaker : undefined;
-    const phaseOf = (p: Presenter) => this.bulletin.presenters.indexOf(p) * 1.37 + 0.4;
-    const pose = (p: Presenter, look = 0) => idlePose(t, phaseOf(p), p.id === talking ? this.speaking!.level(now) : 0, look);
-    const lift = (p: Presenter) => gestureLift(t, phaseOf(p), p.id === talking);
-    const onScreen = seg.presenters.map((id) => this.presenter(id));
-
-    switch (seg.scene) {
-      case 'desk': {
-        if (this.shot === 'full' && graphic) {
-          drawGraphicBackground(g);
-          drawGraphic(g, graphic, 12, 28, W - 24, 84, graphicAge, now);
-          return;
-        }
-        if (this.shot === 'single' && this.line) {
-          const p = this.presenter(this.line.speaker);
-          const top = 30;
-          const deskY = top + SEATED_DESK_Y * 3;
-          if (this.paintedStudio()) {
-            drawImageStudio(g, this.studioImage!, 'close', t);
-          } else {
-            // Panned so the video wall's heart logo sits off to the left, not behind the presenter's head.
-            drawDeskBackground(g, 140);
-            drawStudioLife(g, 140, t);
-          }
-          drawPresenter(g, 92, top, p.look, pose(p), 3);
-          drawDesk(g, deskY, -20, W + 20);
-          drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
-          const shown = graphic ?? this.segGraphic;
-          const panel = shown?.type === 'caller' ? undefined : shown;
-          if (panel) drawGraphic(g, panel, 168, 22, 142, 80, graphic ? graphicAge : Infinity, now);
-          else if (this.bulletin.sidebar) drawSidePanel(g, this.bulletin.sidebar, 168, 22, 142, 80, now);
-          return;
-        }
-        const xs = onScreen.length === 1 ? [160] : [115, 205];
-        const top = 40;
-        const deskY = top + SEATED_DESK_Y * 2;
-        if (this.paintedStudio()) {
-          drawImageStudio(g, this.studioImage!, 'wide', t);
-        } else {
-          drawDeskBackground(g, 0);
-          drawStudioLife(g, 0, t);
-        }
-        // Whoever isn't talking turns to look at whoever is.
-        const pair = onScreen.slice(0, 2);
-        const talkerAt = pair.findIndex((p) => p.id === talking);
-        const lookAt = (k: number) => (talkerAt < 0 || talkerAt === k ? 0 : Math.sign(xs[talkerAt] - xs[k]));
-        pair.forEach((p, k) => drawPresenter(g, xs[k], top, p.look, pose(p, lookAt(k)), 2));
-        drawDesk(g, deskY, 40, 280);
-        pair.forEach((p, k) => drawHands(g, xs[k], deskY, 2, p.look.skin, lift(p), p.look.suit));
-        return;
-      }
-
-      case 'transfer': {
-        drawTransferBackground(g);
-        drawWallClock(g, new Date());
-        const p = onScreen[0];
-        if (p) {
-          drawPresenter(g, 66, 34, p.look, pose(p), 2);
-          drawPodium(g, 66, 34 + SEATED_DESK_Y * 2, 'TRANSFER CENTRE');
-        }
-        if (graphic) drawGraphic(g, graphic, 130, 18, 182, 86, graphicAge, now);
-        else drawIdleScreen(g, 130, 18, 182, 86, 'TRANSFER CENTRE');
-        return;
-      }
-
-      case 'pitchside': {
-        const top = 30;
-        const deskY = top + SEATED_DESK_Y * 3;
-        drawStadium(g, this.ground(), t);
-        const p = onScreen[0];
-        if (p) drawPresenter(g, 92, top, p.look, pose(p), 3);
-        drawPressDesk(g, deskY);
-        if (p) drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
-        if (graphic) drawGraphic(g, graphic, 168, 22, 142, 80, graphicAge, now);
-        return;
-      }
-
-      case 'museum': {
-        const p = onScreen[0];
-        // The opening line outside, a small figure on the pavement by the lamp post so the museum's sign shows; the
-        // rest in the gallery, close to camera in front of the display case. Feet go behind the strap in both.
-        if (this.seg && this.line === this.seg.lines[0] && this.museum.front) {
-          g.drawImage(this.museum.front, 0, 0, W, H);
-          if (p) drawPresenter(g, 292, 166 - STANDING_H, p.look, pose(p), 1, true);
-          return;
-        }
-        if (this.museum.inside) g.drawImage(this.museum.inside, 0, 0, W, H);
-        else drawTouchBackground(g);
-        if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
-        const glance = graphic && t % 5 < 1.6 ? -1 : 0;
-        if (p) drawPresenter(g, 268, 34, p.look, pose(p, glance), 3, true);
-        return;
-      }
-
-      case 'videowall': {
-        // The team news: each player's card in turn, then the team in formation, which stays up for the bench.
-        drawWallBackground(g);
-        const shown = graphic ?? this.segGraphic;
-        if (shown) drawGraphic(g, shown, WALL.x, WALL.y, WALL.w, WALL.h, graphic ? graphicAge : Infinity, now);
-        else drawIdleScreen(g, WALL.x, WALL.y, WALL.w, WALL.h, seg.title);
-        drawWallSeams(g);
-        sweep(g, WALL.x, WALL.y, WALL.w, WALL.h, t);
-        const p = onScreen[0];
-        // Turns to the wall as each new card comes up, and every few seconds while talking.
-        const glance = graphicAge < 1100 || t % 5 < 1.2 ? -1 : 0;
-        if (p) drawPresenter(g, 276, 142 - STANDING_H * 2, p.look, pose(p, glance), 2, true);
-        return;
-      }
-
-      case 'touchscreen': {
-        drawTouchBackground(g);
-        if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
-        else drawIdleScreen(g, 12, 32, 204, 84, 'MATCH CENTRE');
-        const p = onScreen[0];
-        // The analyst glances across at the screen every few seconds while talking it through.
-        const glance = graphic && t % 5 < 1.6 ? -1 : 0;
-        if (p) drawPresenter(g, 266, 142 - STANDING_H * 2, p.look, pose(p, glance), 2, true);
-        return;
-      }
-    }
   }
 }
