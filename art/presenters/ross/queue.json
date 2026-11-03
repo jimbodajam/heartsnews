@@ -2,94 +2,6 @@
  "presenter": "ross",
  "items": [
   {
-   "frame": "h1",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "h1.jpg",
-   "status": "rejected",
-   "attempts": 2,
-   "reasons": [
-    "2026-11-03: moved 1.83 cells, too little to tell it went right"
-   ],
-   "savedAt": "2026-11-03T20:46:02.592Z",
-   "staged": "art/presenters/ross/queue/staged/h1.jpg",
-   "stats": {
-    "changed": 657,
-    "outside": 0,
-    "direction": 1.83
-   }
-  },
-  {
-   "frame": "h2",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "h2.jpg",
-   "status": "rejected",
-   "attempts": 2,
-   "reasons": [
-    "2026-11-03: moved -1.19 cells, too little to tell it went left"
-   ],
-   "savedAt": "2026-11-03T20:46:06.463Z",
-   "staged": "art/presenters/ross/queue/staged/h2.jpg",
-   "stats": {
-    "changed": 558,
-    "outside": 0,
-    "direction": -1.19
-   }
-  },
-  {
-   "frame": "h3",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "h3.jpg",
-   "status": "passed",
-   "attempts": 2,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:46:10.209Z",
-   "staged": "art/presenters/ross/queue/staged/h3.jpg",
-   "stats": {
-    "changed": 292,
-    "outside": 0
-   }
-  },
-  {
-   "frame": "h4",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "h4.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-03T19:27:36.770Z",
-   "staged": "art/presenters/ross/queue/staged/h4.jpg",
-   "stats": {
-    "changed": 417,
-    "outside": 0
-   }
-  },
-  {
-   "frame": "v1",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
-   "crop": true,
-   "save": "v1.jpg",
-   "status": "rejected",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T19:29:22.107Z",
-   "staged": "art/presenters/ross/queue/staged/v1.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.996,
-     "err": 7.1
-    }
-   }
-  },
-  {
    "frame": "v2",
    "source": "b1",
    "attach": "art/presenters/ross/queue/crops/b1.png",
@@ -103,297 +15,147 @@
    ]
   },
   {
-   "frame": "v3",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v1",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v3.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T20:46:24.315Z",
-   "staged": "art/presenters/ross/queue/staged/v3.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.998,
-     "err": 8.3
-    }
-   }
+   "save": "h1v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v4",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v2",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v4.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T20:46:26.752Z",
-   "staged": "art/presenters/ross/queue/staged/v4.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.998,
-     "err": 7.3
-    }
-   }
+   "save": "h1v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v5",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v3",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v5.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T20:46:30.302Z",
-   "staged": "art/presenters/ross/queue/staged/v5.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.996,
-     "err": 8
-    }
-   }
+   "save": "h1v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v6",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v4",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v6.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T20:46:34.090Z",
-   "staged": "art/presenters/ross/queue/staged/v6.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.996,
-     "err": 7.1
-    }
-   }
+   "save": "h1v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v7",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v5",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v7.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-03T20:46:38.035Z",
-   "staged": "art/presenters/ross/queue/staged/v7.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "fit": {
-     "scale": 0.996,
-     "err": 8.7
-    }
-   }
+   "save": "h1v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v9",
-   "source": "b1",
-   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "frame": "h1v6",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
    "crop": true,
-   "save": "v9.jpg",
-   "status": "rejected",
-   "attempts": 3,
-   "reasons": [
-    "2026-11-03: nothing changed inside its area; could not measure the right direction"
-   ],
-   "savedAt": "2026-11-03T20:46:41.740Z",
-   "staged": "art/presenters/ross/queue/staged/v9.jpg",
-   "stats": {
-    "changed": 0,
-    "outside": 0,
-    "direction": null,
-    "fit": {
-     "scale": 0.999,
-     "err": 8
-    }
-   }
+   "save": "h1v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b2",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b2.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:46:45.574Z",
-   "staged": "art/presenters/ross/queue/staged/b2.jpg",
-   "stats": {
-    "changed": 1281,
-    "outside": 0,
-    "direction": 46.01
-   }
+   "frame": "h1v7",
+   "source": "h1",
+   "attach": "art/presenters/ross/queue/crops/h1.png",
+   "crop": true,
+   "save": "h1v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b3",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b3.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:46:49.257Z",
-   "staged": "art/presenters/ross/queue/staged/b3.jpg",
-   "stats": {
-    "changed": 1322,
-    "outside": 0,
-    "direction": 46.3
-   }
+   "frame": "h2v1",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b4",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b4.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:46:52.856Z",
-   "staged": "art/presenters/ross/queue/staged/b4.jpg",
-   "stats": {
-    "changed": 2046,
-    "outside": 0
-   }
+   "frame": "h2v2",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b5",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b5.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:46:56.548Z",
-   "staged": "art/presenters/ross/queue/staged/b5.jpg",
-   "stats": {
-    "changed": 2020,
-    "outside": 0
-   }
+   "frame": "h2v3",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b6",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b6.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:47:00.135Z",
-   "staged": "art/presenters/ross/queue/staged/b6.jpg",
-   "stats": {
-    "changed": 1283,
-    "outside": 0,
-    "direction": -30.93
-   }
+   "frame": "h2v4",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b7",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b7.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:47:03.800Z",
-   "staged": "art/presenters/ross/queue/staged/b7.jpg",
-   "stats": {
-    "changed": 1229,
-    "outside": 0,
-    "direction": -44.76
-   }
+   "frame": "h2v5",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b8",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "b8.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:47:07.477Z",
-   "staged": "art/presenters/ross/queue/staged/b8.jpg",
-   "stats": {
-    "changed": 2114,
-    "outside": 0
-   }
+   "frame": "h2v6",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "f1",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "f1.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "run failed: download lost to a connection error; no file in Downloads",
-    "run failed: download lost to a connection error; no file in Downloads"
-   ],
-   "savedAt": "2026-11-03T20:44:58.313Z",
-   "staged": "art/presenters/ross/queue/staged/f1.jpg",
-   "stats": {
-    "changed": 678,
-    "outside": 17
-   }
-  },
-  {
-   "frame": "f2",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "f2.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:47:11.215Z",
-   "staged": "art/presenters/ross/queue/staged/f2.jpg",
-   "stats": {
-    "changed": 1984,
-    "outside": 52
-   }
-  },
-  {
-   "frame": "f3",
-   "source": "b1",
-   "attach": "site/public/spike/ross/standing/b1.jpg",
-   "save": "f3.jpg",
-   "status": "passed",
-   "attempts": 3,
-   "reasons": [],
-   "savedAt": "2026-11-03T20:47:14.790Z",
-   "staged": "art/presenters/ross/queue/staged/f3.jpg",
-   "stats": {
-    "changed": 430,
-    "outside": 25
-   }
+   "frame": "h2v7",
+   "source": "h2",
+   "attach": "art/presenters/ross/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   }
  ],
- "updated": "2026-11-03T20:47:56.458Z",
+ "updated": "2026-11-03T20:52:35.448Z",
  "downloads": "/mnt/c/Users/jimbo/AppData/Local/Temp/claude/C--Users-jimbo-Documents-code-heartsnews/ad3cdfa3-4b37-452a-bdef-c3a13312cf01/scratchpad/dl-ross3",
  "seen": [
   "h1.jpg@1793738762921.8916",
