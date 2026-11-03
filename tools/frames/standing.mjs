@@ -3,12 +3,14 @@
 // Input: art/presenters/<name>/standing.json, the words that differ per presenter (see below). Re-running rewrites frames.json and prompts.json, so tune cut rows, boxes and the face block in
 // frames.json only once the master is approved, and then stop running this for that presenter.
 //
-// standing.json: { pronoun: "she"|"he", look, top, legs, mouth, crop }
+// standing.json: { pronoun: "she"|"he", look, top, legs, mouth, crop, screen }
 //   look   what must not change on the head, e.g. "black quiff, dark eyebrows and face style"
 //   top    what the upper body wears, as the prompts name it, e.g. "shirt, tie, heart pin"
 //   legs   what the lower body wears, e.g. "trousers, shoes"
 //   mouth  a sentence on the mouth's size, for the mouth frames
 //   crop   the head crop box in image pixels [left, top, width, height] (#71); Fraser's is [236, 30, 376, 300]
+//   screen which image edge the graphic or touchscreen is on: "right" (the default, Fraser and Ross) or "left" (Kirsty, #90). b2/b3 point and gesture towards it (the first two
+//          gestures are the ones aimed at the graphic, as in site/src/hd/museum.ts) and b6/b7 go the other way; "left" also adds b9, a hand on the touchscreen.
 // The prompts are Fraser's standing ones (art/presenters/fraser/prompts.json), with the image edge named in every direction ("towards the RIGHT edge of the image", never "viewer's right").
 // Left out on purpose: leans h5/h6 (made in code, mode "tilt", tools/bake/README.md), and the left glance v8 (Gemini looks right whatever is asked; the glance is code).
 // h2 gets one try: Gemini often turns the left turn the wrong way (Fraser), but not always (Isla). If it fails, mirror h1 and h1v* for h2 and drop h2v*.
@@ -22,6 +24,7 @@ const dir = path.join(ROOT, 'art/presenters', name), inFile = path.join(dir, 'st
 if (!fs.existsSync(inFile)) { console.error(`No ${path.relative(ROOT, inFile)}`); process.exit(1); }
 const S = JSON.parse(fs.readFileSync(inFile, 'utf8')), P = S.pronoun === 'he' ? { s: 'he', o: 'him', p: 'his' } : { s: 'she', o: 'her', p: 'her' };
 const Ps = P.s[0].toUpperCase() + P.s.slice(1);
+const SCR = S.screen === 'left' ? { s: 'LEFT', o: 'RIGHT', sd: 'left', od: 'right' } : { s: 'RIGHT', o: 'LEFT', sd: 'right', od: 'left' };
 
 const GRID = `same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid`;
 const KEEP = `Keep everything exactly identical: ${GRID}. Do not move or resize anything`;
@@ -56,13 +59,15 @@ add('v7', 'b1', 'patch', `Edit this image. ${KEEP}, and do not change the pose, 
 add('v9', 'b1', 'patch', `Edit this image. ${KEEP}, and do not change the pose, the body, the clothes or the head. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are open as before, but the irises and pupils sit against the RIGHT corner of each eye as seen in the picture (the edge nearest the right side of the image), so a sliver of white shows on the left side of each iris and none on the right. ${Ps} is glancing sideways towards the right edge of the picture with ${P.p} head still facing forward.`, { crop: true }, { dir: 'right', measure: 'dark' });
 
 const pose = (n, what, expect) => add(n, 'b1', 'arm', `${ARMS} ${what} ${SLEEVES}`, {}, expect);
-pose('b2', `${P.p} arm on the RIGHT edge of the image is extended out to the side and slightly up, with ${P.p} index finger pointing clearly towards the right edge of the image, as if pointing at an item on a screen, the other fingers curled and the thumb tucked. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side.`, { dir: 'right', measure: 'changed' });
-pose('b3', `${P.p} arm on the RIGHT edge of the image is raised and a little out from ${P.p} side, the elbow bent, the open palm facing up and towards the right edge of the image, fingers together and slightly spread, in a wide, welcoming, emphasising gesture. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side.`, { dir: 'right', measure: 'changed' });
+pose('b2', `${P.p} arm on the ${SCR.s} edge of the image is extended out to the side and slightly up, with ${P.p} index finger pointing clearly towards the ${SCR.sd} edge of the image, as if pointing at an item on a screen, the other fingers curled and the thumb tucked. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side.`, { dir: SCR.sd, measure: 'changed' });
+pose('b3', `${P.p} arm on the ${SCR.s} edge of the image is raised and a little out from ${P.p} side, the elbow bent, the open palm facing up and towards the ${SCR.sd} edge of the image, fingers together and slightly spread, in a wide, welcoming, emphasising gesture. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side.`, { dir: SCR.sd, measure: 'changed' });
 pose('b4', `both elbows are bent and both hands are held together in front of ${P.o} at lower chest height, fingertips lightly touching, as if making a point in a calm explanation.`);
 pose('b5', `both arms are bent at the elbows and ${P.s} holds a small dark navy tablet in front of ${P.o} at waist height, one hand underneath and the other steadying it at the side, as if reading from it. Only the thin edge and the back of the tablet are visible to the viewer, with no text and no screen glow.`);
-pose('b6', `${P.p} arm on the LEFT edge of the image is bent with the hand resting on ${P.p} hip under the open jacket edge, elbow pointing out towards the left edge of the image, and ${P.p} other arm hangs relaxed at ${P.p} side, a confident, attentive, listening pose.`, { dir: 'left', measure: 'changed' });
-pose('b7', `${P.p} arm on the LEFT edge of the image is raised out to the side with the open palm facing up and towards the left edge of the image, as if presenting something to the left, fingers together. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side. Do not move the arm on the right edge of the image.`, { dir: 'left', measure: 'changed' });
+pose('b6', `${P.p} arm on the ${SCR.o} edge of the image is bent with the hand resting on ${P.p} hip under the open jacket edge, elbow pointing out towards the ${SCR.od} edge of the image, and ${P.p} other arm hangs relaxed at ${P.p} side, a confident, attentive, listening pose.`, { dir: SCR.od, measure: 'changed' });
+pose('b7', `${P.p} arm on the ${SCR.o} edge of the image is raised out to the side with the open palm facing up and towards the ${SCR.od} edge of the image, as if presenting something to the ${SCR.od}, fingers together. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side. Do not move the arm on the ${SCR.sd} edge of the image.`, { dir: SCR.od, measure: 'changed' });
 pose('b8', `both arms are held out a little from ${P.p} sides, elbows bent, both palms open and facing slightly upwards at waist height, in a warm, open, welcoming sign-off gesture.`);
+// the touchscreen itself is drawn by the scene, so the hand touches nothing in the image
+if (S.screen === 'left') pose('b9', `${P.p} arm on the LEFT edge of the image reaches out to the side at shoulder height, the elbow almost straight, the hand open and upright with the palm facing the left edge of the image and the index finger a little forward, as if touching a large upright touchscreen just beyond the left side of the picture. There is no screen in the picture. ${P.p[0].toUpperCase() + P.p.slice(1)} other arm hangs relaxed at ${P.p} side. Do not move the arm on the right edge of the image.`, { dir: 'left', measure: 'changed' });
 
 const legs = (n, what) => add(n, 'b1', 'legs', `${LEGS}${what}`);
 legs('f1', `: ${P.s} shifts ${P.p} weight onto the leg on the RIGHT edge of the image, which stands straight and carries all ${P.p} weight, while the leg on the LEFT edge of the image relaxes: that knee is slightly bent, and that foot is placed visibly out towards the left edge of the image and a little forward, with the heel slightly lifted off the floor, so the two feet are clearly in different positions. The trouser hems stay the same style and colour. A natural relaxed weight shift, not a step.`);
@@ -82,7 +87,7 @@ const cfg = {
   bg: 'corner', matchColour: true,
   headCut: 48, feetTop: 138,
   heads: ['b1', 'h1', 'h2', 'h3', 'h4'],
-  poses: ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8'],
+  poses: ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', ...(S.screen === 'left' ? ['b9'] : [])],
   feet: ['b1', 'f1', 'f2', 'f3'],
   eyes: ['blink', 'gazeL', 'gazeR'],
   mouths: ['smile', 'closed', 'small', 'wide', 'O', 'A'],

@@ -1,0 +1,308 @@
+{
+ "_note": "Standing set (#89), scaffolded by tools/frames/standing.mjs from Fraser's tuned values. Grid, cut rows, crop, boxes and the face block are provisional until the master is approved: tune them in this file by hand from then on.",
+ "src": "site/public/spike/kirsty/standing/",
+ "grid": {
+  "w": 145,
+  "h": 216
+ },
+ "bg": "corner",
+ "matchColour": true,
+ "headCut": 48,
+ "feetTop": 138,
+ "heads": [
+  "b1",
+  "h1",
+  "h2",
+  "h3",
+  "h4"
+ ],
+ "poses": [
+  "b1",
+  "b2",
+  "b3",
+  "b4",
+  "b5",
+  "b6",
+  "b7",
+  "b8",
+  "b9"
+ ],
+ "feet": [
+  "b1",
+  "f1",
+  "f2",
+  "f3"
+ ],
+ "eyes": [
+  "blink",
+  "gazeL",
+  "gazeR"
+ ],
+ "mouths": [
+  "smile",
+  "closed",
+  "small",
+  "wide",
+  "O",
+  "A"
+ ],
+ "crop": {
+  "box": [
+   236,
+   12,
+   376,
+   318
+  ],
+  "scale": 3
+ },
+ "boxes": {},
+ "face": {
+  "register": "detect",
+  "patch": {
+   "base": "b1",
+   "mouthBase": "b1",
+   "mouths": {
+    "smile": "v1",
+    "small": "v2",
+    "wide": "v3",
+    "O": "v4",
+    "A": "v5",
+    "closed": "v6"
+   },
+   "eyes": {
+    "blink": "v7",
+    "gazeR": "v9"
+   }
+  },
+  "heads": {
+   "b1": {
+    "mode": "patch"
+   },
+   "h1": {
+    "mode": "set"
+   },
+   "h2": {
+    "mode": "set"
+   },
+   "h3": {
+    "mode": "set"
+   },
+   "h4": {
+    "mode": "set"
+   }
+  }
+ },
+ "frames": [
+  {
+   "name": "b1",
+   "area": "master"
+  },
+  {
+   "name": "h1",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h2",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h3",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h4",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "v1",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v2",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v3",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v4",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v5",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v6",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v7",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v9",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "b2",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b3",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b4",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b5",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b6",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b7",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b8",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "b9",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "f1",
+   "parent": "b1",
+   "area": "legs"
+  },
+  {
+   "name": "f2",
+   "parent": "b1",
+   "area": "legs"
+  },
+  {
+   "name": "f3",
+   "parent": "b1",
+   "area": "legs"
+  },
+  {
+   "name": "h1v1",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v2",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v3",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v4",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v5",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v6",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v7",
+   "parent": "h1",
+   "area": "eyes",
+   "crop": true
+  },
+  {
+   "name": "h2v1",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v2",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v3",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v4",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v5",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v6",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v7",
+   "parent": "h2",
+   "area": "eyes",
+   "crop": true
+  }
+ ]
+}
