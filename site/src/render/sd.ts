@@ -1,5 +1,6 @@
-import type { Presenter, Segment, SegmentKind } from '../../../shared/bulletin';
+import type { Presenter, Segment } from '../../../shared/bulletin';
 import { drawGraphic, drawSidePanel } from '../gfx/graphics';
+import { SEGMENT_LABEL } from '../gfx/labels';
 import {
   drawBreaking, drawBug, drawCaption, drawClock, drawHeadlineBar, drawIdent, drawSplash, drawSting, drawStrap,
   drawCallerBar,
@@ -16,20 +17,6 @@ import {
 } from '../gfx/studio';
 import { drawPressDesk, drawStadium } from '../gfx/stadium';
 import type { FrameState, Renderer } from './state';
-
-const LABEL: Record<SegmentKind, string> = {
-  headlines: 'HEADLINES',
-  story: 'IN FOCUS',
-  transfers: 'TRANSFER CENTRE',
-  fans: 'FAN ZONE',
-  match: 'MATCH CENTRE',
-  debate: 'THE DEBATE',
-  phonein: 'PHONE-IN',
-  opponent: 'OPPOSITION FOCUS',
-  adverts: 'AD BREAK',
-  breaking: 'BREAKING',
-  history: 'ON THIS DAY',
-};
 
 /** The original look: everything drawn in code onto one 320×180 canvas, scaled up with crisp pixels. */
 export class SdRenderer implements Renderer {
@@ -81,7 +68,7 @@ export class SdRenderer implements Renderer {
       if (s.mode === 'show' && ad?.type === 'advert') drawAdvert(g, ad, s.graphicAge, t, s.lineAge);
       else rect(g, 0, 0, W, H, C.black);
       if (s.captions && s.speaking && s.line) drawCaption(g, s.line.text, s.speaking.progress(now));
-      if (s.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+      if (s.mode === 'sting') drawSting(g, age, SEGMENT_LABEL[seg.kind], seg.title);
       if (s.mode === 'breaking') drawBreaking(g, age, s.breakingFlash);
       return;
     }
@@ -93,10 +80,10 @@ export class SdRenderer implements Renderer {
     if (s.captions && s.speaking && s.line) drawCaption(g, s.line.text, s.speaking.progress(now));
     const graphic = s.graphic;
     if (graphic?.type === 'caller') drawCallerBar(g, graphic.name, graphic.from, graphic.topic, now, s.graphicAge);
-    else drawHeadlineBar(g, LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
+    else drawHeadlineBar(g, SEGMENT_LABEL[seg.kind], graphic?.type === 'headline' ? graphic.title : seg.strap);
     s.ticker.draw(g, s.tickerItems, now);
 
-    if (s.mode === 'sting') drawSting(g, age, LABEL[seg.kind], seg.title);
+    if (s.mode === 'sting') drawSting(g, age, SEGMENT_LABEL[seg.kind], seg.title);
     if (s.mode === 'breaking') drawBreaking(g, age, s.breakingFlash);
   }
 

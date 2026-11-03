@@ -43,10 +43,18 @@ async function fetchBulletin(): Promise<Bulletin> {
   return withPitchside(bulletin);
 }
 
+/** The HD renderer with its bottom stack, straps, captions and ticker (#84) layered over the scene. */
+async function hdRenderer() {
+  const [{ HdRenderer }, { HdFurniture }] = await Promise.all([import('./hd/renderer'), import('./hd/furniture')]);
+  const hd = new HdRenderer();
+  hd.addLayer(new HdFurniture());
+  return hd;
+}
+
 async function boot(): Promise<void> {
   // The renderer puts its own elements in the screen (the SD one its canvas, #tv).
   const screen = document.querySelector<HTMLElement>('#screen')!;
-  const renderer = HD ? new (await import('./hd/renderer')).HdRenderer() : new SdRenderer();
+  const renderer = HD ? await hdRenderer() : new SdRenderer();
   renderer.mount(screen);
 
   let bulletin: Bulletin;
