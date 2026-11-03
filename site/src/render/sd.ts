@@ -1,4 +1,4 @@
-import type { Presenter, Segment } from '../../../shared/bulletin';
+import type { Graphic, Presenter, Segment } from '../../../shared/bulletin';
 import { drawGraphic, drawSidePanel } from '../gfx/graphics';
 import { SEGMENT_LABEL } from '../gfx/labels';
 import {
@@ -17,6 +17,30 @@ import {
 } from '../gfx/studio';
 import { drawPressDesk, drawStadium } from '../gfx/stadium';
 import type { FrameState, Renderer } from './state';
+
+/** A desk close-up's side panel, beside the presenter: x, y, w, h on the 320×180 screen. */
+export const SIDE_PANEL = [168, 22, 142, 80] as const;
+
+/**
+ * A desk close-up's side panel: the line's graphic, else the segment's last one (the caller has his own bar instead),
+ * else the bulletin's sidebar.
+ */
+export function drawSdPanel(g: Ctx, s: FrameState, now: number): void {
+  const [x, y, w, h] = SIDE_PANEL;
+  const panel = panelGraphic(s);
+  if (panel) drawGraphic(g, panel, x, y, w, h, s.graphic ? s.graphicAge : Infinity, now);
+  else if (s.sidebar) drawSidePanel(g, s.sidebar, x, y, w, h, now);
+}
+
+/** Whether drawSdPanel draws anything. */
+export function hasSdPanel(s: FrameState): boolean {
+  return Boolean(panelGraphic(s) ?? s.sidebar);
+}
+
+function panelGraphic(s: FrameState): Graphic | undefined {
+  const shown = s.graphic ?? s.segGraphic;
+  return shown?.type === 'caller' ? undefined : shown;
+}
 
 /** The original look: everything drawn in code onto one 320×180 canvas, scaled up with crisp pixels. */
 export class SdRenderer implements Renderer {
@@ -64,9 +88,7 @@ export class SdRenderer implements Renderer {
 
     // An ad break fills the screen: no channel logo, clock, straps or ticker, just the advert (and subtitles).
     if (seg.kind === 'adverts') {
-      const ad = s.line?.graphic;
-      if (s.mode === 'show' && ad?.type === 'advert') drawAdvert(g, ad, s.graphicAge, t, s.lineAge);
-      else rect(g, 0, 0, W, H, C.black);
+      this.drawScene(g, s, seg, now);
       if (s.captions && s.speaking && s.line) drawCaption(g, s.line.text, s.speaking.progress(now));
       if (s.mode === 'sting') drawSting(g, age, SEGMENT_LABEL[seg.kind], seg.title);
       if (s.mode === 'breaking') drawBreaking(g, age, s.breakingFlash);
@@ -87,8 +109,31 @@ export class SdRenderer implements Renderer {
     if (s.mode === 'breaking') drawBreaking(g, age, s.breakingFlash);
   }
 
+  /** Only the scene, without the channel's bars: the HD renderer puts its own furniture over it. */
+  drawSceneOnly(s: FrameState, now: number): void {
+    if (this.g && s.seg) this.drawScene(this.g, s, s.seg, now);
+  }
+
+  /** Only a desk close-up's side panel (drawSdPanel), on a cleared canvas, for the HD renderer to put beside its presenter. */
+  drawPanelOnly(s: FrameState, now: number): void {
+    const { g } = this;
+    if (!g) return;
+    g.clearRect(0, 0, W, H);
+    drawSdPanel(g, s, now);
+  }
+
+  /**
+   * The scene alone, under the channel's bars (logo, clock, strap, captions, headline bar, ticker): the studio, presenters
+   * and screens, or in an ad break the advert.
+   */
   private drawScene(g: Ctx, s: FrameState, seg: Segment, now: number): void {
     const t = now / 1000;
+    if (seg.kind === 'adverts') {
+      const ad = s.line?.graphic;
+      if (s.mode === 'show' && ad?.type === 'advert') drawAdvert(g, ad, s.graphicAge, t, s.lineAge);
+      else rect(g, 0, 0, W, H, C.black);
+      return;
+    }
     const graphic = s.graphic;
     const graphicAge = s.graphicAge;
     const talking = s.talking;
@@ -119,10 +164,7 @@ export class SdRenderer implements Renderer {
           drawPresenter(g, 92, top, p.look, pose(p), 3);
           drawDesk(g, deskY, -20, W + 20);
           drawHands(g, 92, deskY, 3, p.look.skin, lift(p), p.look.suit);
-          const shown = graphic ?? s.segGraphic;
-          const panel = shown?.type === 'caller' ? undefined : shown;
-          if (panel) drawGraphic(g, panel, 168, 22, 142, 80, graphic ? graphicAge : Infinity, now);
-          else if (s.sidebar) drawSidePanel(g, s.sidebar, 168, 22, 142, 80, now);
+          drawSdPanel(g, s, now);
           return;
         }
         const xs = onScreen.length === 1 ? [160] : [115, 205];

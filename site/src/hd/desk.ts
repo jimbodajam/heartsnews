@@ -67,9 +67,15 @@ function mouth(s: FrameState, art: PresenterArt, talking: boolean, t: number, no
   return art.mouths.includes('smile') && t % 5 < 1.2 ? 'smile' : 'rest';
 }
 
-/** The canvas's CSS transform for a camera: the canvas fills the frame, so tight shots are a clean pixel zoom. */
-function cameraTransform(set: StudioSet, cam: Camera, x: number): string {
-  const tx = ((set.w / 2 - cam.z * x) / set.w) * 100;
+/** Where a close-up puts the presenter across the frame when the side panel is up: on the left, as the SD close-up does. */
+const ASIDE = 0.3;
+
+/**
+ * The canvas's CSS transform for a camera, putting set x `x` at `at` across the frame (a fraction of its width): the canvas
+ * fills the frame, so tight shots are a clean pixel zoom.
+ */
+function cameraTransform(set: StudioSet, cam: Camera, x: number, at = 0.5): string {
+  const tx = ((set.w * at - cam.z * x) / set.w) * 100;
   const ty = ((cam.sy - cam.z * cam.y) / set.h) * 100;
   return `translate(${tx.toFixed(3)}%, ${ty.toFixed(3)}%) scale(${cam.z})`;
 }
@@ -92,9 +98,12 @@ function drawProp(g: CanvasRenderingContext2D, set: StudioSet, name: string, cx:
 
 /**
  * Draw the desk with `s.onScreen` seated at it (canSeat must hold) and return the canvas's CSS transform.
- * Wide: both at their seats, or one centred alone. Single: tight on the speaker, drawn alone. Hard cuts between them.
+ * Wide: both at their seats, or one centred alone. Single: tight on the speaker, drawn alone, framed on the left when
+ * `aside` (a side panel takes the right). Hard cuts between them.
  */
-export function drawDeskScene(g: CanvasRenderingContext2D, set: StudioSet, cast: SeatedCast, s: FrameState, now: number): string {
+export function drawDeskScene(
+  g: CanvasRenderingContext2D, set: StudioSet, cast: SeatedCast, s: FrameState, now: number, aside = false,
+): string {
   const t = now / 1000;
   const seated = s.onScreen;
   const both = seated.length === 2;
@@ -141,5 +150,5 @@ export function drawDeskScene(g: CanvasRenderingContext2D, set: StudioSet, cast:
   g.restore();
 
   if (!tightOn) return cameraTransform(set, set.camera.wide, set.camera.wide.x as number);
-  return cameraTransform(set, set.camera.tight, seatX(tightOn));
+  return cameraTransform(set, set.camera.tight, seatX(tightOn), aside ? ASIDE : 0.5);
 }
