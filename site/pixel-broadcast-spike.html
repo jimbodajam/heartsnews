@@ -498,9 +498,9 @@ function backdropFromGrid(img) {
   og.putImageData(id, 0, 0); return out;
 }
 /** The generated desk is also on the 480-column grid. Key it, drop the floor reflection, and draw the real badge into the blank medallion. */
-function deskFromGrid(img, badge) {
-  // This desk's blocks measure ~3.48 × 3.58 px (a touch chunkier than the backdrop), starting at its own bounding box.
-  const BX = 3.482, BY = 3.582, PX0 = 100, PY0 = 352, W = img.naturalWidth, H = img.naturalHeight;
+function deskFromGrid(img, badge, top = 352) {
+  // This desk's blocks measure ~3.48 × 3.58 px (a touch chunkier than the backdrop), starting at its own bounding box (`top` is the image row where that box starts).
+  const BX = 3.482, BY = 3.582, PX0 = 100, PY0 = top, W = img.naturalWidth, H = img.naturalHeight;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const sg = c.getContext('2d', { willReadFrequently: true }); sg.drawImage(img, 0, 0);
   const d = sg.getImageData(0, 0, W, H).data;
@@ -521,9 +521,11 @@ function deskFromGrid(img, badge) {
   }
   return P.canvas();
 }
-const deskImg = await load('./public/spike/desk-pixel.jpg');
+// the seated sets use the deeper-topped desk made for them (art/desk-pixel-v3.jpg, #78); ?olddesk=1 brings the first one back
+const DESK3 = new URLSearchParams(location.search).get('seated') === '1' && new URLSearchParams(location.search).get('olddesk') !== '1';
+const deskImg = await load(DESK3 ? './public/spike/desk-pixel-v3.jpg' : './public/spike/desk-pixel.jpg');
 const bgImg = await load('./public/spike/studio-pixel.jpg');
-const deskGen = deskImg ? deskFromGrid(deskImg, badgeImg) : null, desk = buildDesk(badgeImg), backdrop = bgImg ? backdropFromGrid(bgImg) : studioImg ? bakeBackdrop(studioImg) : null;
+const deskGen = deskImg ? deskFromGrid(deskImg, badgeImg, DESK3 ? 272 : 352) : null, desk = buildDesk(badgeImg), backdrop = bgImg ? backdropFromGrid(bgImg) : studioImg ? bakeBackdrop(studioImg) : null;
 // ---- Fraser: real Gemini mouth frames + hand, blink and glances derived from his master in code (no generator needed) ----
 const FEYE = { x0: 100, y0: 34, x1: 139, y1: 46 }, FMOU = { x0: 106, y0: 55, x1: 134, y1: 70 };
 const FRASER_S = parseFloat(new URLSearchParams(location.search).get('sf')) || 0.7;   // same scale as Isla by default (?sf= to change)
@@ -565,7 +567,7 @@ const PROP_DEFS = {
   papers: { box: [184, 42, 231, 76], s: 0.7, side: 1 }, glass: { box: [141, 40, 160, 76], s: 0.7, side: 1 }, bottle: { box: [161, 36, 177, 76], s: 0.7, side: 1 }, headphones: { box: [124, 90, 168, 119], s: 0.6, side: 1 },
 };
 const PROP_NAMES = ['none', ...Object.keys(PROP_DEFS)];
-const PROP_BASE = 182;   // scene row the props stand on
+const PROP_BASE = DESK3 ? 197 : 182;   // scene row the props stand on (the deeper desk top is lower)
 const SLOT_SIDE = 14;    // art px a small prop sits towards the middle of the desk from its presenter
 const propSheet = await load('./public/spike/props/sheet.jpg');
 const PROPS = {};
