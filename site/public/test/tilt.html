@@ -28,13 +28,12 @@
     <label>Tilt <input id="deg" type="range" min="-25" max="25" step="0.5" value="8"> <output id="degv"></output></label>
     <label><input id="rs" type="checkbox" checked> RotSprite-style (clean down-sampling)</label>
     <label><input id="cyc" type="checkbox" checked> cycle mouths and blinks</label>
-    <label>Neck pivot x <input id="px" type="number" value="117" style="width:4em"> y <input id="py" type="number" value="52" style="width:4em"></label>
-    <label>Cut the head at row <input id="cut" type="number" value="53" style="width:4em"></label>
-    <label>Head half-width <input id="hw" type="number" value="26" style="width:4em"></label>
+    <label>Neck pivot x <input id="px" type="number" value="117" style="width:4em"> y <input id="py" type="number" value="51" style="width:4em"></label>
+    <label><input id="ol" type="checkbox" checked> show the head outline (blue)</label>
     <span id="state" class="note"></span>
   </div>
   <div class="row" id="views"></div>
-  <p class="note">Left: tilted head. Right: the same frame with no tilt, to compare against. Only the rows above the cut row (the dashed line on the right, level with the chin) are rotated, so the neck, collar and jacket stay put (and only this many cells either side of the pivot, so the shoulders don't move); the pivot is just under the chin. Plain mode just rotates the pixels, RotSprite-style scales up 8x first and picks the most common colour in each cell on the way back.</p>
+  <p class="note">Left: tilted head. Right: the same frame with no tilt, to compare against. Only the head's own pixels (inside the blue outline) are rotated; the neck, collar and jacket stay put, and the yellow cross is the pivot, just under the chin. Plain mode just rotates the pixels, RotSprite-style scales up 8x first and picks the most common colour in each cell on the way back.</p>
 </div>
 <script type="module">
 // Prototype for #78: instead of generating own mouths for the tilted heads (h5, h6), rotate the master head with each mouth and blink composed on it, about the neck.
@@ -43,6 +42,7 @@ const SETS = { Fraser: await loadPresenter('../presenters/fraser-seated'), Isla:
 const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'], EYES = ['open', 'open', 'open', 'blink'];
 const $ = id => document.getElementById(id);
 const X0 = 70, X1 = 170, Y1 = 112, K = 8, SC = 4;   // view window in grid cells, up-scale for rotation, on-screen scale
+const GW = 240, GH = 131;
 const views = {};
 for (const [name, P] of Object.entries(SETS)) {
   const card = document.createElement('div'); card.className = 'card';
@@ -50,64 +50,83 @@ for (const [name, P] of Object.entries(SETS)) {
   for (const c of [cv, ref]) { c.width = (X1 - X0) * SC; c.height = Y1 * SC; }
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px'; row.append(cv, ref);
   const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = name;
-  card.append(row, cap); $('views').append(card); views[name] = { P, cv, ref, cap, cache: new Map() };
+  card.append(row, cap); $('views').append(card); views[name] = { P, cv, ref, cap, cache: new Map(), name };
 }
 
 const scratch = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
 
-/** The head rows of a composed frame, rotated `deg` about (px, py) in grid cells. */
-function rotateHead(P, frame, deg, px, py, rotsprite) {
-  const cut = +$('cut').value, W = X1 - X0;
-  const src = scratch(W, cut), sg = src.getContext('2d'), hw = +$('hw').value; sg.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
-  // only the head: columns beside it (the shoulders slope up past the cut row there) stay out of the rotation
-  sg.clearRect(0, 0, Math.max(0, px - X0 - hw), cut); sg.clearRect(px - X0 + hw + 1, 0, W, cut);
+// The head's own pixels: flood out from the middle of the face over every colour the head uses and the clothes do not, then fill any holes (highlights, earrings).
+// The neck is left out below the chin (rows after `chin`, `neck` cells either side of the middle), and nothing below MAXY is taken, so the collar and shoulders never move.
+const PARAMS = { Fraser: { chin: 50, neck: 10 }, Isla: { chin: 52, neck: 9 } }, CX = 117, MAXY = 54;
+function headMask(P, { chin, neck }) {
+  const D = P.frame({ head: 'b1' }).getContext('2d').getImageData(0, 0, GW, GH).data;
+  const px = (x, y) => { const i = (y * GW + x) * 4; return D[i + 3] > 128 ? (D[i] << 16 | D[i + 1] << 8 | D[i + 2]) : -1; };
+  const headCols = new Set(), cloth = new Set();
+  for (let y = 8; y <= 42; y++) for (let x = 90; x <= 145; x++) { const c = px(x, y); if (c >= 0) headCols.add(c); }
+  for (let y = 62; y <= 100; y++) for (let x = 70; x <= 170; x++) { const c = px(x, y); if (c >= 0 && !headCols.has(c)) cloth.add(c); }
+  const ok = (x, y) => { const c = px(x, y); return c >= 0 && !cloth.has(c) && y <= MAXY && !(y > chin && Math.abs(x - CX) <= neck); };
+  const mask = new Uint8Array(GW * GH), q = [[CX, 30]]; mask[30 * GW + CX] = 1;
+  while (q.length) { const [x, y] = q.pop(); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || mask[ny * GW + nx]) continue; if (ok(nx, ny)) { mask[ny * GW + nx] = 1; q.push([nx, ny]); } } }
+  const out = new Uint8Array(GW * GH), r = [[0, 0]]; out[0] = 2;
+  while (r.length) { const [x, y] = r.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || out[ny * GW + nx] || mask[ny * GW + nx]) continue; out[ny * GW + nx] = 2; r.push([nx, ny]); } }
+  for (let i = 0; i < GW * GH; i++) mask[i] = out[i] === 2 ? 0 : 1;
+  return mask;
+}
+for (const v of Object.values(views)) v.mask = headMask(v.P, PARAMS[v.name]);
+
+/** The frame split in two: the head's own pixels (everything inside the mask) and the rest (body, neck, collar). */
+function split(v, frame) {
+  const D = frame.getContext('2d').getImageData(0, 0, GW, GH), head = new ImageData(GW, GH), rest = new ImageData(GW, GH);
+  for (let i = 0; i < GW * GH; i++) { const dst = v.mask[i] ? head : rest; for (let k = 0; k < 4; k++) dst.data[i * 4 + k] = D.data[i * 4 + k]; }
+  const h = scratch(GW, GH), r = scratch(GW, GH); h.getContext('2d').putImageData(head, 0, 0); r.getContext('2d').putImageData(rest, 0, 0);
+  return { head: h, rest: r };
+}
+
+/** The head's pixels rotated `deg` about (px, py) in grid cells. */
+function rotate(src, deg, px, py, rotsprite) {
   if (!deg) return src;
-  const th = deg * Math.PI / 180, cx = px - X0, cy = py;
+  const th = deg * Math.PI / 180;
   if (!rotsprite) {
-    const out = scratch(W, cut), g = out.getContext('2d'); g.imageSmoothingEnabled = false;
-    g.translate(cx, cy); g.rotate(th); g.translate(-cx, -cy); g.drawImage(src, 0, 0); return out;
+    const out = scratch(GW, GH), g = out.getContext('2d'); g.imageSmoothingEnabled = false;
+    g.translate(px, py); g.rotate(th); g.translate(-px, -py); g.drawImage(src, 0, 0); return out;
   }
-  const up = scratch(W * K, cut * K), ug = up.getContext('2d'); ug.imageSmoothingEnabled = false; ug.drawImage(src, 0, 0, W * K, cut * K);
-  const rot = scratch(W * K, cut * K), rg = rot.getContext('2d'); rg.imageSmoothingEnabled = false;
-  rg.translate(cx * K, cy * K); rg.rotate(th); rg.translate(-cx * K, -cy * K); rg.drawImage(up, 0, 0);
-  const d = rg.getImageData(0, 0, W * K, cut * K).data, out = scratch(W, cut), og = out.getContext('2d'), id = og.createImageData(W, cut), stride = W * K * 4;
-  for (let y = 0; y < cut; y++) for (let x = 0; x < W; x++) {
+  const up = scratch(GW * K, GH * K), ug = up.getContext('2d'); ug.imageSmoothingEnabled = false; ug.drawImage(src, 0, 0, GW * K, GH * K);
+  const rot = scratch(GW * K, GH * K), rg = rot.getContext('2d'); rg.imageSmoothingEnabled = false;
+  rg.translate(px * K, py * K); rg.rotate(th); rg.translate(-px * K, -py * K); rg.drawImage(up, 0, 0);
+  const d = rg.getImageData(0, 0, GW * K, GH * K).data, out = scratch(GW, GH), og = out.getContext('2d'), id = og.createImageData(GW, GH), stride = GW * K * 4;
+  // only a window round the head is read back
+  for (let y = 0; y < 80; y++) for (let x = 60; x < 180; x++) {
     // the commonest colour among the K x K samples of this cell wins; transparent counts as a colour, so a ragged outline is not filled in
     const counts = new Map(); let bestK = 0, bestN = 0;
     for (let sy = 0; sy < K; sy++) for (let sx = 0; sx < K; sx++) {
       const i = (y * K + sy) * stride + (x * K + sx) * 4, key = d[i + 3] < 128 ? 0 : ((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]) + 1;
       const n = (counts.get(key) || 0) + 1; counts.set(key, n); if (n > bestN) { bestN = n; bestK = key; }
     }
-    if (bestK) { const o = (y * W + x) * 4, c = bestK - 1; id.data[o] = c >> 16; id.data[o + 1] = (c >> 8) & 255; id.data[o + 2] = c & 255; id.data[o + 3] = 255; }
+    if (bestK) { const o = (y * GW + x) * 4, c = bestK - 1; id.data[o] = c >> 16; id.data[o + 1] = (c >> 8) & 255; id.data[o + 2] = c & 255; id.data[o + 3] = 255; }
   }
   og.putImageData(id, 0, 0); return out;
 }
 
 function draw(v, mouth, eye, deg) {
-  const { P, cv, ref } = v, cut = +$('cut').value, W = X1 - X0;
-  const frame = P.frame({ head: 'b1', mouth, eye });
-  const key = [mouth, eye, deg, $('px').value, $('py').value, cut, $('hw').value, $('rs').checked].join('|');
-  let head = v.cache.get(key); if (!head) { head = rotateHead(P, frame, deg, +$('px').value, +$('py').value, $('rs').checked); if (v.cache.size > 400) v.cache.clear(); v.cache.set(key, head); }
-  for (const [c, h, tilted] of [[cv, head, true], [ref, null, false]]) {
-    const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0);
-    g.fillStyle = '#6d1a2a'; g.fillRect(0, 0, c.width, c.height);
-    g.fillStyle = '#8a8d99'; g.fillRect(0, 105 * SC, c.width, c.height); g.fillStyle = '#4a4d59'; g.fillRect(0, 105 * SC, c.width, SC);
-    g.save(); g.scale(SC, SC);
-    // body first from the frame below the cut, then the head over it
-    g.drawImage(frame, X0, cut, W, Y1 - cut, 0, cut, W, Y1 - cut);
-    if (tilted) {
-      const hx0 = +$('px').value - X0 - +$('hw').value, hx1 = +$('px').value - X0 + +$('hw').value + 1;
-      if (hx0 > 0) g.drawImage(frame, X0, 0, hx0, cut, 0, 0, hx0, cut);
-      if (hx1 < W) g.drawImage(frame, X0 + hx1, 0, W - hx1, cut, hx1, 0, W - hx1, cut);
-      g.drawImage(h, 0, 0);
-    } else g.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+  const { P, cv, ref } = v, frame = P.frame({ head: 'b1', mouth, eye });
+  const key = [mouth, eye, deg, $('px').value, $('py').value, $('rs').checked].join('|');
+  let c = v.cache.get(key);
+  if (!c) { const sp = split(v, frame); c = { rest: sp.rest, head: rotate(sp.head, deg, +$('px').value, +$('py').value, $('rs').checked), still: sp.head }; if (v.cache.size > 400) v.cache.clear(); v.cache.set(key, c); }
+  for (const [cvs, tilted] of [[cv, true], [ref, false]]) {
+    const g = cvs.getContext('2d'); g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#6d1a2a'; g.fillRect(0, 0, cvs.width, cvs.height);
+    g.fillStyle = '#8a8d99'; g.fillRect(0, 105 * SC, cvs.width, cvs.height); g.fillStyle = '#4a4d59'; g.fillRect(0, 105 * SC, cvs.width, SC);
+    g.save(); g.scale(SC, SC); g.translate(-X0, 0);
+    g.drawImage(c.rest, 0, 0); g.drawImage(tilted ? c.head : c.still, 0, 0);
     g.restore();
-    if (!tilted) { g.strokeStyle = '#e0b13a'; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(0, cut * SC); g.lineTo(c.width, cut * SC); g.stroke(); g.setLineDash([]); }
-    if (tilted) { g.strokeStyle = '#e0b13a'; g.lineWidth = 1; g.beginPath(); const x = ($('px').value - X0) * SC, y = $('py').value * SC; g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.stroke(); }
+    if ($('ol').checked) {
+      g.fillStyle = '#2f7dff';
+      for (let y = 0; y < 70; y++) for (let x = X0; x < X1; x++) if (v.mask[y * GW + x] && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !v.mask[(y + dy) * GW + x + dx])) g.fillRect((x - X0) * SC, y * SC, SC, 1.5);
+    }
+    g.strokeStyle = '#e0b13a'; g.lineWidth = 1; g.beginPath(); const x = ($('px').value - X0) * SC, y = $('py').value * SC; g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.stroke();
   }
-  v.cap.textContent = `${v.name}: ${mouth}, ${eye}${eye === 'blink' ? ' (blink)' : ''}`;
+  v.cap.textContent = v.name + ': ' + mouth + ', ' + eye;
 }
-for (const [n, v] of Object.entries(views)) v.name = n;
 
 let mi = 0, ei = 0, last = 0;
 function loop(ms) {
