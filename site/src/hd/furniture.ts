@@ -197,11 +197,16 @@ export class HdFurniture implements Renderer {
     e.classList.toggle(cls, on);
   }
 
-  /** The headline graphic's title, else the segment strap; a caller bar replaces it. It wipes on when it changes. */
+  /**
+   * The headline graphic's title, else the segment strap, else (a segment with no strap) its title; a caller bar replaces
+   * it. With none of them the text box is hidden rather than an empty one wiping on. It wipes on when it changes. (SD
+   * leaves its bar empty without a strap; HD differs on purpose, #87.)
+   */
   private drawHeadline(s: FrameState): void {
     const g = s.graphic;
     const caller = g?.type === 'caller' ? g : undefined;
-    const text = caller ? '' : g?.type === 'headline' ? g.title : s.seg!.strap;
+    const seg = s.seg!;
+    const text = caller ? '' : (g?.type === 'headline' && g.title.trim()) || seg.strap.trim() || seg.title.trim();
     const key = caller ? `c|${caller.name}|${caller.from}|${caller.topic}` : `h|${text}`;
     if (key === this.headKey) return;
     this.headKey = key;
@@ -213,9 +218,10 @@ export class HdFurniture implements Renderer {
       for (let i = 0; i < 5; i++) wave.append(el('i'));
       who.append(wave, el('span', '', `${caller.name} IN ${caller.from}`));
       h.append(who, el('span', 'txt', caller.topic));
-    } else {
+    } else if (text) {
       h.append(el('span', 'txt', text));
     }
+    h.hidden = !caller && !text;
     // Restart the wipe.
     h.classList.remove('wipe');
     void h.offsetWidth;

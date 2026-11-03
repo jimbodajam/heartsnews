@@ -37,11 +37,14 @@ export function icon(id: IconId): HTMLCanvasElement {
   return c;
 }
 
-/** A portrait (faces/<slug>.png) in a gold frame, or the icon when there's none or it won't load. */
-export function picture(face: string | undefined, fallback: IconId): HTMLElement {
+/**
+ * A portrait (faces/<slug>.png) in a gold frame, or the fallback (an icon, or an element such as `shirt`) when there's
+ * none or it won't load. `em` is its size, FACE_EM unless a graphic needs it smaller or bigger.
+ */
+export function picture(face: string | undefined, fallback: IconId | HTMLElement, em = FACE_EM): HTMLElement {
   const box = el('div', 'pic');
-  box.style.setProperty('--face', `${FACE_EM}em`);
-  const ico = icon(fallback);
+  box.style.setProperty('--face', `${em}em`);
+  const ico = typeof fallback === 'string' ? icon(fallback) : fallback;
   box.append(ico);
   if (face) {
     const img = el('img', 'face');
@@ -86,6 +89,19 @@ export function countdown(iso: string, now = Date.now()): string {
   }
   return shortDate(iso);
 }
+
+/** A shirt in our colours with the number on it: a player's picture when there's no portrait (as the SD card). */
+export function shirt(number?: number): HTMLElement {
+  const s = el('div', 'shirt');
+  s.append(el('span', '', number !== undefined ? String(number) : ''));
+  return s;
+}
+
+/** A W, D or L in its colour, as on a form strip. */
+export const chip = (outcome: 'W' | 'D' | 'L') => el('span', `chip ${outcome.toLowerCase()}`, outcome);
+
+/** A live status ("LIVE 63'") blinks red in the title bar; anything else is gold. */
+export const status = (text: string) => el('span', `st${/live/i.test(text) ? ' live' : ''}`, text);
 
 /** "+5", "0", "-3". */
 export const signed = (n: number) => (n > 0 ? `+${n}` : String(n));

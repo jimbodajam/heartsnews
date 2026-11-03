@@ -13,6 +13,14 @@
   --rule: #1d1a35;
   --cream: #f2efe6;
   --red: #e0453a;
+  --green: #3bb273;
+  --amber: #f08a24;
+  --blue: #3fa7d6;
+  --lime: #8bc34a;
+  --light: #c9c4e0;
+  --grey: #9a95b8;
+  --maroon-light: #9b2d40;
+  --kit: #c9ccd6;
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -93,10 +101,26 @@
 .hdg .g-fixtures.few .fx .teams { font-size: 1.6em; line-height: 1.6; }
 .hdg .g-fixtures.few .fx b { font-size: .85em; margin-top: .6em; }
 
-/* result */
-.hdg .g-result h2 .st { color: var(--gold); flex: none; }
-.hdg .g-result h2 .st.live { color: var(--red); animation: hdg-blink 1s steps(1) infinite; }
+/* The next of a run (the team sheet a player at a time) swaps in without wiping the panel on again. */
+.hdg .gfx.run { clip-path: none; animation: none; }
+
+/* A status in the title bar (result, stats): a live one blinks red. */
+.hdg .gfx h2 .st { color: var(--gold); flex: none; }
+.hdg .gfx h2 .st.live { color: var(--red); animation: hdg-blink 1s steps(1) infinite; }
 @keyframes hdg-blink { 50% { visibility: hidden; } }
+
+/* A shirt with the number, where there's no portrait (bench, player). */
+.hdg .shirt { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+.hdg .shirt::before { content: ''; position: absolute; inset: 0; background: var(--maroon-light);
+  clip-path: polygon(8.3% 16.7%, 41.7% 16.7%, 41.7% 25%, 58.3% 25%, 58.3% 16.7%, 91.7% 16.7%, 91.7% 50%, 75% 50%, 75% 91.7%, 25% 91.7%, 25% 50%, 8.3% 50%); }
+.hdg .shirt span { position: relative; font-size: calc(var(--face) * .3); line-height: 1; margin-top: 12%; }
+
+/* W/D/L (form, head to head). */
+.hdg .chip { display: inline-grid; place-items: center; flex: none; width: 2.2em; height: 2.2em; line-height: 1; color: var(--ink); background: var(--gold); }
+.hdg .chip.w { background: var(--green); }
+.hdg .chip.l { background: var(--red); }
+
+/* result */
 .hdg .g-result .body { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1em; align-items: start; padding: 1.8em 1.2em 1em; }
 .hdg .g-result .side { display: grid; justify-items: center; gap: 1em; text-align: center; min-width: 0; }
 .hdg .g-result .team { font-size: 1.1em; line-height: 1.4; overflow-wrap: anywhere; }
@@ -104,3 +128,165 @@
 .hdg .g-result .scorers { display: grid; gap: .5em; font-size: .65em; color: #c9c4e0; text-transform: none; }
 .hdg .g-result .scorers div { text-transform: uppercase; }
 .hdg .g-result .scorers .more { color: #9a95b8; }
+
+/*
+ * Round 2 (#87). Full screen scales the text by 1.3 but the box is only a little taller, so the longer types lay out
+ * across its width there (two columns) rather than running off the bottom.
+ */
+
+/* quote */
+.hdg .g-quote .body { padding: 1.4em; }
+.hdg .g-quote .row { display: flex; gap: 1.4em; align-items: flex-start; height: 100%; }
+.hdg .g-quote .mark { flex: none; width: 1em; font-size: 4em; line-height: 1; color: var(--gold); }
+.hdg .g-quote .text { font-size: 1.05em; line-height: 1.75; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 9; overflow: hidden; }
+.hdg .g-quote.long .text { font-size: .85em; -webkit-line-clamp: 12; }
+.hdg .gfx.full .g-quote .text { -webkit-line-clamp: 7; }
+.hdg .gfx.full .g-quote.long .text { -webkit-line-clamp: 9; }
+
+/* transfer */
+.hdg .g-transfer .body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.3em; padding: 1em 1.4em; text-align: center; }
+.hdg .g-transfer .player { font-size: 1.9em; line-height: 1.3; max-width: 100%; overflow-wrap: anywhere; }
+.hdg .g-transfer .move { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1em; align-items: center; width: 100%; font-size: .85em; color: var(--light); }
+.hdg .g-transfer .club { background: var(--rule); padding: .8em .6em .7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-transfer .arrow { color: var(--gold); font-size: 1.4em; }
+.hdg .g-transfer .stamp { font-size: 1.4em; line-height: 1; color: var(--ink); background: var(--gold); padding: .55em .8em .45em; animation: hdg-drop .01s steps(1) .65s both; }
+.hdg .g-transfer .stamp.talks { background: var(--blue); }
+.hdg .g-transfer .stamp.medical { background: var(--amber); }
+.hdg .g-transfer .stamp.done { background: var(--green); animation: hdg-drop .01s steps(1) .65s both, hdg-flash .8s steps(1) .65s infinite; }
+@keyframes hdg-flash { 50% { background: var(--cream); } }
+.hdg .g-transfer .fee { color: var(--gold); font-size: .85em; }
+.hdg .gfx.full .g-transfer .move { width: 80%; }
+
+/* formation: a pitch attacking left to right, a column per line of the formation */
+.hdg .g-formation h2 .key { flex: none; display: flex; align-items: center; gap: .6em; color: var(--gold); }
+.hdg .g-formation h2 .key i { width: .9em; height: .9em; background: var(--gold); box-shadow: 0 0 0 .15em var(--ink); }
+.hdg .g-formation .body { padding: .6em; }
+.hdg .g-formation .pitch { position: relative; height: 100%; background: repeating-linear-gradient(90deg, #2f7d3b 0 10%, #2a7135 10% 20%); }
+.hdg .g-formation .pitch > i { position: absolute; border: .15em solid rgba(242, 239, 230, .45); }
+.hdg .g-formation .pitch::before { content: ''; position: absolute; inset: .5em; border: .15em solid rgba(242, 239, 230, .45); }
+.hdg .g-formation .pitch .half { top: .5em; bottom: .5em; left: 50%; border-width: 0 0 0 .15em; }
+.hdg .g-formation .pitch .circle { left: 50%; top: 50%; width: 5em; height: 5em; border-radius: 50%; transform: translate(-50%, -50%); }
+.hdg .g-formation .pitch .box { top: 27%; height: 46%; width: 11%; }
+.hdg .g-formation .pitch .box.l { left: .5em; border-left: 0; }
+.hdg .g-formation .pitch .box.r { right: .5em; border-right: 0; }
+.hdg .g-formation .pl { position: absolute; width: calc(100% / var(--cols) - .4em); transform: translate(-50%, -50%); display: grid; justify-items: center; gap: .45em; }
+.hdg .g-formation .pl b { width: 1.2em; height: 1.2em; background: var(--kit); box-shadow: 0 0 0 .2em var(--ink); }
+.hdg .g-formation.ours .pl b { background: var(--maroon-light); }
+.hdg .g-formation .pl span { max-width: 100%; font-size: .6em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: .15em .15em 0 var(--ink); }
+.hdg .g-formation .pl.new b { background: var(--gold); }
+.hdg .g-formation .pl.new span { color: var(--gold-light); }
+.hdg .gfx.full .g-formation .pl b { width: 1em; height: 1em; }
+.hdg .gfx.full .g-formation .pl span { font-size: .5em; }
+
+/* bench: two columns beside the presenter (column first, as SD), a grid of cards full screen */
+.hdg .g-bench .body { display: grid; grid-auto-flow: column; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(var(--rows, 6), minmax(0, 1fr));
+  column-gap: 1.4em; padding: .8em 1.2em; max-height: 100%; }
+.hdg .g-bench .sub { display: grid; grid-template-columns: auto 2.2em minmax(0, 1fr); gap: .8em; align-items: center; min-height: 0; border-bottom: .15em solid var(--rule); }
+.hdg .g-bench .sub .pic { box-shadow: 0 0 0 .2em var(--gold); }
+.hdg .g-bench .sub b { font-weight: normal; color: var(--gold); text-align: right; font-size: .8em; }
+.hdg .g-bench .sub span { font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .gfx.full .g-bench .body { grid-auto-flow: row; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: minmax(0, 1fr);
+  gap: .9em 1.2em; padding: 1em 1.4em; }
+.hdg .gfx.full .g-bench .sub { grid-template-columns: auto minmax(0, 1fr); justify-content: center; align-content: center; row-gap: .5em; column-gap: .6em; border: 0; background: var(--rule); padding: .6em; }
+.hdg .gfx.full .g-bench .sub .pic { grid-column: 1 / -1; justify-self: center; }
+.hdg .gfx.full .g-bench .sub b { font-size: .7em; }
+.hdg .gfx.full .g-bench .sub span { font-size: .6em; }
+
+/* player: the card slides in from the right as each player is read out */
+.hdg .g-player .body { display: flex; align-items: center; padding: 1.4em 1.6em; }
+.hdg .g-player .card { display: flex; align-items: center; gap: 1.8em; min-width: 0; animation: hdg-slide .42s steps(6) both; }
+@keyframes hdg-slide { from { transform: translateX(30%); } to { transform: none; } }
+.hdg .g-player .info { display: grid; gap: .6em; min-width: 0; }
+.hdg .g-player .num { color: var(--gold); font-size: 2.6em; line-height: 1.1; }
+.hdg .g-player .first { color: var(--light); font-size: .9em; }
+.hdg .g-player .sur { font-size: 1.7em; line-height: 1.3; overflow-wrap: anywhere; }
+.hdg .g-player .pos { color: var(--grey); font-size: .75em; }
+.hdg .g-player .tags { display: flex; gap: .8em; margin-top: .4em; }
+.hdg .g-player .tags span { color: var(--ink); font-size: .7em; line-height: 1; padding: .55em .6em .45em; }
+.hdg .g-player .tags .cap { background: var(--gold); }
+.hdg .g-player .tags .new { background: var(--green); animation: hdg-new 1s steps(1) infinite; }
+@keyframes hdg-new { 50% { background: var(--cream); } }
+.hdg .gfx.full .g-player .body { justify-content: center; }
+
+/* stats: a bar per row, each side growing in from its own end */
+.hdg .g-stats .body { display: flex; flex-direction: column; padding: .9em 1.4em; }
+.hdg .g-stats .score { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1em; align-items: center; padding-bottom: .6em; margin-bottom: .3em; border-bottom: .15em solid var(--rule); }
+.hdg .g-stats .score .team { font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-stats .score .team:last-child { text-align: right; }
+.hdg .g-stats .score b { font-weight: normal; color: var(--gold); font-size: 1.6em; }
+.hdg .g-stats .stat { display: grid; grid-template-columns: 4em minmax(0, 1fr) 4em; row-gap: .35em; align-items: center; padding: .2em 0; font-size: .75em; }
+.hdg .g-stats .stat .lbl { text-align: center; color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-stats .stat span:nth-child(3) { text-align: right; }
+.hdg .g-stats .bar { grid-column: 1 / -1; position: relative; height: .5em; background: var(--rule); }
+.hdg .g-stats .bar i { position: absolute; top: 0; bottom: 0; animation: hdg-grow .5s steps(8) both; animation-delay: calc(.55s + var(--i) * 80ms); }
+.hdg .g-stats .bar .h { left: 0; background: var(--gold); transform-origin: left; }
+.hdg .g-stats .bar .a { right: 0; background: var(--light); transform-origin: right; }
+@keyframes hdg-grow { from { transform: scaleX(0); } }
+.hdg .gfx.full .in.g-stats { font-size: 1.05em; }
+
+/* form */
+.hdg .g-form .body { display: flex; flex-direction: column; padding: .6em 1.4em; }
+.hdg .g-form .res { display: grid; grid-template-columns: auto 5em minmax(0, 1fr); gap: 1em; align-items: center; padding: .55em 0; border-bottom: .15em solid var(--rule); }
+.hdg .g-form .res .chip { font-size: .8em; }
+.hdg .g-form .res b { font-weight: normal; color: var(--gold); font-size: .9em; }
+.hdg .g-form .res span:last-child { font-size: .85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .gfx.full .g-form .body { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; column-gap: 3em; align-content: center; }
+
+/* head to head */
+.hdg .g-headtohead .body { display: flex; flex-direction: column; gap: .7em; padding: .9em 1.4em; }
+.hdg .g-headtohead .games { color: var(--light); font-size: .75em; }
+.hdg .g-headtohead .wdl { display: flex; gap: .3em; height: 2.4em; }
+.hdg .g-headtohead .wdl div { flex-basis: 0; min-width: 4.5em; display: grid; place-items: center; color: var(--ink); font-size: .8em; background: var(--gold); }
+.hdg .g-headtohead .wdl .w { background: var(--green); }
+.hdg .g-headtohead .wdl .l { background: var(--red); }
+.hdg .g-headtohead .kv { display: flex; justify-content: space-between; gap: 1em; padding: .3em 0 .45em; border-bottom: .15em solid var(--rule); font-size: .75em; }
+.hdg .g-headtohead .kv span { color: var(--grey); flex: none; }
+.hdg .g-headtohead .kv b { font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-headtohead .recent { display: flex; gap: .4em; align-items: center; margin-top: auto; }
+.hdg .g-headtohead .recent .chip { font-size: .75em; }
+.hdg .g-headtohead .recent .lbl { order: 99; margin-left: auto; color: var(--grey); font-size: .7em; }
+.hdg .gfx.full .g-headtohead .body { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row dense; gap: .8em 3em; align-content: center; }
+.hdg .gfx.full .g-headtohead .games,
+.hdg .gfx.full .g-headtohead .wdl,
+.hdg .gfx.full .g-headtohead .recent { grid-column: 1; margin: 0; }
+.hdg .gfx.full .g-headtohead .kv { grid-column: 2; align-self: center; }
+
+/* predictions */
+.hdg .g-predictions .body { display: flex; flex-direction: column; gap: 1em; padding: 1em 1.4em; }
+.hdg .g-predictions .fixture { text-align: center; color: var(--light); font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-predictions .picks { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1em; align-items: center; }
+.hdg .g-predictions .pick { display: grid; justify-items: center; gap: .9em; min-width: 0; padding: 1.2em .5em; text-align: center; background: var(--rule); }
+.hdg .g-predictions .pick b { max-width: 100%; font-weight: normal; color: var(--gold); font-size: .85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-predictions .pick .score { font-size: 2.6em; line-height: 1.1; white-space: nowrap; }
+.hdg .g-predictions .pick span { color: var(--grey); font-size: .6em; }
+
+/* sentiment: the meter's needle steps out from the middle to the score */
+.hdg .g-sentiment .body { display: flex; flex-direction: column; gap: .6em; padding: 1.4em 1.6em 1em; }
+.hdg .g-sentiment .meter { position: relative; display: flex; flex: none; height: 1.6em; margin-top: 1em; }
+.hdg .g-sentiment .meter i { flex: 1; }
+.hdg .g-sentiment .meter .b0 { background: var(--red); }
+.hdg .g-sentiment .meter .b1 { background: var(--amber); }
+.hdg .g-sentiment .meter .b2 { background: var(--gold); }
+.hdg .g-sentiment .meter .b3 { background: var(--lime); }
+.hdg .g-sentiment .meter .b4 { background: var(--green); }
+.hdg .g-sentiment .needle { position: absolute; top: -1em; bottom: -.4em; left: var(--at); width: .4em; transform: translateX(-50%); background: var(--cream);
+  box-shadow: 0 0 0 .15em var(--ink); animation: hdg-needle 1.4s steps(14) .5s both; }
+.hdg .g-sentiment .needle::before { content: ''; position: absolute; top: 0; left: 50%; width: 1.4em; height: .4em; transform: translateX(-50%); background: var(--cream); }
+@keyframes hdg-needle { from { left: 50%; } }
+.hdg .g-sentiment .ends { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; color: var(--grey); font-size: .65em; }
+.hdg .g-sentiment .ends span:last-child { text-align: right; }
+.hdg .g-sentiment .ends b { font-weight: normal; color: var(--cream); font-size: 2em; }
+.hdg .g-sentiment .tp { margin-top: .5em; color: var(--gold); font-size: .75em; }
+.hdg .g-sentiment .topics { display: grid; gap: .6em; }
+.hdg .g-sentiment .topic { font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .gfx.full .g-sentiment .topics { grid-template-columns: 1fr 1fr; column-gap: 2em; }
+
+/* birthdays: like the table, the one getting the package in maroon */
+.hdg .g-birthdays .body { display: grid; grid-auto-rows: minmax(0, 2.3em); align-content: start; padding: .5em .6em; font-size: .8em; }
+.hdg .g-birthdays .tr { display: grid; grid-template-columns: minmax(0, 1fr) auto 4.2em 3.4em; gap: .8em; align-items: center; padding: 0 .8em; border-bottom: .15em solid var(--rule); }
+.hdg .g-birthdays .tr span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-birthdays .tr span:nth-child(n+2) { text-align: right; }
+.hdg .g-birthdays .tr .yr { color: var(--light); }
+.hdg .g-birthdays .th { color: var(--gold); border-bottom-color: var(--gold); }
+.hdg .g-birthdays .me { background: var(--maroon); color: var(--gold-light); }
+.hdg .g-birthdays .me .yr { color: var(--gold); }

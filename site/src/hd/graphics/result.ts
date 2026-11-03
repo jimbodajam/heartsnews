@@ -1,5 +1,5 @@
 import type { Graphic } from '../../../../shared/bulletin';
-import { el, shell } from './common';
+import { el, shell, status as statusNote } from './common';
 
 /** Scorers listed under each side before the rest go into "+N MORE". */
 const MAX_SCORERS = 4;
@@ -7,7 +7,7 @@ const MAX_SCORERS = 4;
 /** A score: the competition and status in the bar (a live one blinks red), each side's name and scorers either side of it. */
 export function result(g: Extract<Graphic, { type: 'result' }>): HTMLElement {
   const status = g.status ?? 'FULL TIME';
-  const { root, body } = shell('result', g.competition, el('span', `st${/live/i.test(status) ? ' live' : ''}`, status));
+  const { root, body } = shell('result', g.competition, statusNote(status));
   const side = (name: string, scorers: readonly string[] = []) => {
     const col = el('div', 'side');
     col.append(el('div', 'team', name));

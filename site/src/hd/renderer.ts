@@ -16,15 +16,36 @@ type Art = Readonly<{ set: StudioSet; cast: SeatedCast }>;
  */
 export type View = 'hd' | 'hd-full' | 'sd-scene' | 'sd-frame';
 
+/** The team sheet's cards: on the videowall, HD shows them full screen (teamNewsCard). */
+const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
+
+/**
+ * The team news rule (#87): the videowall has no HD art yet (nor has Ross), so in HD a videowall segment's team-news card
+ * (the line's, else the segment's last, as the SD wall keeps it up) plays full screen over the dimmed HD studio instead
+ * of the SD videowall. Undefined when there's no such card HD draws (a line before the first card): then the SD scene
+ * shows as before. Drop this once the wall has HD art.
+ */
+export function teamNewsCard(s: FrameState): Graphic | undefined {
+  if (s.seg?.scene !== 'videowall') return undefined;
+  const card = s.graphic ?? s.segGraphic;
+  return card && TEAM_NEWS.has(card.type) && isNative(card) ? card : undefined;
+}
+
+/** What a full-screen HD view (`hd-full`) shows: the team-news card on the videowall, else the line's graphic. */
+const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
+
 /**
  * Which view this frame gets (#85, #87). The whole SD frame for anything but a show frame (splash, ident, sponsor, sting,
  * breaking flash) until #86. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
- * touchscreen, videowall, pitchside, museum), a full-screen graphic HD doesn't draw yet, a desk with someone who has no HD
- * art (Ross in the debate), and the desk until the art has loaded. A full-screen graphic HD draws gets `hd-full`. Otherwise HD.
+ * touchscreen, pitchside, museum, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
+ * desk with someone who has no HD art (Ross in the debate), and anything until the art has loaded. `hd-full` for a
+ * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). Otherwise HD.
  */
 export function chooseView(s: FrameState, art: Art | undefined): View {
   if (s.mode !== 'show' || !s.seg) return 'sd-frame';
-  if (s.seg.kind === 'adverts' || s.seg.scene !== 'desk' || !art) return 'sd-scene';
+  if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
+  if (teamNewsCard(s)) return 'hd-full';
+  if (s.seg.scene !== 'desk') return 'sd-scene';
   if (s.shot === 'full') return isNative(s.graphic) ? 'hd-full' : 'sd-scene';
   return canSeat(art.set, art.cast, s.onScreen) ? 'hd' : 'sd-scene';
 }
@@ -186,7 +207,7 @@ export class HdRenderer implements Renderer {
       this.column!.hide(now);
       this.setColumnClass(false);
       this.setTransform(drawStudioBackdrop(this.g!, this.art!.set));
-      this.box!.show(s.graphic, 'full');
+      this.box!.show(fullGraphic(s), 'full');
     } else {
       // A close-up with a graphic of its own puts it beside the presenter, who moves left (ASIDE); otherwise the side
       // column is in and the studio moves left for it. Never both: a panel waits for the column to have gone.
