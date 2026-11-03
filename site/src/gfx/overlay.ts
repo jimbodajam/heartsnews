@@ -77,6 +77,11 @@ export class Ticker {
   private last?: number;
   private goalAt = -Infinity;
 
+  /** Whether the goal flash is on at `now`, for the HD ticker to follow. */
+  flashing(now: number): boolean {
+    return now - this.goalAt < GOAL_FLASH_MS;
+  }
+
   /** A goal: bring the first item (the score) to the front now and flash it. */
   goal(now: number): void {
     this.pos = 0;

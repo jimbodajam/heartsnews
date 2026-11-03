@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HD furniture test</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e0c10; overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+  #frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; background: linear-gradient(160deg, #2a2540, #1a2a3a 60%, #223); }
+  #hint { position: fixed; right: 8px; top: 6px; color: #f2efe6aa; font: 11px sans-serif; z-index: 5; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame"></div></div>
+<div id="hint">Dev test for HdFurniture (#84). ?step=N&amp;p=0..1 freezes on a line; ?goal=1 fires the goal flash; ?nodemo=1; ?caller=1; ?ad=1; ?hold=1</div>
+<script type="module">
+import { HdFurniture } from './src/hd/furniture.ts';
+import { Ticker } from './src/gfx/overlay.ts';
+
+const q = new URLSearchParams(location.search);
+const b = await (await fetch('./public/bulletins/latest.json')).json();
+const presenters = Object.fromEntries(b.presenters.map((p) => [p.id, p]));
+const LINE_MS = 4000;
+
+// Every line in order, with its segment, flagged where a speaker is new to the segment.
+const steps = [];
+b.segments.forEach((seg) => {
+  const seen = new Set();
+  seg.lines.forEach((line) => {
+    steps.push({ seg, line, first: !seen.has(line.speaker) });
+    seen.add(line.speaker);
+  });
+});
+// A phone-in caller, to show the caller bar, on the fourth step of the run.
+const CALLER = { type: 'caller', name: 'Davie', from: 'Gorgie', topic: 'Is Vrancken the right man for the Europa nights?' };
+const tickerItems = (live) => [
+  ...(live ? [{ text: 'HT: HEARTS 2-1 DUNDEE UTD  45+2\'', score: true }] : []),
+  ...b.ticker.map((text) => ({ text })),
+];
+
+const frame = document.getElementById('frame');
+const furniture = new HdFurniture();
+furniture.mount(frame);
+const ticker = new Ticker();
+const t0 = performance.now();
+let goalDone = false;
+
+function stateAt(now) {
+  const frozen = q.has('step');
+  const idx = frozen ? Number(q.get('step')) % steps.length : Math.floor((now - t0) / LINE_MS) % steps.length;
+  const age = frozen ? Number(q.get('p') ?? 0.5) * LINE_MS : (now - t0) % LINE_MS;
+  const { seg, line, first } = steps[idx];
+  const graphic = idx === 3 || q.has('caller') ? CALLER : line.graphic;
+  const speaker = presenters[line.speaker] ?? b.presenters[0];
+  const hold = q.has('hold');
+  const strap = first || hold || idx === 3 ? { name: speaker.name, role: hold ? 'LIVE: TYNECASTLE' : speaker.role, age: frozen ? Math.max(age, Number(q.get('sage') ?? 0)) : age, hold } : undefined;
+  const live = idx >= 2;
+  if (!goalDone && (q.has('goal') || idx === 6)) { ticker.goal(now); goalDone = true; }
+  const kind = q.has('ad') ? 'adverts' : seg.kind;
+  return {
+    mode: 'show', modeAge: 9999, status: '', channel: b.channel.name, demo: !q.has('nodemo'), captions: true,
+    seg: { ...seg, kind }, line, lineAge: age, shot: 'wide', strap,
+    speaking: { progress: () => Math.min(1, age / (LINE_MS - 500)), level: () => 0, shape: () => undefined, done: Promise.resolve(), cancel() {} },
+    talking: line.speaker, graphic, graphicAge: age, ticker, tickerItems: tickerItems(live), speaker,
+  };
+}
+
+function frameLoop(now) {
+  furniture.draw(stateAt(now), now);
+  requestAnimationFrame(frameLoop);
+}
+requestAnimationFrame(frameLoop);
+</script>
+</body>
+</html>
