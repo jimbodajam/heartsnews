@@ -2,7 +2,7 @@
 
 Kirsty Reid has no earlier art, so the standing master is made from a description, the way Ross's was (`art/presenters/ross/master-prompts.md`). The framing reference is **Ross's** standing master, not Isla's: Ross's is straight on, arms down, on the 145 x 216 grid that `tools/frames/standing.mjs` is tuned for, and it went through the whole queue and bake. Isla's stands three-quarters on in a skirt (her `feetTop` is 119, not 138), which would put the leg frames off the tuned rows.
 
-**Both masters were made on 3 Nov, first try each** (`site/public/spike/kirsty/standing/b1.jpg`, `site/public/spike/kirsty/seated/b1.jpg`), and both queues are built: `kirsty` (23 frames in round 1) and `kirsty-seated` (16). Start at section 3.
+**Both masters were made on 3 Nov, first try each, and approved by James** (`site/public/spike/kirsty/standing/b1.jpg`, `site/public/spike/kirsty/seated/b1.jpg`), and both queues are built: `kirsty` (23 frames in round 1) and `kirsty-seated` (16). Start at section 3.
 
 Kirsty gets a seated set too, though she only works the touchscreen today: James wants the presenters to be interchangeable, so any of them can sit at the desk once the rota work lands. `art/presenters/kirsty-seated/` was scaffolded with `seated.mjs`. The crop box, `headCut` and `handsTop` are copied from `ross-seated`, whose framing her seated master matches almost exactly, and both crops were checked on the masters. The leans `h5`/`h6` are dropped from the seated frames: they are code tilts, and Ross's came out too big.
 
