@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — HD faces bake-off (#93)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
+<style>
+  :root { --bg: #0e0c10; --ink: #f2efe6; }
+  body.light { --bg: #cfd3dc; --ink: #1a1626; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Press Start 2P', monospace; }
+  header { position: sticky; top: 0; z-index: 3; background: var(--bg); padding: 12px 16px; border-bottom: 2px solid #e0b13a55; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; font-size: 10px; }
+  header h1 { font-size: 12px; margin: 0 12px 0 0; font-weight: normal; color: #e0b13a; }
+  header button { font: inherit; font-size: 10px; background: #120f22; color: #f2efe6; border: 2px solid #e0b13a66; padding: 8px 10px; cursor: pointer; }
+  header button.on { background: #e0b13a; color: #3d0d17; border-color: #e0b13a; }
+  header span { opacity: .75; }
+  #wrap { overflow-x: auto; padding: 0 16px 40px; }
+  .row { display: grid; grid-template-columns: 130px repeat(3, max-content); gap: 14px; align-items: start; padding: 10px 0; border-bottom: 1px solid #ffffff18; }
+  .row.head { position: sticky; top: 0; z-index: 2; background: var(--bg); font-size: 9px; color: #e0b13a; padding: 8px 0; }
+  body.light .row.head { color: #6d1a2a; }
+  .name { font-size: 9px; line-height: 1.6; padding-top: 6px; }
+  .name small { display: block; opacity: .6; font-size: 7px; }
+  /* mock of the HD headline graphic: dark panel, gold edge, maroon header, face on the left */
+  .gfx { background: #120f22; border: 3px solid #e0b13a; color: #f2efe6; }
+  .gfx .hd { background: #6d1a2a; padding: 5px 8px; font-size: 8px; letter-spacing: 1px; }
+  .gfx .bd { display: flex; gap: 10px; align-items: center; padding: 8px; }
+  .gfx .ph { flex: none; background: #2a2340; display: grid; place-items: center; }
+  .gfx .ph img { display: block; image-rendering: pixelated; }
+  .gfx .ph.none { color: #ff8a8a; font-size: 7px; text-align: center; line-height: 1.6; }
+  .gfx .tx { font-size: 8px; line-height: 1.7; white-space: nowrap; }
+  .gfx .tx b { color: #e0b13a; font-weight: normal; }
+</style>
+</head>
+<body>
+<header>
+  <h1>HD faces bake-off</h1>
+  <span>Face size (art px, shown 3x)</span>
+  <span id="sizes"></span>
+  <span>Option 3 source px</span>
+  <span id="srcs"></span>
+  <button id="bg">Light / dark</button>
+</header>
+<div id="wrap"><div id="grid"></div></div>
+<script type="module">
+const SCALE = 3;
+const state = { size: 72, src: 72, light: false };
+const people = await fetch('../faces/faces.json').then(r => r.json());
+const grid = document.getElementById('grid');
+
+// hand-drawn portraits live in art/faces; copies are in faces-art/ so the page can serve them
+await Promise.all(people.map(p => new Promise(r => { const i = new Image(); i.onload = () => { p.hasArt = true; r(); }; i.onerror = () => { p.hasArt = false; r(); }; i.src = `faces-art/${p.file}`; })));
+
+function box(src, name, size) {
+  const d = size * SCALE;
+  const ph = src
+    ? `<div class="ph" style="width:${d}px;height:${d}px"><img src="${src}" width="${d}" height="${d}" alt="${name}" onerror="this.parentNode.className='ph none';this.parentNode.textContent='MISSING'"></div>`
+    : `<div class="ph none" style="width:${d}px;height:${d}px">NO HAND-DRAWN</div>`;
+  return `<div class="gfx"><div class="hd">TRANSFER NEWS</div><div class="bd">${ph}<div class="tx"><b>${name}</b><br>signs new deal</div></div></div>`;
+}
+
+function render() {
+  document.body.classList.toggle('light', state.light);
+  grid.innerHTML = `<div class="row head"><div></div><div>1 HAND-DRAWN</div><div>2 CURRENT</div><div>3 NEW HD FROM PHOTO (${state.src}px)</div></div>` +
+    people.map(p => `<div class="row"><div class="name">${p.name}<small>${p.role}${p.hasArt ? '' : ' / no art'}</small></div>` +
+      box(p.hasArt ? `faces-art/${p.file}` : '', p.name, state.size) +
+      box(`../faces/${p.file}`, p.name, state.size) +
+      box(`faces-hd/${state.src}/${p.file}`, p.name, state.size) + `</div>`).join('');
+}
+
+const mark = () => document.querySelectorAll('#sizes button,#srcs button').forEach(b => b.classList.toggle('on', +b.dataset.v === state[b.parentNode.id === 'sizes' ? 'size' : 'src']));
+function buttons(el, values, key) {
+  el.innerHTML = values.map(v => `<button data-v="${v}">${v}</button>`).join(' ');
+  el.onclick = e => { const v = e.target.dataset.v; if (!v) return; state[key] = +v; mark(); render(); };
+}
+buttons(document.getElementById('sizes'), [48, 72, 96], 'size');
+buttons(document.getElementById('srcs'), [48, 72], 'src');
+document.getElementById('bg').onclick = () => { state.light = !state.light; render(); };
+mark(); render();
+</script>
+</body>
+</html>

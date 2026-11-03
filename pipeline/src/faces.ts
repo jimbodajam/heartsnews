@@ -50,13 +50,13 @@ export function people(html: string): { name: string; img: string; href?: string
  * Head and shoulders from a cut-out photo: trim the transparent edges, take a square from the top centre,
  * shrink to FACE_SIZE and limit the palette so it reads as pixel art.
  */
-export async function portrait(png: Buffer): Promise<Buffer> {
+export async function portrait(png: Buffer, size = FACE_SIZE): Promise<Buffer> {
   const trimmed = await sharp(png).trim().toBuffer({ resolveWithObject: true });
   const { width, height } = trimmed.info;
   const side = Math.round(Math.min(width * 0.62, height));
   return sharp(trimmed.data)
     .extract({ left: Math.round((width - side) / 2), top: 0, width: side, height: side })
-    .resize(FACE_SIZE, FACE_SIZE, { kernel: 'mitchell' })
+    .resize(size, size, { kernel: 'mitchell' })
     .modulate({ saturation: 1.15 })
     .png({ palette: true, colours: 24, dither: 0.3 })
     .toBuffer();
@@ -67,7 +67,39 @@ export async function artPortrait(png: Buffer): Promise<Buffer> {
   return sharp(png).resize(ART_SIZE, ART_SIZE, { kernel: 'nearest', fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
 }
 
+/**
+ * `npm run faces -- --hd [--size 48,72] [--out site/public/test/faces-hd]`: pixelate the club photos at larger sizes for the
+ * HD graphics bake-off (#93). Always from the photo (art/faces ignored); writes <out>/<size>/<slug>.png and leaves
+ * site/public/faces alone.
+ */
+async function mainHd(args: string[]) {
+  const arg = (k: string) => (args.includes(k) ? args[args.indexOf(k) + 1] : undefined);
+  const sizes = (arg('--size') ?? '48,72').split(',').map(Number).filter((n) => n > 0);
+  const out = resolve(ROOT, arg('--out') ?? 'site/public/test/faces-hd');
+  for (const size of sizes) await mkdir(resolve(out, String(size)), { recursive: true });
+  let ok = 0;
+  const failed: string[] = [];
+  for (const page of Object.keys(PAGES)) {
+    for (const p of people(await fetchText(`https://www.heartsfc.co.uk/pages/${page}`))) {
+      try {
+        const res = await fetch(p.img, { signal: AbortSignal.timeout(20_000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = Buffer.from(await res.arrayBuffer());
+        for (const size of sizes) await writeFile(resolve(out, String(size), `${slug(p.name)}.png`), await portrait(buf, size));
+        ok++;
+        console.log(`  ✔ ${p.name}`);
+      } catch (err) {
+        failed.push(p.name);
+        console.log(`  ✘ ${p.name}: ${(err as Error).message}`);
+      }
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+  console.log(`\n${ok} people at ${sizes.join(', ')} px → ${out}${failed.length ? `; failed: ${failed.join(', ')}` : ''}`);
+}
+
 async function main() {
+  if (process.argv.includes('--hd')) return mainHd(process.argv.slice(2));
   await mkdir(OUT, { recursive: true });
   const faces: Face[] = [];
   for (const [page, role] of Object.entries(PAGES)) {
