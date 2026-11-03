@@ -343,7 +343,7 @@ export function sidebar(f: Facts): Sidebar {
   return {
     highlight: f.club.shortName,
     next: n && { date: n.date, home: name(n.home), away: name(n.away), competition: n.competition },
-    last: r && { home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition },
+    last: r && { home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition, date: r.date },
     table: rows.length ? rowsAroundUs(f, rows, 5) : undefined,
     tableTitle: ct ? shortCompetition(ct.competition) : undefined,
   };

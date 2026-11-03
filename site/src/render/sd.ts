@@ -32,12 +32,8 @@ export function drawSdPanel(g: Ctx, s: FrameState, now: number): void {
   else if (s.sidebar) drawSidePanel(g, s.sidebar, x, y, w, h, now);
 }
 
-/** Whether drawSdPanel draws anything. */
-export function hasSdPanel(s: FrameState): boolean {
-  return Boolean(panelGraphic(s) ?? s.sidebar);
-}
-
-function panelGraphic(s: FrameState): Graphic | undefined {
+/** The graphic a desk close-up's side panel shows, if any (the caller has his own bar instead). */
+export function panelGraphic(s: FrameState): Graphic | undefined {
   const shown = s.graphic ?? s.segGraphic;
   return shown?.type === 'caller' ? undefined : shown;
 }

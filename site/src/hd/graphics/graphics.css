@@ -1,0 +1,106 @@
+/*
+ * HD bulletin graphics and the side column (#87). Sized in em with 1em = frame width / 100 (set by HdRenderer), like the
+ * furniture: the bottom stack is the bottom 10em and the captions sit from 21.85em to about 26em up, so the graphics
+ * stay above 29em from the top. The column's look is the spike's (pixel-broadcast-spike.html #side).
+ */
+.hdg {
+  --gold: #e0b13a;
+  --gold-light: #f6dc8a;
+  --maroon: #6d1a2a;
+  --maroon-dark: #4a0f1b;
+  --ink: #3d0d17;
+  --night: #120f22;
+  --rule: #1d1a35;
+  --cream: #f2efe6;
+  --red: #e0453a;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.hdg [hidden] { display: none !important; }
+
+/* With the column in, the captions stop short of it (as the spike). */
+.hd-frame.hd-col .hdf .cap { right: 28em; }
+
+/* ---- Side column ---- */
+.hdg .col { position: absolute; top: 0; right: 0; bottom: 10em; width: 24em; background: var(--night); border-left: .35em solid var(--gold); overflow: hidden; }
+.hdg .col .pane { position: absolute; inset: 0; opacity: 0; transition: opacity .3s steps(4); }
+.hdg .col .pane.on { opacity: 1; }
+.hdg .col h2 { margin: 0; background: var(--maroon); border-bottom: .3em solid var(--gold); font-size: .8em; font-weight: normal; line-height: 1.4; padding: 1.2em 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .col .row { display: grid; grid-template-columns: 2em 1fr 1.6em 3em 3em; gap: .6em; align-items: center; height: 3.1em; padding: 0 1em 0 .8em; font-size: .75em; border-bottom: .15em solid var(--rule); }
+.hdg .col .row span { white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.hdg .col .row.hd { color: var(--gold); height: 2.6em; }
+.hdg .col .row.me { background: var(--maroon); color: var(--cream); }
+.hdg .col .row span:nth-child(n+3) { text-align: right; }
+.hdg .col .fx { padding: 1em 1em 0; font-size: .75em; }
+.hdg .col .fx > div { border-bottom: .15em solid var(--rule); padding: .9em 0 1.1em; line-height: 1.7; }
+.hdg .col .fx b { color: var(--gold); font-weight: normal; display: block; }
+.hdg .col .fx i { font-style: normal; display: block; color: #9a95b8; font-size: .8em; }
+.hdg .col .me { color: var(--gold-light); }
+.hdg .col .row.me span { color: var(--cream); }
+.hdg .col .res { display: grid; justify-items: center; gap: 1.2em; padding: 2.4em 1em; text-align: center; }
+.hdg .col .res .team { font-size: .9em; }
+.hdg .col .res .score { font-size: 3em; color: var(--gold); line-height: 1.2; }
+.hdg .col .res b { font-weight: normal; color: var(--gold); font-size: .7em; }
+
+/* ---- Graphic panels: beside the presenter (who sits 30% across) or full screen. They wipe on like the headline bar. ---- */
+.hdg .gfx { position: absolute; top: 4em; height: 25em; background: var(--night); border: .35em solid var(--gold); overflow: hidden;
+  clip-path: inset(0 100% 0 0); animation: hdg-wipe .55s steps(11) forwards; }
+.hdg .gfx.beside { left: 53em; width: 43em; }
+.hdg .gfx.full { top: 3.5em; height: 25.5em; left: 8em; right: 8em; }
+@keyframes hdg-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+.hdg .gfx .in { display: flex; flex-direction: column; height: 100%; font-size: 1em; }
+.hdg .gfx.full .in { font-size: 1.3em; }
+.hdg .gfx h2 { margin: 0; flex: none; display: flex; justify-content: space-between; gap: 1em; background: var(--maroon); border-bottom: .3em solid var(--gold);
+  font-size: .9em; font-weight: normal; line-height: 1.4; padding: .9em 1.1em .8em; white-space: nowrap; }
+.hdg .gfx h2 .t { overflow: hidden; text-overflow: ellipsis; color: var(--gold); }
+.hdg .gfx .body { flex: 1; min-height: 0; overflow: hidden; }
+/* Rows and fixtures drop in one after another once the wipe is over. */
+.hdg .gfx [style*='--i'] { animation: hdg-drop .01s steps(1) both; animation-delay: calc(.5s + var(--i) * 80ms); }
+@keyframes hdg-drop { from { visibility: hidden; } to { visibility: visible; } }
+
+/* headline */
+.hdg .g-headline .body { display: flex; flex-direction: column; justify-content: space-between; padding: 1.4em 1.4em 1.1em; }
+.hdg .g-headline .row { display: flex; gap: 1.4em; align-items: flex-start; min-height: 0; }
+.hdg .pic { position: relative; flex: none; width: var(--face); height: var(--face); background: var(--maroon-dark); box-shadow: 0 0 0 .3em var(--gold); display: grid; place-items: center; }
+.hdg .pic .icon { width: 62.5%; height: 62.5%; image-rendering: pixelated; }
+.hdg .pic .face { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.hdg .g-headline .title { font-size: 1.4em; line-height: 1.6; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
+.hdg .g-headline .src { color: var(--gold); font-size: .7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* table */
+.hdg .g-table .body { display: grid; grid-auto-rows: minmax(0, 2.1em); align-content: start; padding: .5em .6em; font-size: .8em; }
+.hdg .g-table .tr { display: grid; grid-template-columns: 2.6em 1fr 2.4em 3.4em 3.4em; gap: .8em; align-items: center; padding: 0 .8em; border-bottom: .15em solid var(--rule); }
+.hdg .g-table .tr span { white-space: nowrap; overflow: hidden; }
+.hdg .g-table .tr span:first-child,
+.hdg .g-table .tr span:nth-child(n+3) { text-align: right; }
+.hdg .g-table .th { color: var(--gold); border-bottom-color: var(--gold); }
+.hdg .g-table .me { background: var(--maroon); color: var(--gold-light); }
+
+/* fixtures */
+.hdg .g-fixtures .body { padding: .4em 1.4em; display: flex; flex-direction: column; }
+.hdg .g-fixtures .fx { border-bottom: .15em solid var(--rule); padding: .9em 0 1em; line-height: 1.7; }
+.hdg .g-fixtures .fx .teams { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-fixtures .fx b { display: block; color: var(--gold); font-weight: normal; font-size: .7em; }
+.hdg .g-fixtures.few .body { justify-content: center; }
+.hdg .g-fixtures.few .fx { border: 0; text-align: center; }
+.hdg .g-fixtures.few .fx .teams { font-size: 1.6em; line-height: 1.6; }
+.hdg .g-fixtures.few .fx b { font-size: .85em; margin-top: .6em; }
+
+/* result */
+.hdg .g-result h2 .st { color: var(--gold); flex: none; }
+.hdg .g-result h2 .st.live { color: var(--red); animation: hdg-blink 1s steps(1) infinite; }
+@keyframes hdg-blink { 50% { visibility: hidden; } }
+.hdg .g-result .body { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1em; align-items: start; padding: 1.8em 1.2em 1em; }
+.hdg .g-result .side { display: grid; justify-items: center; gap: 1em; text-align: center; min-width: 0; }
+.hdg .g-result .team { font-size: 1.1em; line-height: 1.4; overflow-wrap: anywhere; }
+.hdg .g-result .score { font-size: 4em; line-height: 1.1; color: var(--gold); padding: 0 .2em; }
+.hdg .g-result .scorers { display: grid; gap: .5em; font-size: .65em; color: #c9c4e0; text-transform: none; }
+.hdg .g-result .scorers div { text-transform: uppercase; }
+.hdg .g-result .scorers .more { color: #9a95b8; }

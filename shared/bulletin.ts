@@ -214,7 +214,8 @@ export interface DeskSignature {
 export interface Sidebar {
   highlight: string;
   next?: FixtureRow;
-  last?: { home: string; away: string; homeScore: number; awayScore: number; competition: string };
+  /** `date` (ISO kick-off) lets the HD side column show it as today's result on the day; older bulletins have none. */
+  last?: { home: string; away: string; homeScore: number; awayScore: number; competition: string; date?: string };
   table?: TableRow[];
   /** Which table it is when it isn't the league, e.g. "Conference League" on a European matchday. */
   tableTitle?: string;

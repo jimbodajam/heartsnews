@@ -1,27 +1,31 @@
-import { hasSdPanel, SdRenderer } from '../render/sd';
+import { panelGraphic, SdRenderer } from '../render/sd';
 import type { FrameState, Mode, Renderer, Shot } from '../render/state';
-import type { Segment } from '../../../shared/bulletin';
-import { canSeat, drawDeskScene, loadSeatedCast, type SeatedCast } from './desk';
+import type { Graphic, Segment } from '../../../shared/bulletin';
+import { COLUMN_SHIFT, SideColumn } from './column';
+import { ASIDE, canSeat, drawDeskScene, drawStudioBackdrop, loadSeatedCast, type SeatedCast } from './desk';
+import { GraphicBox, isNative } from './graphics';
 import { loadSet, type StudioSet } from './set';
 
 /** The HD art, once it has loaded. */
 type Art = Readonly<{ set: StudioSet; cast: SeatedCast }>;
 
 /**
- * How a frame is drawn. `hd`: the HD desk, with the SD side panel beside the presenter in a close-up. `sd-scene`: the SD
- * scene without its bars (or an ad break's advert), under the HD furniture. `sd-frame`: the whole SD frame, bars and all.
+ * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
+ * SD panel) or the side column. `hd-full`: a full-screen HD graphic over the dimmed studio (#87). `sd-scene`: the SD scene
+ * without its bars (or an ad break's advert), under the HD furniture. `sd-frame`: the whole SD frame, bars and all.
  */
-export type View = 'hd' | 'sd-scene' | 'sd-frame';
+export type View = 'hd' | 'hd-full' | 'sd-scene' | 'sd-frame';
 
 /**
- * Which view this frame gets (#85). The whole SD frame for anything but a show frame (splash, ident, sponsor, sting,
+ * Which view this frame gets (#85, #87). The whole SD frame for anything but a show frame (splash, ident, sponsor, sting,
  * breaking flash) until #86. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
- * touchscreen, videowall, pitchside, museum), a desk with someone who has no HD art (Ross in the debate), the full-screen
- * graphic shot until #87, and the desk until the art has loaded. Otherwise HD.
+ * touchscreen, videowall, pitchside, museum), a full-screen graphic HD doesn't draw yet, a desk with someone who has no HD
+ * art (Ross in the debate), and the desk until the art has loaded. A full-screen graphic HD draws gets `hd-full`. Otherwise HD.
  */
 export function chooseView(s: FrameState, art: Art | undefined): View {
   if (s.mode !== 'show' || !s.seg) return 'sd-frame';
-  if (s.seg.kind === 'adverts' || s.seg.scene !== 'desk' || s.shot === 'full' || !art) return 'sd-scene';
+  if (s.seg.kind === 'adverts' || s.seg.scene !== 'desk' || !art) return 'sd-scene';
+  if (s.shot === 'full') return isNative(s.graphic) ? 'hd-full' : 'sd-scene';
   return canSeat(art.set, art.cast, s.onScreen) ? 'hd' : 'sd-scene';
 }
 
@@ -35,10 +39,14 @@ const STYLE = `
 .hd-frame [hidden] { display: none !important; }
 `;
 
+/** Where the shot is centred across the frame while the side column is fully in. */
+const WITH_COLUMN = 0.5 - COLUMN_SHIFT / 480;
+
 /**
  * The HD look (#83): a 16:9 frame holding the 480×270 scene canvas, with HTML layers (the furniture, #84) above it. The frame's
  * font-size is a hundredth of its width, so layers can size themselves in em. The SD renderer's 320×180 canvas sits between
  * them, filling the same frame, for whatever HD can't draw yet (chooseView): a whole SD frame, an SD scene, or just a panel.
+ * The HD graphics and the side column (#87) sit above that and under the layers.
  */
 export class HdRenderer implements Renderer {
   private frame?: HTMLDivElement;
@@ -51,9 +59,24 @@ export class HdRenderer implements Renderer {
   private readonly layers: { layer: Renderer; box?: HTMLDivElement }[] = [];
   private art?: Art;
   private loading?: Promise<void>;
-  /** What the view was chosen for: it's only chosen again when the mode, segment or shot changes, so it never flips mid-line. */
-  private shown?: { mode: Mode; seg?: Segment; shot: Shot; view: View };
+  /**
+   * What the view was chosen for: it's only chosen again when the mode, segment, shot or graphic changes, so it never
+   * flips mid-line.
+   */
+  private shown?: { mode: Mode; seg?: Segment; shot: Shot; graphic?: Graphic; view: View };
   private transform = '';
+
+  // The HD graphics (#87): their layer, the graphic panel, the side column and what was on last frame.
+  private gfxRoot?: HTMLDivElement;
+  private gfxResize?: ResizeObserver;
+  private box?: GraphicBox;
+  private column?: SideColumn;
+  /** The S key's choice, kept over a remount. */
+  private columnOn = true;
+  private sdPanel = false;
+  private withColumn = false;
+  /** The shot, speaker and view last frame: a change is a cut, and the column cuts with it rather than sliding. */
+  private camKey = '';
 
   /** `dir` holds the baked set (set.json and its images). */
   constructor(private readonly dir = 'hd/') {}
@@ -75,15 +98,27 @@ export class HdRenderer implements Renderer {
     this.g.imageSmoothingEnabled = false;
     const sdBox = document.createElement('div');
     sdBox.className = 'hd-sd';
-    frame.append(canvas, sdBox);
+    const gfx = document.createElement('div');
+    gfx.className = 'hd-layer hdg';
+    gfx.setAttribute('aria-hidden', 'true');
+    frame.append(canvas, sdBox, gfx);
     container.append(frame);
     this.sd.mount(sdBox);
     this.frame = frame;
     this.canvas = canvas;
     this.sdBox = sdBox;
+    this.gfxRoot = gfx;
+    this.box = new GraphicBox(gfx);
+    this.column = new SideColumn(gfx);
+    this.column.on = this.columnOn;
+    // Sized in em like the furniture: a hundredth of the frame's width.
+    this.gfxResize = new ResizeObserver(() => {
+      if (gfx.clientWidth) gfx.style.fontSize = `${gfx.clientWidth / 100}px`;
+    });
+    this.gfxResize.observe(gfx);
     for (const l of this.layers) this.mountLayer(l);
     this.shown = undefined;
-    this.show('sd-frame', 'wide');
+    this.show('sd-frame');
 
     this.loading ??= this.load();
   }
@@ -95,10 +130,13 @@ export class HdRenderer implements Renderer {
       l.box = undefined;
     }
     this.sd.unmount();
+    this.gfxResize?.disconnect();
     this.frame?.remove();
     this.style?.remove();
     this.frame = this.canvas = this.sdBox = this.g = this.style = this.shown = undefined;
-    this.transform = '';
+    this.gfxRoot = this.gfxResize = this.box = this.column = undefined;
+    this.transform = this.camKey = '';
+    this.sdPanel = this.withColumn = false;
   }
 
   /** Add an HTML layer above the scene, e.g. the furniture. It's drawn after the scene each frame and hidden while the whole SD frame shows. */
@@ -108,37 +146,62 @@ export class HdRenderer implements Renderer {
     if (this.frame) this.mountLayer(l);
   }
 
+  /** The S key: the side column on or off (it slides). */
+  toggleColumn(): void {
+    this.columnOn = !this.columnOn;
+    if (this.column) this.column.on = this.columnOn;
+  }
+
   focus(): void {
-    if (this.shown?.view === 'hd') this.canvas?.focus();
+    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full') this.canvas?.focus();
     else this.sd.focus();
   }
 
   /** The bulletin couldn't be loaded: there's no programme to draw. */
   offAir(): void {
-    this.show('sd-frame', 'wide');
+    this.show('sd-frame');
     this.sd.offAir();
   }
 
   draw(s: FrameState, now: number): void {
     if (!this.frame) return;
     const { shown } = this;
-    if (!shown || shown.mode !== s.mode || shown.seg !== s.seg || shown.shot !== s.shot) {
+    if (!shown || shown.mode !== s.mode || shown.seg !== s.seg || shown.shot !== s.shot || shown.graphic !== s.graphic) {
       const view = chooseView(s, this.art);
-      this.shown = { mode: s.mode, seg: s.seg, shot: s.shot, view };
-      this.show(view, s.shot);
+      this.shown = { mode: s.mode, seg: s.seg, shot: s.shot, graphic: s.graphic, view };
+      this.show(view);
     }
     const { view } = this.shown!;
-    if (view === 'sd-frame') return this.sd.draw(s, now);
+    const camKey = `${view}|${s.shot}|${s.speaker?.id ?? ''}`;
+    const cut = camKey !== this.camKey;
+    this.camKey = camKey;
 
-    if (view === 'sd-scene') {
+    if (view === 'sd-frame' || view === 'sd-scene') {
+      this.box!.clear();
+      this.column!.hide(now);
+      this.setColumnClass(false);
+      if (view === 'sd-frame') return this.sd.draw(s, now);
       this.sd.drawSceneOnly(s, now);
+    } else if (view === 'hd-full') {
+      this.column!.hide(now);
+      this.setColumnClass(false);
+      this.setTransform(drawStudioBackdrop(this.g!, this.art!.set));
+      this.box!.show(s.graphic, 'full');
     } else {
-      // A close-up's side panel goes on the SD canvas over the scene, so the camera's zoom doesn't take it, and the
-      // camera moves the presenter left to make room.
-      const panel = s.shot === 'single' && hasSdPanel(s);
-      const transform = drawDeskScene(this.g!, this.art!.set, this.art!.cast, s, now, panel);
-      if (transform !== this.transform) this.canvas!.style.transform = this.transform = transform;
-      if (s.shot === 'single') this.sd.drawPanelOnly(s, now);
+      // A close-up with a graphic of its own puts it beside the presenter, who moves left (ASIDE); otherwise the side
+      // column is in and the studio moves left for it. Never both: a panel waits for the column to have gone.
+      const panel = s.shot === 'single' ? panelGraphic(s) : undefined;
+      const q = this.column!.update(s.sidebar, !panel, now, cut);
+      const rest = panel ? ASIDE : 0.5;
+      this.setTransform(drawDeskScene(this.g!, this.art!.set, this.art!.cast, s, now, rest + (WITH_COLUMN - rest) * q));
+      this.setColumnClass(q > 0.5);
+      const up = panel && q === 0 ? panel : undefined;
+      const native = isNative(up);
+      this.box!.show(native ? up : undefined, 'beside');
+      // A type HD doesn't draw yet: the SD panel, on the SD canvas over the scene so the camera's zoom doesn't take it.
+      const sdPanel = Boolean(up) && !native;
+      if (sdPanel !== this.sdPanel) this.sdBox!.hidden = !(this.sdPanel = sdPanel);
+      if (sdPanel) this.sd.drawPanelOnly(s, now);
     }
     for (const l of this.layers) l.layer.draw(s, now);
   }
@@ -170,10 +233,24 @@ export class HdRenderer implements Renderer {
     l.box = box;
   }
 
-  /** Show what `view` draws on: the HD scene or the SD canvas (both for an HD close-up's panel), and the layers unless it's the whole SD frame. */
-  private show(view: View, shot: Shot): void {
-    if (this.canvas) this.canvas.hidden = view !== 'hd';
-    if (this.sdBox) this.sdBox.hidden = view === 'hd' && shot !== 'single';
+  private setTransform(transform: string): void {
+    if (transform !== this.transform) this.canvas!.style.transform = this.transform = transform;
+  }
+
+  /** The captions stop short of the column while it's in. */
+  private setColumnClass(on: boolean): void {
+    if (on === this.withColumn) return;
+    this.withColumn = on;
+    this.frame!.classList.toggle('hd-col', on);
+  }
+
+  /** Show what `view` draws on: the HD scene or the SD canvas (an HD close-up's SD panel is shown by draw), and the layers unless it's the whole SD frame. */
+  private show(view: View): void {
+    const hd = view === 'hd' || view === 'hd-full';
+    if (this.canvas) this.canvas.hidden = !hd;
+    if (this.sdBox) this.sdBox.hidden = hd;
+    this.sdPanel = false;
+    if (this.gfxRoot) this.gfxRoot.hidden = view === 'sd-frame';
     for (const l of this.layers) if (l.box) l.box.hidden = view === 'sd-frame';
     if (this.shown) this.shown.view = view;
   }

@@ -68,7 +68,7 @@ function mouth(s: FrameState, art: PresenterArt, talking: boolean, t: number, no
 }
 
 /** Where a close-up puts the presenter across the frame when the side panel is up: on the left, as the SD close-up does. */
-const ASIDE = 0.3;
+export const ASIDE = 0.3;
 
 /**
  * The canvas's CSS transform for a camera, putting set x `x` at `at` across the frame (a fraction of its width): the canvas
@@ -98,11 +98,12 @@ function drawProp(g: CanvasRenderingContext2D, set: StudioSet, name: string, cx:
 
 /**
  * Draw the desk with `s.onScreen` seated at it (canSeat must hold) and return the canvas's CSS transform.
- * Wide: both at their seats, or one centred alone. Single: tight on the speaker, drawn alone, framed on the left when
- * `aside` (a side panel takes the right). Hard cuts between them.
+ * Wide: both at their seats, or one centred alone. Single: tight on the speaker, drawn alone. Hard cuts between them.
+ * `at` is where across the frame the shot is centred: 0.5, ASIDE when a panel takes the right, or left of centre while
+ * the side column is in (#87).
  */
 export function drawDeskScene(
-  g: CanvasRenderingContext2D, set: StudioSet, cast: SeatedCast, s: FrameState, now: number, aside = false,
+  g: CanvasRenderingContext2D, set: StudioSet, cast: SeatedCast, s: FrameState, now: number, at = 0.5,
 ): string {
   const t = now / 1000;
   const seated = s.onScreen;
@@ -149,6 +150,19 @@ export function drawDeskScene(
   }
   g.restore();
 
-  if (!tightOn) return cameraTransform(set, set.camera.wide, set.camera.wide.x as number);
-  return cameraTransform(set, set.camera.tight, seatX(tightOn), aside ? ASIDE : 0.5);
+  if (!tightOn) return cameraTransform(set, set.camera.wide, set.camera.wide.x as number, at);
+  return cameraTransform(set, set.camera.tight, seatX(tightOn), at);
+}
+
+/** How dark the studio goes behind a full-screen graphic. */
+const FULL_DIM = 0.62;
+
+/** The empty studio, dimmed, in the wide shot: behind a full-screen HD graphic (#87). Returns the canvas's CSS transform. */
+export function drawStudioBackdrop(g: CanvasRenderingContext2D, set: StudioSet): string {
+  g.fillStyle = '#0e0c10';
+  g.fillRect(0, 0, set.w, set.h);
+  g.drawImage(set.backdropImg, set.backdrop.x, set.backdrop.y - set.stack);
+  g.fillStyle = `rgba(14, 12, 16, ${FULL_DIM})`;
+  g.fillRect(0, 0, set.w, set.h);
+  return cameraTransform(set, set.camera.wide, set.camera.wide.x as number);
 }

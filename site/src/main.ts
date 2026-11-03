@@ -184,6 +184,10 @@ async function boot(): Promise<void> {
       case 'h':
         void setLook(look === 'hd' ? 'sd' : 'hd');
         break;
+      case 's':
+        // HD's side column (#87) on or off; SD has none.
+        hd?.toggleColumn();
+        break;
       case 't':
         screen.classList.toggle('crt');
         break;
