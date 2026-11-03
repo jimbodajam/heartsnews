@@ -544,7 +544,7 @@ if (fImgs.every(Boolean)) {
 const SEATED = new URLSearchParams(location.search).get('seated') === '1', seatedSet = {};
 if (SEATED) {
   const { loadPresenter } = await import('./public/test/presenter-player.js'), none = document.createElement('canvas'); none.width = none.height = 1;
-  for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { base: c, handBase: c, eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
+  for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { player: p, handsTop: p.handsTop, base: c, handBase: p.frame({ pose: 'd4' }), eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
 }
 const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
 // ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites. Each presenter has one slot in front of them; any prop can be put in it. ----
@@ -597,19 +597,29 @@ const TWO = new URLSearchParams(location.search).get("two") !== "0";   // second
 const IY = deskGen ? Math.round(170 - 95 * ISLA_S) - ISLA_DY : 69;
 const ic = document.createElement("canvas"); ic.width = GI_W; ic.height = GI_H; const ig = ic.getContext("2d"); ig.imageSmoothingEnabled = false;
 
+const handsQ = [];   // seated hands to draw after the desk, in front of its edge
 function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo = MOU) {
   const t = t0 + ph, IX = Math.round(cx - 120 * S), IYp = deskGen ? Math.round(170 - 95 * S) - ISLA_DY : 69;
   const breath = Math.round(Math.sin(t * 1.9) * 0.5 + 0.5);
   const gesture = talking && Math.sin(t * 1.7 + 0.5) > 0.35;
   const emphasis = talking && Math.sin(t * 2.3) > 0.55;
-  ig.clearRect(0, 0, GI_W, GI_H); ig.drawImage(gesture ? pres.handBase : pres.base, 0, 0);
+  ig.clearRect(0, 0, GI_W, GI_H); if (!pres.player) ig.drawImage(gesture ? pres.handBase : pres.base, 0, 0);
   const blink = (t % 3.4) > 3.28;
   const glance = location.hash === '#gazeL' ? -1 : location.hash === '#gazeR' ? 1 : !talking ? 0 : (t % 6.1 > 5.5 ? -1 : t % 7.3 > 6.7 ? 1 : 0);
   const eye = blink ? pres.eyes.blink : emphasis ? pres.eyes.brows : glance < 0 ? pres.eyes.gazeL : glance > 0 ? pres.eyes.gazeR : null;
-  if (eye) ig.drawImage(eye, E.x0, E.y0);
   const key = talking ? LEVEL < 0.03 ? 'closed' : VIS[Math.floor(t * 11 + hash(Math.floor(t * 11))) % VIS.length] : (t % 5 < 1.2 ? 'smile' : 'rest');
-  if (key !== "rest") ig.drawImage(pres.mouth[key], Mo.x0, Mo.y0);
+  if (pres.player) ig.drawImage(pres.player.frame({ pose: gesture ? 'd4' : 'b1', eye: blink ? 'blink' : 'open', mouth: key }), 0, 0);   // seated sets (#78): the baked frame already has the face on
+  else {
+    if (eye) ig.drawImage(eye, E.x0, E.y0);
+    if (key !== "rest") ig.drawImage(pres.mouth[key], Mo.x0, Mo.y0);
+  }
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(ic, IX, IYp + breath, Math.round(GI_W * S), Math.round(GI_H * S)); g.imageSmoothingEnabled = false;
+  // a seated presenter's hands rest on the desk top, so they are drawn again after the desk, in front of its edge (#78)
+  if (pres.player && pres.handsTop) {
+    const hy = pres.handsTop, hc = pres.hc ??= Object.assign(document.createElement('canvas'), { width: GI_W, height: GI_H - hy }), hg = hc.getContext('2d');
+    hg.clearRect(0, 0, hc.width, hc.height); hg.drawImage(ic, 0, hy, GI_W, GI_H - hy, 0, 0, GI_W, GI_H - hy);
+    handsQ.push({ c: hc, x: IX, y: IYp + breath + Math.round(hy * S), w: Math.round(GI_W * S), h: Math.round((GI_H - hy) * S) });
+  }
 }
 
 const STACK = 48;   // art px taken by the bottom stack; the scene is lifted by this much so the desk front stays clear
@@ -662,6 +672,7 @@ function tick(ms) {
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
+  handsQ.length = 0;
   if (seated !== 'fraser' && (!big || big === 'isla')) drawIsla(t, aTalk, seatX('isla'), 0, SEATED ? seatedSet.isla : isla, SEATED || big ? 1 : ISLA_S);
   if (seated !== 'isla' && (!big || big === 'fraser')) drawIsla(t, bTalk, seatX('fraser'), 1.9, SEATED ? seatedSet.fraser : fraser || isla, SEATED || big ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
@@ -670,6 +681,7 @@ function tick(ms) {
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
+  for (const h of handsQ) g.drawImage(h.c, h.x, h.y, h.w, h.h);
   for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who) && (!big || big === who)) drawProp(name, seatX(who) + (PROPS[name]?.side || 0) * SLOT_SIDE * (big ? 2 : 1) * (who === 'isla' ? 1 : -1), t, big ? 1 / ISLA_S : 1);
   g.restore();
 

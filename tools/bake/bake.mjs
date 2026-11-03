@@ -155,7 +155,7 @@ async function bake(name) {
   fs.mkdirSync(OUT, { recursive: true });
   const png = indexedPNG(pixels, width, height, palette), sheetFile = `${OUT}/${name}.png`, jsonFile = `${OUT}/${name}.json`;
   fs.writeFileSync(sheetFile, png);
-  const json = JSON.stringify({ name, w: cfg.grid.w, h: cfg.grid.h, headCut: CUT, feetTop: TOP, heads: cfg.heads, poses: cfg.poses, feet: cfg.feet, eyes: cfg.eyes, mouths: cfg.mouths, layers: place });
+  const json = JSON.stringify({ name, w: cfg.grid.w, h: cfg.grid.h, headCut: CUT, feetTop: TOP, ...(cfg.handsTop ? { handsTop: cfg.handsTop } : {}), heads: cfg.heads, poses: cfg.poses, feet: cfg.feet, eyes: cfg.eyes, mouths: cfg.mouths, layers: place });
   fs.writeFileSync(jsonFile, json);
 
   // checks: the stacked layers against the composed frame, and against the frame as it looked before baking
