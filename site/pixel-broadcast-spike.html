@@ -542,8 +542,8 @@ if (fImgs.every(Boolean)) {
 }
 // ?seated=1 plays the baked seated sets (#78) at 1:1 in place of the 30 Oct masters
 const SEATED = new URLSearchParams(location.search).get('seated') === '1', seatedSet = {};
-const HCUT = Number(new URLSearchParams(location.search).get('hcut') ?? 111), HTOP = Number(new URLSearchParams(location.search).get('htop') ?? 96);   // ?hcut= the sprite row that meets the desk's back edge, ?htop= the row (the elbows) the arms are drawn in front of the desk from
-const HDEPTH = Number(new URLSearchParams(location.search).get('hdepth') ?? 17), SDY = Number(new URLSearchParams(location.search).get('sdy') ?? 0);   // ?hdepth= how deep the desk top is below its back edge, ?sdy= nudge the seated figures up (-) or down (+)
+const HCUT = Number(new URLSearchParams(location.search).get('hcut') ?? 119), HTOP = Number(new URLSearchParams(location.search).get('htop') ?? 96);   // ?hcut= the sprite row that meets the desk's back edge, ?htop= the row (the elbows) the arms are drawn in front of the desk from
+const HDEPTH = Number(new URLSearchParams(location.search).get('hdepth') ?? 11), SDY = Number(new URLSearchParams(location.search).get('sdy') ?? 0);   // ?hdepth= how deep the desk top is below its back edge, ?sdy= nudge the seated figures up (-) or down (+)
 if (SEATED) {
   const { loadPresenter } = await import('./public/test/presenter-player.js'), none = document.createElement('canvas'); none.width = none.height = 1;
   for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { player: p, handsTop: p.handsTop, hands: handsLayers(p), base: c, handBase: p.frame({ pose: 'd4' }), eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
