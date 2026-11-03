@@ -65,7 +65,7 @@ Without Chrome connected the same queue works by hand: `next` prints everything 
 
 ## New standing sets (#89)
 
-A new presenter's standing set is scaffolded like a seated one: write `art/presenters/<name>/standing.json` (`pronoun`, `look`, `top`, `legs`, `mouth`, `crop`) and run `node tools/frames/standing.mjs <name>`. The prompts are Fraser's, with every direction named by the image edge. The master is made by hand first (`art/presenters/ross/master-prompts.md` is the recipe: Fraser's standing master attached for framing only, then the seated master from the new standing one). Leans, the left glance and `h2v*` are left out (code, or mirrored from `h1`). Round 1 is 22 frames, round 2 is `h1v1`-`h1v7` once `h1` is approved. Re-running overwrites `frames.json`.
+A new presenter's standing set is scaffolded like a seated one: write `art/presenters/<name>/standing.json` (`pronoun`, `look`, `top`, `legs`, `mouth`, `crop`) and run `node tools/frames/standing.mjs <name>`. The prompts are Fraser's, with every direction named by the image edge. The master is made by hand first (`art/presenters/ross/master-prompts.md` is the recipe: Fraser's standing master attached for framing only, then the seated master from the new standing one). Leans and the left glance are left out (made in code). The left turn `h2` gets one try (Gemini turned Fraser the wrong way but got Isla right); if it fails, mirror `h1` and `h1v*`. Round 1 is 22 frames, round 2 is `h1v1`-`h1v7` and `h2v1`-`h2v7` once each head is approved. Re-running overwrites `frames.json`.
 
 ## Seated sets (#78)
 

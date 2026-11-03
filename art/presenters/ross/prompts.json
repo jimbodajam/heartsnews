@@ -173,6 +173,41 @@
    "source": "h1",
    "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: both eyes are fully closed, as in a blink, with the closed lids drawn as a curved dark line. The far eye, which is partly hidden by the turn, is closed too.",
    "from": "tools/frames/standing.mjs"
+  },
+  "h2v1": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is closed with a gentle slight smile.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v2": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are slightly parted, relaxed, a thin dark gap and no visible teeth.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v3": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a relaxed \"ee\" shape, only slightly wider than closed, with a thin strip of the top teeth visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v4": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a small round \"oh\", the lips rounded and a little open.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v5": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is open for an \"ah\", the jaw dropped a little, a dark inside and the top teeth just visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v6": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are pressed together in a flat line, neither smiling nor frowning.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v7": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: both eyes are fully closed, as in a blink, with the closed lids drawn as a curved dark line. The far eye, which is partly hidden by the turn, is closed too.",
+   "from": "tools/frames/standing.mjs"
   }
  }
 }

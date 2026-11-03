@@ -10,8 +10,9 @@
 //   mouth  a sentence on the mouth's size, for the mouth frames
 //   crop   the head crop box in image pixels [left, top, width, height] (#71); Fraser's is [236, 30, 376, 300]
 // The prompts are Fraser's standing ones (art/presenters/fraser/prompts.json), with the image edge named in every direction ("towards the RIGHT edge of the image", never "viewer's right").
-// Left out on purpose: leans h5/h6 (made in code, mode "tilt", tools/bake/README.md), the left glance v8 (Gemini looks right whatever is asked; the glance is code), and h2v1-h2v7
-// (Gemini turns heads the wrong way for the left turn: mirror h1 and h1v* for h2 if h2 comes out wrong). h1v1-h1v7 wait for h1 to be approved ("Waiting for a parent image").
+// Left out on purpose: leans h5/h6 (made in code, mode "tilt", tools/bake/README.md), and the left glance v8 (Gemini looks right whatever is asked; the glance is code).
+// h2 gets one try: Gemini often turns the left turn the wrong way (Fraser), but not always (Isla). If it fails, mirror h1 and h1v* for h2 and drop h2v*.
+// h1v*/h2v* wait for their head to be approved ("Waiting for a parent image").
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -68,9 +69,11 @@ legs('f1', `: ${P.s} shifts ${P.p} weight onto the leg on the RIGHT edge of the 
 legs('f2', `: ${P.s} shifts ${P.p} weight onto the leg on the LEFT edge of the image, which stands straight and carries all ${P.p} weight, while the leg on the RIGHT edge of the image relaxes: that knee is slightly bent, and that foot is placed visibly out towards the right edge of the image and a little forward, with the heel slightly lifted off the floor, so the two feet are clearly in different positions. The trouser hems stay the same style and colour. A natural relaxed weight shift, not a step.`);
 legs('f3', `, and only slightly: both legs stand straight with ${P.p} weight even, and ${P.p} feet are placed a little further apart than in the original, about shoulder width, both feet flat on the floor, toes pointing slightly outwards.`);
 
-// round 2: the turned head's own mouths and blink, cut from h1 once it is approved
-for (const [n, what] of MOUTHS) add('h1' + n, 'h1', 'mouth', MOUTH(what, true), { crop: true });
-add('h1v7', 'h1', 'eyes', `Edit this image. ${KEEP}, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: ${BLINK} The far eye, which is partly hidden by the turn, is closed too.`, { crop: true });
+// round 2: each turned head's own mouths and blink, cut from h1/h2 once that head is approved
+for (const h of ['h1', 'h2']) {
+  for (const [n, what] of MOUTHS) add(h + n, h, 'mouth', MOUTH(what, true), { crop: true });
+  add(h + 'v7', h, 'eyes', `Edit this image. ${KEEP}, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: ${BLINK} The far eye, which is partly hidden by the turn, is closed too.`, { crop: true });
+}
 
 const cfg = {
   _note: 'Standing set (#89), scaffolded by tools/frames/standing.mjs from Fraser\'s tuned values. Grid, cut rows, crop, boxes and the face block are provisional until the master is approved: tune them in this file by hand from then on.',

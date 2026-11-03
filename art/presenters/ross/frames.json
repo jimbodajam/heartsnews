@@ -255,6 +255,48 @@
    "parent": "h1",
    "area": "eyes",
    "crop": true
+  },
+  {
+   "name": "h2v1",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v2",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v3",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v4",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v5",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v6",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v7",
+   "parent": "h2",
+   "area": "eyes",
+   "crop": true
   }
  ]
 }
