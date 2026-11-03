@@ -124,12 +124,13 @@ const set = {
   w: GW, h: GH,
   backdrop: { file: 'backdrop.png', x: 0, y: 0 },
   desk: { file: 'desk.png', x: deskX, y: deskY, w: desk.w, h: desk.h, lip: DESK_LIP, top: DESK_Y_TOP, note: 'drawn over the seated figures; rows above `top` are transparent (the back lip is left out)' },
-  props: { file: 'props.png', base: 189, slotSide: 14, tightScale: 1 / 0.7, laptopTight: 1.15, laptopLift: 2, default: { isla: 'none', fraser: 'none' }, items: props, note: 'drawn at sheet size * s, bottom on `base`, centred on the seat x moved `side * slotSide` towards the middle; smoothed scaling' },
+  props: { file: 'props.png', base: 189, slotSide: 14, tightScale: 1 / 0.7, laptopTight: 1.15, laptopLift: 2, default: { isla: 'none', fraser: 'none', ross: 'none' }, items: props, note: 'drawn at sheet size * s, bottom on `base`, centred on the seat x moved `side * slotSide` towards the middle; smoothed scaling' },
   seated: {
     hcut: 112, propx: 0,
     note: 'figure origin: x = seat x - 120, y = desk.top - hcut (the sprite row hcut meets the desk back edge); sprites are 1:1',
+    // Ross has no seat of his own: he takes whichever side his partner leaves free (seatFor in site/src/hd/desk.ts, #89)
     seats: { wide: { isla: 168, fraser: 312 }, tight: { isla: 222, fraser: 258 }, alone: 240 },
-    presenters: { isla: 'presenters/isla-seated', fraser: 'presenters/fraser-seated' },
+    presenters: { isla: 'presenters/isla-seated', fraser: 'presenters/fraser-seated', ross: 'presenters/ross-seated' },
   },
   stack: 48,
   museum: {

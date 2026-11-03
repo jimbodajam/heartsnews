@@ -153,10 +153,10 @@
     "mode": "set"
    },
    "h3": {
-    "mode": "set"
+    "mode": "patch"
    },
    "h4": {
-    "mode": "set"
+    "mode": "patch"
    }
   }
  },

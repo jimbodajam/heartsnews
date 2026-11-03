@@ -38,7 +38,7 @@
 <script type="module">
 // Prototype for #78: instead of generating own mouths for the tilted heads (h5, h6), rotate the master head with each mouth and blink composed on it, about the neck.
 const { loadPresenter } = await import('./presenter-player.js');
-const SETS = { Fraser: await loadPresenter('../presenters/fraser-seated'), Isla: await loadPresenter('../presenters/isla-seated') };
+const SETS = { Fraser: await loadPresenter('../presenters/fraser-seated'), Isla: await loadPresenter('../presenters/isla-seated'), Ross: await loadPresenter('../presenters/ross-seated') };
 const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'], EYES = ['open', 'open', 'open', 'blink'];
 const $ = id => document.getElementById(id);
 const X0 = 70, X1 = 170, Y1 = 112, K = 8, SC = 4;   // view window in grid cells, up-scale for rotation, on-screen scale

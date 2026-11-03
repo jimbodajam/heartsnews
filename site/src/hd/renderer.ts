@@ -43,7 +43,7 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
  * when there's no segment yet. The sting and the break-in flash play over the picture the segment would have had in a
  * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
  * touchscreen, pitchside, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
- * desk with someone who has no HD art (Ross in the debate), and anything until the art has loaded. `hd-full` for a
+ * desk with someone who has no seated HD art, and anything until the art has loaded. `hd-full` for a
  * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). `museum` for the museum when its
  * backdrops have loaded and the presenter has standing art (else the SD museum). Otherwise HD.
  */

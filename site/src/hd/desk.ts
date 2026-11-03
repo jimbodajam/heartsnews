@@ -18,11 +18,21 @@ export async function loadSeatedCast(set: StudioSet): Promise<SeatedCast> {
   return new Map(entries);
 }
 
-/** Who can sit at the HD desk: one presenter with art, or two who also have wide seats. */
+/** Who can sit at the HD desk: one presenter with art, or two with art of whom at least one has seats of their own. */
 export function canSeat(set: StudioSet, cast: SeatedCast, presenters: readonly Presenter[]): boolean {
   if (presenters.length < 1 || presenters.length > 2) return false;
   if (!presenters.every((p) => cast.has(p.id))) return false;
-  return presenters.length === 1 || presenters.every((p) => p.id in set.seated.seats.wide && p.id in set.seated.seats.tight);
+  return presenters.length === 1 || presenters.some((p) => p.id in set.seated.seats.wide && p.id in set.seated.seats.tight);
+}
+
+/**
+ * A presenter's seat x in a two-shot (`wide` or `tight`). Someone with no seat of their own (Ross, #89: on the left with
+ * Fraser, on the right with Isla) takes the seat their partner leaves free.
+ */
+export function seatFor(set: StudioSet, kind: 'wide' | 'tight', p: Presenter, partner: Presenter): number {
+  const seats = set.seated.seats[kind];
+  if (p.id in seats) return seats[p.id];
+  return Object.entries(seats).find(([id, x]) => id !== partner.id && x !== seats[partner.id])?.[1] ?? set.seated.seats.alone;
 }
 
 const hash = (n: number) => {
@@ -110,7 +120,10 @@ export function drawDeskScene(
   const seated = s.onScreen;
   const both = seated.length === 2;
   const tightOn = s.shot === 'single' ? seated.find((p) => p.id === s.speaker?.id) : undefined;
-  const seatX = (p: Presenter) => (!both ? set.seated.seats.alone : tightOn ? set.seated.seats.tight[p.id] : set.seated.seats.wide[p.id]);
+  const seatX = (p: Presenter) => {
+    if (!both) return set.seated.seats.alone;
+    return seatFor(set, tightOn ? 'tight' : 'wide', p, seated.find((o) => o.id !== p.id)!);
+  };
 
   g.fillStyle = '#0e0c10';
   g.fillRect(0, 0, set.w, set.h);

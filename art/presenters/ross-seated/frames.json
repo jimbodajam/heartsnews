@@ -1,5 +1,5 @@
 {
- "_note": "Seated desk set (#78), scaffolded by tools/frames/seated.mjs. Grid, cut rows, boxes and the face block are provisional until the master is approved: tune them in this file by hand from then on. Crop box, headCut and handsTop copied from fraser-seated (same body framing) on 3 Nov.",
+ "_note": "Seated desk set (#78, #89), scaffolded by tools/frames/seated.mjs and tuned by hand to match fraser-seated: leans are code tilts (h5/h6 generated but unused), register shift.",
  "src": "site/public/spike/ross/seated/",
  "paletteFrom": "ross",
  "grid": {
@@ -17,8 +17,10 @@
   "h2",
   "h3",
   "h4",
-  "h5",
-  "h6"
+  "tilt-6",
+  "tilt-3",
+  "tilt3",
+  "tilt6"
  ],
  "poses": [
   "b1",
@@ -88,7 +90,7 @@
   }
  },
  "face": {
-  "register": "detect",
+  "register": "shift",
   "patch": {
    "base": "b1",
    "mouthBase": "b1",
@@ -141,28 +143,48 @@
      53
     ]
    },
-   "h1": {
-    "mode": "set",
-    "warpEyes": true
-   },
-   "h2": {
-    "mode": "set",
-    "warpEyes": true
-   },
    "h3": {
     "mode": "patch"
    },
    "h4": {
     "mode": "patch"
    },
-   "h5": {
-    "mode": "patch",
-    "warpEyes": true
+   "tilt-6": {
+    "mode": "tilt",
+    "deg": -6
    },
-   "h6": {
-    "mode": "patch",
-    "warpEyes": true
+   "tilt-3": {
+    "mode": "tilt",
+    "deg": -3
+   },
+   "tilt3": {
+    "mode": "tilt",
+    "deg": 3
+   },
+   "tilt6": {
+    "mode": "tilt",
+    "deg": 6
+   },
+   "h1": {
+    "mode": "set"
+   },
+   "h2": {
+    "mode": "set"
    }
+  },
+  "tilt": {
+   "chin": 55,
+   "neck": 10,
+   "cx": 117,
+   "maxY": 57,
+   "seed": [
+    117,
+    30
+   ],
+   "pivot": [
+    117,
+    53
+   ]
   }
  },
  "frames": [
@@ -351,5 +373,6 @@
    "parent": "b1",
    "area": "arm"
   }
- ]
+ ],
+ "_tilt": "tilt-6 .. tilt6 are the master head turned by code about the neck (face.tilt: the head outline is flood-filled from the face, cut at the chin row, pivot under the chin), with every mouth and the blink composed first. They replace the generated h5/h6 leans. Angles are degrees, clockwise positive."
 }

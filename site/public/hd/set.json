@@ -25,7 +25,8 @@
   "laptopLift": 2,
   "default": {
    "isla": "none",
-   "fraser": "none"
+   "fraser": "none",
+   "ross": "none"
   },
   "items": {
    "laptop": {
@@ -118,7 +119,8 @@
   },
   "presenters": {
    "isla": "presenters/isla-seated",
-   "fraser": "presenters/fraser-seated"
+   "fraser": "presenters/fraser-seated",
+   "ross": "presenters/ross-seated"
   }
  },
  "stack": 48,

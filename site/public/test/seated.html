@@ -16,16 +16,17 @@
 <div id="stage"><canvas id="cv"></canvas></div>
 <div id="hud"></div>
 <script type="module">
-// Seated Isla and Fraser from the baked sheets (#78): every head, desk pose, mouth and the blink, at the grid they were made on. The desk is drawn first, so the hands sit in front of it.
+// Seated presenters from the baked sheets (#78): every head, desk pose, mouth and the blink, at the grid they were made on. The desk is drawn first, so the hands sit in front of it.
+// ?p=fraser,ross picks the pair (left, right); Fraser and Isla by default.
 const { loadPresenter } = await import('./presenter-player.js');
 const GW = 480, GH = 270;
-const [ISLA, FRA] = await Promise.all([loadPresenter('../presenters/isla-seated'), loadPresenter('../presenters/fraser-seated')]);
+const q = new URLSearchParams(location.search);
+const [FRA, ISLA] = await Promise.all((q.get('p') || 'fraser,isla').split(',').map(n => loadPresenter('../presenters/' + n + '-seated')));
 const HEADS = ISLA.heads, POSES = ISLA.poses, MOUTHS = ['rest', ...ISLA.mouths];
 const cv = document.getElementById('cv'); cv.width = GW; cv.height = GH;
 const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
 const st = { head: 0, pose: 0, mouth: 0, auto: true, blink: 0, ms: 0 };
 const hud = document.getElementById('hud');
-const q = new URLSearchParams(location.search);
 if (q.has('head')) st.head = Math.max(0, HEADS.indexOf(q.get('head'))), st.auto = false;
 if (q.has('pose')) st.pose = Math.max(0, POSES.indexOf(q.get('pose'))), st.auto = false;
 if (q.has('mouth')) st.mouth = Math.max(0, MOUTHS.indexOf(q.get('mouth'))), st.auto = false;
