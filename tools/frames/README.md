@@ -63,6 +63,10 @@ Without Chrome connected the same queue works by hand: `next` prints everything 
 - Crops only for mouths and blinks (`area` mouth or eyes): a head, arm or legs frame is still a whole frame.
 - Frames not listed in `frames.json` (Fraser's `h5v*`, `h6v*`, `h2v*`, `v8`) are not queued; add the frame to `frames.json` first, and its prompt is already in `prompts.json`.
 
+## New standing sets (#89)
+
+A new presenter's standing set is scaffolded like a seated one: write `art/presenters/<name>/standing.json` (`pronoun`, `look`, `top`, `legs`, `mouth`, `crop`) and run `node tools/frames/standing.mjs <name>`. The prompts are Fraser's, with every direction named by the image edge. The master is made by hand first (`art/presenters/ross/master-prompts.md` is the recipe: Fraser's standing master attached for framing only, then the seated master from the new standing one). Leans, the left glance and `h2v*` are left out (code, or mirrored from `h1`). Round 1 is 22 frames, round 2 is `h1v1`-`h1v7` once `h1` is approved. Re-running overwrites `frames.json`.
+
 ## Seated sets (#78)
 
 `isla-seated` and `fraser-seated` are queued like any presenter. `node tools/frames/seated.mjs <p>` wrote their `frames.json` and `prompts.json`; the masters are `site/public/spike/<name>/seated/b1.jpg`. Run in two rounds, because the turned-head mouths and blinks (`h1v1`-`h1v7`, `h2v1`-`h2v7`) are made from the turned head, so `queue` holds them back until `h1` and `h2` are approved (it prints "Waiting for a parent image").

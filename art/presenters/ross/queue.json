@@ -1,0 +1,213 @@
+{
+ "presenter": "ross",
+ "limitHit": null,
+ "items": [
+  {
+   "frame": "h1",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "h1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h2",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "h2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h3",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "h3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "h4",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "h4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v1",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v2",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v3",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v4",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v5",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v6",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v7",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v9",
+   "source": "b1",
+   "attach": "art/presenters/ross/queue/crops/b1.png",
+   "crop": true,
+   "save": "v9.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b2",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b3",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b4",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b5",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b6",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b7",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "b8",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "b8.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "f1",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "f1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "f2",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "f2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "f3",
+   "source": "b1",
+   "attach": "site/public/spike/ross/standing/b1.jpg",
+   "save": "f3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  }
+ ],
+ "updated": "2026-11-03T19:16:01.500Z"
+}

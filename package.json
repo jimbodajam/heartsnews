@@ -38,6 +38,7 @@
     "test": "node --test \"shared/test/*.test.ts\" \"pipeline/test/*.test.ts\" \"tools/frames/*.test.mjs\"",
     "frames": "node tools/frames/frames.mjs",
     "frames:seated": "node tools/frames/seated.mjs",
+    "frames:standing": "node tools/frames/standing.mjs",
     "typecheck": "npm -w pipeline run typecheck && npm -w site run typecheck && npm -w worker run typecheck"
   },
   "devDependencies": {
