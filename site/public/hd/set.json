@@ -1,0 +1,139 @@
+{
+ "w": 480,
+ "h": 270,
+ "backdrop": {
+  "file": "backdrop.png",
+  "x": 0,
+  "y": 0
+ },
+ "desk": {
+  "file": "desk.png",
+  "x": 71,
+  "y": 162,
+  "w": 337,
+  "h": 122,
+  "lip": 8,
+  "top": 170,
+  "note": "drawn over the seated figures; rows above `top` are transparent (the back lip is left out)"
+ },
+ "props": {
+  "file": "props.png",
+  "base": 189,
+  "slotSide": 14,
+  "tightScale": 1.4285714285714286,
+  "laptopTight": 1.15,
+  "laptopLift": 2,
+  "default": {
+   "isla": "none",
+   "fraser": "none"
+  },
+  "items": {
+   "laptop": {
+    "sheet": [
+     0,
+     0,
+     88,
+     55
+    ],
+    "s": 0.5,
+    "side": 0
+   },
+   "mug": {
+    "sheet": [
+     173,
+     0,
+     31,
+     30
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "notebook": {
+    "sheet": [
+     0,
+     55,
+     40,
+     26
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "papers": {
+    "sheet": [
+     125,
+     0,
+     48,
+     35
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "glass": {
+    "sheet": [
+     105,
+     0,
+     20,
+     37
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "bottle": {
+    "sheet": [
+     88,
+     0,
+     17,
+     41
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "headphones": {
+    "sheet": [
+     204,
+     0,
+     45,
+     30
+    ],
+    "s": 0.6,
+    "side": 1
+   }
+  },
+  "note": "drawn at sheet size * s, bottom on `base`, centred on the seat x moved `side * slotSide` towards the middle; smoothed scaling"
+ },
+ "seated": {
+  "hcut": 112,
+  "propx": 0,
+  "note": "figure origin: x = seat x - 120, y = desk.top - hcut (the sprite row hcut meets the desk back edge); sprites are 1:1",
+  "seats": {
+   "wide": {
+    "isla": 168,
+    "fraser": 312
+   },
+   "tight": {
+    "isla": 222,
+    "fraser": 258
+   },
+   "alone": 240
+  },
+  "presenters": {
+   "isla": "presenters/isla-seated",
+   "fraser": "presenters/fraser-seated"
+  }
+ },
+ "stack": 48,
+ "camera": {
+  "wide": {
+   "z": 1,
+   "x": 240,
+   "y": 135,
+   "sy": 135
+  },
+  "tight": {
+   "z": 1.8,
+   "x": "seat",
+   "y": 55,
+   "sy": 78
+  }
+ }
+}

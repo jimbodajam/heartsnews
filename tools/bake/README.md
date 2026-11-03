@@ -83,3 +83,24 @@ A seated presenter is a second set beside the standing one: `art/presenters/<nam
 **Showing them.** The seated figures sit behind the desk and the desk is drawn over them, so it cuts them off at the waist. Drawing the arms in front of the desk was tried: the torso and sleeves are one colour, and every version either hung the arms off the front, cut them at the back edge or put the body on the desk. `site/pixel-broadcast-spike.html?seated=1` plays them (`hcut`, `propx`, `idx idy fdx fdy` in the URL, or the panel, K hides it). They do not bob; a seated figure does not move up and down. They nod, lean and turn to the other presenter (`seatedHead` in the spike) while they speak or listen.
 
 **The desk.** The seated sets use `art/desk-pixel-v3.jpg` (`site/public/spike/desk-pixel-v3.jpg`): the first desk with the top surface about 50% deeper, made by giving Gemini the old desk and asking for just that. Gemini also added a dark maroon lip along the back edge; it looked like a wall in front of the presenters, so the spike leaves those 8 rows out (`DESK3_LIP`) and the figures are cut off at the cream top. Its grid starts at image row 272, where the old one started at 352 (`deskFromGrid(img, badge, top, skip)`). `?olddesk=1` brings the first desk back.
+
+## HD studio set (#81)
+
+The studio behind the seated presenters is baked once, offline, so the browser never samples a grid. Run from the repo root, in WSL:
+
+```bash
+node tools/bake/set.mjs
+```
+
+It reads the generated images in `site/public/spike/` (`studio-pixel.jpg`, `desk-pixel-v3.jpg`, `props/sheet.jpg`) and the club badge, and writes `site/public/hd/`. The logic is the spike's (`backdropFromGrid`, `deskFromGrid`, `toGrid` in `site/pixel-broadcast-spike.html`), copied as it stands.
+
+| File | What |
+|---|---|
+| `backdrop.png` | 480x270, block centres of the 1376 px image at 1376/480 |
+| `desk.png` | 337x122, v3 desk keyed to transparent with the dark back lip (8 rows) left out, club badge drawn into the medallion (36x36, 24 colour steps) |
+| `props.png` | laptop, mug, notebook, papers, glass, bottle and headphones cut from the 5.865 px grid and packed on one sheet |
+| `set.json` | where everything goes: `desk` x, y and `top` (scene row of the cream top, 170); `props.items` (sheet box, scale `s`, `side`), `base` 189, `slotSide` 14, and `default` (none for both, HD shows no props); `seated` (`hcut` 112, `propx` 0, seat x positions for wide, tight and alone); `stack` 48; `camera` shots |
+
+Seated figures draw at x = seat x - 120, y = `desk.top` - `hcut`, then the desk goes over them. `site/public/test/hd-set.html` draws exactly that from the baked files and the baked seated sheets: keys 1-3 cameras, 4-6 desk, 7 and 8 props.
+
+The spike's tuning panel is gone from the plan: the values it defaulted to are the constants in `set.json`. Changing them means editing `set.mjs` and baking again. The badge is scaled with sharp, not the browser, so its edge pixels differ slightly from the spike's (about 770 cells); the backdrop and the rest of the desk match the spike exactly.
