@@ -18,7 +18,7 @@ export function buildPresenter(cfg, G, ref = G) {
     if (!ref[n]) continue;
     if (s.mode === 'patch') {
       if (fc.register === 'iris') off[n] = headOffsets(ref[P.base], ref[n], ref[P.registerMouth]);
-      else if (fc.register === 'shift') { const B = P.boxes, fit = (box, m) => shiftFit(ref[P.base], ref[n], [box[0] - m, box[1] - m, box[2] + m, box[3] + m]); off[n] = { eyeL: fit(B.EBL, 3), eyeR: fit(B.EBR, 3), mouth: [0, 0] }; const m = shiftFit(ref[P.base], ref[n], [B.MB[0] - 3, B.MB[1] - 3, B.MB[2] + 3, B.MB[3] + 3], 7, true, [(B.MB[0] + B.MB[2]) / 2, (B.MB[1] + B.MB[3]) / 2]); off[n].mouth = [m[0], m[1]]; if (m[2]) off[n].mouthRot = m[2]; }
+      else if (fc.register === 'shift') off[n] = rigidOffsets(ref[P.base], ref[n], P.boxes);
       else { const c = centres(n), c0 = centres(P.base), m = faceOf(n).mouthFit, m0 = faceOf(P.base).mouthFit; off[n] = { eyeL: [Math.round(c[0][0] - c0[0][0]), Math.round(c[0][1] - c0[0][1])], eyeR: [Math.round(c[1][0] - c0[1][0]), Math.round(c[1][1] - c0[1][1])], mouth: [Math.round(m.cx - m0.cx), Math.round(m.yc - m0.yc)] }; }
       if (s.nudge) { const o = off[n], a = s.nudge; off[n] = { eyeL: [o.eyeL[0] + a.eye, o.eyeL[1]], eyeR: [o.eyeR[0] + a.eye, o.eyeR[1]], mouth: [o.mouth[0] + a.mouth, o.mouth[1]] }; }
     }
@@ -74,12 +74,14 @@ export function composePresenter(F, { head = 'b1', pose = 'b1', feet = 'b1', eye
   return X;
 }
 
-/** The shift [dx, dy] that lays `head` over `base` inside `win` (grid cells): head(x + dx, y + dy) matches base(x, y), by mean luminance difference. For heads that are tilted or nodded a little, where the eye and mouth detectors are not steady.
- *  With `rot` it also tries small turns about `c` (the way a mouth patch is laid on a tilted head, see composeFace) and returns [dx, dy, radians]. */
-function shiftFit(base, head, win, R = 9, rot = false, c = [0, 0]) {
+/** How a nodded or tilted head sits against the master, as one rigid move (shift and a small turn) fitted over the whole face, eyes to mouth, so it is steadier than fitting an eye or the mouth alone.
+ *  Returns the offsets composeFace takes: each eye and the mouth move to where that rigid move carries their centres, and the mouth patch is turned by the same angle. */
+function rigidOffsets(base, head, B, R = 8) {
   const lum = p => 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2];
+  const mid = b => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], pL = mid(B.EBL), pR = mid(B.EBR), pM = mid(B.MB);
+  const win = [Math.floor(B.EBL[0]) - 3, Math.floor(B.EBL[1]) - 4, Math.ceil(B.EBR[2]) + 3, Math.ceil(B.MB[3]) + 2], c = [(win[0] + win[2]) / 2, (win[1] + win[3]) / 2];
   let best = [0, 0, 0], bestE = Infinity;
-  for (const r of rot ? [-0.18, -0.15, -0.12, -0.09, -0.06, -0.03, 0, 0.03, 0.06, 0.09, 0.12, 0.15, 0.18] : [0]) {
+  for (let r = -0.36; r <= 0.361; r += 0.03) {
     const co = Math.cos(r), si = Math.sin(r);
     for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
       let e = 0, n = 0;
@@ -88,11 +90,15 @@ function shiftFit(base, head, win, R = 9, rot = false, c = [0, 0]) {
         const rx = x - c[0], ry = y - c[1], hx = Math.round(c[0] + dx + rx * co - ry * si), hy = Math.round(c[1] + dy + rx * si + ry * co);
         e += head.has(hx, hy) ? Math.abs(lum(base.get(x, y)) - lum(head.get(hx, hy))) : 255;
       }
-      e = n ? e / n + (Math.abs(dx) + Math.abs(dy)) * 0.05 + Math.abs(r) * 4 : Infinity;
+      e = n ? e / n + (Math.abs(dx) + Math.abs(dy)) * 0.03 + Math.abs(r) * 2 : Infinity;
       if (e < bestE) { bestE = e; best = [dx, dy, r]; }
     }
   }
-  return rot ? best : [best[0], best[1]];
+  const [dx, dy, r] = best, co = Math.cos(r), si = Math.sin(r);
+  const move = p => { const rx = p[0] - c[0], ry = p[1] - c[1]; return [Math.round(c[0] + dx + rx * co - ry * si - p[0]), Math.round(c[1] + dy + rx * si + ry * co - p[1])]; };
+  const off = { eyeL: move(pL), eyeR: move(pR), mouth: move(pM) };
+  if (Math.abs(r) > 0.005) off.mouthRot = +r.toFixed(3);
+  return off;
 }
 
 /** Face of a head that has moved (nods and tilts shift it by several rows): eyes from a wide window, then the mouth window sits about 11 rows below the eyes, perpendicular to the line between them, so it follows a tilt. */
