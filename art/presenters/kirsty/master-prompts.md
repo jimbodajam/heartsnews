@@ -2,7 +2,9 @@
 
 Kirsty Reid has no earlier art, so the standing master is made from a description, the way Ross's was (`art/presenters/ross/master-prompts.md`). The framing reference is **Ross's** standing master, not Isla's: Ross's is straight on, arms down, on the 145 x 216 grid that `tools/frames/standing.mjs` is tuned for, and it went through the whole queue and bake. Isla's stands three-quarters on in a skirt (her `feetTop` is 119, not 138), which would put the leg frames off the tuned rows.
 
-Standing only: Kirsty works the touchscreen and is not at the desk yet (Kirsty in the debate waits for the rota work). If a seated set is wanted later, make it from her standing master the same way as Ross's seated one.
+**Both masters were made on 3 Nov, first try each** (`site/public/spike/kirsty/standing/b1.jpg`, `site/public/spike/kirsty/seated/b1.jpg`), and both queues are built: `kirsty` (23 frames in round 1) and `kirsty-seated` (16). Start at section 3.
+
+Kirsty gets a seated set too, though she only works the touchscreen today: James wants the presenters to be interchangeable, so any of them can sit at the desk once the rota work lands. `art/presenters/kirsty-seated/` was scaffolded with `seated.mjs`. The crop box, `headCut` and `handsTop` are copied from `ross-seated`, whose framing her seated master matches almost exactly, and both crops were checked on the masters. The leans `h5`/`h6` are dropped from the seated frames: they are code tilts, and Ross's came out too big.
 
 Look from `channel.json`: deep brown skin (#8d5a3b), long near-black hair (#2a1a14), maroon suit (#6d1a2a), cream shirt (#f2efe6), no tie. She is 34, the match analyst and a former Hearts Women midfielder: straight-talking, evidence-led, an athlete's build. Like the others she wears the small heart pin on her left lapel, drawn gold here because a maroon heart disappears on a maroon suit.
 
@@ -16,7 +18,7 @@ Look from `channel.json`: deep brown skin (#8d5a3b), long near-black hair (#2a1a
 - **Name each download by its frame.** On Ross's first run two clicks gave no file and Gemini's unnamed downloads slipped by one frame twice. Round 2, saved as `<frame>.jpg` as each landed, had no mispairs. Never `collect --force`.
 - **Leave out the leans and the left glance.** `h5`/`h6` are code tilts and `v8` is a code glance, as for Ross.
 
-## 1. Standing master (`b1`)
+## 1. Standing master (`b1`), done
 
 Fresh request in Gemini (`gemini.google.com/images?dest=create`). Attach `site/public/spike/ross/standing/b1.jpg` (framing and style only). Save the one you pick as `site/public/spike/kirsty/standing/b1.jpg`, 848 x 1264.
 
@@ -40,18 +42,21 @@ She stands facing straight at the viewer, full length from the top of her head t
 
 If Gemini drapes the hair over the shoulders anyway, ask in the same chat: "Keep everything else the same, but move all of her hair behind her shoulders so both lapels and the tops of both shoulders are fully visible."
 
-## 2. Between the master and the queue (in WSL, with Claude)
+## 2. Seated master (`kirsty-seated` `b1`), done
 
-1. Commit the master.
-2. Measure the head crop box on the master (head, all the hair beside the face, and the collar) and set `crop` in `art/presenters/kirsty/standing.json`. It is Ross's box for now, `[236, 12, 376, 318]`, and long hair is wider than a quiff.
-3. Check `headCut` (48) sits at the chin and collar line, and `feetTop` (138) at the jacket hem, on the master: open it on the grid and move them in `frames.json` if not.
-4. `npm run frames:standing -- kirsty` again if `standing.json` changed, then `npm run frames -- queue kirsty`.
+Fresh request with two images attached, in this order: Kirsty's standing master, then `site/public/spike/fraser/seated/b1.jpg` (framing and scale only). Target 1376 x 768.
 
-## 3. Round 1 (23 frames)
+```text
+Create a pixel-art image of the presenter in the first image, seated, from the waist up. Use the first image only for who she is: the same face, long near-black hair with the centre parting falling behind her shoulders, skin, maroon suit jacket, cream blouse open at the neck and the small gold heart pin. Use the second image only for the framing, the scale and the style: the figure is the same size and in the same place in the frame, cut off at the same height, on the same flat magenta background, in the same chunky pixel-art style. Do not copy the man in the second image. She sits upright facing straight at the viewer, with her forearms forward and her hands clasped loosely in front of her at the bottom of the picture, as if resting on a desk, but there is no desk. Her hair stays behind her shoulders, so none of it lies over the front of her jacket. Her head is straight, not tilted or turned, her eyes look at the viewer and her mouth is closed and neutral. Flat magenta background, no desk, no chair, no shadow, no text. Output size 1376 x 768.
+```
 
-`h1`-`h4`, `v1`-`v7`, `v9`, `b2`-`b9`, `f1`-`f3`. Everything depends only on the master. Ross's 40 frames went through in one evening without reaching the daily limit, so this should fit in one day.
+Checked on 3 Nov: the suit is about 95 away from the background colour (the key threshold is 45), and Ross's crop boxes take in all of her hair in both sets. Her hair ends a few rows below the standing `headCut` (48) at the shoulders. Watch for that on the head turns: if they trip the outside-area check there, move `headCut` down a row or two.
 
-Brief for a background Haiku run in Claude in Chrome: follow "Background run" in `tools/frames/README.md` for `kirsty`. Use `npm run frames -- next kirsty --json` for each frame, find the file input by ref (never click by coordinates), and download exactly one image per frame. **As each image lands, copy it to `art/presenters/kirsty/queue/named/<frame>.jpg`**, look at it to make sure it is that frame (a mouth crop, an arm pose and a leg pose are easy to tell apart), then `mark kirsty <frame> saved`. On the content filter ("interests of third-party content providers"), do not resend: use the shorter mouth wording in the README and go on. Stop at the daily limit with `mark ... limit`. Finish with `collect kirsty --from art/presenters/kirsty/queue/named` and `sheet kirsty`. Do not approve, bake or commit.
+## 3. Round 1 (`kirsty` 23 frames, `kirsty-seated` 16)
+
+Standing: `h1`-`h4`, `v1`-`v7`, `v9`, `b2`-`b9`, `f1`-`f3`. Seated: `h1`-`h4`, `v1`-`v7`, `d1`-`d5`. Everything depends only on the master. Ross's 40 frames went through in one evening without reaching the daily limit, so both should fit in one day. Run standing first: it has the frames the touchscreen needs.
+
+Brief for a background Haiku run in Claude in Chrome, per set (`kirsty`, then `kirsty-seated`): follow "Background run" in `tools/frames/README.md`. Use `npm run frames -- next <p> --json` for each frame, find the file input by ref (never click by coordinates), and download exactly one image per frame. **As each image lands, copy it to `art/presenters/<p>/queue/named/<frame>.jpg`**, look at it to make sure it is that frame (a mouth crop, an arm pose and a leg pose are easy to tell apart), then `mark <p> <frame> saved`. On the content filter ("interests of third-party content providers"), do not resend: use the shorter mouth wording in the README and go on. Stop at the daily limit with `mark ... limit`. Finish with `collect <p> --from art/presenters/<p>/queue/named` and `sheet <p>`. Do not approve, bake or commit.
 
 Look hardest at:
 - `h2`: the turn towards the screen. If it turns the wrong way, mirror `h1`.
@@ -62,4 +67,4 @@ Look hardest at:
 
 ## 4. Round 2 (14 frames)
 
-Once `h1` and `h2` are approved, set `boxes.h1`/`boxes.h2` (`face-boxes.mjs kirsty h1`, `... h2`), re-run `queue kirsty`, and run `h1v1`-`h1v7`, `h2v1`-`h2v7` the same way. Then bake (`npm run frames -- bake kirsty`) into `site/public/presenters/kirsty`.
+Once `h1` and `h2` are approved in a set, set `boxes.h1`/`boxes.h2` (`face-boxes.mjs <p> h1`, `... h2`), re-run `queue <p>`, and run `h1v1`-`h1v7`, `h2v1`-`h2v7` the same way (14 per set). Then tune `kirsty-seated/frames.json` the way Ross's was (tilt heads, register shift), and bake both into `site/public/presenters/kirsty{,-seated}`.
