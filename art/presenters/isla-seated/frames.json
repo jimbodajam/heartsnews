@@ -17,8 +17,10 @@
   "h2",
   "h3",
   "h4",
-  "h5",
-  "h6"
+  "tilt-6",
+  "tilt-3",
+  "tilt3",
+  "tilt6"
  ],
  "poses": [
   "b1",
@@ -147,18 +149,42 @@
    "h4": {
     "mode": "patch"
    },
-   "h5": {
-    "mode": "patch"
-   },
-   "h6": {
-    "mode": "patch"
-   },
    "h1": {
     "mode": "set"
    },
    "h2": {
     "mode": "set"
+   },
+   "tilt-6": {
+    "mode": "tilt",
+    "deg": -6
+   },
+   "tilt-3": {
+    "mode": "tilt",
+    "deg": -3
+   },
+   "tilt3": {
+    "mode": "tilt",
+    "deg": 3
+   },
+   "tilt6": {
+    "mode": "tilt",
+    "deg": 6
    }
+  },
+  "tilt": {
+   "chin": 52,
+   "neck": 9,
+   "cx": 117,
+   "maxY": 55,
+   "seed": [
+    117,
+    30
+   ],
+   "pivot": [
+    117,
+    51
+   ]
   }
  },
  "frames": [
@@ -347,5 +373,6 @@
    "parent": "b1",
    "area": "arm"
   }
- ]
+ ],
+ "_tilt": "tilt-6 .. tilt6 are the master head turned by code about the neck (face.tilt: the head outline is flood-filled from the face, cut at the chin row, pivot under the chin), with every mouth and the blink composed first. They replace the generated h5/h6 leans. Angles are degrees, clockwise positive."
 }

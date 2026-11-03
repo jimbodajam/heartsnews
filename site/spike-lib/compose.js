@@ -39,6 +39,8 @@ function codeEyes(h, eye, eyes) {
 
 function composeHead(F, head, eye, mouthKey) {
   const { cfg, G, V, off, warp, faceOf } = F, fc = cfg.face, P = fc.patch;
+  // a leaned head (seated sets, #78): the master head with its mouth and blink composed on, then its own pixels turned about the neck
+  if (fc.heads[head]?.mode === 'tilt') return rotateHead(composeHead(F, 'b1', eye, mouthKey), F.headMask ??= headMask(G.b1, fc.tilt), fc.heads[head].deg, fc.tilt.pivot);
   const src = G[head] ? head : 'b1', spec = fc.heads[src];   // a head frame that is not generated yet falls back to the master head
   const mk = mouthKey === 'rest' ? null : fc.mouthAlias?.[mouthKey] ?? mouthKey, open = eye === 'open';
   let h = G[src];
@@ -99,6 +101,43 @@ function rigidOffsets(base, head, B, R = 8) {
   const off = { eyeL: move(pL), eyeR: move(pR), mouth: move(pM) };
   if (Math.abs(r) > 0.005) off.mouthRot = +r.toFixed(3);
   return off;
+}
+
+/**
+ * The head's own pixels, as a mask over the grid: flood out from the middle of the face over every colour the head uses and the clothes do not, then fill holes (highlights, earrings).
+ * Below the chin the neck is left out (`neck` cells either side of `cx`), and nothing below `maxY` is taken, so the collar and shoulders never move. `tilt` is { chin, neck, cx, maxY, seed, pivot }.
+ */
+function headMask(P, { chin, neck, cx = 117, maxY = 55, seed = [117, 30] }) {
+  const key = (x, y) => { const c = P.get(x, y); return (c[0] << 16) | (c[1] << 8) | c[2]; };
+  const headCols = new Set(), cloth = new Set();
+  for (let y = 8; y <= 42; y++) for (let x = 90; x <= 145; x++) if (P.has(x, y)) headCols.add(key(x, y));
+  for (let y = 62; y <= 100; y++) for (let x = 70; x <= 170; x++) if (P.has(x, y) && !headCols.has(key(x, y))) cloth.add(key(x, y));
+  const ok = (x, y) => P.has(x, y) && !cloth.has(key(x, y)) && y <= maxY && !(y > chin && Math.abs(x - cx) <= neck);
+  const W = P.w, H = P.h, mask = new Uint8Array(W * H), q = [seed]; mask[seed[1] * W + seed[0]] = 1;
+  while (q.length) { const [x, y] = q.pop(); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || mask[ny * W + nx]) continue; if (ok(nx, ny)) { mask[ny * W + nx] = 1; q.push([nx, ny]); } } }
+  const out = new Uint8Array(W * H), r = [[0, 0]]; out[0] = 2;
+  while (r.length) { const [x, y] = r.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || out[ny * W + nx] || mask[ny * W + nx]) continue; out[ny * W + nx] = 2; r.push([nx, ny]); } }
+  for (let i = 0; i < W * H; i++) mask[i] = out[i] === 2 ? 0 : 1;
+  return mask;
+}
+
+/**
+ * `P` with the pixels inside `mask` turned `deg` degrees (clockwise is positive) about `pivot` (grid cells), the rest left where it is.
+ * RotSprite-style: each cell takes the commonest colour among K x K sub-samples mapped back through the turn, so outlines stay clean at the small angles a head leans.
+ */
+function rotateHead(P, mask, deg, pivot, K = 8) {
+  const out = P.clone(), W = P.w, th = deg * Math.PI / 180, co = Math.cos(th), si = Math.sin(th), [px, py] = pivot;
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) out.d[out.idx(x, y) + 3] = 0;
+  for (let y = 0; y < P.h; y++) for (let x = 0; x < W; x++) {
+    const counts = new Map(); let bestKey = -1, bestN = 0;
+    for (let sy = 0; sy < K; sy++) for (let sx = 0; sx < K; sx++) {
+      const dx = x + (sx + 0.5) / K - px, dy = y + (sy + 0.5) / K - py, ux = Math.floor(px + dx * co + dy * si), uy = Math.floor(py - dx * si + dy * co);
+      const hit = ux >= 0 && uy >= 0 && ux < W && uy < P.h && mask[uy * W + ux] && P.has(ux, uy), c = hit ? (P.get(ux, uy)[0] << 16) | (P.get(ux, uy)[1] << 8) | P.get(ux, uy)[2] : -1, n = (counts.get(c) || 0) + 1;
+      counts.set(c, n); if (n > bestN) { bestN = n; bestKey = c; }
+    }
+    if (bestKey >= 0) out.set(x, y, [bestKey >> 16, (bestKey >> 8) & 255, bestKey & 255]);
+  }
+  return out;
 }
 
 /** Face of a head that has moved (nods and tilts shift it by several rows): eyes from a wide window, then the mouth window sits about 11 rows below the eyes, perpendicular to the line between them, so it follows a tilt. */

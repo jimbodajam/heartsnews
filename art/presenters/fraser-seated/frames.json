@@ -13,10 +13,14 @@
  "feetTop": 131,
  "heads": [
   "b1",
+  "h1",
+  "h2",
   "h3",
   "h4",
-  "h5",
-  "h6"
+  "tilt-6",
+  "tilt-3",
+  "tilt3",
+  "tilt6"
  ],
  "poses": [
   "b1",
@@ -145,12 +149,42 @@
    "h4": {
     "mode": "patch"
    },
-   "h5": {
-    "mode": "patch"
+   "tilt-6": {
+    "mode": "tilt",
+    "deg": -6
    },
-   "h6": {
-    "mode": "patch"
+   "tilt-3": {
+    "mode": "tilt",
+    "deg": -3
+   },
+   "tilt3": {
+    "mode": "tilt",
+    "deg": 3
+   },
+   "tilt6": {
+    "mode": "tilt",
+    "deg": 6
+   },
+   "h1": {
+    "mode": "set"
+   },
+   "h2": {
+    "mode": "set"
    }
+  },
+  "tilt": {
+   "chin": 53,
+   "neck": 10,
+   "cx": 117,
+   "maxY": 55,
+   "seed": [
+    117,
+    30
+   ],
+   "pivot": [
+    117,
+    51
+   ]
   }
  },
  "frames": [
@@ -340,5 +374,6 @@
    "area": "arm"
   }
  ],
- "_turned": "h1/h2 are left out of heads until their own mouth and blink sets exist (round 2): the eye detector cannot find both eyes on a turned head, so they cannot be composed as patch heads. Add them back with { mode: \"set\", warpEyes: true } and boxes.h1/boxes.h2."
+ "_turned": "h1/h2 are left out of heads until their own mouth and blink sets exist (round 2): the eye detector cannot find both eyes on a turned head, so they cannot be composed as patch heads. Add them back with { mode: \"set\", warpEyes: true } and boxes.h1/boxes.h2.",
+ "_tilt": "tilt-6 .. tilt6 are the master head turned by code about the neck (face.tilt: the head outline is flood-filled from the face, cut at the chin row, pivot under the chin), with every mouth and the blink composed first. They replace the generated h5/h6 leans. Angles are degrees, clockwise positive."
 }

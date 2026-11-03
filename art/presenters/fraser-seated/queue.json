@@ -8,9 +8,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:40:07.407Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v1.jpg",
+   "stats": {
+    "changed": 16,
+    "outside": 0,
+    "fit": {
+     "scale": 1.001,
+     "err": 7.5
+    }
+   }
   },
   {
    "frame": "h1v2",
@@ -18,9 +28,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:41:24.948Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v2.jpg",
+   "stats": {
+    "changed": 44,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 7.5
+    }
+   }
   },
   {
    "frame": "h1v3",
@@ -28,9 +48,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:42:44.781Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v3.jpg",
+   "stats": {
+    "changed": 48,
+    "outside": 0,
+    "fit": {
+     "scale": 0.996,
+     "err": 6.8
+    }
+   }
   },
   {
    "frame": "h1v4",
@@ -40,7 +70,10 @@
    "save": "h1v4.jpg",
    "status": "pending",
    "attempts": 0,
-   "reasons": []
+   "reasons": [
+    "run failed: content filter refused twice",
+    "run failed: Gemini error, no image (seem to be encountering an error), retry also failed"
+   ]
   },
   {
    "frame": "h1v5",
@@ -48,9 +81,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:50:26.457Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v5.jpg",
+   "stats": {
+    "changed": 71,
+    "outside": 0,
+    "fit": {
+     "scale": 0.993,
+     "err": 7.6
+    }
+   }
   },
   {
    "frame": "h1v6",
@@ -58,9 +101,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:52:47.763Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v6.jpg",
+   "stats": {
+    "changed": 10,
+    "outside": 0,
+    "fit": {
+     "scale": 0.993,
+     "err": 7
+    }
+   }
   },
   {
    "frame": "h1v7",
@@ -68,9 +121,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:54:01.065Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v7.jpg",
+   "stats": {
+    "changed": 46,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 7.2
+    }
+   }
   },
   {
    "frame": "h2v1",
@@ -78,9 +141,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:55:14.480Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v1.jpg",
+   "stats": {
+    "changed": 23,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 6.7
+    }
+   }
   },
   {
    "frame": "h2v2",
@@ -88,9 +161,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:57:38.099Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v2.jpg",
+   "stats": {
+    "changed": 45,
+    "outside": 0,
+    "fit": {
+     "scale": 0.994,
+     "err": 6.5
+    }
+   }
   },
   {
    "frame": "h2v3",
@@ -98,9 +181,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:58:50.667Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v3.jpg",
+   "stats": {
+    "changed": 34,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 6.6
+    }
+   }
   },
   {
    "frame": "h2v4",
@@ -110,7 +203,9 @@
    "save": "h2v4.jpg",
    "status": "pending",
    "attempts": 0,
-   "reasons": []
+   "reasons": [
+    "run failed: content filter refused twice"
+   ]
   },
   {
    "frame": "h2v5",
@@ -120,7 +215,9 @@
    "save": "h2v5.jpg",
    "status": "pending",
    "attempts": 0,
-   "reasons": []
+   "reasons": [
+    "run failed: Gemini error, no image (sorry something went wrong)"
+   ]
   },
   {
    "frame": "h2v6",
@@ -128,9 +225,19 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T10:05:54.729Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 8,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 6.6
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -138,12 +245,22 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T10:07:13.541Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 52,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 6
+    }
+   }
   }
  ],
- "updated": "2026-11-02T22:22:51.142Z",
+ "updated": "2026-11-03T10:10:44.342Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_9ic0179ic0179ic0.jpg@1793651239935.587",
@@ -170,6 +287,17 @@
   "Gemini_Generated_Image_3am2ro3am2ro3am2.jpg@1793656081726.0874",
   "Gemini_Generated_Image_7ro1gb7ro1gb7ro1.jpg@1793656151849.587",
   "Gemini_Generated_Image_b5o2scb5o2scb5o2.jpg@1793656221366.5938",
-  "Gemini_Generated_Image_hwq0jjhwq0jjhwq0.jpg@1793656291517.0876"
+  "Gemini_Generated_Image_hwq0jjhwq0jjhwq0.jpg@1793656291517.0876",
+  "Gemini_Generated_Image_fhe6r5fhe6r5fhe6.jpg@1793698800435.9402",
+  "Gemini_Generated_Image_yxipleyxipleyxip.jpg@1793698878001.441",
+  "Gemini_Generated_Image_mzsjvbmzsjvbmzsj.jpg@1793698957213.6096",
+  "Gemini_Generated_Image_ccambcccambcccam.jpg@1793699413548.1116",
+  "Gemini_Generated_Image_ccsejiccsejiccse.jpg@1793699557142.7903",
+  "Gemini_Generated_Image_o61pxeo61pxeo61p.jpg@1793699633312.2559",
+  "Gemini_Generated_Image_wox65vwox65vwox6.jpg@1793699707061.2566",
+  "Gemini_Generated_Image_oyr243oyr243oyr2.jpg@1793699850853.8938",
+  "Gemini_Generated_Image_hl1nz6hl1nz6hl1n.jpg@1793699923246.6443",
+  "Gemini_Generated_Image_s1b1dxs1b1dxs1b1.jpg@1793700347528.4197",
+  "Gemini_Generated_Image_shoop3shoop3shoo.jpg@1793700425080.4207"
  ]
 }
