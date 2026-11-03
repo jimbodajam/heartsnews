@@ -542,38 +542,20 @@ if (fImgs.every(Boolean)) {
 }
 // ?seated=1 plays the baked seated sets (#78) at 1:1 in place of the 30 Oct masters
 const SEATED = new URLSearchParams(location.search).get('seated') === '1', seatedSet = {};
-// Where the seated figures sit against the desk (#78). Tuned live with the panel (K shows or hides it), remembered in the browser, and any of it can be set in the URL.
-//   hcut    the sprite row that meets the desk's back edge (higher = the figure sits higher)    htop   the row (the elbows) the arms are drawn in front of the desk from
-//   hdepth  how many rows below the back edge the arms reach (the depth of the desk top)       propx  how far desk props sit from the hands
+// Where the seated figures sit against the desk (#78): the desk is drawn over them, so it cuts them off at the waist (their arms and hands are behind it).
+// Tuned live with the panel (K shows or hides it), remembered in the browser, and any of it can be set in the URL.
+//   hcut  the sprite row that meets the desk's back edge (higher = the figure sits higher)    propx  how far desk props sit to the side (0 = straight in front)
 //   idx idy / fdx fdy   nudge Isla / Fraser left-right and up-down
-const QS = new URLSearchParams(location.search), TUNE_KEYS = ['front', 'hcut', 'htop', 'hdepth', 'propx', 'isla.dx', 'isla.dy', 'fraser.dx', 'fraser.dy'];
-const TUNE = { front: 1, hcut: 119, htop: 96, hdepth: 11, propx: 46, isla: { dx: 0, dy: 0 }, fraser: { dx: 0, dy: 0 } };
+const QS = new URLSearchParams(location.search), TUNE_KEYS = ['hcut', 'propx', 'isla.dx', 'isla.dy', 'fraser.dx', 'fraser.dy'], TUNE_URL = { hcut: 'hcut', propx: 'propx', 'isla.dx': 'idx', 'isla.dy': 'idy', 'fraser.dx': 'fdx', 'fraser.dy': 'fdy' };
+const TUNE_DEFAULT = { hcut: 112, propx: 0, 'isla.dx': 0, 'isla.dy': 0, 'fraser.dx': 0, 'fraser.dy': 0 };
+const TUNE = { isla: {}, fraser: {} };
 const tuneGet = k => k.split('.').reduce((o, p) => o[p], TUNE), tuneSet = (k, v) => { const p = k.split('.'), last = p.pop(); p.reduce((o, q) => o[q], TUNE)[last] = v; };
+for (const k of TUNE_KEYS) tuneSet(k, TUNE_DEFAULT[k]);
 try { for (const [k, v] of Object.entries(JSON.parse(localStorage.getItem('seatedTune') || '{}'))) if (TUNE_KEYS.includes(k)) tuneSet(k, Number(v)); } catch { /* no saved settings */ }
-for (const [k, q] of [['front', 'front'], ['hcut', 'hcut'], ['htop', 'htop'], ['hdepth', 'hdepth'], ['propx', 'propx'], ['isla.dx', 'idx'], ['isla.dy', 'idy'], ['fraser.dx', 'fdx'], ['fraser.dy', 'fdy']]) if (QS.has(q)) tuneSet(k, Number(QS.get(q)));
+for (const k of TUNE_KEYS) if (QS.has(TUNE_URL[k])) tuneSet(k, Number(QS.get(TUNE_URL[k])));
 if (SEATED) {
   const { loadPresenter } = await import('./public/test/presenter-player.js'), none = document.createElement('canvas'); none.width = none.height = 1;
-  for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { who: n, player: p, handsTop: p.handsTop, hands: handsLayers(p), base: c, handBase: p.frame({ pose: 'd4' }), eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
-}
-/**
- * What of a seated pose is drawn in front of the desk (#78): the arms and hands from row HTOP (the elbows) down, and nothing of the torso, which stays behind the desk.
- * The sleeves and the jacket are the same colour, so the torso is found by flooding out from the middle of the chest, 4-way, over everything that is not a dark outline or a hand
- * (skin or cuff white): the outlines along the inside of each sleeve fence it in. What the torso does not take, from row HTOP down, is the arms.
- */
-function handsLayers(p) {
-  const W = p.w, H = p.h, out = {}, lum = (r, g2, b) => 0.299 * r + 0.587 * g2 + 0.114 * b;
-  const isHand = (r, g2, b) => (r > 170 && g2 > 100 && b > 70 && r > g2 && g2 > b * 0.9 && r - b > 40) || (Math.min(r, g2, b) > 205);
-  for (const pose of p.poses) {
-    const d = p.frame({ pose }).getContext('2d').getImageData(0, 0, W, H).data, torso = new Uint8Array(W * H);
-    const free = (x, y) => { const i = (y * W + x) * 4; return d[i + 3] > 128 && lum(d[i], d[i + 1], d[i + 2]) >= 45 && !isHand(d[i], d[i + 1], d[i + 2]); };
-    let sy = 80; while (sy < H && !free(117, sy)) sy++;
-    const q = [[117, sy]]; torso[sy * W + 117] = 1;
-    while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || torso[ny * W + nx] || !free(nx, ny)) continue; torso[ny * W + nx] = 1; q.push([nx, ny]); } }
-    const c = Object.assign(document.createElement('canvas'), { width: W, height: H }), g2 = c.getContext('2d'), id = g2.createImageData(W, H);
-    for (let y = TUNE.htop; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; if (d[i + 3] > 128 && !torso[y * W + x]) for (let k = 0; k < 4; k++) id.data[i + k] = d[i + k]; }
-    g2.putImageData(id, 0, 0); out[pose] = c;
-  }
-  return out;
+  for (const n of ['isla', 'fraser']) { const p = await loadPresenter('./public/presenters/' + n + '-seated'), c = p.frame(); seatedSet[n] = { who: n, player: p, base: c, handBase: p.frame({ pose: 'd4' }), eyes: {}, mouth: new Proxy({}, { get: () => none }) }; }
 }
 const mug = buildMug(), tablet = buildTablet(), papers = buildPapers();
 // ---- Desk props: generated sheet (same 240x131 grid as the presenters), cut into sprites. Each presenter has one slot in front of them; any prop can be put in it. ----
@@ -626,13 +608,9 @@ const TWO = new URLSearchParams(location.search).get("two") !== "0";   // second
 const IY = deskGen ? Math.round(170 - 95 * ISLA_S) - ISLA_DY : 69;
 const ic = document.createElement("canvas"); ic.width = GI_W; ic.height = GI_H; const ig = ic.getContext("2d"); ig.imageSmoothingEnabled = false;
 
-const handsQ = [];   // seated hands to draw after the desk, in front of its edge
 // ---- live tuning panel for the seated figures (K shows or hides it) ----
 function buildTunePanel() {
-  const SPEC = [
-    ['front', 'Arms in front of the desk (1 = yes, 0 = the desk covers them)', 0, 1], ['hcut', 'Figure height (row at the desk edge)', 100, 135], ['htop', 'Arms in front from row (elbows)', 80, 112], ['hdepth', 'Arm reach down the desk top', 2, 30], ['propx', 'Props: distance from the hands', 0, 100],
-    ['isla.dx', 'Isla: left / right', -40, 40], ['isla.dy', 'Isla: up / down', -15, 15], ['fraser.dx', 'Fraser: left / right', -40, 40], ['fraser.dy', 'Fraser: up / down', -15, 15],
-  ];
+  const SPEC = [['hcut', 'Figure height (row at the desk edge)', 100, 135], ['propx', 'Props: distance to the side', 0, 100], ['isla.dx', 'Isla: left / right', -40, 40], ['isla.dy', 'Isla: up / down', -15, 15], ['fraser.dx', 'Fraser: left / right', -40, 40], ['fraser.dy', 'Fraser: up / down', -15, 15]];
   const box = document.createElement('div');
   box.style.cssText = 'position:fixed;left:10px;top:34px;z-index:50;width:270px;padding:8px 10px;background:#0e0c10e6;color:#f2efe6;font:11px/1.35 system-ui,sans-serif;border:1px solid #e0b13a;border-radius:4px';
   box.innerHTML = '<b style="color:#e0b13a">Seated tuning</b> <span style="opacity:.6">(K hides)</span>';
@@ -642,25 +620,24 @@ function buildTunePanel() {
     const row = document.createElement('label'); row.style.cssText = 'display:block;margin-top:5px';
     const out = document.createElement('output'); out.style.cssText = 'float:right;color:#e0b13a;font-variant-numeric:tabular-nums';
     const r = document.createElement('input'); r.type = 'range'; r.min = lo; r.max = hi; r.step = 1; r.value = tuneGet(k); r.style.cssText = 'width:100%;margin:2px 0 0';
-    out.textContent = r.value;
-    r.oninput = () => { tuneSet(k, +r.value); out.textContent = r.value; save(); if (k === 'htop') for (const s of Object.values(seatedSet)) s.hands = handsLayers(s.player); };   // the arm layers are cut from the elbow row, so they are rebuilt
+    out.textContent = r.value; r.oninput = () => { tuneSet(k, +r.value); out.textContent = r.value; save(); };
     row.append(label, out, document.createElement('br'), r); box.append(row); inputs.push([k, r, out]);
   }
   const btns = document.createElement('div'); btns.style.cssText = 'margin-top:8px;display:flex;gap:6px';
   const mk = (text, fn) => { const b = document.createElement('button'); b.textContent = text; b.style.cssText = 'flex:1;padding:3px 0;font:inherit;background:#e0b13a;color:#3d0d17;border:0;cursor:pointer'; b.onclick = fn; btns.append(b); return b; };
   const copy = mk('Copy values', async () => {
-    const txt = TUNE_KEYS.map(k => `${k}=${tuneGet(k)}`).join('  ') + '\nURL: ' + location.origin + location.pathname + '?seated=1&desk=both&side=0&' + [['front', 'front'], ['hcut', 'hcut'], ['htop', 'htop'], ['hdepth', 'hdepth'], ['propx', 'propx'], ['isla.dx', 'idx'], ['isla.dy', 'idy'], ['fraser.dx', 'fdx'], ['fraser.dy', 'fdy']].map(([k, q]) => `${q}=${tuneGet(k)}`).join('&');
+    const txt = TUNE_KEYS.map(k => k + '=' + tuneGet(k)).join('  ') + '\nURL: ' + location.origin + location.pathname + '?seated=1&desk=both&side=0&' + TUNE_KEYS.map(k => TUNE_URL[k] + '=' + tuneGet(k)).join('&');
     try { await navigator.clipboard.writeText(txt); copy.textContent = 'Copied'; } catch { copy.textContent = 'Copy failed'; console.log(txt); }
     setTimeout(() => copy.textContent = 'Copy values', 1500);
   });
-  mk('Reset', () => { const D = { front: 1, hcut: 119, htop: 96, hdepth: 11, propx: 46, 'isla.dx': 0, 'isla.dy': 0, 'fraser.dx': 0, 'fraser.dy': 0 }; for (const [k, r, out] of inputs) { tuneSet(k, D[k]); r.value = D[k]; out.textContent = D[k]; } save(); for (const s of Object.values(seatedSet)) s.hands = handsLayers(s.player); });
+  mk('Reset', () => { for (const [k, r, out] of inputs) { tuneSet(k, TUNE_DEFAULT[k]); r.value = TUNE_DEFAULT[k]; out.textContent = TUNE_DEFAULT[k]; } save(); });
   box.append(btns); document.body.append(box);
   addEventListener('keydown', e => { if (e.key.toLowerCase() === 'k' && !e.metaKey && !e.ctrlKey) box.style.display = box.style.display === 'none' ? '' : 'none'; });
 }
 if (SEATED) buildTunePanel();
 function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo = MOU) {
   const tn = pres.player ? TUNE[pres.who] : null, t = t0 + ph, IX = Math.round(cx - 120 * S) + (tn ? tn.dx : 0), IYp = pres.player ? 170 - TUNE.hcut + tn.dy : deskGen ? Math.round(170 - 95 * S) - ISLA_DY : 69;   // a seated figure's hands row meets the desk's back edge
-  const breath = Math.round(Math.sin(t * 1.9) * 0.5 + 0.5);
+  const breath = pres.player ? 0 : Math.round(Math.sin(t * 1.9) * 0.5 + 0.5);   // a seated figure does not bob up and down
   const gesture = new URLSearchParams(location.search).get('gesture') === '1' || talking && Math.sin(t * 1.7 + 0.5) > 0.35;   // ?gesture=1 holds the raised-arm pose, to check it against the desk
   const emphasis = talking && Math.sin(t * 2.3) > 0.55;
   ig.clearRect(0, 0, GI_W, GI_H); if (!pres.player) ig.drawImage(gesture ? pres.handBase : pres.base, 0, 0);
@@ -674,9 +651,6 @@ function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo 
     if (key !== "rest") ig.drawImage(pres.mouth[key], Mo.x0, Mo.y0);
   }
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(ic, IX, IYp + breath, Math.round(GI_W * S), Math.round(GI_H * S)); g.imageSmoothingEnabled = false;
-  // a seated presenter's hands rest on the desk top, so they are drawn again after the desk, in front of its edge (#78)
-  // only the hands go on top (the torso stays behind the desk), and only as far down as the desk top reaches, so nothing hangs over the front
-  if (pres.player && TUNE.front) handsQ.push({ c: pres.hands[gesture ? 'd4' : 'b1'], x: IX, y: IYp + breath + TUNE.htop, h: TUNE.hcut + TUNE.hdepth - TUNE.htop });
 }
 
 const STACK = 48;   // art px taken by the bottom stack; the scene is lifted by this much so the desk front stays clear
@@ -729,7 +703,6 @@ function tick(ms) {
   g.save(); g.translate(0, -STACK);
   if (backdrop) g.drawImage(backdrop, 0, 0); else { g.fillStyle = '#1b1f3a'; g.fillRect(0, 0, GW, GH); }
   const aTalk = !!cur && cur.by === "a", bTalk = !!cur && cur.by === "b";
-  handsQ.length = 0;
   if (seated !== 'fraser' && (!big || big === 'isla')) drawIsla(t, aTalk, seatX('isla'), 0, SEATED ? seatedSet.isla : isla, SEATED || big ? 1 : ISLA_S);
   if (seated !== 'isla' && (!big || big === 'fraser')) drawIsla(t, bTalk, seatX('fraser'), 1.9, SEATED ? seatedSet.fraser : fraser || isla, SEATED || big ? 1 : fraser ? FRASER_S : ISLA_S, fraser ? FEYE : EYE, fraser ? FMOU : MOU);
   if (deskGen) g.drawImage(deskGen, 240 - Math.round(deskGen.width / 2), 170); else {
@@ -738,7 +711,6 @@ function tick(ms) {
   for (const [sx, ph] of [[75, 0], [403, 1.7]]) for (let i = 0; i < 3; i++) { const yy = DESK_Y - 3 - ((t * 9 + i * 5 + ph * 4) % 14), a = 1 - ((t * 9 + i * 5 + ph * 4) % 14) / 14; g.fillStyle = `rgba(240,240,255,${0.5 * a})`; g.fillRect(sx + Math.round(Math.sin(yy * 0.6 + ph) * 1.4), yy, 1, 2); }
   g.drawImage(tablet, 120, DESK_Y + 5); g.drawImage(papers, 330, DESK_Y + 4);
   }
-  for (const h of handsQ) if (h.h > 0) g.drawImage(h.c, 0, TUNE.htop, GI_W, h.h, h.x, h.y, GI_W, h.h);
   for (const [who, name] of [['isla', slot.isla], ['fraser', slot.fraser]]) if (name !== 'none' && (seated === 'both' || seated === who) && (!big || big === who)) drawProp(name, seatX(who) + ((PROPS[name]?.side || 0) * SLOT_SIDE * (big ? 2 : 1) + (SEATED ? TUNE.propx * (big ? 1.3 : 1) : 0)) * (who === 'isla' ? 1 : -1), t, big ? 1 / ISLA_S : 1);
   g.restore();
 
