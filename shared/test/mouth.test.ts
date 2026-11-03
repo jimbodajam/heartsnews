@@ -27,7 +27,7 @@ test('bad files give no cues', () => {
 });
 
 test('a real pipeline file parses', () => {
-  const file = JSON.parse(readFileSync(new URL('../../site/public/spike/audio/line0.mouth.json', import.meta.url), 'utf8'));
+  const file = JSON.parse(readFileSync(new URL('../../site/public/test/audio/line0.mouth.json', import.meta.url), 'utf8'));
   const parsed = parseMouthCues(file);
   assert.ok(parsed && parsed.length > 5);
   assert.equal(shapeAt(parsed, 0.3), 'small');

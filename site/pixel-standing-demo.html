@@ -92,9 +92,9 @@ if (new URLSearchParams(location.search).get('sheet') === '1') {
 const ACX = new (window.AudioContext || window.webkitAudioContext)();
 const analyser = ACX.createAnalyser(); analyser.fftSize = 512; analyser.connect(ACX.destination);
 const spec = new Uint8Array(analyser.fftSize);
-const SCRIPT = await (await fetch('./public/spike/audio/lines.json')).json();
+const SCRIPT = await (await fetch('./public/test/audio/lines.json')).json();
 await Promise.all(SCRIPT.map(s => new Promise(res => {
-  s.el = new Audio('./public/spike/audio/' + s.file); s.el.preload = 'auto';
+  s.el = new Audio('./public/test/audio/' + s.file); s.el.preload = 'auto';
   ACX.createMediaElementSource(s.el).connect(analyser);
   s.el.addEventListener('loadedmetadata', res); s.el.addEventListener('error', res);
 })));

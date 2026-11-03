@@ -28,21 +28,8 @@ const { loadPresenter } = await import('./presenter-player.js');
 const GW = 480, GH = 270;
 const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
 
-// ---- backdrop: the generated studio on its 480-column grid ----
-function backdropFromGrid(img) {
-  const BB = 1376 / 480, c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-  const sg = c.getContext('2d', { willReadFrequently: true }); sg.drawImage(img, 0, 0);
-  const d = sg.getImageData(0, 0, c.width, c.height).data, rows = Math.floor(c.height / BB);
-  const out = document.createElement('canvas'); out.width = GW; out.height = GH; const og = out.getContext('2d'), id = og.createImageData(GW, GH);
-  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    const j = Math.min(rows - 1, Math.max(0, y - Math.floor((GH - rows) / 2)));
-    const sx = Math.min(c.width - 1, Math.round((x + 0.5) * BB)), sy = Math.min(c.height - 1, Math.round((j + 0.5) * BB)), k = (sy * c.width + sx) * 4, o = (y * GW + x) * 4;
-    id.data[o] = d[k]; id.data[o + 1] = d[k + 1]; id.data[o + 2] = d[k + 2]; id.data[o + 3] = 255;
-  }
-  og.putImageData(id, 0, 0); return out;
-}
-const bgImg = await load('../spike/studio-pixel.jpg');
-const backdrop = bgImg ? backdropFromGrid(bgImg) : null;
+// ---- backdrop: the baked studio from ../hd (#81), already on the 480-column grid ----
+const backdrop = await load('../hd/backdrop.png');
 
 // ---- standing presenters: baked sprite sheets from tools/bake, stacked by presenter-player.js ----
 const [ISLA, FRA] = await Promise.all([loadPresenter('../presenters/isla'), loadPresenter('../presenters/fraser')]);
@@ -57,14 +44,14 @@ const FXF = -10, FYF = 40;   // Fraser stands to the left of Isla
 const ACX = new (window.AudioContext || window.webkitAudioContext)();
 const analyser = ACX.createAnalyser(); analyser.fftSize = 512; analyser.connect(ACX.destination);
 const spec = new Uint8Array(analyser.fftSize);
-const SCRIPT = await (await fetch('../spike/audio/lines.json')).json();
+const SCRIPT = await (await fetch('audio/lines.json')).json();
 await Promise.all(SCRIPT.map(s => new Promise(res => {
-  s.el = new Audio('../spike/audio/' + s.file); s.el.preload = 'auto';
+  s.el = new Audio('audio/' + s.file); s.el.preload = 'auto';
   ACX.createMediaElementSource(s.el).connect(analyser);
   s.el.addEventListener('loadedmetadata', res); s.el.addEventListener('error', res);
 })));
 // Timed mouth shapes (#75): Rhubarb's cues from tools/lipsync, one file per clip. A clip without one falls back to loudness.
-await Promise.all(SCRIPT.map(async s => { try { s.cues = (await (await fetch('../spike/audio/' + s.file.replace(/\.\w+$/, '.mouth.json'))).json()).cues; } catch { s.cues = null; } }));
+await Promise.all(SCRIPT.map(async s => { try { s.cues = (await (await fetch('audio/' + s.file.replace(/\.\w+$/, '.mouth.json'))).json()).cues; } catch { s.cues = null; } }));
 // Rhubarb's shapes on to the presenters' mouths: A lips together (M B P), B slightly open, C open (EH), D wide open (AA), E rounded (AO), F puckered (OO W), G F and V, H L, X silence.
 const RHUBARB = { A: 'press', B: 'small', C: 'wide', D: 'A', E: 'O', F: 'O', G: 'small', H: 'wide', X: 'closed' };
 /** The shape at `sec` into the clip: each cue holds until the next one starts. */

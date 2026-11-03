@@ -143,6 +143,14 @@ export class HdRenderer implements Renderer {
     for (const l of this.layers) l.layer.draw(s, now);
   }
 
+  /** Load the HD art (once; mount does too) and say whether it's there. The toggle (#65) stays on SD when it isn't, and a retry loads again. */
+  async ready(): Promise<boolean> {
+    this.loading ??= this.load();
+    await this.loading;
+    if (!this.art) this.loading = undefined;
+    return !!this.art;
+  }
+
   private async load(): Promise<void> {
     try {
       const set = await loadSet(this.dir);

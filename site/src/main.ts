@@ -6,6 +6,8 @@ import { audioContext } from './audio/sting';
 import { Voices } from './audio/voice';
 import { BreakingNews } from './breaking';
 import { type FeedSource, LiveScore, workerSource } from './live';
+import type { HdRenderer } from './hd/renderer';
+import { chosenLook, type Look, LookBadge, rememberLook } from './look';
 import { Player } from './player';
 import { SdRenderer } from './render/sd';
 
@@ -13,8 +15,6 @@ import { SdRenderer } from './render/sd';
 const params = new URLSearchParams(location.search);
 const BULLETIN_URL = params.get('bulletin') ?? 'bulletins/latest.json';
 let START_SEGMENT = params.get('segment') ?? undefined;
-// In dev, ?hd=1 plays in the HD renderer (#83), loaded on demand so SD viewers never download it.
-const HD = import.meta.env.DEV && params.get('hd') === '1';
 // In dev, ?scene=pitchside opens on a demo of our reporter at the ground (see pitchside-preview.ts).
 const PITCHSIDE = import.meta.env.DEV && params.get('scene') === 'pitchside';
 // ?live=off turns the live score off, ?live=<url> reads live.json from elsewhere (e.g. `npm run worker:dev`, or
@@ -43,8 +43,8 @@ async function fetchBulletin(): Promise<Bulletin> {
   return withPitchside(bulletin);
 }
 
-/** The HD renderer with its bottom stack, straps, captions and ticker (#84) layered over the scene. */
-async function hdRenderer() {
+/** The HD renderer with its bottom stack, straps, captions and ticker (#84) layered over the scene. Loaded on demand so SD viewers never download it. */
+async function hdRenderer(): Promise<HdRenderer> {
   const [{ HdRenderer }, { HdFurniture }] = await Promise.all([import('./hd/renderer'), import('./hd/furniture')]);
   const hd = new HdRenderer();
   hd.addLayer(new HdFurniture());
@@ -54,14 +54,61 @@ async function hdRenderer() {
 async function boot(): Promise<void> {
   // The renderer puts its own elements in the screen (the SD one its canvas, #tv).
   const screen = document.querySelector<HTMLElement>('#screen')!;
-  const renderer = HD ? await hdRenderer() : new SdRenderer();
+  // SD first, always; the HD one is built on the first switch to it and kept, so switching back and forth reuses both.
+  const sd = new SdRenderer();
+  let hd: HdRenderer | undefined;
+  let renderer: SdRenderer | HdRenderer = sd;
   renderer.mount(screen);
+  let showing: Player | undefined;
+  let onAir = true;
+  let look: Look = 'sd';
+  let switching = false;
+
+  /** Switch the picture between SD and HD, mid-show if need be. Stays as it was (with a word on the badge) if HD can't load. */
+  const setLook = async (to: Look, remember = true): Promise<void> => {
+    if (to === look || switching) return;
+    switching = true;
+    badge.busy(true);
+    try {
+      let next: SdRenderer | HdRenderer = sd;
+      if (to === 'hd') {
+        try {
+          hd ??= await hdRenderer();
+          if (!(await hd.ready())) throw new Error('The HD art did not load');
+        } catch (err) {
+          console.error(err);
+          badge.say('HD UNAVAILABLE');
+          return;
+        }
+        next = hd;
+      }
+      if (showing) showing.setRenderer(next);
+      else {
+        renderer.unmount();
+        next.mount(screen);
+      }
+      renderer = next;
+      look = to;
+      if (remember) rememberLook(to);
+      badge.set(to);
+      badge.toEnd();
+      if (!onAir) next.offAir();
+      next.focus();
+    } finally {
+      badge.busy(false);
+      switching = false;
+    }
+  };
+  const badge = new LookBadge(screen, setLook);
+  // ?hd=1 or ?hd=0 beats the remembered choice for this load only.
+  if (chosenLook(params) === 'hd') void setLook('hd', false);
 
   let bulletin: Bulletin;
   try {
     bulletin = await fetchBulletin();
   } catch (err) {
     console.error(err);
+    onAir = false;
     renderer.offAir();
     return;
   }
@@ -71,6 +118,7 @@ async function boot(): Promise<void> {
   const player = new Player(screen, renderer, voices, bulletin, new URL(BULLETIN_URL, location.href), () =>
     fetchBulletin().catch(() => undefined),
   );
+  showing = player;
 
   // Dev only: ?stinger=goal|red|calm|ko plays just the break-in flash at the first line, for checking its look and sound.
   const stinger = import.meta.env.DEV ? params.get('stinger') : null;
@@ -132,6 +180,9 @@ async function boot(): Promise<void> {
         break;
       case 'b':
         player.classicStudio = !player.classicStudio;
+        break;
+      case 'h':
+        void setLook(look === 'hd' ? 'sd' : 'hd');
         break;
       case 't':
         screen.classList.toggle('crt');

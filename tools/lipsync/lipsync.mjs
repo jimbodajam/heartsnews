@@ -1,7 +1,7 @@
 // Timed mouth shapes for the /test spike lines (#75); bulletin clips get theirs in the pipeline (pipeline/src/lipsync.ts). Runs Rhubarb Lip Sync on each clip, with the line's text as a hint,
 // and writes `<clip>.mouth.json` beside it: Rhubarb's own shape letters (A-H, X) with start times, so the mapping on to a
 // presenter's mouths stays in the player. Usage, from the repo root in WSL:
-//   node tools/lipsync/lipsync.mjs site/public/spike/audio/lines.json
+//   node tools/lipsync/lipsync.mjs site/public/test/audio/lines.json
 // RHUBARB points at the binary (default ~/tools/Rhubarb-Lip-Sync-1.14.0-Linux/rhubarb). ffmpeg must be on PATH.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { tmpdir, homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
 const RHUBARB = process.env.RHUBARB || join(homedir(), 'tools/Rhubarb-Lip-Sync-1.14.0-Linux/rhubarb');
-const list = resolve(process.argv[2] || 'site/public/spike/audio/lines.json');
+const list = resolve(process.argv[2] || 'site/public/test/audio/lines.json');
 const lines = JSON.parse(readFileSync(list, 'utf8'));
 const tmp = mkdtempSync(join(tmpdir(), 'lipsync-'));
 

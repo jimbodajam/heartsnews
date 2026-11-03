@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadKokoro, renderClip, CLIP_EXT } from './voice.ts';
 
-const OUT = fileURLToPath(new URL('../../site/public/spike/audio/', import.meta.url));
+const OUT = fileURLToPath(new URL('../../site/public/test/audio/', import.meta.url));
 const VOICES = { a: 'bf_emma', b: 'bm_george' } as const;
 const LINES: { by: 'a' | 'b'; text: string }[] = [
   { by: 'a', text: 'Good evening, and welcome to Hearts News 24. I am Isla.' },
