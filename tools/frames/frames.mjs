@@ -64,7 +64,9 @@ async function queue(P, args) {
   if (missingPrompt.length) console.log(`No prompt in prompts.json for: ${missingPrompt.join(' ')}`);
 }
 
-const todo = P => P.queue.items.filter(i => i.status === 'pending' || i.status === 'rejected');
+const stuck = i => /^run failed/.test(i.reasons.at(-1) || '');
+/** Frames still to generate, in queue order; one whose last run failed (a refusal, a hang) goes to the back so it does not hold up the rest. */
+const todo = P => { const t = P.queue.items.filter(i => i.status === 'pending' || i.status === 'rejected'); return [...t.filter(i => !stuck(i)), ...t.filter(stuck)]; };
 
 function next(P, args) {
   const i = todo(P)[0];

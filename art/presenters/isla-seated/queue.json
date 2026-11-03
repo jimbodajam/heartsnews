@@ -8,9 +8,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:15:45.070Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v1.jpg",
+   "stats": {
+    "changed": 24,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 5.5
+    }
+   }
   },
   {
    "frame": "h1v2",
@@ -18,9 +28,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:18:24.948Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v2.jpg",
+   "stats": {
+    "changed": 28,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 6
+    }
+   }
   },
   {
    "frame": "h1v3",
@@ -28,9 +48,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:20:47.747Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v3.jpg",
+   "stats": {
+    "changed": 25,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h1v4",
@@ -38,9 +68,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:23:24.529Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v4.jpg",
+   "stats": {
+    "changed": 27,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 5.7
+    }
+   }
   },
   {
    "frame": "h1v5",
@@ -48,9 +88,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:25:46.662Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v5.jpg",
+   "stats": {
+    "changed": 41,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "h1v6",
@@ -58,9 +108,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:27:10.036Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v6.jpg",
+   "stats": {
+    "changed": 22,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "h1v7",
@@ -68,9 +128,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:28:22.288Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h1v7.jpg",
+   "stats": {
+    "changed": 93,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "h2v1",
@@ -78,9 +148,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:29:51.441Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v1.jpg",
+   "stats": {
+    "changed": 29,
+    "outside": 0,
+    "fit": {
+     "scale": 1.002,
+     "err": 5.8
+    }
+   }
   },
   {
    "frame": "h2v2",
@@ -88,9 +168,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:31:05.925Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v2.jpg",
+   "stats": {
+    "changed": 25,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 6.4
+    }
+   }
   },
   {
    "frame": "h2v3",
@@ -98,9 +188,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:32:20.324Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v3.jpg",
+   "stats": {
+    "changed": 31,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 6.2
+    }
+   }
   },
   {
    "frame": "h2v4",
@@ -108,9 +208,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:33:34.981Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v4.jpg",
+   "stats": {
+    "changed": 32,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 5.8
+    }
+   }
   },
   {
    "frame": "h2v5",
@@ -118,9 +228,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:34:49.556Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 37,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 5.7
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -128,9 +248,19 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:36:03.509Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 15,
+    "outside": 0,
+    "fit": {
+     "scale": 0.994,
+     "err": 6.1
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -138,26 +268,41 @@
    "attach": "art/presenters/isla-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "approved",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-03T09:37:17.187Z",
+   "staged": "art/presenters/isla-seated/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 88,
+    "outside": 0,
+    "fit": {
+     "scale": 0.996,
+     "err": 5.6
+    }
+   }
   },
   {
    "frame": "d3",
    "source": "b1",
    "attach": "site/public/spike/isla/seated/b1.jpg",
    "save": "d3.jpg",
-   "status": "rejected",
-   "attempts": 2,
+   "status": "approved",
+   "attempts": 3,
    "reasons": [
     "2026-11-02: 485 cells changed outside its area (hands), around x 103-143, y 91-104",
-    "2026-11-02: 10987 cells changed outside its area (hands), around x 0-239, y 5-104"
+    "2026-11-02: 10987 cells changed outside its area (hands), around x 0-239, y 5-104",
+    "2026-11-03: 416 cells changed outside its area (hands), around x 99-133, y 5-104"
    ],
-   "savedAt": "2026-11-02T21:55:37.871Z",
-   "staged": "art/presenters/isla-seated/queue/staged/d3.jpg"
+   "savedAt": "2026-11-03T09:38:33.095Z",
+   "staged": "art/presenters/isla-seated/queue/staged/d3.jpg",
+   "stats": {
+    "changed": 1674,
+    "outside": 416
+   }
   }
  ],
- "updated": "2026-11-02T22:22:46.715Z",
+ "updated": "2026-11-03T09:48:31.769Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_bc9pwqbc9pwqbc9p.jpg@1793653156744.5872",
@@ -180,7 +325,22 @@
   "Gemini_Generated_Image_rrdkzirrdkzirrdk.jpg@1793654851359.588",
   "Gemini_Generated_Image_e3tpn5e3tpn5e3tp.jpg@1793656393742.5884",
   "Gemini_Generated_Image_ugbqpyugbqpyugbq.jpg@1793656461845.587",
-  "Gemini_Generated_Image_9uda589uda589uda.jpg@1793656529725.5867"
+  "Gemini_Generated_Image_9uda589uda589uda.jpg@1793656529725.5867",
+  "Gemini_Generated_Image_glq33nglq33nglq3.jpg@1793697337673.3237",
+  "Gemini_Generated_Image_txav3wtxav3wtxav.jpg@1793697498221.8196",
+  "Gemini_Generated_Image_ogqqckogqqckogqq.jpg@1793697641082.5032",
+  "Gemini_Generated_Image_qmnhhrqmnhhrqmnh.jpg@1793697797297.3884",
+  "Gemini_Generated_Image_xw2ig4xw2ig4xw2i.jpg@1793697939829.0095",
+  "Gemini_Generated_Image_yn5ixoyn5ixoyn5i.jpg@1793698023279.9695",
+  "Gemini_Generated_Image_ta0mwgta0mwgta0m.jpg@1793698095298.0947",
+  "Gemini_Generated_Image_x6owqvx6owqvx6ow.jpg@1793698184636.9983",
+  "Gemini_Generated_Image_dqfy9idqfy9idqfy.jpg@1793698259027.572",
+  "Gemini_Generated_Image_ae5cnhae5cnhae5c.jpg@1793698333481.9773",
+  "Gemini_Generated_Image_8y1ai18y1ai18y1a.jpg@1793698407981.1157",
+  "Gemini_Generated_Image_1c80gj1c80gj1c80.jpg@1793698482604.2578",
+  "Gemini_Generated_Image_p24xtyp24xtyp24x.jpg@1793698556770.7979",
+  "Gemini_Generated_Image_t5v1zlt5v1zlt5v1.jpg@1793698630307.871",
+  "Gemini_Generated_Image_lz2y54lz2y54lz2y.jpg@1793698706223.8704"
  ],
  "limitNote": "Image Editing Limit Reached: Your limit resets on Nov 3"
 }
