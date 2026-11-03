@@ -68,12 +68,22 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "pending",
-   "attempts": 0,
+   "status": "approved",
+   "attempts": 1,
    "reasons": [
     "run failed: content filter refused twice",
     "run failed: Gemini error, no image (seem to be encountering an error), retry also failed"
-   ]
+   ],
+   "savedAt": "2026-11-03T10:16:29.555Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h1v4.jpg",
+   "stats": {
+    "changed": 52,
+    "outside": 0,
+    "fit": {
+     "scale": 1.004,
+     "err": 6.8
+    }
+   }
   },
   {
    "frame": "h1v5",
@@ -201,11 +211,21 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "pending",
-   "attempts": 0,
+   "status": "approved",
+   "attempts": 1,
    "reasons": [
     "run failed: content filter refused twice"
-   ]
+   ],
+   "savedAt": "2026-11-03T10:17:48.947Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v4.jpg",
+   "stats": {
+    "changed": 44,
+    "outside": 0,
+    "fit": {
+     "scale": 1.006,
+     "err": 6.5
+    }
+   }
   },
   {
    "frame": "h2v5",
@@ -213,11 +233,21 @@
    "attach": "art/presenters/fraser-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
+   "status": "approved",
+   "attempts": 1,
    "reasons": [
     "run failed: Gemini error, no image (sorry something went wrong)"
-   ]
+   ],
+   "savedAt": "2026-11-03T10:19:43.735Z",
+   "staged": "art/presenters/fraser-seated/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 64,
+    "outside": 0,
+    "fit": {
+     "scale": 0.994,
+     "err": 6.8
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -260,7 +290,7 @@
    }
   }
  ],
- "updated": "2026-11-03T10:10:44.342Z",
+ "updated": "2026-11-03T10:20:01.558Z",
  "downloads": "/mnt/d/Downloads",
  "seen": [
   "Gemini_Generated_Image_9ic0179ic0179ic0.jpg@1793651239935.587",
@@ -298,6 +328,9 @@
   "Gemini_Generated_Image_oyr243oyr243oyr2.jpg@1793699850853.8938",
   "Gemini_Generated_Image_hl1nz6hl1nz6hl1n.jpg@1793699923246.6443",
   "Gemini_Generated_Image_s1b1dxs1b1dxs1b1.jpg@1793700347528.4197",
-  "Gemini_Generated_Image_shoop3shoop3shoo.jpg@1793700425080.4207"
+  "Gemini_Generated_Image_shoop3shoop3shoo.jpg@1793700425080.4207",
+  "h2v5.jpg@1793701182061.9285",
+  "Gemini_Generated_Image_lcdozvlcdozvlcdo.jpg@1793700963889.3333",
+  "Gemini_Generated_Image_16qoul16qoul16qo.jpg@1793701063264.3335"
  ]
 }
