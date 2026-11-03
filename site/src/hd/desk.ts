@@ -59,10 +59,11 @@ function mouthFromLevel(level: number): MouthShape {
 }
 
 /** The mouth to draw: the clip's timed shape, else its loudness; at rest when not talking, with the odd smile. */
-function mouth(s: FrameState, art: PresenterArt, talking: boolean, t: number, now: number): string {
+export function mouth(s: FrameState, art: PresenterArt, talking: boolean, t: number, now: number): string {
   if (talking && s.speaking) {
     const shape = s.speaking.shape(now);
-    return shape ? withoutPress(shape) : mouthFromLevel(s.speaking.level(now));
+    // `press` only where the sheet has it (the standing Isla); the others draw it as closed.
+    return shape ? (art.mouths.includes('press') ? shape : withoutPress(shape)) : mouthFromLevel(s.speaking.level(now));
   }
   return art.mouths.includes('smile') && t % 5 < 1.2 ? 'smile' : 'rest';
 }

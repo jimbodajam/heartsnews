@@ -21,6 +21,9 @@ import type { FrameState, Renderer } from './state';
 /** A desk close-up's side panel, beside the presenter: x, y, w, h on the 320×180 screen. */
 export const SIDE_PANEL = [168, 22, 142, 80] as const;
 
+/** The museum gallery's graphic, over the wall panels on the left: x, y, w, h on the 320×180 screen. */
+const MUSEUM_PANEL = [12, 32, 204, 84] as const;
+
 /**
  * A desk close-up's side panel: the line's graphic, else the segment's last one (the caller has his own bar instead),
  * else the bulletin's sidebar.
@@ -116,6 +119,14 @@ export class SdRenderer implements Renderer {
     if (!g) return;
     g.clearRect(0, 0, W, H);
     drawSdPanel(g, s, now);
+  }
+
+  /** Only the line's graphic as the museum gallery shows it, on a cleared canvas: for a type HD doesn't draw (#88). */
+  drawMuseumPanelOnly(s: FrameState, now: number): void {
+    const { g } = this;
+    if (!g) return;
+    g.clearRect(0, 0, W, H);
+    if (s.graphic) drawGraphic(g, s.graphic, ...MUSEUM_PANEL, s.graphicAge, now);
   }
 
   /**
@@ -218,7 +229,7 @@ export class SdRenderer implements Renderer {
         }
         if (s.museum.inside) g.drawImage(s.museum.inside, 0, 0, W, H);
         else drawTouchBackground(g);
-        if (graphic) drawGraphic(g, graphic, 12, 32, 204, 84, graphicAge, now);
+        if (graphic) drawGraphic(g, graphic, ...MUSEUM_PANEL, graphicAge, now);
         const glance = graphic && t % 5 < 1.6 ? -1 : 0;
         if (p) drawPresenter(g, 268, 34, p.look, pose(p, glance), 3, true);
         return;

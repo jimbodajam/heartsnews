@@ -3,8 +3,11 @@
 import type { IconId } from '../../../../shared/bulletin';
 import { drawIcon } from '../../gfx/icons';
 
-/** Where a graphic goes: beside the presenter in a close-up, or full screen over the dimmed studio. */
-export type Place = 'beside' | 'full';
+/**
+ * Where a graphic goes: beside the presenter in a close-up, full screen over the dimmed studio, or on the left of the
+ * museum's gallery (#88) over the wall panels, the presenter on the right.
+ */
+export type Place = 'beside' | 'full' | 'left';
 
 /** A portrait's width and height in frame em (1em = a hundredth of the frame), beside the presenter; full screen scales it with the text. One place to change it once the faces bake-off (#93) has decided. */
 export const FACE_EM = 8;

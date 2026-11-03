@@ -34,6 +34,22 @@ function backdropFromGrid(img) {
   return out;
 }
 
+/**
+ * A pixel-art picture on a regular block grid (`B` source px a block, first block edge at `ox`, `oy`), sampled at block centres
+ * onto the 480x270 canvas: each output pixel takes the centre of the block its 480-column position falls in, so a 240-block
+ * picture comes out as exact 2x2 blocks. The picture is a little under 270 rows at 480 wide: the spare rows are the same
+ * edge row repeated, split top and bottom, so nothing is cut (the studio does the same).
+ */
+function sceneFromGrid(img, B, ox, oy) {
+  const S = img.w / GW, rows = Math.round(img.h / S), pad = Math.floor((GH - rows) / 2), out = new Pix(GW, GH);
+  const snap = (v, o, max) => Math.min(max, Math.max(0, Math.round(o + (Math.floor((v - o) / B) + 0.5) * B)));
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const sx = snap((x + 0.5) * S, ox, img.w - 1), sy = snap(Math.min(rows - 0.5, Math.max(0.5, y - pad + 0.5)) * S, oy, img.h - 1), k = (sy * img.w + sx) * 4;
+    out.set(x, y, [img.d[k], img.d[k + 1], img.d[k + 2]]);
+  }
+  return out;
+}
+
 function fringe(P) {
   const kill = [];
   for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) if (P.has(x, y)) { const [r, g, b] = P.get(x, y); if (r > 150 && b > 120 && b - g > 40 && r - g > 40 && (!P.has(x - 1, y) || !P.has(x + 1, y) || !P.has(x, y - 1) || !P.has(x, y + 1))) kill.push([x, y]); }
@@ -82,6 +98,13 @@ const [bgImg, deskImg, propImg] = await Promise.all([read('site/public/spike/stu
 const backdrop = backdropFromGrid(bgImg);
 await png(backdrop, path.join(OUT, 'backdrop.png'));
 
+// On This Day's two scenes (#88): art/Museum, each a 240-block pixel picture (block 5.733 and 4.267 source px: width / 240), phases found by the edge energy at block boundaries.
+const MUSEUM = {
+  front: { src: 'art/Museum/Gemini_Generated_Image_n2i954n2i954n2i9.jpg', file: 'museum-front.png', block: 1376 / 240, ox: 4.75, oy: 4.75 },
+  inside: { src: 'art/Museum/ff3cb19b-dcff-4933-bbb2-ddc15d6e4b10.jpg', file: 'museum.png', block: 1024 / 240, ox: 3.25, oy: 1.25 },
+};
+for (const m of Object.values(MUSEUM)) await png(sceneFromGrid(await read(m.src), m.block, m.ox, m.oy), path.join(OUT, m.file));
+
 const desk = await deskFromGrid(deskImg, 'site/public/badges/heart-of-midlothian.png', DESK_TOP, DESK_LIP);
 await png(desk, path.join(OUT, 'desk.png'));
 const deskX = GW / 2 - Math.round(desk.w / 2), deskY = DESK_Y_TOP - DESK_LIP;   // as the spike draws it: 240 - round(width / 2), 170 - lip
@@ -107,8 +130,15 @@ const set = {
     presenters: { isla: 'presenters/isla-seated', fraser: 'presenters/fraser-seated' },
   },
   stack: 48,
+  museum: {
+    front: MUSEUM.front.file, inside: MUSEUM.inside.file,
+    note: 'On This Day (#88): the front for the first line, the gallery for the rest; standing presenters at 1:1, feet at `feet` (the art row of the last sheet row), centred on `x`',
+    outside: { x: 62, feet: 262 }, gallery: { x: 415, feet: 270 },
+    glance: { every: 5, for: 1.6 },
+    presenters: { fraser: 'presenters/fraser' },
+  },
   camera: { wide: { z: 1, x: 240, y: 135, sy: 135 }, tight: { z: 1.8, x: 'seat', y: 55, sy: 78 } },
 };
 fs.writeFileSync(path.join(OUT, 'set.json'), JSON.stringify(set, null, 1) + '\n');
-for (const f of ['backdrop.png', 'desk.png', 'props.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
+for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
 console.log('desk', desk.w + 'x' + desk.h, 'at', deskX + ',' + deskY, '| props sheet', sheet.w + 'x' + sheet.h);

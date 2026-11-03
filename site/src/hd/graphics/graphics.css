@@ -60,6 +60,7 @@
 .hdg .gfx { position: absolute; top: 4em; height: 25em; background: var(--night); border: .35em solid var(--gold); overflow: hidden;
   clip-path: inset(0 100% 0 0); animation: hdg-wipe .55s steps(11) forwards; }
 .hdg .gfx.beside { left: 53em; width: 43em; }
+.hdg .gfx.left { left: 4em; width: 46em; top: 5em; }
 .hdg .gfx.full { top: 3.5em; height: 25.5em; left: 8em; right: 8em; }
 @keyframes hdg-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 

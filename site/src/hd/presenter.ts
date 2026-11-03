@@ -13,6 +13,8 @@ export type PresenterData = {
   name: string;
   w: number;
   h: number;
+  /** The sprite row the legs start at (standing sheets): the upper body above it can breathe. */
+  feetTop?: number;
   heads: string[];
   poses: string[];
   feet: string[];

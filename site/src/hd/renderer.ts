@@ -5,18 +5,20 @@ import { COLUMN_SHIFT, SideColumn } from './column';
 import { ASIDE, canSeat, drawDeskScene, drawStudioBackdrop, loadSeatedCast, type SeatedCast } from './desk';
 import { GraphicBox, isNative } from './graphics';
 import { HdMoments } from './moments';
+import { canMuseum, drawMuseum, loadMuseum, museumGraphic, type MuseumArt } from './museum';
 import { loadSet, type StudioSet } from './set';
 
 /** The HD art, once it has loaded. */
-type Art = Readonly<{ set: StudioSet; cast: SeatedCast }>;
+type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt }>;
 
 /**
  * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
  * SD panel) or the side column. `hd-full`: a full-screen HD graphic over the dimmed studio (#87). `sd-scene`: the SD scene
  * without its bars (or an ad break's advert), under the HD furniture. `moment`: no picture, for the full-screen moments
- * (splash, ident, sponsor card: #86) that cover the frame, and a sting or break-in with nothing yet under it.
+ * (splash, ident, sponsor card: #86) that cover the frame, and a sting or break-in with nothing yet under it. `museum`: On
+ * This Day at the HD museum with its standing presenter (#88): no side column, the line's graphic on the left.
  */
-export type View = 'hd' | 'hd-full' | 'sd-scene' | 'moment';
+export type View = 'hd' | 'hd-full' | 'museum' | 'sd-scene' | 'moment';
 
 /** The team sheet's cards: on the videowall, HD shows them full screen (teamNewsCard). */
 const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
@@ -40,14 +42,16 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
  * Which view this frame gets (#85, #87, #86). `moment` for the moments that cover the frame (splash, ident, sponsor), and
  * when there's no segment yet. The sting and the break-in flash play over the picture the segment would have had in a
  * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
- * touchscreen, pitchside, museum, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
+ * touchscreen, pitchside, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
  * desk with someone who has no HD art (Ross in the debate), and anything until the art has loaded. `hd-full` for a
- * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). Otherwise HD.
+ * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). `museum` for the museum when its
+ * backdrops have loaded and the presenter has standing art (else the SD museum). Otherwise HD.
  */
 export function chooseView(s: FrameState, art: Art | undefined): View {
   if (HdMoments.covers(s.mode) || !s.seg) return 'moment';
   if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
   if (teamNewsCard(s)) return 'hd-full';
+  if (s.seg.scene === 'museum') return canMuseum(art.museum, s.onScreen) ? 'museum' : 'sd-scene';
   if (s.seg.scene !== 'desk') return 'sd-scene';
   if (s.shot === 'full') return isNative(s.graphic) ? 'hd-full' : 'sd-scene';
   return canSeat(art.set, art.cast, s.onScreen) ? 'hd' : 'sd-scene';
@@ -181,7 +185,7 @@ export class HdRenderer implements Renderer {
   }
 
   focus(): void {
-    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full') this.canvas?.focus();
+    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full' || this.shown?.view === 'museum') this.canvas?.focus();
     else this.sd.focus();
   }
 
@@ -209,6 +213,19 @@ export class HdRenderer implements Renderer {
       this.column!.hide(now);
       this.setColumnClass(false);
       if (view === 'sd-scene') this.sd.drawSceneOnly(s, now);
+    } else if (view === 'museum') {
+      // The gallery's graphic goes on the left, the presenter on the right; no side column in the museum. A type HD
+      // doesn't draw is the SD panel on the SD canvas over the scene.
+      this.column!.hide(now);
+      this.setColumnClass(false);
+      this.setTransform('');
+      drawMuseum(this.g!, this.art!.museum!, s, now);
+      const graphic = museumGraphic(s);
+      const native = isNative(graphic);
+      this.box!.show(native ? graphic : undefined, 'left');
+      const sdPanel = Boolean(graphic) && !native;
+      if (sdPanel !== this.sdPanel) this.sdBox!.hidden = !(this.sdPanel = sdPanel);
+      if (sdPanel) this.sd.drawMuseumPanelOnly(s, now);
     } else if (view === 'hd-full') {
       this.column!.hide(now);
       this.setColumnClass(false);
@@ -245,7 +262,13 @@ export class HdRenderer implements Renderer {
   private async load(): Promise<void> {
     try {
       const set = await loadSet(this.dir);
-      this.art = { set, cast: await loadSeatedCast(set) };
+      const cast = await loadSeatedCast(set);
+      // The museum is optional: without it On This Day stays on the SD scenes.
+      const museum = await loadMuseum(this.dir, set.museum).catch((err) => {
+        console.error(err);
+        return undefined;
+      });
+      this.art = { set, cast, museum };
     } catch (err) {
       // Stays on the SD scenes.
       console.error(err);
@@ -274,7 +297,7 @@ export class HdRenderer implements Renderer {
 
   /** Show what `view` draws on: the HD scene or the SD canvas (an HD close-up's SD panel is shown by draw), and the layers unless it's the whole SD frame. */
   private show(view: View): void {
-    const hd = view === 'hd' || view === 'hd-full';
+    const hd = view === 'hd' || view === 'hd-full' || view === 'museum';
     if (this.canvas) this.canvas.hidden = !hd;
     if (this.sdBox) this.sdBox.hidden = hd;
     this.sdPanel = false;

@@ -5,6 +5,18 @@ export type Camera = { z: number; x: number | 'seat'; y: number; sy: number };
 
 export type Prop = { sheet: [number, number, number, number]; s: number; side: number };
 
+/** The museum's backdrops (files in the set's folder) and its standing presenters: each stands centred on `x` with the sheet's last row on `feet`. */
+export type MuseumData = {
+  front: string;
+  inside: string;
+  outside: { x: number; feet: number };
+  gallery: { x: number; feet: number };
+  /** In the gallery a presenter glances at the graphic for `for` seconds of every `every`. */
+  glance: { every: number; for: number };
+  /** Presenter id to the baked standing sheet, relative to the site root. */
+  presenters: Record<string, string>;
+};
+
 /** set.json as baked by tools/bake. Positions are art pixels on the 480×270 canvas. */
 export type SetData = {
   w: number;
@@ -34,6 +46,8 @@ export type SetData = {
   };
   /** Art rows taken by the bottom stack: the scene is lifted by this much so the desk front clears it. */
   stack: number;
+  /** On This Day's two scenes and where standing presenters go in them (museum.ts); absent in a set without them. */
+  museum?: MuseumData;
   camera: { wide: Camera; tight: Camera };
 };
 

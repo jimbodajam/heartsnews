@@ -122,6 +122,26 @@
   }
  },
  "stack": 48,
+ "museum": {
+  "front": "museum-front.png",
+  "inside": "museum.png",
+  "note": "On This Day (#88): the front for the first line, the gallery for the rest; standing presenters at 1:1, feet at `feet` (the art row of the last sheet row), centred on `x`",
+  "outside": {
+   "x": 62,
+   "feet": 262
+  },
+  "gallery": {
+   "x": 415,
+   "feet": 270
+  },
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "fraser": "presenters/fraser"
+  }
+ },
  "camera": {
   "wide": {
    "z": 1,

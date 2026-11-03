@@ -99,7 +99,10 @@ It reads the generated images in `site/public/spike/` (`studio-pixel.jpg`, `desk
 | `backdrop.png` | 480x270, block centres of the 1376 px image at 1376/480 |
 | `desk.png` | 337x122, v3 desk keyed to transparent with the dark back lip (8 rows) left out, club badge drawn into the medallion (36x36, 24 colour steps) |
 | `props.png` | laptop, mug, notebook, papers, glass, bottle and headphones cut from the 5.865 px grid and packed on one sheet |
+| `museum-front.png`, `museum.png` | On This Day's two scenes (#88), 480x270, from `art/Museum` (see below) |
 | `set.json` | where everything goes: `desk` x, y and `top` (scene row of the cream top, 170); `props.items` (sheet box, scale `s`, `side`), `base` 189, `slotSide` 14, and `default` (none for both, HD shows no props); `seated` (`hcut` 112, `propx` 0, seat x positions for wide, tight and alone); `stack` 48; `camera` shots |
+
+**The museum (#88).** Both sources in `art/Museum` are 240-block pixel pictures (the generated image's blocks measure width / 240: 5.733 px in the 1376 px front, 4.267 px in the 1024 px gallery; the block phase was found from the edge energy at block boundaries, a weaker grid than the studio's but clear). `sceneFromGrid` in `set.mjs` takes each 480x270 pixel from the centre of the block its position falls in, so each block comes out as an exact 2x2. The pictures are a little under 270 rows at 480 wide (268), so nothing is cropped: the spare row at the top and bottom is the edge row repeated, as for the studio. The museum's `set.json` section (`museum`) names the two files, where the standing presenter goes (`outside` and `gallery`: the figure's centre `x` and the art row of its last sprite row `feet`, sprites drawn 1:1), the gallery glance (every 5 s for 1.6 s) and the standing sheets by presenter id. `site/src/hd/museum.ts` draws it.
 
 Seated figures draw at x = seat x - 120, y = `desk.top` - `hcut`, then the desk goes over them. `site/public/test/hd-set.html` draws exactly that from the baked files and the baked seated sheets: keys 1-3 cameras, 4-6 desk, 7 and 8 props.
 
