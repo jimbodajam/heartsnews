@@ -635,6 +635,18 @@ function buildTunePanel() {
   addEventListener('keydown', e => { if (e.key.toLowerCase() === 'k' && !e.metaKey && !e.ctrlKey) box.style.display = box.style.display === 'none' ? '' : 'none'; });
 }
 if (SEATED) buildTunePanel();
+/**
+ * Which head a seated presenter shows (#78). While the other presenter speaks they look at them (Isla sits on the left and turns to the right edge, h1; Fraser the other way, h2) for most of the line.
+ * Otherwise the head holds the straight pose, with a nod or a small lean every couple of seconds while they talk, so they are never frozen. A head holds for a whole slot, then changes with a cut, like the other frames.
+ */
+const SEATED_WHILE_TALKING = ['b1', 'b1', 'h3', 'tilt3', 'b1', 'tilt-3', 'h4', 'b1', 'tilt6', 'b1', 'tilt-6', 'h3'], SEATED_IDLE = ['b1', 'b1', 'b1', 'b1', 'tilt3', 'b1', 'b1', 'tilt-3'];
+function seatedHead(who, t, talking) {
+  const slot = Math.floor(t / 1.9) + (who === 'isla' ? 0 : 37), r = hash(slot * 3.1);
+  const other = !!playing && playing.by === (who === 'isla' ? 'b' : 'a');
+  if (other) return r < 0.75 ? (who === 'isla' ? 'h1' : 'h2') : r < 0.88 ? 'h3' : 'b1';
+  const pool = talking ? SEATED_WHILE_TALKING : SEATED_IDLE;
+  return pool[Math.floor(hash(slot * 7.7 + 1) * pool.length)];
+}
 function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo = MOU) {
   const tn = pres.player ? TUNE[pres.who] : null, t = t0 + ph, IX = Math.round(cx - 120 * S) + (tn ? tn.dx : 0), IYp = pres.player ? 170 - TUNE.hcut + tn.dy : deskGen ? Math.round(170 - 95 * S) - ISLA_DY : 69;   // a seated figure's hands row meets the desk's back edge
   const breath = pres.player ? 0 : Math.round(Math.sin(t * 1.9) * 0.5 + 0.5);   // a seated figure does not bob up and down
@@ -645,7 +657,7 @@ function drawIsla(t0, talking, cx, ph = 0, pres = isla, S = ISLA_S, E = EYE, Mo 
   const glance = location.hash === '#gazeL' ? -1 : location.hash === '#gazeR' ? 1 : !talking ? 0 : (t % 6.1 > 5.5 ? -1 : t % 7.3 > 6.7 ? 1 : 0);
   const eye = blink ? pres.eyes.blink : emphasis ? pres.eyes.brows : glance < 0 ? pres.eyes.gazeL : glance > 0 ? pres.eyes.gazeR : null;
   const key = talking ? LEVEL < 0.03 ? 'closed' : VIS[Math.floor(t * 11 + hash(Math.floor(t * 11))) % VIS.length] : (t % 5 < 1.2 ? 'smile' : 'rest');
-  if (pres.player) ig.drawImage(pres.player.frame({ pose: gesture ? 'd4' : 'b1', eye: blink ? 'blink' : 'open', mouth: key }), 0, 0);   // seated sets (#78): the baked frame already has the face on
+  if (pres.player) ig.drawImage(pres.player.frame({ head: seatedHead(pres.who, t, talking), pose: gesture ? 'd4' : 'b1', eye: blink ? 'blink' : 'open', mouth: key }), 0, 0);   // seated sets (#78): the baked frame already has the face on
   else {
     if (eye) ig.drawImage(eye, E.x0, E.y0);
     if (key !== "rest") ig.drawImage(pres.mouth[key], Mo.x0, Mo.y0);
