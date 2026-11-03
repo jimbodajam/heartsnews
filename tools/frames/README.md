@@ -76,3 +76,13 @@ Without Chrome connected the same queue works by hand: `next` prints everything 
 Frames to look at hardest on the contact sheet: `h1`/`h2` (direction, the check catches a wrong way), `d4`/`d5` (arm direction, and that nothing appears below the desk edge), and the `v` frames (the face must not move).
 
 Brief for a background Haiku run, per presenter (`isla-seated`, then `fraser-seated`): follow "Background run" above. Use `npm run frames -- next <p> --json` for each frame, never click by coordinates, one download per frame, stop at the daily limit with `mark ... limit`, and finish with `collect <p>` and `sheet <p>`. Do not approve, bake or commit; James approves from the contact sheet.
+
+**What was learned on the seated run**
+
+- **The direction check misreads small head turns** (`h1`/`h2`): it measures changed cells against the middle of the figure. Look at the frame and use `approve <p> <frame> --force` to accept a frame the checks rejected.
+- **Gemini turns Fraser the wrong way** for the left turn. Mirror the right turn instead: flip `h1` (and the `h1v*` crops) for `h2`. Isla's `h2` was made the same way.
+- **The content filter.** A refusal reads "I can't generate the image you requested right now due to interests of third-party content providers". It is the copyright and likeness filter, not an error and not the daily limit, and it fires at random on some mouth requests for Fraser's face. Do not resend the same prompt: use a shorter one (drop "do not change the pose…" and "his mouth is thin…", and ask for "the mouth slightly open and rounded, as if saying the letter O"), or mirror the frame from the other turned head if one exists.
+- **The upload menu is flaky.** The first click on "Upload & tools" often finds no file input; press Escape, click it again, then `find` "(file input)". Text typed right after an upload can be lost, so find the prompt box again first.
+- **`recheck <p> [frame...]`** runs the checks again on the staged images, after the boxes in `frames.json` change. **`next`** hands out a frame whose last run failed last, so one refusal does not hold up the rest.
+- **The `v` frames need boxes.** A `patch` crop frame takes its pixels from the master's `eyeWin`/`mouthWin` (or `boxes.b1.patch`); with none the whole frame is read back as unchanged.
+- **Leans are not generated** (see `tools/bake/README.md`): the nods use the `v` patches and the leans are the master head turned by code, so no `h5`/`h6` frames are needed. The ones already generated stay in the repo.
