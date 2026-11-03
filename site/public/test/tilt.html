@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Hearts News 24 — seated head tilt test</title>
+<style>
+  html, body { margin: 0; background: #0e0c10; color: #f2efe6; font: 14px system-ui, sans-serif; }
+  #wrap { max-width: 1000px; margin: 0 auto; padding: 14px 16px 30px; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  p { margin: 4px 0 10px; color: #b9b4c4; }
+  .ctl { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; background: #1a1722; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; position: sticky; top: 0; z-index: 2; }
+  .ctl label { display: flex; align-items: center; gap: 8px; }
+  input[type=range] { width: 340px; }
+  output { display: inline-block; min-width: 4.5em; font-variant-numeric: tabular-nums; color: #e0b13a; font-weight: 600; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card { background: #1a1722; padding: 8px; border-radius: 6px; }
+  canvas { display: block; image-rendering: pixelated; }
+  .cap { font-size: 12px; color: #b9b4c4; margin-top: 4px; }
+  .note { font-size: 12px; color: #8b8697; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>Seated head tilt: rotate the master head, mouths and blinks included</h1>
+  <p>Drag the slider to lean the head about the neck, and see how far it can go before it looks wrong. The mouths and blinks cycle on their own so you can check they follow the tilt. Positive leans clockwise (towards the right of the image).</p>
+  <div class="ctl">
+    <label>Tilt <input id="deg" type="range" min="-25" max="25" step="0.5" value="8"> <output id="degv"></output></label>
+    <label><input id="rs" type="checkbox" checked> RotSprite-style (clean down-sampling)</label>
+    <label><input id="cyc" type="checkbox" checked> cycle mouths and blinks</label>
+    <label>Neck pivot x <input id="px" type="number" value="117" style="width:4em"> y <input id="py" type="number" value="46" style="width:4em"></label>
+    <label>Cut the head at row <input id="cut" type="number" value="47" style="width:4em"></label>
+    <span id="state" class="note"></span>
+  </div>
+  <div class="row" id="views"></div>
+  <p class="note">Left: tilted head. Right: the same frame with no tilt, to compare against. Only the rows above the cut row (the neck, just above the collar) are rotated, so the jacket stays put; the pivot is where the neck meets the collar. Plain mode just rotates the pixels, RotSprite-style scales up 8x first and picks the most common colour in each cell on the way back.</p>
+</div>
+<script type="module">
+// Prototype for #78: instead of generating own mouths for the tilted heads (h5, h6), rotate the master head with each mouth and blink composed on it, about the neck.
+const { loadPresenter } = await import('./presenter-player.js');
+const SETS = { Fraser: await loadPresenter('../presenters/fraser-seated'), Isla: await loadPresenter('../presenters/isla-seated') };
+const MOUTHS = ['rest', 'smile', 'closed', 'small', 'wide', 'O', 'A'], EYES = ['open', 'open', 'open', 'blink'];
+const $ = id => document.getElementById(id);
+const X0 = 70, X1 = 170, Y1 = 112, K = 8, SC = 4;   // view window in grid cells, up-scale for rotation, on-screen scale
+const views = {};
+for (const [name, P] of Object.entries(SETS)) {
+  const card = document.createElement('div'); card.className = 'card';
+  const cv = document.createElement('canvas'), ref = document.createElement('canvas');
+  for (const c of [cv, ref]) { c.width = (X1 - X0) * SC; c.height = Y1 * SC; }
+  const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px'; row.append(cv, ref);
+  const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = name;
+  card.append(row, cap); $('views').append(card); views[name] = { P, cv, ref, cap, cache: new Map() };
+}
+
+const scratch = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+
+/** The head rows of a composed frame, rotated `deg` about (px, py) in grid cells. */
+function rotateHead(P, frame, deg, px, py, rotsprite) {
+  const cut = +$('cut').value, W = X1 - X0;
+  const src = scratch(W, cut); src.getContext('2d').drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+  if (!deg) return src;
+  const th = deg * Math.PI / 180, cx = px - X0, cy = py;
+  if (!rotsprite) {
+    const out = scratch(W, cut), g = out.getContext('2d'); g.imageSmoothingEnabled = false;
+    g.translate(cx, cy); g.rotate(th); g.translate(-cx, -cy); g.drawImage(src, 0, 0); return out;
+  }
+  const up = scratch(W * K, cut * K), ug = up.getContext('2d'); ug.imageSmoothingEnabled = false; ug.drawImage(src, 0, 0, W * K, cut * K);
+  const rot = scratch(W * K, cut * K), rg = rot.getContext('2d'); rg.imageSmoothingEnabled = false;
+  rg.translate(cx * K, cy * K); rg.rotate(th); rg.translate(-cx * K, -cy * K); rg.drawImage(up, 0, 0);
+  const d = rg.getImageData(0, 0, W * K, cut * K).data, out = scratch(W, cut), og = out.getContext('2d'), id = og.createImageData(W, cut), stride = W * K * 4;
+  for (let y = 0; y < cut; y++) for (let x = 0; x < W; x++) {
+    // the commonest colour among the K x K samples of this cell wins; transparent counts as a colour, so a ragged outline is not filled in
+    const counts = new Map(); let bestK = 0, bestN = 0;
+    for (let sy = 0; sy < K; sy++) for (let sx = 0; sx < K; sx++) {
+      const i = (y * K + sy) * stride + (x * K + sx) * 4, key = d[i + 3] < 128 ? 0 : ((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]) + 1;
+      const n = (counts.get(key) || 0) + 1; counts.set(key, n); if (n > bestN) { bestN = n; bestK = key; }
+    }
+    if (bestK) { const o = (y * W + x) * 4, c = bestK - 1; id.data[o] = c >> 16; id.data[o + 1] = (c >> 8) & 255; id.data[o + 2] = c & 255; id.data[o + 3] = 255; }
+  }
+  og.putImageData(id, 0, 0); return out;
+}
+
+function draw(v, mouth, eye, deg) {
+  const { P, cv, ref } = v, cut = +$('cut').value, W = X1 - X0;
+  const frame = P.frame({ head: 'b1', mouth, eye });
+  const key = [mouth, eye, deg, $('px').value, $('py').value, cut, $('rs').checked].join('|');
+  let head = v.cache.get(key); if (!head) { head = rotateHead(P, frame, deg, +$('px').value, +$('py').value, $('rs').checked); if (v.cache.size > 400) v.cache.clear(); v.cache.set(key, head); }
+  for (const [c, h, tilted] of [[cv, head, true], [ref, null, false]]) {
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#6d1a2a'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#8a8d99'; g.fillRect(0, 105 * SC, c.width, c.height); g.fillStyle = '#4a4d59'; g.fillRect(0, 105 * SC, c.width, SC);
+    g.save(); g.scale(SC, SC);
+    // body first from the frame below the cut, then the head over it
+    g.drawImage(frame, X0, cut, W, Y1 - cut, 0, cut, W, Y1 - cut);
+    if (tilted) g.drawImage(h, 0, 0); else g.drawImage(frame, X0, 0, W, cut, 0, 0, W, cut);
+    g.restore();
+    if (tilted) { g.strokeStyle = '#e0b13a'; g.lineWidth = 1; g.beginPath(); const x = ($('px').value - X0) * SC, y = $('py').value * SC; g.moveTo(x - 6, y); g.lineTo(x + 6, y); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.stroke(); }
+  }
+  v.cap.textContent = `${v.name}: ${mouth}, ${eye}${eye === 'blink' ? ' (blink)' : ''}`;
+}
+for (const [n, v] of Object.entries(views)) v.name = n;
+
+let mi = 0, ei = 0, last = 0;
+function loop(ms) {
+  if ($('cyc').checked && ms - last > 380) { last = ms; mi = (mi + 1) % MOUTHS.length; ei = (ei + 1) % EYES.length; }
+  const deg = +$('deg').value; $('degv').textContent = deg.toFixed(1) + '°';
+  $('state').textContent = $('cyc').checked ? '' : 'cycling is off';
+  for (const v of Object.values(views)) draw(v, MOUTHS[mi], EYES[ei], deg);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
