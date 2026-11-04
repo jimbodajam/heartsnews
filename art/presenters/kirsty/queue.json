@@ -14,15 +14,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:48:38.384Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v1.jpg",
-   "stats": {
-    "changed": 19,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5.1
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v1.jpg"
   },
   {
    "frame": "h1v2",
@@ -36,15 +28,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:50:00.879Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v2.jpg",
-   "stats": {
-    "changed": 6,
-    "outside": 0,
-    "fit": {
-     "scale": 1.002,
-     "err": 5.1
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v2.jpg"
   },
   {
    "frame": "h1v3",
@@ -58,15 +42,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:51:17.189Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v3.jpg",
-   "stats": {
-    "changed": 11,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5.1
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v3.jpg"
   },
   {
    "frame": "h1v4",
@@ -80,15 +56,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:52:34.052Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v4.jpg",
-   "stats": {
-    "changed": 15,
-    "outside": 0,
-    "fit": {
-     "scale": 1.002,
-     "err": 5
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v4.jpg"
   },
   {
    "frame": "h1v5",
@@ -102,15 +70,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:53:56.118Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v5.jpg",
-   "stats": {
-    "changed": 36,
-    "outside": 0,
-    "fit": {
-     "scale": 1.002,
-     "err": 4.9
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v5.jpg"
   },
   {
    "frame": "h1v6",
@@ -125,15 +85,7 @@
     "2026-11-04: nothing changed inside its area (recheck)"
    ],
    "savedAt": "2026-11-04T10:55:12.593Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v6.jpg",
-   "stats": {
-    "changed": 1,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5.2
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v6.jpg"
   },
   {
    "frame": "h1v7",
@@ -147,15 +99,7 @@
     "2026-11-04: nothing changed inside its area"
    ],
    "savedAt": "2026-11-04T10:56:38.663Z",
-   "staged": "art/presenters/kirsty/queue/staged/h1v7.jpg",
-   "stats": {
-    "changed": 124,
-    "outside": 56,
-    "fit": {
-     "scale": 0.996,
-     "err": 4.8
-    }
-   }
+   "staged": "art/presenters/kirsty/queue/staged/h1v7.jpg"
   },
   {
    "frame": "h2v1",
@@ -163,19 +107,20 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "rejected",
-   "attempts": 1,
+   "status": "passed",
+   "attempts": 2,
    "reasons": [
+    "2026-11-04: nothing changed inside its area",
     "2026-11-04: nothing changed inside its area"
    ],
-   "savedAt": "2026-11-04T10:58:08.659Z",
+   "savedAt": "2026-11-04T11:10:32.071Z",
    "staged": "art/presenters/kirsty/queue/staged/h2v1.jpg",
    "stats": {
-    "changed": 0,
+    "changed": 21,
     "outside": 0,
     "fit": {
-     "scale": 1.002,
-     "err": 4.7
+     "scale": 0.999,
+     "err": 4.8
     }
    }
   },
@@ -185,19 +130,20 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "rejected",
-   "attempts": 1,
+   "status": "passed",
+   "attempts": 2,
    "reasons": [
+    "2026-11-04: nothing changed inside its area",
     "2026-11-04: nothing changed inside its area"
    ],
-   "savedAt": "2026-11-04T10:59:28.783Z",
+   "savedAt": "2026-11-04T11:10:34.002Z",
    "staged": "art/presenters/kirsty/queue/staged/h2v2.jpg",
    "stats": {
-    "changed": 0,
+    "changed": 12,
     "outside": 0,
     "fit": {
      "scale": 1.002,
-     "err": 5.1
+     "err": 5
     }
    }
   },
@@ -207,19 +153,20 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "rejected",
-   "attempts": 1,
+   "status": "passed",
+   "attempts": 2,
    "reasons": [
+    "2026-11-04: nothing changed inside its area",
     "2026-11-04: nothing changed inside its area"
    ],
-   "savedAt": "2026-11-04T11:00:49.750Z",
+   "savedAt": "2026-11-04T11:10:35.674Z",
    "staged": "art/presenters/kirsty/queue/staged/h2v3.jpg",
    "stats": {
-    "changed": 0,
+    "changed": 10,
     "outside": 0,
     "fit": {
-     "scale": 1.002,
-     "err": 5.2
+     "scale": 0.999,
+     "err": 4.9
     }
    }
   },
@@ -229,19 +176,20 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "rejected",
-   "attempts": 1,
+   "status": "passed",
+   "attempts": 2,
    "reasons": [
+    "2026-11-04: nothing changed inside its area",
     "2026-11-04: nothing changed inside its area"
    ],
-   "savedAt": "2026-11-04T11:02:10.799Z",
+   "savedAt": "2026-11-04T11:10:37.294Z",
    "staged": "art/presenters/kirsty/queue/staged/h2v4.jpg",
    "stats": {
-    "changed": 0,
+    "changed": 17,
     "outside": 0,
     "fit": {
-     "scale": 1.002,
-     "err": 5.1
+     "scale": 0.999,
+     "err": 4.9
     }
    }
   },
@@ -251,9 +199,21 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "passed",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T11:10:39.148Z",
+   "staged": "art/presenters/kirsty/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 43,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 4.7
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -261,9 +221,22 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area",
+    "2026-11-04: nothing changed inside its area (recheck)"
+   ],
+   "savedAt": "2026-11-04T11:10:41.008Z",
+   "staged": "art/presenters/kirsty/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 1,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 5.1
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -271,13 +244,26 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area",
+    "2026-11-04: 186 cells changed outside its area (eyes), around x 37-80, y 49-121 (recheck)"
+   ],
+   "savedAt": "2026-11-04T11:10:42.708Z",
+   "staged": "art/presenters/kirsty/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 239,
+    "outside": 186,
+    "fit": {
+     "scale": 0.998,
+     "err": 4.7
+    }
+   }
   }
  ],
- "updated": "2026-11-04T11:06:13.628Z",
- "downloads": "art/presenters/kirsty/queue/named",
+ "updated": "2026-11-04T11:11:09.779Z",
+ "downloads": "art/presenters/kirsty/queue/mirrored",
  "seen": [
   "h1.jpg@1793783527640.7354",
   "h2.jpg@1793783640554.394",
@@ -312,7 +298,14 @@
   "h2v1.jpg@1793789885885.796",
   "h2v2.jpg@1793789965848.7305",
   "h2v3.jpg@1793790046759.6223",
-  "h2v4.jpg@1793790127716.764"
+  "h2v4.jpg@1793790127716.764",
+  "h2v1.jpg@1793790626455.2603",
+  "h2v2.jpg@1793790626539.76",
+  "h2v3.jpg@1793790626620.762",
+  "h2v4.jpg@1793790626697.2617",
+  "h2v5.jpg@1793790626774.26",
+  "h2v6.jpg@1793790626860.263",
+  "h2v7.jpg@1793790626947.261"
  ],
  "limitNote": "Your limit resets at 12:24 PM"
 }
