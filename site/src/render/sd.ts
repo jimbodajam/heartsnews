@@ -6,7 +6,7 @@ import {
   drawCallerBar,
 } from '../gfx/overlay';
 import { drawPresenter, gestureLift, idlePose, SEATED_DESK_Y, STANDING_H } from '../gfx/presenter';
-import { drawAdvert } from '../gfx/adverts';
+import { drawAdvert, drawAdvertOverlay } from '../gfx/adverts';
 import { drawSponsor } from '../gfx/sponsor';
 import { C } from '../gfx/palette';
 import type { Ctx } from '../gfx/screen';
@@ -127,6 +127,15 @@ export class SdRenderer implements Renderer {
     if (!g) return;
     g.clearRect(0, 0, W, H);
     if (s.graphic) drawGraphic(g, s.graphic, ...MUSEUM_PANEL, s.graphicAge, now);
+  }
+
+  /** Only an advert's brand panel and fine print (drawAdvertOverlay), on a cleared canvas, for the HD ad breaks (#92) to put over their own picture. */
+  drawAdvertOverlayOnly(s: FrameState, now: number): void {
+    const { g } = this;
+    if (!g) return;
+    g.clearRect(0, 0, W, H);
+    const ad = s.line?.graphic;
+    if (s.mode === 'show' && ad?.type === 'advert') drawAdvertOverlay(g, ad, s.graphicAge);
   }
 
   /**

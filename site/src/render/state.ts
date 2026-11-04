@@ -72,4 +72,6 @@ export interface Renderer {
   /** Remove them again, e.g. when another renderer takes over mid-show. */
   unmount(): void;
   draw(state: FrameState, now: number): void;
+  /** Optional: start fetching art for these segments ahead of time (called once the bulletin loads, and when this renderer takes over). */
+  preload?(segments: readonly Segment[]): void;
 }

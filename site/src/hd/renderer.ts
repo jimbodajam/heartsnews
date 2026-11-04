@@ -5,6 +5,7 @@ import { COLUMN_SHIFT, SideColumn } from './column';
 import { ASIDE, canSeat, drawDeskScene, drawStudioBackdrop, loadSeatedCast, type SeatedCast } from './desk';
 import { GraphicBox, isNative } from './graphics';
 import { HdMoments } from './moments';
+import { drawHdAdvert, hdAdvert, preloadBreaks } from './advert';
 import { canMuseum, drawMuseum, loadMuseum, museumGraphic, type MuseumArt } from './museum';
 import { loadSet, type StudioSet } from './set';
 import { canScene, drawScene, loadScene, screenGraphic, type SceneArt } from './touchscreen';
@@ -20,7 +21,7 @@ type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touc
  * This Day at the HD museum with its standing presenter (#88): no side column, the line's graphic on the left. `touch`: the Match
  * Centre's HD touchscreen with its standing presenter (#92): the line's graphic on the screen.
  */
-export type View = 'hd' | 'hd-full' | 'museum' | 'touch' | 'sd-scene' | 'moment';
+export type View = 'hd' | 'hd-full' | 'museum' | 'touch' | 'advert' | 'sd-scene' | 'moment';
 
 /** The team sheet's cards: on the videowall, HD shows them full screen (teamNewsCard). */
 const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
@@ -51,7 +52,8 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
  */
 export function chooseView(s: FrameState, art: Art | undefined): View {
   if (HdMoments.covers(s.mode) || !s.seg) return 'moment';
-  if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
+  if (!art) return 'sd-scene';
+  if (s.seg.kind === 'adverts') return hdAdvert(s) ? 'advert' : 'sd-scene';
   // The videowall's own HD scene (#92) when it can be drawn; else the team-news card full screen.
   if (s.seg.scene === 'videowall' && canScene(art.wall, s.onScreen)) return 'touch';
   if (teamNewsCard(s)) return 'hd-full';
@@ -97,7 +99,7 @@ export class HdRenderer implements Renderer {
    * What the view was chosen for: it's only chosen again when the mode, segment, shot or graphic changes, so it never
    * flips mid-line.
    */
-  private shown?: { mode: Mode; seg?: Segment; shot: Shot; graphic?: Graphic; view: View };
+  private shown?: { mode: Mode; seg?: Segment; shot: Shot; graphic?: Graphic; ad: boolean; view: View };
   private transform = '';
 
   // The HD graphics (#87): their layer, the graphic panel, the side column and what was on last frame.
@@ -107,6 +109,11 @@ export class HdRenderer implements Renderer {
   private column?: SideColumn;
   /** The full-screen moments (#86), above everything else in the frame. */
   private moments?: HdMoments;
+  /** Start fetching the ad breaks' HD pictures (the player calls this once the bulletin is in, and when HD takes over). */
+  preload(segments: readonly Segment[]): void {
+    preloadBreaks(segments);
+  }
+
   /** The S key's choice, kept over a remount. */
   private columnOn = true;
   /** The screen box last put on the graphics layer (placeScreen). */
@@ -194,7 +201,7 @@ export class HdRenderer implements Renderer {
   }
 
   focus(): void {
-    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full' || this.shown?.view === 'museum' || this.shown?.view === 'touch') this.canvas?.focus();
+    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full' || this.shown?.view === 'museum' || this.shown?.view === 'touch' || this.shown?.view === 'advert') this.canvas?.focus();
     else this.sd.focus();
   }
 
@@ -207,9 +214,11 @@ export class HdRenderer implements Renderer {
   draw(s: FrameState, now: number): void {
     if (!this.frame) return;
     const { shown } = this;
-    if (!shown || shown.mode !== s.mode || shown.seg !== s.seg || shown.shot !== s.shot || shown.graphic !== s.graphic) {
+    // An advert's HD picture may arrive after its line starts: the view is chosen again when it has.
+    const ad = s.seg?.kind === 'adverts' && Boolean(hdAdvert(s));
+    if (!shown || shown.mode !== s.mode || shown.seg !== s.seg || shown.shot !== s.shot || shown.graphic !== s.graphic || shown.ad !== ad) {
       const view = chooseView(s, this.art);
-      this.shown = { mode: s.mode, seg: s.seg, shot: s.shot, graphic: s.graphic, view };
+      this.shown = { mode: s.mode, seg: s.seg, shot: s.shot, graphic: s.graphic, ad, view };
       this.show(view);
     }
     const { view } = this.shown!;
@@ -222,6 +231,16 @@ export class HdRenderer implements Renderer {
       this.column!.hide(now);
       this.setColumnClass(false);
       if (view === 'sd-scene') this.sd.drawSceneOnly(s, now);
+    } else if (view === 'advert') {
+      // The backdrop at 480x270 on the HD canvas; the brand panel and fine print on the SD canvas over it.
+      this.box!.clear();
+      this.column!.hide(now);
+      this.setColumnClass(false);
+      this.setTransform('');
+      const shownAd = hdAdvert(s);
+      if (shownAd) drawHdAdvert(this.g!, shownAd.img);
+      if (!this.sdPanel) this.sdBox!.hidden = !(this.sdPanel = true);
+      this.sd.drawAdvertOverlayOnly(s, now);
     } else if (view === 'museum') {
       // The gallery's graphic goes on the left, the presenter on the right; no side column in the museum. A type HD
       // doesn't draw is the SD panel on the SD canvas over the scene.
@@ -344,7 +363,7 @@ export class HdRenderer implements Renderer {
 
   /** Show what `view` draws on: the HD scene or the SD canvas (an HD close-up's SD panel is shown by draw), and the layers unless it's the whole SD frame. */
   private show(view: View): void {
-    const hd = view === 'hd' || view === 'hd-full' || view === 'museum' || view === 'touch';
+    const hd = view === 'hd' || view === 'hd-full' || view === 'museum' || view === 'touch' || view === 'advert';
     if (this.canvas) this.canvas.hidden = !hd;
     if (this.sdBox) this.sdBox.hidden = hd;
     this.sdPanel = false;

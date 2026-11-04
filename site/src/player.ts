@@ -108,6 +108,7 @@ export class Player {
     this.renderer.unmount();
     r.mount(this.screen);
     this.renderer = r;
+    r.preload?.(this.bulletin.segments);
   }
 
   private presenter(id: string): Presenter {
@@ -173,6 +174,7 @@ export class Player {
     this.voices.preload(SPONSOR_CLIP).catch(() => undefined);
     this.voices.preload(SPONSOR_JINGLE).catch(() => undefined);
     this.voices.preload(SPONSOR_JINGLE_SHORT).catch(() => undefined);
+    this.renderer.preload?.(this.bulletin.segments);
     for (const seg of this.bulletin.segments) {
       for (const line of seg.lines) {
         const url = this.clipUrl(line);

@@ -178,11 +178,18 @@ function finePrint(g: Ctx, ad: Advert): void {
  * panel top left that stays put across cuts.
  */
 function drawPhotoAdvert(g: Ctx, ad: Advert, photo: HTMLImageElement, age: number, shotAge: number): void {
-  const { bg, fg, accent } = ad.colours;
   const ox = Math.round(Math.min(photo.naturalWidth - W, shotAge * 0.005));
   const oy = Math.round((photo.naturalHeight - H) / 2);
   g.drawImage(photo, ox, oy, W, H, 0, 0, W, H);
+  drawAdvertOverlay(g, ad, age);
+}
 
+/**
+ * What goes over a backdrop: the brand and tagline panel top left (sliding in, then staying put across cuts) and the fine
+ * print. On its own for the HD ad breaks (#92), which draw the 480×270 picture themselves and put this on the SD canvas over it.
+ */
+export function drawAdvertOverlay(g: Ctx, ad: Advert, age: number): void {
+  const { bg, fg, accent } = ad.colours;
   const brand = ad.brand.toUpperCase();
   const tag = wrap(ad.tagline.toUpperCase(), 150).slice(0, 2);
   const pw = Math.max(measure(brand, 2), ...tag.map((l) => measure(l))) + 16;
