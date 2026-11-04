@@ -3,11 +3,11 @@
 // dark screen box the line's graphic goes over (HTML for a type HD draws, else the SD panel; with no graphic the idle screen).
 // Like the museum, only the figure is animated.
 
-import type { Presenter } from '../../../shared/bulletin';
+import type { Graphic, Presenter } from '../../../shared/bulletin';
 import type { FrameState } from '../render/state';
 import { drawStanding, type Arms } from './museum';
 import { loadPresenter, type PresenterArt } from './presenter';
-import { loadImage, type SceneData } from './set';
+import { loadImage, type SceneData, type Side } from './set';
 import { drawTextCentred } from '../gfx/font';
 
 export type SceneArt = Readonly<{
@@ -15,12 +15,14 @@ export type SceneArt = Readonly<{
   data: SceneData;
   cast: ReadonlyMap<string, PresenterArt>;
   arms: Map<string, Arms>;
+  /** Which side each standing sheet points (SetData.points). */
+  points: Readonly<Record<string, Side>>;
   /** The podium sprite, in a scene that has one. */
   podium?: HTMLImageElement;
 }>;
 
 /** Load a scene named in set.json (`touchscreen`, `transfer`), or undefined if the set has none. */
-export async function loadScene(dir: string, data: SceneData | undefined): Promise<SceneArt | undefined> {
+export async function loadScene(dir: string, data: SceneData | undefined, points: Readonly<Record<string, Side>>): Promise<SceneArt | undefined> {
   if (!data) return undefined;
   const [backdrop, podium, ...art] = await Promise.all([
     loadImage(dir + data.file),
@@ -28,7 +30,7 @@ export async function loadScene(dir: string, data: SceneData | undefined): Promi
     ...Object.values(data.presenters).map((base) => loadPresenter(base)),
   ]);
   const cast = new Map(Object.keys(data.presenters).map((id, i) => [id, art[i]] as const));
-  return { backdrop, podium, data, cast, arms: new Map() };
+  return { backdrop, podium, data, cast, arms: new Map(), points };
 }
 
 /** Whether the scene can be drawn in HD: the segment's presenter has standing art for it (else the SD scene). */
@@ -64,8 +66,8 @@ export function drawScene(g: CanvasRenderingContext2D, t: SceneArt, s: FrameStat
   const p = s.onScreen[0];
   const art = p && t.cast.get(p.id);
   if (p && art) {
-    const glancing = Boolean(s.graphic) && (now / 1000) % data.glance.every < data.glance.for;
-    drawStanding(g, art, t.arms, p.id, s, now, data.stand, glancing);
+    const glancing = Boolean(screenGraphic(s)) && (now / 1000) % data.glance.every < data.glance.for;
+    drawStanding(g, art, t.arms, p.id, s, now, data.stand, glancing, { screen: data.screenSide, points: t.points[p.id] ?? 'left' });
   }
   if (data.podium && t.podium) {
     const { x, feet, w, h, label } = data.podium;
@@ -75,4 +77,9 @@ export function drawScene(g: CanvasRenderingContext2D, t: SceneArt, s: FrameStat
     drawTextCentred(g, 'TRANSFER', left + label.cx, top + label.cy - 7, '#e0b13a');
     drawTextCentred(g, 'CENTRE', left + label.cx, top + label.cy + 1, '#e0b13a');
   }
+}
+
+/** What the screen shows: the line's graphic, and on the videowall the segment's last card when the line has none (the team sheet stays up as the wall does in SD). */
+export function screenGraphic(s: FrameState): Graphic | undefined {
+  return s.graphic ?? (s.seg?.scene === 'videowall' ? s.segGraphic : undefined);
 }

@@ -141,8 +141,19 @@
    "for": 1.6
   },
   "presenters": {
-   "fraser": "presenters/fraser"
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
   }
+ },
+ "points": {
+  "kirsty": "left",
+  "fraser": "left",
+  "ross": "right",
+  "isla": "right",
+  "gregor": "right"
  },
  "touchscreen": {
   "file": "touchscreen.png",
@@ -157,12 +168,17 @@
    "x": 325,
    "feet": 262
   },
+  "screenSide": "left",
   "glance": {
    "every": 5,
    "for": 1.6
   },
   "presenters": {
-   "kirsty": "presenters/kirsty"
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
   }
  },
  "transfer": {
@@ -183,6 +199,7 @@
    "x": 142,
    "feet": 262
   },
+  "screenSide": "right",
   "podium": {
    "file": "transfer-podium.png",
    "x": 142,
@@ -199,7 +216,37 @@
    "for": 1.6
   },
   "presenters": {
-   "ross": "presenters/ross"
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
+  }
+ },
+ "videowall": {
+  "file": "videowall.png",
+  "screen": {
+   "x": 39,
+   "y": 45,
+   "w": 217,
+   "h": 168
+  },
+  "note": "Team news (#92): the wall on the left, a standing presenter on the right (flipped if their sheet points the other way); the card is the line card, else the last card of the segment (as SD)",
+  "stand": {
+   "x": 360,
+   "feet": 262
+  },
+  "screenSide": "left",
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
   }
  },
  "camera": {

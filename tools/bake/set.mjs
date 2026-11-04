@@ -148,6 +148,21 @@ for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) { const k = (y * PW + 
 fringe(podium);
 await png(podium, path.join(OUT, 'transfer-podium.png'));
 
+// The videowall (#92): art/scenes/videowall.jpg, its screen one big magenta rectangle (it runs lower than the others, so the search goes
+// further down the picture; the floor glow is maroon and the reflection dimmer, neither is keyed).
+const wall = sceneFromGrid(await read('art/scenes/videowall.jpg'), 1376 / 480, 0, 2.75);
+let wx0 = GW, wx1 = -1, wy0 = GH, wy1 = -1;
+for (let y = 0; y < 235; y++) for (let x = 0; x < GW; x++) if (keyed(wall, x, y)) { wx0 = Math.min(wx0, x); wx1 = Math.max(wx1, x); wy0 = Math.min(wy0, y); wy1 = Math.max(wy1, y); }
+for (let y = wy0; y <= wy1; y++) for (let x = wx0; x <= wx1; x++) wall.set(x, y, TOUCH_PANEL);
+// A purple fringe of the key can sit just outside the rectangle (2 pixels at most): those pixels join the panel.
+for (let y = wy0 - 2; y <= wy1 + 2; y++) for (let x = wx0 - 2; x <= wx1 + 2; x++) {
+  if (x >= wx0 && x <= wx1 && y >= wy0 && y <= wy1) continue;
+  const [r, g, b] = wall.get(x, y);
+  if (b - g > 35 && r - g > 25) wall.set(x, y, TOUCH_PANEL);
+}
+await png(wall, path.join(OUT, 'videowall.png'));
+const WALL_SCREEN = { x: wx0, y: wy0, w: wx1 - wx0 + 1, h: wy1 - wy0 + 1 };
+
 const desk = await deskFromGrid(deskImg, 'site/public/badges/heart-of-midlothian.png', DESK_TOP, DESK_LIP);
 await png(desk, path.join(OUT, 'desk.png'));
 const deskX = GW / 2 - Math.round(desk.w / 2), deskY = DESK_Y_TOP - DESK_LIP;   // as the spike draws it: 240 - round(width / 2), 170 - lip
@@ -160,6 +175,9 @@ const sheet = new Pix(SHEET_W, py + row);
 for (const c of cuts) for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) { const sx = c.box[0] + x, sy = c.box[1] + y; if (PG.has(sx, sy)) sheet.set(c.sx + x, c.sy + y, PG.get(sx, sy)); }
 await png(sheet, path.join(OUT, 'props.png'));
 const props = Object.fromEntries(Object.keys(PROP_DEFS).map(n => { const c = cuts.find(k => k.name === n); return [n, { sheet: [c.sx, c.sy, c.w, c.h], s: c.s, side: c.side }]; }));
+
+// Every presenter has a standing sheet: any of them can present at a standing scene (flipped when their sheet points away from the screen, see `points`).
+const STANDING = Object.fromEntries(['isla', 'fraser', 'ross', 'kirsty', 'gregor'].map((id) => [id, 'presenters/' + id]));
 
 const set = {
   w: GW, h: GH,
@@ -179,27 +197,36 @@ const set = {
     note: 'On This Day (#88): the front for the first line, the gallery for the rest; standing presenters at 1:1, feet at `feet` (the art row of the last sheet row), centred on `x`',
     outside: { x: 62, feet: 262 }, gallery: { x: 415, feet: 270 },
     glance: { every: 5, for: 1.6 },
-    presenters: { fraser: 'presenters/fraser' },
+    presenters: STANDING,
   },
+  points: { kirsty: 'left', fraser: 'left', ross: 'right', isla: 'right', gregor: 'right' },
   touchscreen: {
     file: 'touchscreen.png', screen: TOUCH_SCREEN,
     note: 'Match Centre (#92): the screen box is a dark panel the line\'s graphic goes over; the standing presenter is centred on `x` with the sheet\'s last row on `feet`',
-    stand: { x: 325, feet: 262 },
+    stand: { x: 325, feet: 262 }, screenSide: 'left',
     glance: { every: 5, for: 1.6 },
-    presenters: { kirsty: 'presenters/kirsty' },
+    presenters: STANDING,
   },
   transfer: {
     file: 'transfer.png', screen: TRANSFER_SCREEN, clock: CLOCK,
     note: 'Transfer Centre (#92): as touchscreen, plus the wall clock (hands drawn live) and the podium sprite drawn over the presenter, its last row on `feet`, centred on `x`; `label` is the panel (podium pixels) the title is drawn on',
-    stand: { x: 142, feet: 262 },
+    stand: { x: 142, feet: 262 }, screenSide: 'right',
     podium: { file: 'transfer-podium.png', x: 142, feet: 226, w: PW, h: PH, label: { cx: Math.round(PW / 2), cy: Math.round(PH * 0.47) } },
     glance: { every: 5, for: 1.6 },
-    presenters: { ross: 'presenters/ross' },
+    presenters: STANDING,
+  },
+  videowall: {
+    file: 'videowall.png', screen: WALL_SCREEN,
+    note: 'Team news (#92): the wall on the left, a standing presenter on the right (flipped if their sheet points the other way); the card is the line card, else the last card of the segment (as SD)',
+    stand: { x: 360, feet: 262 }, screenSide: 'left',
+    glance: { every: 5, for: 1.6 },
+    presenters: STANDING,
   },
   camera: { wide: { z: 1, x: 240, y: 135, sy: 135 }, tight: { z: 1.8, x: 'seat', y: 55, sy: 78 } },
 };
 fs.writeFileSync(path.join(OUT, 'set.json'), JSON.stringify(set, null, 1) + '\n');
-for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'touchscreen.png', 'transfer.png', 'transfer-podium.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
+for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'touchscreen.png', 'transfer.png', 'transfer-podium.png', 'videowall.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
 console.log('touchscreen screen', JSON.stringify(TOUCH_SCREEN));
 console.log('transfer screen', JSON.stringify(TRANSFER_SCREEN), 'clock', JSON.stringify(CLOCK), 'podium', PW + 'x' + PH);
+console.log('videowall screen', JSON.stringify(WALL_SCREEN));
 console.log('desk', desk.w + 'x' + desk.h, 'at', deskX + ',' + deskY, '| props sheet', sheet.w + 'x' + sheet.h);

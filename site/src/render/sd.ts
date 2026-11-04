@@ -133,11 +133,12 @@ export class SdRenderer implements Renderer {
    * Only the line's graphic, or the idle screen (labelled `label`), in an HD screen scene's box (#92) on a cleared canvas: for a type HD
    * doesn't draw. `box` is the screen in SD pixels (the HD art's divided by 1.5).
    */
-  drawTouchPanelOnly(s: FrameState, now: number, label: string, box: readonly [number, number, number, number]): void {
+  drawTouchPanelOnly(s: FrameState, now: number, label: string, graphic: Graphic | undefined, box: readonly [number, number, number, number]): void {
     const { g } = this;
     if (!g) return;
     g.clearRect(0, 0, W, H);
-    if (s.graphic) drawGraphic(g, s.graphic, ...box, s.graphicAge, now);
+    // A card carried over from earlier in the segment (not the line's own) is already up: no wipe-in.
+    if (graphic) drawGraphic(g, graphic, ...box, graphic === s.graphic ? s.graphicAge : Infinity, now);
     else drawIdleScreen(g, ...box, label);
   }
 

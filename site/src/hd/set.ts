@@ -17,6 +17,9 @@ export type MuseumData = {
   presenters: Record<string, string>;
 };
 
+/** The side of the picture a standing sheet's gestures and head turn point to (`points` in set.json, from tools/bake/set.mjs): a figure is drawn flipped when the screen is on the other side. */
+export type Side = 'left' | 'right';
+
 /** A standing-presenter screen scene (#92: the Match Centre touchscreen, the Transfer Centre): its backdrop, the dark screen box (art pixels) the graphic goes over, and where the standing presenter stands. The Transfer Centre adds a wall clock (hands drawn live) and a podium sprite drawn over the presenter. */
 export type SceneData = {
   file: string;
@@ -24,6 +27,8 @@ export type SceneData = {
   stand: { x: number; feet: number };
   clock?: { x: number; y: number; r: number };
   podium?: { file: string; x: number; feet: number; w: number; h: number; label: { cx: number; cy: number } };
+  /** Which side of the picture the screen is on: the figure faces it, flipped if its sheet points the other way. */
+  screenSide: Side;
   glance: { every: number; for: number };
   presenters: Record<string, string>;
 };
@@ -59,10 +64,14 @@ export type SetData = {
   stack: number;
   /** On This Day's two scenes and where standing presenters go in them (museum.ts); absent in a set without them. */
   museum?: MuseumData;
+  /** Standing presenter id to the side their sheet points (see Side); one not listed points left. */
+  points: Record<string, Side>;
   /** The Match Centre (touchscreen.ts); absent in a set without it. */
   touchscreen?: SceneData;
   /** The Transfer Centre (touchscreen.ts); absent in a set without it. */
   transfer?: SceneData;
+  /** The videowall (touchscreen.ts), for team news; absent in a set without it. */
+  videowall?: SceneData;
   camera: { wide: Camera; tight: Camera };
 };
 

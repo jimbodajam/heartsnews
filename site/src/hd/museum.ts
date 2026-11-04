@@ -8,7 +8,7 @@ import type { Graphic, Presenter } from '../../../shared/bulletin';
 import type { FrameState } from '../render/state';
 import { mouth } from './desk';
 import { loadPresenter, type PresenterArt } from './presenter';
-import { loadImage, type MuseumData } from './set';
+import { loadImage, type MuseumData, type Side } from './set';
 
 /** The museum art once loaded: both backdrops and the standing presenters who can be drawn in it. */
 export type MuseumArt = Readonly<{
@@ -18,12 +18,14 @@ export type MuseumArt = Readonly<{
   cast: ReadonlyMap<string, PresenterArt>;
   /** Per presenter: the arms' last pose and when it changed (see `stagger`). */
   arms: Map<string, Arms>;
+  /** Which side each standing sheet points (SetData.points). */
+  points: Readonly<Record<string, Side>>;
 }>;
 
 export type Arms = { shown?: string; from?: string; to?: string; at: number };
 
 /** Load the museum named in set.json (`museum`), or undefined if the set has none. */
-export async function loadMuseum(dir: string, data: MuseumData | undefined): Promise<MuseumArt | undefined> {
+export async function loadMuseum(dir: string, data: MuseumData | undefined, points: Readonly<Record<string, Side>> = {}): Promise<MuseumArt | undefined> {
   if (!data) return undefined;
   const [front, inside, ...art] = await Promise.all([
     loadImage(dir + data.front),
@@ -31,7 +33,7 @@ export async function loadMuseum(dir: string, data: MuseumData | undefined): Pro
     ...Object.values(data.presenters).map((base) => loadPresenter(base)),
   ]);
   const cast = new Map(Object.keys(data.presenters).map((id, i) => [id, art[i]] as const));
-  return { front, inside, data, cast, arms: new Map() };
+  return { front, inside, data, cast, arms: new Map(), points };
 }
 
 /** Whether the museum can be drawn for this frame: the segment's presenter has standing art. */
@@ -110,7 +112,7 @@ export function drawMuseum(g: CanvasRenderingContext2D, m: MuseumArt, s: FrameSt
   if (!p || !art) return;
   const place = outside ? m.data.outside : m.data.gallery;
   const glancing = !outside && Boolean(museumGraphic(s)) && (now / 1000) % m.data.glance.every < m.data.glance.for;
-  drawStanding(g, art, m.arms, p.id, s, now, place, glancing);
+  drawStanding(g, art, m.arms, p.id, s, now, place, glancing, { screen: 'left', points: m.points[p.id] ?? 'left' });
 }
 
 /** The names a sheet has of one kind, from the wanted ones in order (so a presenter with fewer frames still has a full list). */
@@ -134,6 +136,7 @@ export function drawStanding(
   now: number,
   place: { x: number; feet: number },
   glancing: boolean,
+  facing: { screen: Side; points: Side },
 ): void {
   const t = now / 1000;
   const talking = s.talking === id;
@@ -141,10 +144,13 @@ export function drawStanding(
   const heads = have(HEADS, art.heads, 'b1');
   const feets = have(FEET, art.feet, 'b1');
   const pose = talking ? gestures[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * gestures.length)] : Math.floor(t / 6) % 3 === 0 && art.poses.includes('b6') ? 'b6' : 'b1';
-  // Turns to the graphic (on their left) when glancing; otherwise the head drifts, and a gesture at the graphic turns it too.
-  const head = glancing && art.heads.includes('h2') ? 'h2' : heads[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * heads.length)];
+  // Turns to the graphic when glancing, the way the sheet points (h2 and gazeL turn to the picture's left, h1 and gazeR to its
+  // right; a flipped figure turns the other way on screen); otherwise the head drifts, and a gesture at the graphic turns it too.
+  const turn = facing.points === 'left' ? 'h2' : 'h1';
+  const gaze = facing.points === 'left' ? 'gazeL' : 'gazeR';
+  const head = glancing && art.heads.includes(turn) ? turn : heads[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * heads.length)];
   const feet = feets[Math.floor(hash(Math.floor(t / 7) * 3.3) * feets.length)];
-  const eye = (t + 1.3) % 4.2 > 4.08 ? 'blink' : glancing && art.eyes.includes('gazeL') ? 'gazeL' : 'open';
+  const eye = (t + 1.3) % 4.2 > 4.08 ? 'blink' : glancing && art.eyes.includes(gaze) ? gaze : 'open';
   const arms = armsOf.get(id) ?? { at: 0 };
   armsOf.set(id, arms);
   const img = art.frame({
@@ -154,5 +160,13 @@ export function drawStanding(
     eye,
     mouth: mouth(s, art, talking, t, now),
   });
+  // A sheet that points the other way from the screen is drawn mirrored about its centre.
+  const flip = facing.points !== facing.screen;
+  if (flip) {
+    g.save();
+    g.translate(place.x * 2, 0);
+    g.scale(-1, 1);
+  }
   drawFigure(g, art, img, place.x, place.feet, Math.sin(t * 1.85) > 0.6);
+  if (flip) g.restore();
 }

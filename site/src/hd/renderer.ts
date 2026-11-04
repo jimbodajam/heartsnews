@@ -7,10 +7,10 @@ import { GraphicBox, isNative } from './graphics';
 import { HdMoments } from './moments';
 import { canMuseum, drawMuseum, loadMuseum, museumGraphic, type MuseumArt } from './museum';
 import { loadSet, type StudioSet } from './set';
-import { canScene, drawScene, loadScene, type SceneArt } from './touchscreen';
+import { canScene, drawScene, loadScene, screenGraphic, type SceneArt } from './touchscreen';
 
 /** The HD art, once it has loaded. */
-type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touch?: SceneArt; transfer?: SceneArt }>;
+type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touch?: SceneArt; transfer?: SceneArt; wall?: SceneArt }>;
 
 /**
  * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
@@ -26,10 +26,10 @@ export type View = 'hd' | 'hd-full' | 'museum' | 'touch' | 'sd-scene' | 'moment'
 const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
 
 /**
- * The team news rule (#87): the videowall has no HD art yet (nor has Ross), so in HD a videowall segment's team-news card
+ * The team news fallback (#87): when the videowall's HD scene can't be drawn (no standing art for the presenter), a videowall segment's team-news card
  * (the line's, else the segment's last, as the SD wall keeps it up) plays full screen over the dimmed HD studio instead
  * of the SD videowall. Undefined when there's no such card HD draws (a line before the first card): then the SD scene
- * shows as before. Drop this once the wall has HD art.
+ * shows as before.
  */
 export function teamNewsCard(s: FrameState): Graphic | undefined {
   if (s.seg?.scene !== 'videowall') return undefined;
@@ -52,6 +52,8 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
 export function chooseView(s: FrameState, art: Art | undefined): View {
   if (HdMoments.covers(s.mode) || !s.seg) return 'moment';
   if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
+  // The videowall's own HD scene (#92) when it can be drawn; else the team-news card full screen.
+  if (s.seg.scene === 'videowall' && canScene(art.wall, s.onScreen)) return 'touch';
   if (teamNewsCard(s)) return 'hd-full';
   if (s.seg.scene === 'museum') return canMuseum(art.museum, s.onScreen) ? 'museum' : 'sd-scene';
   if (s.seg.scene === 'touchscreen') return canScene(art.touch, s.onScreen) ? 'touch' : 'sd-scene';
@@ -239,15 +241,18 @@ export class HdRenderer implements Renderer {
       this.column!.hide(now);
       this.setColumnClass(false);
       this.setTransform('');
-      const scene = s.seg!.scene === 'transfer' ? this.art!.transfer! : this.art!.touch!;
+      const kind = s.seg!.scene;
+      const scene = kind === 'transfer' ? this.art!.transfer! : kind === 'videowall' ? this.art!.wall! : this.art!.touch!;
+      const card = screenGraphic(s);
       drawScene(this.g!, scene, s, now);
       this.placeScreen(scene.data.screen);
-      const native = isNative(s.graphic);
-      this.box!.show(native ? s.graphic : undefined, 'screen');
+      const native = isNative(card);
+      this.box!.show(native ? card : undefined, 'screen');
       if (this.sdPanel === native) this.sdBox!.hidden = !(this.sdPanel = !native);
       if (this.sdPanel) {
         const b = scene.data.screen;
-        this.sd.drawTouchPanelOnly(s, now, s.seg!.scene === 'transfer' ? 'TRANSFER CENTRE' : 'MATCH CENTRE', [Math.round(b.x / 1.5), Math.round(b.y / 1.5), Math.round(b.w / 1.5), Math.round(b.h / 1.5)]);
+        const label = kind === 'transfer' ? 'TRANSFER CENTRE' : kind === 'videowall' ? s.seg!.title : 'MATCH CENTRE';
+        this.sd.drawTouchPanelOnly(s, now, label, card, [Math.round(b.x / 1.5), Math.round(b.y / 1.5), Math.round(b.w / 1.5), Math.round(b.h / 1.5)]);
       }
     } else if (view === 'hd-full') {
       this.column!.hide(now);
@@ -287,19 +292,23 @@ export class HdRenderer implements Renderer {
       const set = await loadSet(this.dir);
       const cast = await loadSeatedCast(set);
       // The museum is optional: without it On This Day stays on the SD scenes.
-      const museum = await loadMuseum(this.dir, set.museum).catch((err) => {
+      const museum = await loadMuseum(this.dir, set.museum, set.points).catch((err) => {
         console.error(err);
         return undefined;
       });
-      const touch = await loadScene(this.dir, set.touchscreen).catch((err) => {
+      const touch = await loadScene(this.dir, set.touchscreen, set.points).catch((err) => {
         console.error(err);
         return undefined;
       });
-      const transfer = await loadScene(this.dir, set.transfer).catch((err) => {
+      const transfer = await loadScene(this.dir, set.transfer, set.points).catch((err) => {
         console.error(err);
         return undefined;
       });
-      this.art = { set, cast, museum, touch, transfer };
+      const wall = await loadScene(this.dir, set.videowall, set.points).catch((err) => {
+        console.error(err);
+        return undefined;
+      });
+      this.art = { set, cast, museum, touch, transfer, wall };
     } catch (err) {
       // Stays on the SD scenes.
       console.error(err);
