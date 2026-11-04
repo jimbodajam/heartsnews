@@ -26,7 +26,8 @@
   "default": {
    "isla": "none",
    "fraser": "none",
-   "ross": "none"
+   "ross": "none",
+   "kirsty": "none"
   },
   "items": {
    "laptop": {
@@ -120,7 +121,8 @@
   "presenters": {
    "isla": "presenters/isla-seated",
    "fraser": "presenters/fraser-seated",
-   "ross": "presenters/ross-seated"
+   "ross": "presenters/ross-seated",
+   "kirsty": "presenters/kirsty-seated"
   }
  },
  "stack": 48,
