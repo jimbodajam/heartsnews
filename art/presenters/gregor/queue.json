@@ -3,417 +3,147 @@
  "limitHit": null,
  "items": [
   {
-   "frame": "h1",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "h1.jpg",
-   "status": "rejected",
-   "attempts": 1,
-   "reasons": [
-    "run failed: output ignored reference: new figure (clasped hands, no headset or scarf), not the same character",
-    "2026-11-04: moved 0.65 cells, too little to tell it went right",
-    "2026-11-04: moved 0.65 cells, too little to tell it went right (recheck)"
-   ],
-   "savedAt": "2026-11-04T14:42:50.361Z",
-   "staged": "art/presenters/gregor/queue/staged/h1.jpg",
-   "stats": {
-    "changed": 751,
-    "outside": 18,
-    "direction": 0.65
-   }
-  },
-  {
-   "frame": "h2",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "h2.jpg",
-   "status": "rejected",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: moved -0.04 cells, too little to tell it went left",
-    "2026-11-04: moved -0.04 cells, too little to tell it went left (recheck)",
-    "2026-11-04: turned towards the right edge like h1; cannot mirror h1 (boom would swap ears), regenerate"
-   ],
-   "savedAt": "2026-11-04T14:13:37.087Z",
-   "staged": "art/presenters/gregor/queue/staged/h2.jpg",
-   "stats": {
-    "changed": 692,
-    "outside": 19,
-    "direction": -0.04
-   }
-  },
-  {
-   "frame": "h3",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "h3.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:14:55.894Z",
-   "staged": "art/presenters/gregor/queue/staged/h3.jpg",
-   "stats": {
-    "changed": 585,
-    "outside": 8
-   }
-  },
-  {
-   "frame": "h4",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "h4.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:16:12.514Z",
-   "staged": "art/presenters/gregor/queue/staged/h4.jpg",
-   "stats": {
-    "changed": 610,
-    "outside": 0
-   }
-  },
-  {
-   "frame": "v1",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v1",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v1.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:17:28.315Z",
-   "staged": "art/presenters/gregor/queue/staged/v1.jpg",
-   "stats": {
-    "changed": 13,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 4.9
-    }
-   }
+   "save": "h1v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v2",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v2",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v2.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:18:44.481Z",
-   "staged": "art/presenters/gregor/queue/staged/v2.jpg",
-   "stats": {
-    "changed": 14,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 4.7
-    }
-   }
+   "save": "h1v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v3",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v3",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v3.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:20:00.811Z",
-   "staged": "art/presenters/gregor/queue/staged/v3.jpg",
-   "stats": {
-    "changed": 38,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 4.8
-    }
-   }
+   "save": "h1v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v4",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v4",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v4.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:21:16.548Z",
-   "staged": "art/presenters/gregor/queue/staged/v4.jpg",
-   "stats": {
-    "changed": 67,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5
-    }
-   }
+   "save": "h1v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v5",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v5",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v5.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:22:32.250Z",
-   "staged": "art/presenters/gregor/queue/staged/v5.jpg",
-   "stats": {
-    "changed": 85,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5
-    }
-   }
+   "save": "h1v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v6",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v6",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v6.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:24:08.317Z",
-   "staged": "art/presenters/gregor/queue/staged/v6.jpg",
-   "stats": {
-    "changed": 19,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 4.9
-    }
-   }
+   "save": "h1v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v7",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h1v7",
+   "source": "h1",
+   "attach": "art/presenters/gregor/queue/crops/h1.png",
    "crop": true,
-   "save": "v7.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area"
-   ],
-   "savedAt": "2026-11-04T14:26:02.745Z",
-   "staged": "art/presenters/gregor/queue/staged/v7.jpg",
-   "stats": {
-    "changed": 39,
-    "outside": 0,
-    "fit": {
-     "scale": 0.999,
-     "err": 5.3
-    }
-   }
+   "save": "h1v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "v9",
-   "source": "b1",
-   "attach": "art/presenters/gregor/queue/crops/b1.png",
+   "frame": "h2v1",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
    "crop": true,
-   "save": "v9.jpg",
-   "status": "rejected",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: nothing changed inside its area; could not measure the right direction",
-    "2026-11-04: could not measure the right direction (recheck)"
-   ],
-   "savedAt": "2026-11-04T14:27:23.467Z",
-   "staged": "art/presenters/gregor/queue/staged/v9.jpg",
-   "stats": {
-    "changed": 16,
-    "outside": 0,
-    "direction": null,
-    "fit": {
-     "scale": 0.999,
-     "err": 4.9
-    }
-   }
+   "save": "h2v1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b2",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b2.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:28:47.665Z",
-   "staged": "art/presenters/gregor/queue/staged/b2.jpg",
-   "stats": {
-    "changed": 1059,
-    "outside": 0,
-    "direction": 46.62
-   }
+   "frame": "h2v2",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b3",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b3.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:30:13.841Z",
-   "staged": "art/presenters/gregor/queue/staged/b3.jpg",
-   "stats": {
-    "changed": 1139,
-    "outside": 0,
-    "direction": 48.9
-   }
+   "frame": "h2v3",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b4",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b4.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "run failed: Gemini error: Sorry, something went wrong (Failed Image Edit Request), no image"
-   ],
-   "savedAt": "2026-11-04T14:44:15.552Z",
-   "staged": "art/presenters/gregor/queue/staged/b4.jpg",
-   "stats": {
-    "changed": 1458,
-    "outside": 0
-   }
+   "frame": "h2v4",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b5",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b5.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:32:43.137Z",
-   "staged": "art/presenters/gregor/queue/staged/b5.jpg",
-   "stats": {
-    "changed": 1432,
-    "outside": 0
-   }
+   "frame": "h2v5",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b6",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b6.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "run failed: Gemini error: Image Edit Error, It seems I am encountering an error (no image)"
-   ],
-   "savedAt": "2026-11-04T14:45:32.930Z",
-   "staged": "art/presenters/gregor/queue/staged/b6.jpg",
-   "stats": {
-    "changed": 861,
-    "outside": 0,
-    "direction": -33.58
-   }
+   "frame": "h2v6",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   },
   {
-   "frame": "b7",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b7.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:35:58.077Z",
-   "staged": "art/presenters/gregor/queue/staged/b7.jpg",
-   "stats": {
-    "changed": 1203,
-    "outside": 0,
-    "direction": -43.58
-   }
-  },
-  {
-   "frame": "b8",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "b8.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:37:19.051Z",
-   "staged": "art/presenters/gregor/queue/staged/b8.jpg",
-   "stats": {
-    "changed": 1741,
-    "outside": 0
-   }
-  },
-  {
-   "frame": "f1",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "f1.jpg",
-   "status": "rejected",
-   "attempts": 1,
-   "reasons": [
-    "2026-11-04: 334 cells changed outside its area (legs), around x 45-107, y 11-146 (recheck)"
-   ],
-   "savedAt": "2026-11-04T14:38:37.141Z",
-   "staged": "art/presenters/gregor/queue/staged/f1.jpg",
-   "stats": {
-    "changed": 2307,
-    "outside": 334
-   }
-  },
-  {
-   "frame": "f2",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "f2.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [
-    "run failed: Gemini error: Image Editing Error, I seem to be encountering an error (no image)"
-   ],
-   "savedAt": "2026-11-04T14:47:13.695Z",
-   "staged": "art/presenters/gregor/queue/staged/f2.jpg",
-   "stats": {
-    "changed": 1874,
-    "outside": 67
-   }
-  },
-  {
-   "frame": "f3",
-   "source": "b1",
-   "attach": "site/public/spike/gregor/standing/b1.jpg",
-   "save": "f3.jpg",
-   "status": "passed",
-   "attempts": 1,
-   "reasons": [],
-   "savedAt": "2026-11-04T14:41:30.087Z",
-   "staged": "art/presenters/gregor/queue/staged/f3.jpg",
-   "stats": {
-    "changed": 2330,
-    "outside": 65
-   }
+   "frame": "h2v7",
+   "source": "h2",
+   "attach": "art/presenters/gregor/queue/crops/h2.png",
+   "crop": true,
+   "save": "h2v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
   }
  ],
- "updated": "2026-11-04T15:01:27.727Z",
+ "updated": "2026-11-04T19:24:09.357Z",
  "downloads": "art/presenters/gregor/queue/named",
  "seen": [
   "h2.jpg@1793801608670.1528",
@@ -437,6 +167,7 @@
   "h1.jpg@1793803363451.3752",
   "b4.jpg@1793803448759.577",
   "b6.jpg@1793803526144.136",
-  "f2.jpg@1793803626666.2896"
+  "f2.jpg@1793803626666.2896",
+  "h2.jpg@1793818552969.2744"
  ]
 }
