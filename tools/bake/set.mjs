@@ -107,6 +107,18 @@ const MUSEUM = {
 };
 for (const m of Object.values(MUSEUM)) await png(sceneFromGrid(await read(m.src), m.block, m.ox, m.oy), path.join(OUT, m.file));
 
+// The Match Centre touchscreen (#92): art/scenes/touchscreen.jpg has its screen as one flat magenta rectangle. It is found in the baked
+// picture (pure magenta only: the dimmer purple in the floor's reflection is left as the glow), filled with a dark panel, and its box
+// written to set.json so the site can lay the line's graphic over it.
+const TOUCH_SRC = 'art/scenes/touchscreen.jpg', TOUCH_PANEL = [10, 12, 24];
+const touch = sceneFromGrid(await read(TOUCH_SRC), 1376 / 480, 0, 2.75);
+const isKey = (x, y) => { const [r, g, b] = touch.get(x, y); return r > 150 && b > 150 && g < 110 && r - g > 70 && b - g > 70; };
+let tx0 = GW, tx1 = -1, ty0 = GH, ty1 = -1;
+for (let y = 0; y < 200; y++) for (let x = 0; x < GW; x++) if (isKey(x, y)) { tx0 = Math.min(tx0, x); tx1 = Math.max(tx1, x); ty0 = Math.min(ty0, y); ty1 = Math.max(ty1, y); }
+for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) touch.set(x, y, TOUCH_PANEL);
+await png(touch, path.join(OUT, 'touchscreen.png'));
+const TOUCH_SCREEN = { x: tx0, y: ty0, w: tx1 - tx0 + 1, h: ty1 - ty0 + 1 };
+
 const desk = await deskFromGrid(deskImg, 'site/public/badges/heart-of-midlothian.png', DESK_TOP, DESK_LIP);
 await png(desk, path.join(OUT, 'desk.png'));
 const deskX = GW / 2 - Math.round(desk.w / 2), deskY = DESK_Y_TOP - DESK_LIP;   // as the spike draws it: 240 - round(width / 2), 170 - lip
@@ -140,8 +152,16 @@ const set = {
     glance: { every: 5, for: 1.6 },
     presenters: { fraser: 'presenters/fraser' },
   },
+  touchscreen: {
+    file: 'touchscreen.png', screen: TOUCH_SCREEN,
+    note: 'Match Centre (#92): the screen box is a dark panel the line\'s graphic goes over; the standing presenter is centred on `x` with the sheet\'s last row on `feet`',
+    stand: { x: 325, feet: 262 },
+    glance: { every: 5, for: 1.6 },
+    presenters: { kirsty: 'presenters/kirsty' },
+  },
   camera: { wide: { z: 1, x: 240, y: 135, sy: 135 }, tight: { z: 1.8, x: 'seat', y: 55, sy: 78 } },
 };
 fs.writeFileSync(path.join(OUT, 'set.json'), JSON.stringify(set, null, 1) + '\n');
-for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
+for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'touchscreen.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
+console.log('touchscreen screen', JSON.stringify(TOUCH_SCREEN));
 console.log('desk', desk.w + 'x' + desk.h, 'at', deskX + ',' + deskY, '| props sheet', sheet.w + 'x' + sheet.h);

@@ -144,6 +144,27 @@
    "fraser": "presenters/fraser"
   }
  },
+ "touchscreen": {
+  "file": "touchscreen.png",
+  "screen": {
+   "x": 39,
+   "y": 54,
+   "w": 208,
+   "h": 113
+  },
+  "note": "Match Centre (#92): the screen box is a dark panel the line's graphic goes over; the standing presenter is centred on `x` with the sheet's last row on `feet`",
+  "stand": {
+   "x": 325,
+   "feet": 262
+  },
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "kirsty": "presenters/kirsty"
+  }
+ },
  "camera": {
   "wide": {
    "z": 1,

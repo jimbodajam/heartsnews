@@ -20,7 +20,7 @@ export type MuseumArt = Readonly<{
   arms: Map<string, Arms>;
 }>;
 
-type Arms = { shown?: string; from?: string; to?: string; at: number };
+export type Arms = { shown?: string; from?: string; to?: string; at: number };
 
 /** Load the museum named in set.json (`museum`), or undefined if the set has none. */
 export async function loadMuseum(dir: string, data: MuseumData | undefined): Promise<MuseumArt | undefined> {
@@ -57,8 +57,8 @@ const hash = (n: number) => {
 
 /** The arms follow the head by this long (ms), as in /test. */
 const STAGGER = 150;
-/** Gestures while talking; the first two point (or hold a palm out) at the graphic. */
-const GESTURES = ['b2', 'b3', 'b4', 'b8', 'b3'];
+/** Gestures while talking; the first two point (or hold a palm out) at the graphic, and b9 (only some sheets) touches the screen. */
+const GESTURES = ['b2', 'b3', 'b4', 'b8', 'b3', 'b9'];
 const HEADS = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'h2', 'b1'];
 const FEET = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'];
 
@@ -108,19 +108,45 @@ export function drawMuseum(g: CanvasRenderingContext2D, m: MuseumArt, s: FrameSt
   const p = s.onScreen[0];
   const art = p && m.cast.get(p.id);
   if (!p || !art) return;
-  const t = now / 1000;
-  const talking = s.talking === p.id;
   const place = outside ? m.data.outside : m.data.gallery;
-  const glancing = !outside && Boolean(museumGraphic(s)) && t % m.data.glance.every < m.data.glance.for;
+  const glancing = !outside && Boolean(museumGraphic(s)) && (now / 1000) % m.data.glance.every < m.data.glance.for;
+  drawStanding(g, art, m.arms, p.id, s, now, place, glancing);
+}
 
-  // As /test's Fraser: gestures while talking (a new one every ~3 s), otherwise his weight on one hip now and then.
-  const pose = talking ? GESTURES[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * GESTURES.length)] : Math.floor(t / 6) % 3 === 0 ? 'b6' : 'b1';
-  // Turns to the graphic (on his left) when glancing; otherwise the head drifts, and a gesture at the graphic turns it too.
-  const head = glancing ? 'h2' : HEADS[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * HEADS.length)];
-  const feet = FEET[Math.floor(hash(Math.floor(t / 7) * 3.3) * FEET.length)];
-  const eye = (t + 1.3) % 4.2 > 4.08 ? 'blink' : glancing ? 'gazeL' : 'open';
-  const arms = m.arms.get(p.id) ?? { at: 0 };
-  m.arms.set(p.id, arms);
+/** The names a sheet has of one kind, from the wanted ones in order (so a presenter with fewer frames still has a full list). */
+const have = (wanted: readonly string[], has: readonly string[], fallback: string) => {
+  const list = wanted.filter((n) => has.includes(n));
+  return list.length ? list : [fallback];
+};
+
+/**
+ * A standing presenter at `place` (last row on `place.feet`): as /test's Fraser, gestures while talking (a new one every ~3 s),
+ * otherwise their weight on one hip now and then, head drifting, blinking, mouth from the clip. `glancing` turns the head
+ * (h2) and eyes to the graphic on their left. Frames the sheet lacks are left out of the rotation, and the screen touch
+ * (b9) is a gesture only where the sheet has it.
+ */
+export function drawStanding(
+  g: CanvasRenderingContext2D,
+  art: PresenterArt,
+  armsOf: Map<string, Arms>,
+  id: string,
+  s: FrameState,
+  now: number,
+  place: { x: number; feet: number },
+  glancing: boolean,
+): void {
+  const t = now / 1000;
+  const talking = s.talking === id;
+  const gestures = have(GESTURES, art.poses, 'b1');
+  const heads = have(HEADS, art.heads, 'b1');
+  const feets = have(FEET, art.feet, 'b1');
+  const pose = talking ? gestures[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * gestures.length)] : Math.floor(t / 6) % 3 === 0 && art.poses.includes('b6') ? 'b6' : 'b1';
+  // Turns to the graphic (on their left) when glancing; otherwise the head drifts, and a gesture at the graphic turns it too.
+  const head = glancing && art.heads.includes('h2') ? 'h2' : heads[Math.floor(hash(Math.floor(t / 2.6) * 1.7) * heads.length)];
+  const feet = feets[Math.floor(hash(Math.floor(t / 7) * 3.3) * feets.length)];
+  const eye = (t + 1.3) % 4.2 > 4.08 ? 'blink' : glancing && art.eyes.includes('gazeL') ? 'gazeL' : 'open';
+  const arms = armsOf.get(id) ?? { at: 0 };
+  armsOf.set(id, arms);
   const img = art.frame({
     head,
     pose: stagger(arms, pose, now),

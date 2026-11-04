@@ -130,6 +130,18 @@ export class SdRenderer implements Renderer {
   }
 
   /**
+   * Only the line's graphic, or the idle screen, in the HD touchscreen's box (#92) on a cleared canvas: for a type HD
+   * doesn't draw. `box` is the screen in SD pixels (the HD art's divided by 1.5).
+   */
+  drawTouchPanelOnly(s: FrameState, now: number, box: readonly [number, number, number, number]): void {
+    const { g } = this;
+    if (!g) return;
+    g.clearRect(0, 0, W, H);
+    if (s.graphic) drawGraphic(g, s.graphic, ...box, s.graphicAge, now);
+    else drawIdleScreen(g, ...box, 'MATCH CENTRE');
+  }
+
+  /**
    * The scene alone, under the channel's bars (logo, clock, strap, captions, headline bar, ticker): the studio, presenters
    * and screens, or in an ad break the advert.
    */

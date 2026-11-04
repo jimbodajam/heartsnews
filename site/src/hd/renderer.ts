@@ -7,18 +7,20 @@ import { GraphicBox, isNative } from './graphics';
 import { HdMoments } from './moments';
 import { canMuseum, drawMuseum, loadMuseum, museumGraphic, type MuseumArt } from './museum';
 import { loadSet, type StudioSet } from './set';
+import { canTouch, drawTouch, loadTouch, type TouchArt } from './touchscreen';
 
 /** The HD art, once it has loaded. */
-type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt }>;
+type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touch?: TouchArt }>;
 
 /**
  * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
  * SD panel) or the side column. `hd-full`: a full-screen HD graphic over the dimmed studio (#87). `sd-scene`: the SD scene
  * without its bars (or an ad break's advert), under the HD furniture. `moment`: no picture, for the full-screen moments
  * (splash, ident, sponsor card: #86) that cover the frame, and a sting or break-in with nothing yet under it. `museum`: On
- * This Day at the HD museum with its standing presenter (#88): no side column, the line's graphic on the left.
+ * This Day at the HD museum with its standing presenter (#88): no side column, the line's graphic on the left. `touch`: the Match
+ * Centre's HD touchscreen with its standing presenter (#92): the line's graphic on the screen.
  */
-export type View = 'hd' | 'hd-full' | 'museum' | 'sd-scene' | 'moment';
+export type View = 'hd' | 'hd-full' | 'museum' | 'touch' | 'sd-scene' | 'moment';
 
 /** The team sheet's cards: on the videowall, HD shows them full screen (teamNewsCard). */
 const TEAM_NEWS: ReadonlySet<Graphic['type']> = new Set(['formation', 'bench', 'player']);
@@ -42,7 +44,7 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
  * Which view this frame gets (#85, #87, #86). `moment` for the moments that cover the frame (splash, ident, sponsor), and
  * when there's no segment yet. The sting and the break-in flash play over the picture the segment would have had in a
  * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
- * touchscreen, pitchside, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
+ * pitchside, the touchscreen without standing art, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
  * desk with someone who has no seated HD art, and anything until the art has loaded. `hd-full` for a
  * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). `museum` for the museum when its
  * backdrops have loaded and the presenter has standing art (else the SD museum). Otherwise HD.
@@ -52,6 +54,7 @@ export function chooseView(s: FrameState, art: Art | undefined): View {
   if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
   if (teamNewsCard(s)) return 'hd-full';
   if (s.seg.scene === 'museum') return canMuseum(art.museum, s.onScreen) ? 'museum' : 'sd-scene';
+  if (s.seg.scene === 'touchscreen') return canTouch(art.touch, s.onScreen) ? 'touch' : 'sd-scene';
   if (s.seg.scene !== 'desk') return 'sd-scene';
   if (s.shot === 'full') return isNative(s.graphic) ? 'hd-full' : 'sd-scene';
   return canSeat(art.set, art.cast, s.onScreen) ? 'hd' : 'sd-scene';
@@ -103,6 +106,8 @@ export class HdRenderer implements Renderer {
   private moments?: HdMoments;
   /** The S key's choice, kept over a remount. */
   private columnOn = true;
+  /** The touchscreen's box in art pixels, once the set has loaded. */
+  private screenBox?: { x: number; y: number; w: number; h: number };
   private sdPanel = false;
   private withColumn = false;
   /** The shot, speaker and view last frame: a change is a cut, and the column cuts with it rather than sliding. */
@@ -141,6 +146,7 @@ export class HdRenderer implements Renderer {
     this.box = new GraphicBox(gfx);
     this.column = new SideColumn(gfx);
     this.column.on = this.columnOn;
+    this.placeScreen();
     // Sized in em like the furniture: a hundredth of the frame's width.
     this.gfxResize = new ResizeObserver(() => {
       if (gfx.clientWidth) gfx.style.fontSize = `${gfx.clientWidth / 100}px`;
@@ -185,7 +191,7 @@ export class HdRenderer implements Renderer {
   }
 
   focus(): void {
-    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full' || this.shown?.view === 'museum') this.canvas?.focus();
+    if (this.shown?.view === 'hd' || this.shown?.view === 'hd-full' || this.shown?.view === 'museum' || this.shown?.view === 'touch') this.canvas?.focus();
     else this.sd.focus();
   }
 
@@ -226,6 +232,20 @@ export class HdRenderer implements Renderer {
       const sdPanel = Boolean(graphic) && !native;
       if (sdPanel !== this.sdPanel) this.sdBox!.hidden = !(this.sdPanel = sdPanel);
       if (sdPanel) this.sd.drawMuseumPanelOnly(s, now);
+    } else if (view === 'touch') {
+      // The graphic goes on the screen, the presenter on the right; no side column. A type HD doesn't draw (and the idle
+      // screen) is the SD panel on the SD canvas, in the same box.
+      this.column!.hide(now);
+      this.setColumnClass(false);
+      this.setTransform('');
+      drawTouch(this.g!, this.art!.touch!, s, now);
+      const native = isNative(s.graphic);
+      this.box!.show(native ? s.graphic : undefined, 'screen');
+      if (this.sdPanel === native) this.sdBox!.hidden = !(this.sdPanel = !native);
+      if (this.sdPanel) {
+        const b = this.art!.touch!.data.screen;
+        this.sd.drawTouchPanelOnly(s, now, [Math.round(b.x / 1.5), Math.round(b.y / 1.5), Math.round(b.w / 1.5), Math.round(b.h / 1.5)]);
+      }
     } else if (view === 'hd-full') {
       this.column!.hide(now);
       this.setColumnClass(false);
@@ -268,11 +288,24 @@ export class HdRenderer implements Renderer {
         console.error(err);
         return undefined;
       });
-      this.art = { set, cast, museum };
+      const touch = await loadTouch(this.dir, set.touchscreen).catch((err) => {
+        console.error(err);
+        return undefined;
+      });
+      this.art = { set, cast, museum, touch };
+      this.placeScreen(set.touchscreen?.screen);
     } catch (err) {
       // Stays on the SD scenes.
       console.error(err);
     }
+  }
+
+  /** Remember the touchscreen's box (art pixels) and put it on the graphics layer as --screen-* in em (4.8 art pixels each). */
+  private placeScreen(b?: { x: number; y: number; w: number; h: number }): void {
+    if (b) this.screenBox = b;
+    const box = this.screenBox;
+    if (!box || !this.gfxRoot) return;
+    for (const [k, v] of [['x', box.x], ['y', box.y], ['w', box.w], ['h', box.h]] as const) this.gfxRoot.style.setProperty(`--screen-${k}`, `${v / 4.8}em`);
   }
 
   private mountLayer(l: { layer: Renderer; box?: HTMLDivElement }): void {
@@ -297,7 +330,7 @@ export class HdRenderer implements Renderer {
 
   /** Show what `view` draws on: the HD scene or the SD canvas (an HD close-up's SD panel is shown by draw), and the layers unless it's the whole SD frame. */
   private show(view: View): void {
-    const hd = view === 'hd' || view === 'hd-full' || view === 'museum';
+    const hd = view === 'hd' || view === 'hd-full' || view === 'museum' || view === 'touch';
     if (this.canvas) this.canvas.hidden = !hd;
     if (this.sdBox) this.sdBox.hidden = hd;
     this.sdPanel = false;

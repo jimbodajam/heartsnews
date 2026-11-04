@@ -17,6 +17,15 @@ export type MuseumData = {
   presenters: Record<string, string>;
 };
 
+/** The Match Centre touchscreen (#92): its backdrop, the dark screen box (art pixels) the graphic goes over, and where the standing presenter stands. */
+export type TouchData = {
+  file: string;
+  screen: { x: number; y: number; w: number; h: number };
+  stand: { x: number; feet: number };
+  glance: { every: number; for: number };
+  presenters: Record<string, string>;
+};
+
 /** set.json as baked by tools/bake. Positions are art pixels on the 480×270 canvas. */
 export type SetData = {
   w: number;
@@ -48,6 +57,8 @@ export type SetData = {
   stack: number;
   /** On This Day's two scenes and where standing presenters go in them (museum.ts); absent in a set without them. */
   museum?: MuseumData;
+  /** The Match Centre (touchscreen.ts); absent in a set without it. */
+  touchscreen?: TouchData;
   camera: { wide: Camera; tight: Camera };
 };
 
