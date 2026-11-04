@@ -94,7 +94,7 @@
   }
  },
  "face": {
-  "register": "detect",
+  "register": "shift",
   "patch": {
    "base": "b1",
    "mouthBase": "b1",
@@ -154,10 +154,10 @@
     "mode": "set"
    },
    "h3": {
-    "mode": "set"
+    "mode": "patch"
    },
    "h4": {
-    "mode": "set"
+    "mode": "patch"
    }
   }
  },

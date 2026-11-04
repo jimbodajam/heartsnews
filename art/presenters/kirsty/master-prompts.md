@@ -67,6 +67,8 @@ Look hardest at:
 
 **Standing `h2` went the wrong way (4 Nov), and it got past the contact sheet.** At sheet size a small turn either way looks plausible. It was caught only when the `h2v*` mouths changed on the same side as `h1`'s. Check a turn at full size: the ear that shows is on the side the head turns away from (`h1`, turning to the right edge, shows the left ear). The fix was the planned one: `h2.jpg` is `h1.jpg` flipped (the figure sits on the image centre, so no shift is needed), `h2v1`-`h2v7` are the `h1v*` crops flipped, and `boxes.h2` is `boxes.h1` mirrored on the 145-wide grid. The mirrored blink `h2v7` trips the outside-area check at the collar, because the jacket is not symmetrical, but the bake takes only the eye box from it. Seated `h2` was a real left turn.
 
+**Standing baked 4 Nov with `register: "shift"`, not `"detect"`.** The nods `h3`/`h4` borrow the straight-head mouths (`mode: "patch"`, as Ross's do). With `detect`, the nod's mouth is searched for in a window as far below the eyes as the master's `mouthWin` centre. Kirsty's `mouthWin` is the full mouth-change box, so the window centred on her chin and the talking mouths landed there. `shift` lines the nod up with the master by image match over the face boxes (the seated sets' register), and the mouths land on the lips. Ross's standing sheet has the same fault.
+
 ## 4. Round 2 (14 frames)
 
 Once `h1` and `h2` are approved in a set, set `boxes.h1`/`boxes.h2` (`face-boxes.mjs <p> h1`, `... h2`), re-run `queue <p>`, and run `h1v1`-`h1v7`, `h2v1`-`h2v7` the same way (14 per set). Then tune `kirsty-seated/frames.json` the way Ross's was (tilt heads, register shift), and bake both into `site/public/presenters/kirsty{,-seated}`.
