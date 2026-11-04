@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { accept, LIMITS, nextBlock, nextRequest, pollEvery, readThread, type Reply } from '../../kickback/src/crawl.ts';
-import { parseThreadPage, threadTitle } from '../../kickback/src/parse.ts';
+import { parseThreadPage, threadTitle, topicOf } from '../../kickback/src/parse.ts';
 import type { Db } from '../../kickback/src/types.ts';
 import { admin, kickbackData, renderKickback } from '../../worker/src/admin.ts';
 import { kickback } from '../../worker/src/kickback.ts';
@@ -319,4 +319,39 @@ test('the admin Kickback view shows the crawler, a thread\'s posting rate and it
   assert.match(await ok.text(), /Jambos Kickback crawler/);
   const asJson = await admin(new Request('https://w.test/admin.json?kickback=9', { headers: { authorization: 'Bearer secret' } }), env);
   assert.equal(((await asJson.json()) as { rate: { peak15: number } }).rate.peak15, 12);
+});
+
+test('a thread is watched from a pasted forum link, and stopped and started again from the admin view', async () => {
+  assert.equal(topicOf('https://www.hmfckickback.co.uk/index.php?/topic/212866-official-fc-thun-v-heart-of-midlothian-walking-wounded-match-thread/')?.id, 212866);
+  assert.equal(topicOf('https://www.hmfckickback.co.uk/index.php?/topic/212866-x/page/2/')?.url, 'https://www.hmfckickback.co.uk/index.php?/topic/212866-x/');
+  assert.equal(topicOf('https://example.com/index.php?/topic/1-x/'), undefined);
+  assert.equal(topicOf('https://www.hmfckickback.co.uk/index.php?/forum/12-hearts/'), undefined);
+
+  const d1 = memoryD1();
+  const env = { DB: d1, ADMIN_TOKEN: 'secret' };
+  const post = (body: Record<string, string>, origin = 'https://w.test') =>
+    admin(
+      new Request('https://w.test/admin/kickback', { method: 'POST', headers: { cookie: 'admin=secret', origin }, body: new URLSearchParams(body) }),
+      env,
+    );
+  const watched = async () => (await kickbackData(d1)).threads.find((t) => t.id === 212866);
+
+  let res = await post({ url: 'https://www.hmfckickback.co.uk/index.php?/topic/212866-x/', title: '' });
+  assert.equal(res.status, 303);
+  assert.equal(res.headers.get('location'), '/admin?kickback=1');
+  assert.equal((await watched())?.watching, true);
+
+  res = await post({ id: '212866', watching: '0' });
+  assert.equal((await watched())?.watching, false);
+  res = await post({ id: '212866', watching: '1' });
+  assert.equal((await watched())?.watching, true);
+
+  res = await post({ url: 'https://example.com/nope' });
+  assert.match(res.headers.get('location') ?? '', /error=/);
+  assert.equal((await post({ url: 'https://www.hmfckickback.co.uk/index.php?/topic/212867-y/' }, 'https://evil.test')).status, 403);
+
+  const html = renderKickback((await kickbackData(d1)), 'Not a thread link');
+  assert.match(html, /action="\/admin\/kickback"/);
+  assert.match(html, /Not a thread link/);
+  assert.match(html, /Stop watching/);
 });

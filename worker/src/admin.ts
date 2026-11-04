@@ -9,6 +9,7 @@ import { parsePlayerRecords, PLAYERS_URL } from '../../shared/londonhearts-playe
 import { auditTally, loadTotals, tallySince } from '../../pipeline/src/tally-totals.ts';
 import type { TallyStore } from '../../pipeline/src/tally-totals.ts';
 import { LIMITS as KICKBACK_LIMITS, pollEvery, STATE_KEYS as KICKBACK_KEYS, type Block, type LastFetch } from '../../kickback/src/crawl.ts';
+import { topicOf } from '../../kickback/src/parse.ts';
 import { EVERY_MS } from './clock.ts';
 import { sameToken, type D1Database } from './store.ts';
 
@@ -736,7 +737,29 @@ ${off.length ? `<section><h2>Switched off or no longer listed (${off.length})</h
 
 type Kickback = Awaited<ReturnType<typeof kickbackData>>;
 
-export function renderKickback(d: Kickback): string {
+/**
+ * Watches a forum thread (a pasted topic link, with an optional title the crawler otherwise reads from the page), or
+ * turns watching off or on for a thread already kept (`id` + `watching`). Stopping keeps the thread and its posts.
+ */
+export async function saveKickbackThread(db: D1Database, form: FormData): Promise<string | undefined> {
+  const id = Number(form.get('id'));
+  if (Number.isInteger(id) && id > 1) {
+    const watching = form.get('watching') === '1' ? 1 : 0;
+    await db.batch([db.prepare(`UPDATE kickback_threads SET watching = ? WHERE id = ?`).bind(watching, id)]);
+    return undefined;
+  }
+  const topic = topicOf(String(form.get('url') ?? ''));
+  if (!topic) return 'That is not a Jambos Kickback thread link. Paste the address of the thread, the one with index.php?/topic/ in it.';
+  const title = String(form.get('title') ?? '').trim().slice(0, 200);
+  await db.batch([
+    db.prepare(
+      `INSERT INTO kickback_threads (id, title, url) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET watching = 1`,
+    ).bind(topic.id, title, topic.url),
+  ]);
+  return undefined;
+}
+
+export function renderKickback(d: Kickback, notice?: string): string {
   const paused = d.paused && Date.parse(d.paused.until) > Date.parse(d.generatedAt) ? d.paused : undefined;
   const status = d.cooling
     ? pill(`cooling off until ${when(d.cooling.until)}`, 'bad')
@@ -754,7 +777,9 @@ export function renderKickback(d: Kickback): string {
       t.caughtUp ? `caught up, looks again every ${t.pollMinutes >= 60 ? `${t.pollMinutes / 60}h` : `${t.pollMinutes} min`}` : `page ${t.nextPage} of ${t.pages}`,
       when(t.newestPostAt),
       `${when(t.lastCrawledAt)}${t.lastCrawledAt ? `, ${t.lastNew} new` : ''}`,
-      t.lastError ? pill(t.lastError, 'bad') : !t.watching ? pill('not watched', 'warn') : '',
+      raw(
+        `${t.lastError ? pill(t.lastError, 'bad') : !t.watching ? pill('not watched', 'warn') : ''}<form method="post" action="/admin/kickback" class="person"><input type="hidden" name="id" value="${t.id}"><input type="hidden" name="watching" value="${t.watching ? 0 : 1}"><button>${t.watching ? 'Stop watching' : 'Watch again'}</button></form>`,
+      ),
     ]),
   );
   const run = d.lastFetch
@@ -766,7 +791,9 @@ export function renderKickback(d: Kickback): string {
 <p class="note">${run} Fetched from home, never more than ${d.limits.perWindow} requests in ${d.limits.windowMinutes} minutes, 2-3 seconds apart; any 403, 429 or 503 stops it and starts a cool-off (6 hours, doubling on repeats${d.lastBlock ? `; the last was HTTP ${d.lastBlock.status} on ${esc(when(d.lastBlock.at))}, strike ${d.lastBlock.strikes}` : ''}).</p>
 ${paused ? `<p class="note">Paused: ${esc(paused.why)}</p>` : ''}
 ${d.lastBlock?.detail ? `<details><summary>What the refusal looked like</summary><pre>${esc(JSON.stringify(d.lastBlock.detail, null, 2))}</pre></details>` : ''}
-<h3>Threads</h3>${threads}</section>`;
+<h3>Threads</h3>${threads}
+<h3>Watch a thread</h3>${notice ? `<p class="note"><b>${esc(notice)}</b></p>` : ''}
+<form method="post" action="/admin/kickback" class="person"><input name="url" type="url" required placeholder="https://www.hmfckickback.co.uk/index.php?/topic/…" aria-label="Thread link"> <input name="title" placeholder="Title (optional: the crawler reads it from the page)" aria-label="Title" maxlength="200"> <button>Watch thread</button></form></section>`;
   if (!('rate' in d)) return page(header);
 
   const { rate } = d;
@@ -860,6 +887,15 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
     return new Response(null, { status: 303, headers: { ...noStore, location: '/admin?roster=1' } });
   }
 
+  // The Kickback form adds a thread to watch, or turns watching off or on for one kept. The same origin check; back to the page.
+  if (request.method === 'POST' && url.pathname === '/admin/kickback') {
+    const origin = request.headers.get('origin');
+    if (origin && origin !== url.origin) return new Response('Forbidden', { status: 403, headers: noStore });
+    const error = await saveKickbackThread(env.DB, await request.formData());
+    const location = error ? `/admin?kickback=1&error=${encodeURIComponent(error)}` : '/admin?kickback=1';
+    return new Response(null, { status: 303, headers: { ...noStore, location } });
+  }
+
   // The audit reads London Hearts and writes nothing, but it is a button, so a post like the squad list's.
   if (request.method === 'POST' && url.pathname === '/admin/audit') {
     const origin = request.headers.get('origin');
@@ -897,7 +933,7 @@ export async function admin(request: Request, env: AdminEnv): Promise<Response> 
   if (kickback) {
     const id = Number(kickback);
     const d = await kickbackData(env.DB, Number.isInteger(id) && id > 1 ? id : undefined, Number(url.searchParams.get('p')) || 1);
-    return respond(d, renderKickback(d));
+    return respond(d, renderKickback(d, url.searchParams.get('error') ?? undefined));
   }
   const itemId = url.searchParams.get('item');
   if (itemId) {

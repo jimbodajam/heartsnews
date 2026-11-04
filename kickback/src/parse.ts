@@ -66,3 +66,15 @@ export function parseThreadPage(html: string): ParsedPage {
   }
   return { pages, posts };
 }
+
+/**
+ * The thread a forum link points at, from its topic address (`index.php?/topic/212866-slug/`). A link to a later page
+ * (`…/page/2/`) is the same thread. Anything else, including another site's link, is undefined.
+ */
+export function topicOf(link: string): { id: number; url: string } | undefined {
+  const trimmed = link.trim();
+  const m = /^https?:\/\/(?:www\.)?hmfckickback\.co\.uk\/index\.php\?\/topic\/(\d+)-[^\s]*$/i.exec(trimmed);
+  if (!m) return undefined;
+  const first = trimmed.replace(/\/page\/\d+\/?$/, '/').replace(/([^/])$/, '$1/');
+  return { id: Number(m[1]), url: first };
+}
