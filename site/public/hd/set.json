@@ -16,6 +16,14 @@
   "top": 170,
   "note": "drawn over the seated figures; rows above `top` are transparent (the back lip is left out)"
  },
+ "crest": {
+  "file": "crest.svg",
+  "x": 222,
+  "y": 227,
+  "w": 36,
+  "h": 36,
+  "note": "the club crest (SVG) drawn over the desk medallion, on the same camera transform as the desk"
+ },
  "props": {
   "file": "props.png",
   "base": 189,

@@ -40,6 +40,8 @@ export type SetData = {
   backdrop: { file: string; x: number; y: number };
   /** Drawn over the seated figures; rows above `top` are transparent. */
   desk: { file: string; x: number; y: number; w: number; h: number; lip: number; top: number };
+  /** The club crest, an SVG drawn over the desk's medallion by the page (not in the desk picture), so it stays sharp at HD size. */
+  crest?: { file: string; x: number; y: number; w: number; h: number };
   props: {
     file: string;
     /** The scene row props stand on. */

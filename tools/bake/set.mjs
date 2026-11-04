@@ -56,8 +56,8 @@ function fringe(P) {
   for (const [x, y] of kill) P.d[P.idx(x, y) + 3] = 0;
 }
 
-/** Desk: keyed, with the club badge drawn into the blank medallion. `skip` rows at the top are left out (the dark back lip of the v3 desk). */
-async function deskFromGrid(img, badgeFile, top, skip) {
+/** Desk: keyed, the medallion left blank (the club crest goes over it as a vector, see CREST). `skip` rows at the top are left out (the dark back lip of the v3 desk). */
+function deskFromGrid(img, top, skip) {
   const BX = 3.482, BY = 3.582, PX0 = 100, PY0 = top, W = img.w;
   const cols = Math.floor((1274 - PX0) / BX), rows = Math.floor((712 - PY0) / BY), P = new Pix(cols, rows);
   for (let j = skip; j < rows; j++) for (let i = 0; i < cols; i++) {
@@ -66,8 +66,6 @@ async function deskFromGrid(img, badgeFile, top, skip) {
     P.set(i, j, [r, g, b]);
   }
   fringe(P);
-  const S = 36, bd = await sharp(badgeFile).ensureAlpha().resize(S, S, { fit: 'fill' }).raw().toBuffer(), cx = Math.round((688 - PX0) / BX), cy = Math.round((568 - PY0) / BY);
-  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const k = (j * S + i) * 4; if (bd[k + 3] > 140) P.set(cx - S / 2 + i, cy - S / 2 + j, [Math.round(bd[k] / 24) * 24, Math.round(bd[k + 1] / 24) * 24, Math.round(bd[k + 2] / 24) * 24]); }
   return P;
 }
 
@@ -163,9 +161,15 @@ for (let y = wy0 - 2; y <= wy1 + 2; y++) for (let x = wx0 - 2; x <= wx1 + 2; x++
 await png(wall, path.join(OUT, 'videowall.png'));
 const WALL_SCREEN = { x: wx0, y: wy0, w: wx1 - wx0 + 1, h: wy1 - wy0 + 1 };
 
-const desk = await deskFromGrid(deskImg, 'site/public/badges/heart-of-midlothian.png', DESK_TOP, DESK_LIP);
+const desk = deskFromGrid(deskImg, DESK_TOP, DESK_LIP);
 await png(desk, path.join(OUT, 'desk.png'));
 const deskX = GW / 2 - Math.round(desk.w / 2), deskY = DESK_Y_TOP - DESK_LIP;   // as the spike draws it: 240 - round(width / 2), 170 - lip
+
+// The club crest: a vector, drawn over the medallion by the page at the screen's own resolution. Baked as pixels at 36
+// canvas px it was too rough. The medallion's centre is at canvas (240, 245); CREST_D fits inside its navy disc.
+const CREST_D = 36, crestCy = deskY + Math.round((568 - DESK_TOP) / 3.582);
+fs.copyFileSync('art/badges/heart-of-midlothian.svg', path.join(OUT, 'crest.svg'));
+const crest = { file: 'crest.svg', x: GW / 2 - CREST_D / 2, y: crestCy - CREST_D / 2, w: CREST_D, h: CREST_D };
 
 // props: cut by box, shelf-packed (tallest first) into one sheet
 const PG = toGrid(propImg), cuts = Object.entries(PROP_DEFS).map(([name, d]) => ({ name, ...d, w: d.box[2] - d.box[0] + 1, h: d.box[3] - d.box[1] + 1 })).sort((a, b) => b.h - a.h);
@@ -183,6 +187,7 @@ const set = {
   w: GW, h: GH,
   backdrop: { file: 'backdrop.png', x: 0, y: 0 },
   desk: { file: 'desk.png', x: deskX, y: deskY, w: desk.w, h: desk.h, lip: DESK_LIP, top: DESK_Y_TOP, note: 'drawn over the seated figures; rows above `top` are transparent (the back lip is left out)' },
+  crest: { ...crest, note: 'the club crest (SVG) drawn over the desk medallion, on the same camera transform as the desk' },
   props: { file: 'props.png', base: 189, slotSide: 14, tightScale: 1 / 0.7, laptopTight: 1.15, laptopLift: 2, default: { isla: 'none', fraser: 'none', ross: 'none', kirsty: 'none' }, items: props, note: 'drawn at sheet size * s, bottom on `base`, centred on the seat x moved `side * slotSide` towards the middle; smoothed scaling' },
   seated: {
     hcut: 112, propx: 0,

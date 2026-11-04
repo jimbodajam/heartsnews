@@ -69,6 +69,9 @@ const STYLE = `
 .hd-frame { position: relative; aspect-ratio: 16 / 9; width: min(100vw, 100vh * 16 / 9); overflow: hidden; background: #0e0c10;
   font-size: calc(min(100vw, 100vh * 16 / 9) / 100); line-height: normal; }
 .hd-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; transform-origin: 0 0; }
+/* The desk's crest (set.json, crest): on the scene's camera transform, so it moves with the desk, but drawn as a vector. */
+.hd-crest { position: absolute; inset: 0; transform-origin: 0 0; pointer-events: none; }
+.hd-crest img { position: absolute; display: block; }
 .hd-sd, .hd-layer { position: absolute; inset: 0; }
 /* The SD renderer sizes its canvas to the window: here it fills the frame instead, at 1.5 HD pixels to each SD one. */
 .hd-sd > canvas { display: block; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
@@ -87,6 +90,8 @@ const WITH_COLUMN = 0.5 - COLUMN_SHIFT / 480;
 export class HdRenderer implements Renderer {
   private frame?: HTMLDivElement;
   private canvas?: HTMLCanvasElement;
+  /** The desk's club crest, over the canvas and under the graphics; hidden unless the desk is drawn. */
+  private crest?: HTMLDivElement;
   /** Holds the SD renderer's canvas. */
   private sdBox?: HTMLDivElement;
   private g?: CanvasRenderingContext2D;
@@ -143,14 +148,19 @@ export class HdRenderer implements Renderer {
     this.g.imageSmoothingEnabled = false;
     const sdBox = document.createElement('div');
     sdBox.className = 'hd-sd';
+    const crest = document.createElement('div');
+    crest.className = 'hd-crest';
+    crest.hidden = true;
+    crest.setAttribute('aria-hidden', 'true');
     const gfx = document.createElement('div');
     gfx.className = 'hd-layer hdg';
     gfx.setAttribute('aria-hidden', 'true');
-    frame.append(canvas, sdBox, gfx);
+    frame.append(canvas, sdBox, crest, gfx);
     container.append(frame);
     this.sd.mount(sdBox);
     this.frame = frame;
     this.canvas = canvas;
+    this.crest = crest;
     this.sdBox = sdBox;
     this.gfxRoot = gfx;
     this.box = new GraphicBox(gfx);
@@ -180,7 +190,7 @@ export class HdRenderer implements Renderer {
     this.moments?.remove();
     this.frame?.remove();
     this.style?.remove();
-    this.frame = this.canvas = this.sdBox = this.g = this.style = this.shown = undefined;
+    this.frame = this.canvas = this.crest = this.sdBox = this.g = this.style = this.shown = undefined;
     this.gfxRoot = this.gfxResize = this.box = this.column = this.moments = undefined;
     this.screenBox = undefined;
     this.transform = this.camKey = '';
@@ -294,6 +304,8 @@ export class HdRenderer implements Renderer {
       if (sdPanel !== this.sdPanel) this.sdBox!.hidden = !(this.sdPanel = sdPanel);
       if (sdPanel) this.sd.drawPanelOnly(s, now);
     }
+    // The crest is only on the desk (the seated view); the other scenes have no medallion.
+    if (this.crest) this.crest.hidden = view !== 'hd';
     for (const l of this.layers) l.layer.draw(s, now);
     this.moments!.draw(s, now);
   }
@@ -310,6 +322,15 @@ export class HdRenderer implements Renderer {
     try {
       const set = await loadSet(this.dir);
       const cast = await loadSeatedCast(set);
+      if (set.crest && this.crest) {
+        // Positioned in percent of the 480×270 canvas, which fills the frame: the same box the desk's medallion is at.
+        const { x, y, w, h } = set.crest;
+        const img = new Image();
+        img.alt = '';
+        img.src = this.dir + set.crest.file;
+        img.style.cssText = `left:${(x / set.w) * 100}%;top:${(y / set.h) * 100}%;width:${(w / set.w) * 100}%;height:${(h / set.h) * 100}%`;
+        this.crest.replaceChildren(img);
+      }
       // The museum is optional: without it On This Day stays on the SD scenes.
       const museum = await loadMuseum(this.dir, set.museum, set.points).catch((err) => {
         console.error(err);
@@ -352,6 +373,8 @@ export class HdRenderer implements Renderer {
 
   private setTransform(transform: string): void {
     if (transform !== this.transform) this.canvas!.style.transform = this.transform = transform;
+    // The crest has the same box and origin as the canvas, so the same transform keeps it on the medallion.
+    if (this.crest) this.crest.style.transform = transform;
   }
 
   /** The captions stop short of the column while it's in. */
