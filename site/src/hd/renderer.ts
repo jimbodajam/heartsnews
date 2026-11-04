@@ -7,10 +7,10 @@ import { GraphicBox, isNative } from './graphics';
 import { HdMoments } from './moments';
 import { canMuseum, drawMuseum, loadMuseum, museumGraphic, type MuseumArt } from './museum';
 import { loadSet, type StudioSet } from './set';
-import { canTouch, drawTouch, loadTouch, type TouchArt } from './touchscreen';
+import { canScene, drawScene, loadScene, type SceneArt } from './touchscreen';
 
 /** The HD art, once it has loaded. */
-type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touch?: TouchArt }>;
+type Art = Readonly<{ set: StudioSet; cast: SeatedCast; museum?: MuseumArt; touch?: SceneArt; transfer?: SceneArt }>;
 
 /**
  * How a frame is drawn. `hd`: the HD desk, with the line's graphic beside the presenter in a close-up (HD's own, else the
@@ -43,7 +43,7 @@ const fullGraphic = (s: FrameState) => teamNewsCard(s) ?? s.graphic;
 /**
  * Which view this frame gets (#85, #87, #86). `moment` for the moments that cover the frame (splash, ident, sponsor), and
  * when there's no segment yet. The sting and the break-in flash play over the picture the segment would have had in a
- * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (transfer,
+ * show frame, so they get its view. The SD scene under the HD furniture for ad breaks, scenes HD can't draw (
  * pitchside, the touchscreen without standing art, and the videowall without a team-news card), a full-screen graphic HD doesn't draw yet, a
  * desk with someone who has no seated HD art, and anything until the art has loaded. `hd-full` for a
  * full-screen graphic HD draws and for the videowall's team-news cards (teamNewsCard). `museum` for the museum when its
@@ -54,7 +54,8 @@ export function chooseView(s: FrameState, art: Art | undefined): View {
   if (s.seg.kind === 'adverts' || !art) return 'sd-scene';
   if (teamNewsCard(s)) return 'hd-full';
   if (s.seg.scene === 'museum') return canMuseum(art.museum, s.onScreen) ? 'museum' : 'sd-scene';
-  if (s.seg.scene === 'touchscreen') return canTouch(art.touch, s.onScreen) ? 'touch' : 'sd-scene';
+  if (s.seg.scene === 'touchscreen') return canScene(art.touch, s.onScreen) ? 'touch' : 'sd-scene';
+  if (s.seg.scene === 'transfer') return canScene(art.transfer, s.onScreen) ? 'touch' : 'sd-scene';
   if (s.seg.scene !== 'desk') return 'sd-scene';
   if (s.shot === 'full') return isNative(s.graphic) ? 'hd-full' : 'sd-scene';
   return canSeat(art.set, art.cast, s.onScreen) ? 'hd' : 'sd-scene';
@@ -106,7 +107,7 @@ export class HdRenderer implements Renderer {
   private moments?: HdMoments;
   /** The S key's choice, kept over a remount. */
   private columnOn = true;
-  /** The touchscreen's box in art pixels, once the set has loaded. */
+  /** The screen box last put on the graphics layer (placeScreen). */
   private screenBox?: { x: number; y: number; w: number; h: number };
   private sdPanel = false;
   private withColumn = false;
@@ -146,7 +147,6 @@ export class HdRenderer implements Renderer {
     this.box = new GraphicBox(gfx);
     this.column = new SideColumn(gfx);
     this.column.on = this.columnOn;
-    this.placeScreen();
     // Sized in em like the furniture: a hundredth of the frame's width.
     this.gfxResize = new ResizeObserver(() => {
       if (gfx.clientWidth) gfx.style.fontSize = `${gfx.clientWidth / 100}px`;
@@ -173,6 +173,7 @@ export class HdRenderer implements Renderer {
     this.style?.remove();
     this.frame = this.canvas = this.sdBox = this.g = this.style = this.shown = undefined;
     this.gfxRoot = this.gfxResize = this.box = this.column = this.moments = undefined;
+    this.screenBox = undefined;
     this.transform = this.camKey = '';
     this.sdPanel = this.withColumn = false;
   }
@@ -238,13 +239,15 @@ export class HdRenderer implements Renderer {
       this.column!.hide(now);
       this.setColumnClass(false);
       this.setTransform('');
-      drawTouch(this.g!, this.art!.touch!, s, now);
+      const scene = s.seg!.scene === 'transfer' ? this.art!.transfer! : this.art!.touch!;
+      drawScene(this.g!, scene, s, now);
+      this.placeScreen(scene.data.screen);
       const native = isNative(s.graphic);
       this.box!.show(native ? s.graphic : undefined, 'screen');
       if (this.sdPanel === native) this.sdBox!.hidden = !(this.sdPanel = !native);
       if (this.sdPanel) {
-        const b = this.art!.touch!.data.screen;
-        this.sd.drawTouchPanelOnly(s, now, [Math.round(b.x / 1.5), Math.round(b.y / 1.5), Math.round(b.w / 1.5), Math.round(b.h / 1.5)]);
+        const b = scene.data.screen;
+        this.sd.drawTouchPanelOnly(s, now, s.seg!.scene === 'transfer' ? 'TRANSFER CENTRE' : 'MATCH CENTRE', [Math.round(b.x / 1.5), Math.round(b.y / 1.5), Math.round(b.w / 1.5), Math.round(b.h / 1.5)]);
       }
     } else if (view === 'hd-full') {
       this.column!.hide(now);
@@ -288,23 +291,25 @@ export class HdRenderer implements Renderer {
         console.error(err);
         return undefined;
       });
-      const touch = await loadTouch(this.dir, set.touchscreen).catch((err) => {
+      const touch = await loadScene(this.dir, set.touchscreen).catch((err) => {
         console.error(err);
         return undefined;
       });
-      this.art = { set, cast, museum, touch };
-      this.placeScreen(set.touchscreen?.screen);
+      const transfer = await loadScene(this.dir, set.transfer).catch((err) => {
+        console.error(err);
+        return undefined;
+      });
+      this.art = { set, cast, museum, touch, transfer };
     } catch (err) {
       // Stays on the SD scenes.
       console.error(err);
     }
   }
 
-  /** Remember the touchscreen's box (art pixels) and put it on the graphics layer as --screen-* in em (4.8 art pixels each). */
-  private placeScreen(b?: { x: number; y: number; w: number; h: number }): void {
-    if (b) this.screenBox = b;
-    const box = this.screenBox;
-    if (!box || !this.gfxRoot) return;
+  /** Put a screen scene's box (art pixels) on the graphics layer, when it changes, as --screen-* in em (4.8 art pixels each): the box the graphic goes over. */
+  private placeScreen(box: { x: number; y: number; w: number; h: number }): void {
+    if (box === this.screenBox || !this.gfxRoot) return;
+    this.screenBox = box;
     for (const [k, v] of [['x', box.x], ['y', box.y], ['w', box.w], ['h', box.h]] as const) this.gfxRoot.style.setProperty(`--screen-${k}`, `${v / 4.8}em`);
   }
 

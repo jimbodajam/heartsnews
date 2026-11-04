@@ -53,8 +53,8 @@
 .hdf .headin .who .wave i:nth-child(5) { animation-delay: -.35s; }
 @keyframes hdf-bar { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
 
-/* Segment label: a small gold tab sitting on the headline bar. */
-.hdf .tab { position: absolute; left: 19em; bottom: 10em; background: var(--gold); color: var(--ink); padding: .5em 1em .4em; font-size: 1.1em; line-height: 1.3; white-space: nowrap; border-top: .3em solid var(--gold-light); }
+/* Segment label: a small gold tab at the top left, out of the way of the captions that sit on the headline bar. */
+.hdf .tab { position: absolute; left: 3em; top: 1.2em; background: var(--gold); color: var(--ink); padding: .5em 1em .4em; font-size: 1.1em; line-height: 1.3; white-space: nowrap; border-top: .3em solid var(--gold-light); }
 .hdf .demo { position: absolute; left: 0; bottom: 10em; background: var(--ink); color: var(--gold); padding: .5em 1em .4em; font-size: 1.1em; white-space: nowrap; }
 
 /* Ticker strip: logo cell, clock, scrolling items. */
@@ -73,13 +73,15 @@
 @keyframes hdf-goal-text { 0% { color: var(--gold); } 50% { color: var(--cream); } }
 
 /* Name strap: slides in from the left, name on cream over role on maroon. */
-.hdf .strap { position: absolute; left: 3em; bottom: 14em; min-width: 22em; transform: translateX(-130%); transition: transform .35s steps(7); }
+.hdf .strap { position: absolute; left: 3em; bottom: 11em; min-width: 22em; transform: translateX(-130%); transition: transform .35s steps(7); }
 .hdf .strap.on { transform: none; }
+/* The strap rides up over the captions while they show. */
+.hdf:has(.cap:not(.hidden)) .strap { bottom: 16.2em; }
 .hdf .strap .n { background: var(--cream); color: var(--ink); padding: .8em 1.2em .7em; font-size: 1em; white-space: nowrap; border-left: .5em solid var(--gold); }
 .hdf .strap .r { background: var(--maroon); color: var(--gold); padding: .6em 1.2em .5em; font-size: .75em; white-space: nowrap; border-left: .67em solid var(--gold); }
 
 /* Captions: the speaker in gold, two lines of the line as it is spoken. */
-.hdf .cap { position: absolute; left: 4em; right: 4em; bottom: 23em; display: flex; gap: 1.2em; background: var(--night); color: var(--cream); padding: .6em 1.2em; font-size: .95em; line-height: 1.6; }
+.hdf .cap { position: absolute; left: 4em; right: 4em; bottom: 10.6em; display: flex; gap: 1.2em; background: var(--night); color: var(--cream); padding: .6em 1.2em; font-size: .95em; line-height: 1.6; }
 .hdf .cap b { flex: none; color: var(--gold); font-weight: normal; }
 .hdf .cap .box { flex: 1; min-width: 0; max-height: 3.2em; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; text-transform: none; }
 .hdf .cap .box span { display: block; text-transform: uppercase; }

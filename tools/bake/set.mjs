@@ -119,6 +119,35 @@ for (let y = ty0; y <= ty1; y++) for (let x = tx0; x <= tx1; x++) touch.set(x, y
 await png(touch, path.join(OUT, 'touchscreen.png'));
 const TOUCH_SCREEN = { x: tx0, y: ty0, w: tx1 - tx0 + 1, h: ty1 - ty0 + 1 };
 
+// The Transfer Centre (#92): art/scenes/transfer.jpg has a magenta screen (right) and a magenta clock face (left of it); both are found
+// in the baked picture. The screen becomes a dark panel; the face becomes a cream disc with 12 tick marks (the hands are drawn live by
+// the site). The podium is its own sprite (art/scenes/transfer-podium.jpg on magenta), keyed, cropped and scaled down by PODIUM_SCALE
+// (it was generated bigger than it needs to be) so Ross stands behind it; its bottom row sits on the floor.
+const TRANSFER_SRC = 'art/scenes/transfer.jpg', PODIUM_SRC = 'art/scenes/transfer-podium.jpg', PODIUM_SCALE = 0.6;
+const tr = sceneFromGrid(await read(TRANSFER_SRC), 1376 / 480, 0, 2.75);
+const keyed = (P, x, y) => { const [r, g, b] = P.get(x, y); return r > 150 && b > 150 && g < 110 && r - g > 70 && b - g > 70; };
+const box = (test) => { const b = { x0: GW, x1: -1, y0: GH, y1: -1 }; for (let y = 0; y < 200; y++) for (let x = 0; x < GW; x++) if (test(x, y)) { b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.y0 = Math.min(b.y0, y); b.y1 = Math.max(b.y1, y); } return b; };
+const sb = box((x, y) => x >= 240 && keyed(tr, x, y)), cb = box((x, y) => x < 240 && keyed(tr, x, y));
+for (let y = sb.y0; y <= sb.y1; y++) for (let x = sb.x0; x <= sb.x1; x++) tr.set(x, y, TOUCH_PANEL);
+const CLOCK = { x: Math.round((cb.x0 + cb.x1) / 2), y: Math.round((cb.y0 + cb.y1) / 2), r: Math.round((cb.x1 - cb.x0 + 1) / 2) };
+for (let y = cb.y0; y <= cb.y1; y++) for (let x = cb.x0; x <= cb.x1; x++) if (keyed(tr, x, y)) tr.set(x, y, [242, 239, 230]);
+for (let h = 0; h < 12; h++) { const a = (h / 12) * Math.PI * 2, d = CLOCK.r - 4; tr.set(CLOCK.x + Math.sin(a) * d, CLOCK.y - Math.cos(a) * d, [29, 26, 34]); }
+await png(tr, path.join(OUT, 'transfer.png'));
+const TRANSFER_SCREEN = { x: sb.x0, y: sb.y0, w: sb.x1 - sb.x0 + 1, h: sb.y1 - sb.y0 + 1 };
+
+const podSrc = await read(PODIUM_SRC);
+let pb = { x0: podSrc.w, x1: -1, y0: podSrc.h, y1: -1 };
+const podKey = (i) => { const r = podSrc.d[i], g = podSrc.d[i + 1], b = podSrc.d[i + 2]; return r > 150 && b > 150 && g < 130 && r - g > 60 && b - g > 60; };
+for (let y = 0; y < podSrc.h; y++) for (let x = 0; x < podSrc.w; x++) if (!podKey((y * podSrc.w + x) * 4)) { pb.x0 = Math.min(pb.x0, x); pb.x1 = Math.max(pb.x1, x); pb.y0 = Math.min(pb.y0, y); pb.y1 = Math.max(pb.y1, y); }
+const pcw = pb.x1 - pb.x0 + 1, pch = pb.y1 - pb.y0 + 1, pcrop = Buffer.alloc(pcw * pch * 4);
+for (let y = 0; y < pch; y++) for (let x = 0; x < pcw; x++) { const i = ((pb.y0 + y) * podSrc.w + pb.x0 + x) * 4, o = (y * pcw + x) * 4; pcrop[o] = podSrc.d[i]; pcrop[o + 1] = podSrc.d[i + 1]; pcrop[o + 2] = podSrc.d[i + 2]; pcrop[o + 3] = podKey(i) ? 0 : 255; }
+const PW = Math.round((pcw / (1376 / 480)) * PODIUM_SCALE), PH = Math.round((pch / (1376 / 480)) * PODIUM_SCALE);
+const small = await sharp(pcrop, { raw: { width: pcw, height: pch, channels: 4 } }).resize(PW, PH, { kernel: 'lanczos3', fit: 'fill' }).raw().toBuffer();
+const podium = new Pix(PW, PH);
+for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) { const k = (y * PW + x) * 4; if (small[k + 3] > 140) podium.set(x, y, [0, 1, 2].map((c) => Math.min(255, Math.round(small[k + c] / 8) * 8))); }
+fringe(podium);
+await png(podium, path.join(OUT, 'transfer-podium.png'));
+
 const desk = await deskFromGrid(deskImg, 'site/public/badges/heart-of-midlothian.png', DESK_TOP, DESK_LIP);
 await png(desk, path.join(OUT, 'desk.png'));
 const deskX = GW / 2 - Math.round(desk.w / 2), deskY = DESK_Y_TOP - DESK_LIP;   // as the spike draws it: 240 - round(width / 2), 170 - lip
@@ -159,9 +188,18 @@ const set = {
     glance: { every: 5, for: 1.6 },
     presenters: { kirsty: 'presenters/kirsty' },
   },
+  transfer: {
+    file: 'transfer.png', screen: TRANSFER_SCREEN, clock: CLOCK,
+    note: 'Transfer Centre (#92): as touchscreen, plus the wall clock (hands drawn live) and the podium sprite drawn over the presenter, its last row on `feet`, centred on `x`; `label` is the panel (podium pixels) the title is drawn on',
+    stand: { x: 142, feet: 262 },
+    podium: { file: 'transfer-podium.png', x: 142, feet: 226, w: PW, h: PH, label: { cx: Math.round(PW / 2), cy: Math.round(PH * 0.47) } },
+    glance: { every: 5, for: 1.6 },
+    presenters: { ross: 'presenters/ross' },
+  },
   camera: { wide: { z: 1, x: 240, y: 135, sy: 135 }, tight: { z: 1.8, x: 'seat', y: 55, sy: 78 } },
 };
 fs.writeFileSync(path.join(OUT, 'set.json'), JSON.stringify(set, null, 1) + '\n');
-for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'touchscreen.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
+for (const f of ['backdrop.png', 'desk.png', 'props.png', 'museum-front.png', 'museum.png', 'touchscreen.png', 'transfer.png', 'transfer-podium.png', 'set.json']) console.log(f, fs.statSync(path.join(OUT, f)).size, 'bytes');
 console.log('touchscreen screen', JSON.stringify(TOUCH_SCREEN));
+console.log('transfer screen', JSON.stringify(TRANSFER_SCREEN), 'clock', JSON.stringify(CLOCK), 'podium', PW + 'x' + PH);
 console.log('desk', desk.w + 'x' + desk.h, 'at', deskX + ',' + deskY, '| props sheet', sheet.w + 'x' + sheet.h);

@@ -17,11 +17,13 @@ export type MuseumData = {
   presenters: Record<string, string>;
 };
 
-/** The Match Centre touchscreen (#92): its backdrop, the dark screen box (art pixels) the graphic goes over, and where the standing presenter stands. */
-export type TouchData = {
+/** A standing-presenter screen scene (#92: the Match Centre touchscreen, the Transfer Centre): its backdrop, the dark screen box (art pixels) the graphic goes over, and where the standing presenter stands. The Transfer Centre adds a wall clock (hands drawn live) and a podium sprite drawn over the presenter. */
+export type SceneData = {
   file: string;
   screen: { x: number; y: number; w: number; h: number };
   stand: { x: number; feet: number };
+  clock?: { x: number; y: number; r: number };
+  podium?: { file: string; x: number; feet: number; w: number; h: number; label: { cx: number; cy: number } };
   glance: { every: number; for: number };
   presenters: Record<string, string>;
 };
@@ -58,7 +60,9 @@ export type SetData = {
   /** On This Day's two scenes and where standing presenters go in them (museum.ts); absent in a set without them. */
   museum?: MuseumData;
   /** The Match Centre (touchscreen.ts); absent in a set without it. */
-  touchscreen?: TouchData;
+  touchscreen?: SceneData;
+  /** The Transfer Centre (touchscreen.ts); absent in a set without it. */
+  transfer?: SceneData;
   camera: { wide: Camera; tight: Camera };
 };
 

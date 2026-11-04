@@ -165,6 +165,43 @@
    "kirsty": "presenters/kirsty"
   }
  },
+ "transfer": {
+  "file": "transfer.png",
+  "screen": {
+   "x": 266,
+   "y": 54,
+   "w": 189,
+   "h": 114
+  },
+  "clock": {
+   "x": 192,
+   "y": 79,
+   "r": 27
+  },
+  "note": "Transfer Centre (#92): as touchscreen, plus the wall clock (hands drawn live) and the podium sprite drawn over the presenter, its last row on `feet`, centred on `x`; `label` is the panel (podium pixels) the title is drawn on",
+  "stand": {
+   "x": 142,
+   "feet": 262
+  },
+  "podium": {
+   "file": "transfer-podium.png",
+   "x": 142,
+   "feet": 226,
+   "w": 107,
+   "h": 76,
+   "label": {
+    "cx": 54,
+    "cy": 36
+   }
+  },
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "ross": "presenters/ross"
+  }
+ },
  "camera": {
   "wide": {
    "z": 1,
