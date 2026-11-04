@@ -1,0 +1,213 @@
+{
+ "_note": "Generation prompts for tools/frames, scaffolded by tools/frames/standing.mjs.",
+ "frames": {
+  "h1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the hands, jacket, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet or shoulders. Keep his short grey hair, the black headset with its short microphone boom, grey eyebrows and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: turn it a few degrees (a small, subtle turn, about 8 degrees) so his nose and gaze point towards the RIGHT edge of the image (the right-hand side of the picture, as you look at it). Do not turn it towards the left edge. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "expect": {
+    "dir": "right",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the hands, jacket, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet or shoulders. Keep his short grey hair, the black headset with its short microphone boom, grey eyebrows and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: turn it a few degrees (a small, subtle turn, about 8 degrees) so his nose and gaze point towards the LEFT edge of the image (the left-hand side of the picture, as you look at it). Do not turn it towards the right edge. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "expect": {
+    "dir": "left",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "h3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the hands, jacket, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet or shoulders. Keep his short grey hair, the black headset with its short microphone boom, grey eyebrows and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: tilt it very slightly forward and down, as in a small nod, about 6 degrees, so the chin dips a little towards the chest and the top of the head tips forward. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the body, both arms hanging down, the hands, jacket, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet or shoulders. Keep his short grey hair, the black headset with its short microphone boom, grey eyebrows and face style exactly as in the original, with the same neutral closed-mouth expression and the same eye style. Change only the head: tilt it very slightly back and up, as at the top of a small nod, about 5 degrees, so the chin lifts a little. The neck stays attached at the same place on the shoulders, and the head stays the same size and at the same height.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the mouth is closed with a gentle slight smile.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the lips are slightly parted, relaxed, a thin dark gap and no visible teeth.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the mouth is a relaxed \"ee\" shape, only slightly wider than closed, with a thin strip of the top teeth visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the mouth is a small round \"oh\", the lips rounded and a little open.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v5": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the mouth is open for an \"ah\", the jaw dropped a little, a dark inside and the top teeth just visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v6": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the eyebrows and eyes exactly as in the original: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original. Change only this one thing: the lips are pressed together in a flat line, neither smiling nor frowning.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v7": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are fully closed, as in a blink, with the closed lids drawn as a curved dark line.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "v9": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the mouth, nose, hair and brows exactly as in the original. Change only this one thing: both eyes are open as before, but the irises and pupils sit against the RIGHT corner of each eye as seen in the picture (the edge nearest the right side of the image), so a sliver of white shows on the left side of each iris and none on the right. He is glancing sideways towards the right edge of the picture with his head still facing forward.",
+   "expect": {
+    "dir": "right",
+    "measure": "dark"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "b2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: his arm on the RIGHT edge of the image is extended out to the side and slightly up, with his index finger pointing clearly towards the right edge of the image, as if pointing at an item on a screen, the other fingers curled and the thumb tucked. His other arm hangs relaxed at his side. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "expect": {
+    "dir": "right",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "b3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: his arm on the RIGHT edge of the image is raised and a little out from his side, the elbow bent, the open palm facing up and towards the right edge of the image, fingers together and slightly spread, in a wide, welcoming, emphasising gesture. His other arm hangs relaxed at his side. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "expect": {
+    "dir": "right",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "b4": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: both elbows are bent and both hands are held together in front of him at lower chest height, fingertips lightly touching, as if making a point in a calm explanation. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "b5": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: both arms are bent at the elbows and he holds a small dark navy tablet in front of him at waist height, one hand underneath and the other steadying it at the side, as if reading from it. Only the thin edge and the back of the tablet are visible to the viewer, with no text and no screen glow. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "b6": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: his arm on the LEFT edge of the image is bent with the hand resting on his hip under the open jacket edge, elbow pointing out towards the left edge of the image, and his other arm hangs relaxed at his side, a confident, attentive, listening pose. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "expect": {
+    "dir": "left",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "b7": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: his arm on the LEFT edge of the image is raised out to the side with the open palm facing up and towards the left edge of the image, as if presenting something to the left, fingers together. His other arm hangs relaxed at his side. Do not move the arm on the right edge of the image. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "expect": {
+    "dir": "left",
+    "measure": "changed"
+   },
+   "from": "tools/frames/standing.mjs"
+  },
+  "b8": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, trousers and shoes and background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize the figure, and do not move his feet. Keep his expression exactly as in the original. Change only his arms and hands: both arms are held out a little from his sides, elbows bent, both palms open and facing slightly upwards at waist height, in a warm, open, welcoming sign-off gesture. The suit sleeves and shirt cuffs stay the same style and colours as in the original.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "f1": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, jacket, both arms and hands, and the coat hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Everything above the bottom of the coat (about 68% of the way down the image) must be unchanged. Do not move or resize the figure. Change only his trousers and shoes below that line: he shifts his weight onto the leg on the RIGHT edge of the image, which stands straight and carries all his weight, while the leg on the LEFT edge of the image relaxes: that knee is slightly bent, and that foot is placed visibly out towards the left edge of the image and a little forward, with the heel slightly lifted off the floor, so the two feet are clearly in different positions. The trouser hems stay the same style and colour. A natural relaxed weight shift, not a step.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "f2": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, jacket, both arms and hands, and the coat hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Everything above the bottom of the coat (about 68% of the way down the image) must be unchanged. Do not move or resize the figure. Change only his trousers and shoes below that line: he shifts his weight onto the leg on the LEFT edge of the image, which stands straight and carries all his weight, while the leg on the RIGHT edge of the image relaxes: that knee is slightly bent, and that foot is placed visibly out towards the right edge of the image and a little forward, with the heel slightly lifted off the floor, so the two feet are clearly in different positions. The trouser hems stay the same style and colour. A natural relaxed weight shift, not a step.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "f3": {
+   "source": "b1",
+   "prompt": "Edit this image. Keep the head, face, hair, neck, open dark coat, maroon scarf, shirt, tie, heart pin, jacket, both arms and hands, and the coat hem exactly identical, and keep the background exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Everything above the bottom of the coat (about 68% of the way down the image) must be unchanged. Do not move or resize the figure. Change only his trousers and shoes below that line, and only slightly: both legs stand straight with his weight even, and his feet are placed a little further apart than in the original, about shoulder width, both feet flat on the floor, toes pointing slightly outwards.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v1": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is closed with a gentle slight smile.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v2": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are slightly parted, relaxed, a thin dark gap and no visible teeth.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v3": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a relaxed \"ee\" shape, only slightly wider than closed, with a thin strip of the top teeth visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v4": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a small round \"oh\", the lips rounded and a little open.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v5": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is open for an \"ah\", the jaw dropped a little, a dark inside and the top teeth just visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v6": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are pressed together in a flat line, neither smiling nor frowning.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h1v7": {
+   "source": "h1",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: both eyes are fully closed, as in a blink, with the closed lids drawn as a curved dark line. The far eye, which is partly hidden by the turn, is closed too.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v1": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is closed with a gentle slight smile.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v2": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are slightly parted, relaxed, a thin dark gap and no visible teeth.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v3": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a relaxed \"ee\" shape, only slightly wider than closed, with a thin strip of the top teeth visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v4": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is a small round \"oh\", the lips rounded and a little open.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v5": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the mouth is open for an \"ah\", the jaw dropped a little, a dark inside and the top teeth just visible.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v6": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same eyebrows and eyes: same shape, same position, relaxed and neutral. Keep the mouth in the same position on the face, along the same angle as the original mouth, with the same centre and no wider than the mouth in the original: his mouth is a medium width and his head is straight, so keep it the same size. The black microphone boom beside his mouth stays exactly as in the original, and his head is turned, so keep it small and keep its angle. Change only this one thing: the lips are pressed together in a flat line, neither smiling nor frowning.",
+   "from": "tools/frames/standing.mjs"
+  },
+  "h2v7": {
+   "source": "h2",
+   "prompt": "Edit this image. Keep everything exactly identical: same pixels, same position, same size, same colours, same outline, same flat background colour, the same pixel grid. Do not move or resize anything, and do not change the pose, the body, the clothes or the head. Keep the head turned exactly as in the original, at the same angle, with the same mouth, nose, hair and brows. Change only this one thing: both eyes are fully closed, as in a blink, with the closed lids drawn as a curved dark line. The far eye, which is partly hidden by the turn, is closed too.",
+   "from": "tools/frames/standing.mjs"
+  }
+ }
+}

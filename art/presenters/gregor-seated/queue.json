@@ -1,0 +1,225 @@
+{
+ "presenter": "gregor-seated",
+ "limitHit": "2026-11-04T14:59:46.533Z",
+ "items": [
+  {
+   "frame": "h1",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "h1.jpg",
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: moved 0.58 cells, too little to tell it went right"
+   ],
+   "savedAt": "2026-11-04T14:48:57.254Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/h1.jpg",
+   "stats": {
+    "changed": 1166,
+    "outside": 0,
+    "direction": 0.58
+   }
+  },
+  {
+   "frame": "h2",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "h2.jpg",
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: moved 0.92 cells, too little to tell it went left",
+    "2026-11-04: turned towards the right edge like h1; regenerate from the flipped master and flip back"
+   ],
+   "savedAt": "2026-11-04T14:50:40.593Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/h2.jpg",
+   "stats": {
+    "changed": 1045,
+    "outside": 0,
+    "direction": 0.92
+   }
+  },
+  {
+   "frame": "h3",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "h3.jpg",
+   "status": "passed",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-04T14:51:56.473Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/h3.jpg",
+   "stats": {
+    "changed": 709,
+    "outside": 0
+   }
+  },
+  {
+   "frame": "h4",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "h4.jpg",
+   "status": "passed",
+   "attempts": 1,
+   "reasons": [],
+   "savedAt": "2026-11-04T14:53:15.432Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/h4.jpg",
+   "stats": {
+    "changed": 651,
+    "outside": 0
+   }
+  },
+  {
+   "frame": "v1",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v1.jpg",
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T14:54:32.515Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/v1.jpg",
+   "stats": {
+    "changed": 0,
+    "outside": 0,
+    "fit": {
+     "scale": 0.993,
+     "err": 5.8
+    }
+   }
+  },
+  {
+   "frame": "v2",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v2.jpg",
+   "status": "rejected",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T14:55:51.040Z",
+   "staged": "art/presenters/gregor-seated/queue/staged/v2.jpg",
+   "stats": {
+    "changed": 0,
+    "outside": 0,
+    "fit": {
+     "scale": 0.993,
+     "err": 6.4
+    }
+   }
+  },
+  {
+   "frame": "v3",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": [
+    "run failed: no image after 2 minutes (Gemini stuck on a text placeholder)"
+   ]
+  },
+  {
+   "frame": "v4",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v5",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v6",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v6.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "v7",
+   "source": "b1",
+   "attach": "art/presenters/gregor-seated/queue/crops/b1.png",
+   "crop": true,
+   "save": "v7.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "d1",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "d1.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "d2",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "d2.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "d3",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "d3.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "d4",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "d4.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  },
+  {
+   "frame": "d5",
+   "source": "b1",
+   "attach": "site/public/spike/gregor/seated/b1.jpg",
+   "save": "d5.jpg",
+   "status": "pending",
+   "attempts": 0,
+   "reasons": []
+  }
+ ],
+ "updated": "2026-11-04T15:02:02.998Z",
+ "limitNote": "I can create more images as soon as your limit resets. Your limit resets at 5:24 PM",
+ "downloads": "art/presenters/gregor-seated/queue/named",
+ "seen": [
+  "h1.jpg@1793803730614.943",
+  "h2.jpg@1793803830674.0095",
+  "h3.jpg@1793803909757.9001",
+  "h4.jpg@1793803988333.258",
+  "v1.jpg@1793804065335.463",
+  "v2.jpg@1793804143857.835"
+ ]
+}

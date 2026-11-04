@@ -1,0 +1,274 @@
+{
+ "_note": "Seated desk set (#78, #91), scaffolded by tools/frames/seated.mjs. Crop box, headCut and handsTop copied from ross-seated (same body framing) on 4 Nov; leans are code tilts (no h5/h6). Tune face/register once the heads are approved.",
+ "src": "site/public/spike/gregor/seated/",
+ "paletteFrom": "gregor",
+ "grid": {
+  "w": 240,
+  "h": 131
+ },
+ "bg": "corner",
+ "matchColour": false,
+ "headCut": 55,
+ "handsTop": 105,
+ "feetTop": 131,
+ "heads": [
+  "b1",
+  "h1",
+  "h2",
+  "h3",
+  "h4"
+ ],
+ "poses": [
+  "b1",
+  "d1",
+  "d2",
+  "d3",
+  "d4",
+  "d5"
+ ],
+ "feet": [],
+ "eyes": [
+  "blink"
+ ],
+ "mouths": [
+  "smile",
+  "closed",
+  "small",
+  "wide",
+  "O",
+  "A"
+ ],
+ "crop": {
+  "box": [
+   440,
+   10,
+   500,
+   340
+  ],
+  "scale": 3
+ },
+ "boxes": {},
+ "face": {
+  "register": "detect",
+  "patch": {
+   "base": "b1",
+   "mouthBase": "b1",
+   "mouths": {
+    "smile": "v1",
+    "small": "v2",
+    "wide": "v3",
+    "O": "v4",
+    "A": "v5",
+    "closed": "v6"
+   },
+   "eyes": {
+    "blink": "v7"
+   }
+  },
+  "mouthAlias": {},
+  "heads": {
+   "b1": {
+    "mode": "patch"
+   },
+   "h1": {
+    "mode": "set",
+    "warpEyes": true
+   },
+   "h2": {
+    "mode": "set",
+    "warpEyes": true
+   },
+   "h3": {
+    "mode": "patch"
+   },
+   "h4": {
+    "mode": "patch"
+   },
+   "h5": {
+    "mode": "patch",
+    "warpEyes": true
+   },
+   "h6": {
+    "mode": "patch",
+    "warpEyes": true
+   }
+  }
+ },
+ "frames": [
+  {
+   "name": "b1",
+   "area": "master"
+  },
+  {
+   "name": "h1",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h2",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h3",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "h4",
+   "parent": "b1",
+   "area": "head"
+  },
+  {
+   "name": "v1",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v2",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v3",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v4",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v5",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v6",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "v7",
+   "parent": "b1",
+   "area": "patch",
+   "crop": true
+  },
+  {
+   "name": "h1v1",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v2",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v3",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v4",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v5",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v6",
+   "parent": "h1",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h1v7",
+   "parent": "h1",
+   "area": "eyes",
+   "crop": true
+  },
+  {
+   "name": "h2v1",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v2",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v3",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v4",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v5",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v6",
+   "parent": "h2",
+   "area": "mouth",
+   "crop": true
+  },
+  {
+   "name": "h2v7",
+   "parent": "h2",
+   "area": "eyes",
+   "crop": true
+  },
+  {
+   "name": "d1",
+   "parent": "b1",
+   "area": "hands"
+  },
+  {
+   "name": "d2",
+   "parent": "b1",
+   "area": "hands"
+  },
+  {
+   "name": "d3",
+   "parent": "b1",
+   "area": "hands"
+  },
+  {
+   "name": "d4",
+   "parent": "b1",
+   "area": "arm"
+  },
+  {
+   "name": "d5",
+   "parent": "b1",
+   "area": "arm"
+  }
+ ]
+}
