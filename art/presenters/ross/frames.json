@@ -93,7 +93,7 @@
   }
  },
  "face": {
-  "register": "detect",
+  "register": "shift",
   "patch": {
    "base": "b1",
    "mouthBase": "b1",
