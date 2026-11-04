@@ -54,9 +54,46 @@
   ],
   "scale": 3
  },
- "boxes": {},
+ "boxes": {
+  "h1": {
+   "eyes": [
+    [
+     71,
+     22,
+     87,
+     30
+    ]
+   ],
+   "mouth": [
+    [
+     70,
+     33,
+     86,
+     46
+    ]
+   ]
+  },
+  "h2": {
+   "eyes": [
+    [
+     58,
+     22,
+     75,
+     29
+    ]
+   ],
+   "mouth": [
+    [
+     59,
+     33,
+     72,
+     43
+    ]
+   ]
+  }
+ },
  "face": {
-  "register": "detect",
+  "register": "shift",
   "patch": {
    "base": "b1",
    "mouthBase": "b1",
@@ -116,10 +153,10 @@
     "mode": "set"
    },
    "h3": {
-    "mode": "set"
+    "mode": "patch"
    },
    "h4": {
-    "mode": "set"
+    "mode": "patch"
    }
   }
  },

@@ -1,5 +1,5 @@
 {
- "_note": "Seated desk set (#78, #91), scaffolded by tools/frames/seated.mjs. Crop box, headCut and handsTop copied from ross-seated (same body framing) on 4 Nov; leans are code tilts (no h5/h6). Tune face/register once the heads are approved.",
+ "_note": "Seated desk set (#78, #91), scaffolded by tools/frames/seated.mjs and tuned by hand to match kirsty-seated: leans are code tilts (no h5/h6), register shift. Crop box, headCut and handsTop copied from ross-seated; face.tilt chin moved up to row 52 for Gregor.",
  "src": "site/public/spike/gregor/seated/",
  "paletteFrom": "gregor",
  "grid": {
@@ -16,7 +16,11 @@
   "h1",
   "h2",
   "h3",
-  "h4"
+  "h4",
+  "tilt-6",
+  "tilt-3",
+  "tilt3",
+  "tilt6"
  ],
  "poses": [
   "b1",
@@ -47,9 +51,46 @@
   ],
   "scale": 3
  },
- "boxes": {},
+ "boxes": {
+  "h1": {
+   "eyes": [
+    [
+     113,
+     27,
+     135,
+     34
+    ]
+   ],
+   "mouth": [
+    [
+     118,
+     40,
+     133,
+     54
+    ]
+   ]
+  },
+  "h2": {
+   "eyes": [
+    [
+     99,
+     26,
+     119,
+     35
+    ]
+   ],
+   "mouth": [
+    [
+     101,
+     41,
+     117,
+     54
+    ]
+   ]
+  }
+ },
  "face": {
-  "register": "detect",
+  "register": "shift",
   "patch": {
    "base": "b1",
    "mouthBase": "b1",
@@ -102,28 +143,48 @@
      54
     ]
    },
-   "h1": {
-    "mode": "set",
-    "warpEyes": true
-   },
-   "h2": {
-    "mode": "set",
-    "warpEyes": true
-   },
    "h3": {
     "mode": "patch"
    },
    "h4": {
     "mode": "patch"
    },
-   "h5": {
-    "mode": "patch",
-    "warpEyes": true
+   "tilt-6": {
+    "mode": "tilt",
+    "deg": -6
    },
-   "h6": {
-    "mode": "patch",
-    "warpEyes": true
+   "tilt-3": {
+    "mode": "tilt",
+    "deg": -3
+   },
+   "tilt3": {
+    "mode": "tilt",
+    "deg": 3
+   },
+   "tilt6": {
+    "mode": "tilt",
+    "deg": 6
+   },
+   "h1": {
+    "mode": "set"
+   },
+   "h2": {
+    "mode": "set"
    }
+  },
+  "tilt": {
+   "chin": 52,
+   "neck": 10,
+   "cx": 117,
+   "maxY": 54,
+   "seed": [
+    117,
+    30
+   ],
+   "pivot": [
+    117,
+    50
+   ]
   }
  },
  "frames": [
@@ -302,5 +363,6 @@
    "parent": "b1",
    "area": "arm"
   }
- ]
+ ],
+ "_tilt": "tilt-6 .. tilt6 are the master head turned by code about the neck (face.tilt: the head outline is flood-filled from the face, cut at the chin row, pivot under the chin), with every mouth and the blink composed first. They replace the generated h5/h6 leans. Angles are degrees, clockwise positive."
 }

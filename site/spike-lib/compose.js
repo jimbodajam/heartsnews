@@ -31,6 +31,7 @@ export function buildPresenter(cfg, G, ref = G) {
 
 /** Eyes drawn in code on a head's own detected eyes. */
 function codeEyes(h, eye, eyes) {
+  if (eyes.length < 2) return h;   // an eye hidden by the lids (Gregor's nod h3, #91): no eye white to move, so the head keeps its open eyes for this glance
   if (eye === 'blink') return blink(h, eyes);
   if (eye === 'gazeL') return gaze(h, eyes, -1);
   if (eye === 'gazeR') return gaze(h, eyes, 1);
@@ -146,6 +147,7 @@ function findFace(P, base = {}) {
   const ew = base.eyeWin, mw = base.mouthWin, drop = ew && mw ? (mw[1] + mw[3]) / 2 - (ew[1] + ew[3]) / 2 : 11, [mx, my] = mw ? [(mw[2] - mw[0]) / 2, (mw[3] - mw[1]) / 2] : [6, 3];
   const eyes = detectEyes(P, ew ? [ew[0] - 8, ew[1] - 8, ew[2] + 8, ew[3] + 8] : [56, 16, 92, 38]);
   const c = eyes.map(e => [(e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2]);
+  if (c.length < 2) return { eyes, mouthFit: null };   // see codeEyes; only "code" heads need the mouth fit, and they need both eyes
   const mid = [(c[0][0] + c[1][0]) / 2, (c[0][1] + c[1][1]) / 2], dx = c[1][0] - c[0][0], dy = c[1][1] - c[0][1], len = Math.hypot(dx, dy) || 1;
   const m = [mid[0] - dy / len * drop, mid[1] + dx / len * drop];
   return { eyes, mouthFit: detectMouth(P, [Math.round(m[0] - mx), Math.round(m[1] - my), Math.round(m[0] + mx), Math.round(m[1] + my)]) };
