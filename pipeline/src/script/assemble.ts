@@ -131,11 +131,11 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
     }
     if (draft.milestones) lines.push({ speaker: analyst, text: draft.milestones });
     if (draft.table && f.table.length) {
-      // The screen fits six rows: show the ones around us rather than always the top six.
+      // The HD table fits twelve rows (a whole Premiership): show the ones around us rather than always the top.
       lines.push({
         speaker: analyst,
         text: draft.table,
-        graphic: { type: 'table', title: 'League Table', highlight: club.shortName, rows: rowsAroundUs(f, f.table, 6) },
+        graphic: { type: 'table', title: 'League Table', highlight: club.shortName, rows: rowsAroundUs(f, f.table, 12) },
       });
     }
     // On a European (or cup group) matchday, that competition's table too.
@@ -144,7 +144,7 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
       lines.push({
         speaker: analyst,
         text: draft.competitionTable,
-        graphic: { type: 'table', title: `${shortCompetition(ct.competition)} Table`, highlight: club.shortName, rows: rowsAroundUs(f, ct.rows, 6) },
+        graphic: { type: 'table', title: `${shortCompetition(ct.competition)} Table`, highlight: club.shortName, rows: rowsAroundUs(f, ct.rows, 12) },
       });
     }
     if (draft.next && f.nextFixtures.length) {
