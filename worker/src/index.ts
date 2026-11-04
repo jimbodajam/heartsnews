@@ -59,7 +59,7 @@ export default {
     const path = new URL(request.url).pathname;
     if (path === '/store') return store(request, env);
     if (path.startsWith('/kickback/')) return kickback(request, env);
-    if (path === '/admin' || path === '/admin.json' || path === '/admin/roster') return admin(request, env);
+    if (path === '/admin' || path === '/admin.json' || path === '/admin/roster' || path === '/admin/kickback' || path === '/admin/audit') return admin(request, env);
     return live.respond(request);
   },
   scheduled: (_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): void => {
