@@ -72,3 +72,5 @@ Look hardest at:
 ## 4. Round 2 (14 frames)
 
 Once `h1` and `h2` are approved in a set, set `boxes.h1`/`boxes.h2` (`face-boxes.mjs <p> h1`, `... h2`), re-run `queue <p>`, and run `h1v1`-`h1v7`, `h2v1`-`h2v7` the same way (14 per set). Then tune `kirsty-seated/frames.json` the way Ross's was (tilt heads, register shift), and bake both into `site/public/presenters/kirsty{,-seated}`.
+
+**Seated round 2 done 4 Nov**, all 14 first try. `boxes.h1`/`boxes.h2` were set by hand from `face-boxes.mjs` (its suggestion took in specks at the hair and ear edges). `h2v6` (closed mouth) changes under a cell, so it was approved with `--force`. The seated set is tuned like `ross-seated`: register `shift`, and Ross's `face.tilt` block as is, because her face sits in the same place. The long hair turns cleanly with the head in the tilts. Baked 4 Nov. Not on air yet: `site/public/hd/set.json` has no seat for her.

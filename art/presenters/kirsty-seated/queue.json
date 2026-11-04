@@ -8,9 +8,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:25:02.114Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v1.jpg",
+   "stats": {
+    "changed": 4,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h1v2",
@@ -18,9 +30,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:26:26.054Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v2.jpg",
+   "stats": {
+    "changed": 24,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.4
+    }
+   }
   },
   {
    "frame": "h1v3",
@@ -28,9 +52,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:27:54.244Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v3.jpg",
+   "stats": {
+    "changed": 6,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.4
+    }
+   }
   },
   {
    "frame": "h1v4",
@@ -38,9 +74,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:29:19.592Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v4.jpg",
+   "stats": {
+    "changed": 17,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.1
+    }
+   }
   },
   {
    "frame": "h1v5",
@@ -48,9 +96,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:30:59.955Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v5.jpg",
+   "stats": {
+    "changed": 40,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h1v6",
@@ -58,9 +118,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:32:27.963Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v6.jpg",
+   "stats": {
+    "changed": 7,
+    "outside": 0,
+    "fit": {
+     "scale": 0.994,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h1v7",
@@ -68,9 +140,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:33:53.865Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h1v7.jpg",
+   "stats": {
+    "changed": 41,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.2
+    }
+   }
   },
   {
    "frame": "h2v1",
@@ -78,9 +162,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:35:20.782Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v1.jpg",
+   "stats": {
+    "changed": 6,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 4.2
+    }
+   }
   },
   {
    "frame": "h2v2",
@@ -88,9 +184,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:36:50.266Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v2.jpg",
+   "stats": {
+    "changed": 13,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h2v3",
@@ -98,9 +206,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:38:20.143Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v3.jpg",
+   "stats": {
+    "changed": 16,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h2v4",
@@ -108,9 +228,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:39:48.049Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v4.jpg",
+   "stats": {
+    "changed": 18,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 4.4
+    }
+   }
   },
   {
    "frame": "h2v5",
@@ -118,9 +250,21 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:41:18.265Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v5.jpg",
+   "stats": {
+    "changed": 40,
+    "outside": 0,
+    "fit": {
+     "scale": 0.992,
+     "err": 4.2
+    }
+   }
   },
   {
    "frame": "h2v6",
@@ -128,9 +272,22 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area",
+    "2026-11-04: nothing changed inside its area (recheck)"
+   ],
+   "savedAt": "2026-11-04T13:42:49.507Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v6.jpg",
+   "stats": {
+    "changed": 0,
+    "outside": 0,
+    "fit": {
+     "scale": 0.999,
+     "err": 4.3
+    }
+   }
   },
   {
    "frame": "h2v7",
@@ -138,13 +295,25 @@
    "attach": "art/presenters/kirsty-seated/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "pending",
-   "attempts": 0,
-   "reasons": []
+   "status": "baked",
+   "attempts": 1,
+   "reasons": [
+    "2026-11-04: nothing changed inside its area"
+   ],
+   "savedAt": "2026-11-04T13:44:19.767Z",
+   "staged": "art/presenters/kirsty-seated/queue/staged/h2v7.jpg",
+   "stats": {
+    "changed": 48,
+    "outside": 0,
+    "fit": {
+     "scale": 0.998,
+     "err": 4.2
+    }
+   }
   }
  ],
- "updated": "2026-11-04T10:44:22.517Z",
- "downloads": "art/presenters/kirsty-seated/queue/named",
+ "updated": "2026-11-04T13:47:23.043Z",
+ "downloads": "art/presenters/kirsty-seated/queue/named2",
  "seen": [
   "h1.jpg@1793785737795.1892",
   "h2.jpg@1793785824350.7913",
@@ -161,6 +330,20 @@
   "d2.jpg@1793786786992.3901",
   "d3.jpg@1793786873410.8892",
   "d4.jpg@1793786959795.2805",
-  "d5.jpg@1793787045235.9043"
+  "d5.jpg@1793787045235.9043",
+  "h1v1.jpg@1793798692027.9922",
+  "h1v2.jpg@1793798783095.4512",
+  "h1v3.jpg@1793798871360.4387",
+  "h1v4.jpg@1793798956712.702",
+  "h1v5.jpg@1793799056962.2168",
+  "h1v6.jpg@1793799145070.339",
+  "h1v7.jpg@1793799230981.5986",
+  "h2v1.jpg@1793799317910.7424",
+  "h2v2.jpg@1793799407238.7664",
+  "h2v3.jpg@1793799497308.3823",
+  "h2v4.jpg@1793799585199.0605",
+  "h2v5.jpg@1793799675316.9443",
+  "h2v6.jpg@1793799766515.6992",
+  "h2v7.jpg@1793799856753.8176"
  ]
 }
