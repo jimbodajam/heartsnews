@@ -8,7 +8,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v1.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -22,7 +22,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v2.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -36,7 +36,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v3.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -50,7 +50,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v4.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -64,7 +64,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v5.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -78,7 +78,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v6.jpg",
-   "status": "rejected",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -93,7 +93,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h1.png",
    "crop": true,
    "save": "h1v7.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -107,7 +107,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v1.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 2,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -130,7 +130,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v2.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 2,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -153,7 +153,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v3.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 2,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -176,7 +176,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v4.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 2,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -199,7 +199,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v5.jpg",
-   "status": "passed",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area"
@@ -221,7 +221,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v6.jpg",
-   "status": "rejected",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -244,7 +244,7 @@
    "attach": "art/presenters/kirsty/queue/crops/h2.png",
    "crop": true,
    "save": "h2v7.jpg",
-   "status": "rejected",
+   "status": "approved",
    "attempts": 1,
    "reasons": [
     "2026-11-04: nothing changed inside its area",
@@ -262,7 +262,7 @@
    }
   }
  ],
- "updated": "2026-11-04T11:11:09.779Z",
+ "updated": "2026-11-04T11:15:02.362Z",
  "downloads": "art/presenters/kirsty/queue/mirrored",
  "seen": [
   "h1.jpg@1793783527640.7354",
