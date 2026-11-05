@@ -2,7 +2,7 @@ import { CATEGORIES, categorise, type Category, type Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle, shortHash } from './text.ts';
 import { videoText } from './summary-text.ts';
 import type { OnAirStoryline } from './onair.ts';
-import type { ClubConfig, Item, SourceKind } from './types.ts';
+import type { ClubConfig, Figure, Item, SourceKind } from './types.ts';
 
 // Turns raw items into ranked stories: the same news from several outlets becomes one story,
 // scored by freshness, how many outlets carry it and how authoritative they are. A bulletin's stories are mostly the
@@ -16,6 +16,8 @@ export interface Article {
   text: string;
   /** The item whose article page this is, so the store can keep it. */
   item?: string;
+  /** The article summary's checked money figures (issue #100). */
+  figures?: Figure[];
 }
 
 export interface Story {
@@ -32,6 +34,8 @@ export interface Story {
   people: string[];
   /** Up to three outlets' text: stored articles for a storyline, otherwise a video transcript or feed summary. */
   articles?: Article[];
+  /** The articles' checked money figures, merged, with the outlet each came from (issue #100). */
+  figures?: (Figure & { outlet: string })[];
   /** The brief, the claims and the articles' text together, for checking quotes and scores against. */
   body?: string;
   /** The storyline this story is, when it comes from the store (onair.ts). */

@@ -7,6 +7,7 @@ import { parseJson } from './workers-ai.ts';
 // Issue #52's one-off backfill: summarises every long article the store still has text for and no summary, on a local
 // Ollama model, so the first pass doesn't spend the Workers AI allowance the ingest reads with. Run at home, once:
 //   npm run backfill:articles [-- --model qwen3:8b --limit 5]
+// Issue #100: `--storyline <id> --redo` reads that storyline's articles again, even summarised ones, for their figures.
 // Needs STORE_TOKEN (in .env) and Ollama running (OLLAMA_HOST, default http://localhost:11434). New articles are
 // summarised by the ingest on Workers AI as before.
 
@@ -45,7 +46,12 @@ async function main() {
   const store = storeFromEnv();
   if (!store) throw new Error('No STORE_TOKEN set.');
   const model = arg('model') ?? 'qwen3:8b';
-  const waiting = await loadArticlesToSummarise(store, new Date(), Number(arg('limit') ?? 1_000));
+  // --storyline <id> --redo: read that storyline's articles again, summarised or not (issue #100: to get their figures).
+  const storyline = arg('storyline');
+  const waiting = await loadArticlesToSummarise(store, new Date(), Number(arg('limit') ?? 1_000), undefined, {
+    ...(storyline ? { storyline: Number(storyline) } : {}),
+    redo: process.argv.includes('--redo'),
+  });
   console.log(`${waiting.length} long articles to summarise on ${model}.`);
   const started = Date.now();
   const done = await summariseEach(store, ollama(model), waiting, console.log);

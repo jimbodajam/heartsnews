@@ -4,7 +4,8 @@ import { BIG_LEAD_H, bigGame } from './matchday.ts';
 import { matchPhase, type Brief, type ClaimStatus, type Storyline, type StorylineKind } from './storylines.ts';
 import type { Tags } from './tags.ts';
 import { mentionsAny, normaliseTitle } from './text.ts';
-import type { ClubConfig, Fixture, Item } from './types.ts';
+import type { ClubConfig, Figure, Fixture, Item } from './types.ts';
+import { parseAmount } from './amounts.ts';
 
 // Story engine 2b (issue #31): the bulletin's stories are the storylines in the store. The ingest has already read
 // every article into claims and keeps a brief on each storyline (storylines.ts), so a build fetches no article pages:
@@ -19,6 +20,8 @@ export interface StoredItem extends Item {
   text?: string;
   /** A long article's summary (issue #52), for the writer in place of its opening; `text` stays for checking quotes. */
   digest?: string;
+  /** The article summary's checked money figures (issue #100). */
+  figures?: Figure[];
 }
 
 /** What the build reads from the store (loadOnAir in store.ts). */
@@ -31,6 +34,22 @@ export interface OnAirDesk {
   airings: Map<number, AiredStory>;
   /** Which of this build's collected items the ingest has read. */
   sifted: Set<string>;
+}
+
+/** The articles' checked figures in their order (best and newest first), one per label and value, each with its outlet. */
+export function mergeFigures(articles: Article[]): (Figure & { outlet: string })[] {
+  const seen = new Set<string>();
+  const out: (Figure & { outlet: string })[] = [];
+  for (const a of articles) {
+    for (const f of a.figures ?? []) {
+      const amount = parseAmount(f.value);
+      const key = `${f.label.toLowerCase()}|${amount ? `${amount.kind}${amount.n}` : f.value}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ ...f, outlet: a.outlet });
+    }
+  }
+  return out;
 }
 
 /** A story's storyline: what the presenters work from, and what's new since it last aired. */
@@ -200,8 +219,9 @@ export function storylineStories(desk: OnAirDesk, o: OnAirOptions): Story[] {
       .filter((it) => readIds.has(it.id) && (it.text?.length ?? 0) > 300)
       .sort((a, b) => Number(newIds.has(b.id)) - Number(newIds.has(a.id)) || b.publishedAt.localeCompare(a.publishedAt))) {
       if (articles.length >= MAX_ARTICLES) break;
-      if (!articles.some((a) => a.outlet === outlet(it))) articles.push({ outlet: outlet(it), text: it.digest ?? it.text!, item: it.id });
+      if (!articles.some((a) => a.outlet === outlet(it))) articles.push({ outlet: outlet(it), text: it.digest ?? it.text!, item: it.id, ...(it.figures ? { figures: it.figures } : {}) });
     }
+    const figures = mergeFigures(articles);
 
     const latestFresh = latestOf(fresh.map((st) => st.latest));
     const latest = latestOf([s.updatedAt, ...standing.map((c) => c.firstSeen), latestFresh]);
@@ -220,6 +240,7 @@ export function storylineStories(desk: OnAirDesk, o: OnAirOptions): Story[] {
       items,
       people: s.entity ? [s.entity] : [],
       articles,
+      ...(figures.length ? { figures } : {}),
       // Quotes and scores are checked against every source's text, not just the three the writer sees.
       body: [brief?.known, brief?.disputed, ...claims.map((c) => c.text), ...ranked.filter((it) => readIds.has(it.id)).map((it) => it.text)]
         .filter(Boolean)

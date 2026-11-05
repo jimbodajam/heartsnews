@@ -16,6 +16,7 @@ const BODY = [
   'Hearts head coach Wouter Vrancken says Harry Milne faces around six weeks out with a hamstring injury.',
   '“We have to be careful with Harry, he’s been our most consistent player,” said Vrancken.',
   'Milne has started every league game this season. '.repeat(60),
+  'The club reported turnover of £33.4 million for 2024/25, up from £28.1m, and a loss of £4.2m.',
 ].join('\n');
 
 function setUp() {
@@ -44,7 +45,23 @@ const REPLY = {
     { text: 'Harry will be back stronger than ever', speaker: 'Wouter Vrancken' },
   ],
   background: ['Milne has started every league game this season'],
+  figures: [
+    { label: 'Turnover', value: '£33.4m', previous: '£28.1 million', period: '2024/25' },
+    { label: 'Loss', value: '£9.9m' },
+    { label: 'Pre-tax loss', value: '£4.2m', previous: '£1.1m' },
+    { label: 'Fans', value: 'lots' },
+  ],
 };
+
+test('a figure is kept only when its number is in the article; a bad comparison is dropped but the figure kept', () => {
+  const s = parseArticleSummary(REPLY, BODY);
+  assert.deepEqual(s.figures, [
+    { label: 'Turnover', value: '£33.4m', previous: '£28.1 million', period: '2024/25' },
+    { label: 'Pre-tax loss', value: '£4.2m' },
+  ]);
+  assert.match(renderArticleSummary(s), /Figures \(these will be shown on screen, quote them as given\):\n- Turnover: £33.4m \(was £28.1 million, 2024\/25\)\n- Pre-tax loss: £4.2m/);
+  assert.equal(parseArticleSummary({ ...REPLY, figures: [{ label: 'x', value: '£99m' }] }, BODY).figures, undefined);
+});
 
 test('a quote is kept only when it is in the article word for word, curly quotes and all', () => {
   const s = parseArticleSummary(REPLY, BODY);
@@ -78,8 +95,14 @@ test('the ingest summarises a long new article once, leaves short ones, and the 
   s.d1.db.exec(`INSERT INTO storylines (id, kind, title, status, opened_at, updated_at) VALUES (1, 'person', 'Milne injury', 'open', '${NOW.toISOString()}', '${NOW.toISOString()}')`);
   s.d1.db.exec(`INSERT INTO claims (id, storyline_id, text, status, first_seen) VALUES (1, 1, 'Milne out six weeks', 'reported', '${NOW.toISOString()}')`);
   s.d1.db.exec(`INSERT INTO claim_sources (claim_id, item_id, corroboration, at) VALUES (1, 'long', 0, '${NOW.toISOString()}')`);
+  // The figures backfill: a summarised article only comes back with --redo, and --storyline limits it to that storyline's.
+  assert.deepEqual((await loadArticlesToSummarise(s.store, NOW, 10)).map((a) => a.id), ['old']);
+  assert.deepEqual((await loadArticlesToSummarise(s.store, NOW, 10, undefined, { redo: true })).map((a) => a.id), ['long', 'old']);
+  assert.deepEqual((await loadArticlesToSummarise(s.store, NOW, 10, undefined, { redo: true, storyline: 1 })).map((a) => a.id), ['long']);
   const desk = await loadOnAir(s.store, [], NOW);
   const long = desk.items.get('long')!;
   assert.match(long.digest ?? '', /Milne is out for about six weeks/);
   assert.equal(long.text, BODY);
+  assert.equal(long.figures?.[0].value, '£33.4m');
+  assert.match(long.digest ?? '', /Turnover: £33.4m/);
 });

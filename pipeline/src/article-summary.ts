@@ -1,7 +1,10 @@
 import { OutOfBudget, type MeteredModel } from './workers-ai.ts';
 import { loadArticlesToSummarise, saveNeurons, saveSummaries, type ArticleToSummarise, type Store } from './store.ts';
 import { truncate } from './text.ts';
-import type { ArticleSummary } from './types.ts';
+import { hasAmount, parseAmount } from './amounts.ts';
+import type { ArticleSummary, Figure } from './types.ts';
+
+const MAX_FIGURES = 6;
 
 // Issue #52: a long article is read once, whole, and reduced to its news, its quotes and its background, so the in-depth
 // packages get all of it in a few lines instead of the opening 1,800 characters. Like a show's summary (summarise.ts),
@@ -23,8 +26,9 @@ export const ARTICLE_SCHEMA = {
     news: { type: 'array', items: S },
     quotes: { type: 'array', items: { type: 'object', properties: { text: S, speaker: S }, required: ['text', 'speaker'] } },
     background: { type: 'array', items: S },
+    figures: { type: 'array', items: { type: 'object', properties: { label: S, value: S, previous: S, period: S }, required: ['label', 'value'] } },
   },
-  required: ['news', 'quotes', 'background'],
+  required: ['news', 'quotes', 'background', 'figures'],
 };
 
 interface Source {
@@ -39,6 +43,7 @@ Rules:
 - news: what the article reports, the key details first: what happened or is said to be happening, who, when, numbers, what comes next. One line each (at most 30 words), in your own words. Where the article only reports something (a transfer link, a source's claim), say so ("is reported to", "according to").
 - quotes: the direct quotes worth using, copied exactly as printed between quotation marks in the article, with who said them (name and role as the article gives them). Never shorten, join or reword a quote; leave out any you can't copy exactly. At most 6.
 - background: history, statistics and context the article gives that are not the news itself (past results, a player's record, earlier events). One line each.
+- figures: only numbers about the club's money that the article states (turnover, profit or loss, debt, wages, investment, share issues, season-ticket income, cash reserves). Not transfer fees or player stats. Copy each number exactly as printed ("£33.4m"). label: at most 3 words. previous: only when the article gives the figure it is compared to. period: the year or season it covers, if given. Leave the list empty when there are none. At most 6.
 - Only what is in the article. Leave a list empty rather than pad it. Aim for no more than 10 news lines and 6 background lines.
 
 Article:
@@ -71,7 +76,24 @@ export function parseArticleSummary(reply: unknown, body: string): ArticleSummar
     .filter((q): q is { text: string; speaker: string } => !!q.text && !!q.speaker && q.text.length >= 12 && text.includes(normaliseQuote(q.text)))
     .map((q) => ({ text: q.text.replace(/^["'“”‘’\s]+|["'“”‘’\s]+$/g, ''), speaker: truncate(q.speaker, 80) }))
     .slice(0, 8);
-  return { news: list(r.news, 12), quotes, background: list(r.background, 8) };
+  const figures = (Array.isArray(r.figures) ? r.figures : [])
+    .map((f) => (f && typeof f === 'object' ? (f as Record<string, unknown>) : {}))
+    .map((f) => ({ label: str(f.label), value: str(f.value), previous: str(f.previous), period: str(f.period) }))
+    .filter((f): f is typeof f & { label: string; value: string } => {
+      const a = f.value && f.label ? parseAmount(f.value) : undefined;
+      return !!a && hasAmount(body, a);
+    })
+    .map((f): Figure => {
+      const prev = f.previous ? parseAmount(f.previous) : undefined;
+      return {
+        label: truncate(f.label, 24),
+        value: f.value,
+        ...(f.previous && prev && hasAmount(body, prev) ? { previous: f.previous } : {}),
+        ...(f.period ? { period: truncate(f.period, 24) } : {}),
+      };
+    })
+    .slice(0, MAX_FIGURES);
+  return { news: list(r.news, 12), quotes, background: list(r.background, 8), ...(figures.length ? { figures } : {}) };
 }
 
 export async function summariseArticle(model: { generateJson(prompt: string, schema: object): Promise<unknown> }, a: ArticleToSummarise): Promise<ArticleSummary> {

@@ -9,7 +9,7 @@ import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
 import { renderArticleSummary, renderSummary } from './summary-text.ts';
-import type { ArticleSummary, Item, SourceKind, VideoSummary } from './types.ts';
+import type { ArticleSummary, Figure, Item, SourceKind, VideoSummary } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
 // Every query the pipeline makes is here, so nothing else talks SQL. The schema is in worker/migrations/.
@@ -780,7 +780,7 @@ export async function loadOnAir(store: Store, collected: string[], now: Date): P
           url: String(r.url ?? ''),
           publishedAt: String(r.published_at || r.first_seen),
           ...(r.text ? { text: itemText(r, 'full') } : {}),
-          ...(r.kind !== 'video' && r.summary_json ? { digest: renderArticleSummary(JSON.parse(String(r.summary_json)) as ArticleSummary) } : {}),
+          ...articleDigest(r),
         },
       ]),
     ),
@@ -799,6 +799,13 @@ export async function loadOnAir(store: Store, collected: string[], now: Date): P
     ),
     sifted: new Set(sifted.map((r) => String(r.id))),
   };
+}
+
+/** An article row's summary as the writer's digest, with its checked figures (issue #100). */
+function articleDigest(r: Record<string, unknown>): { digest?: string; figures?: Figure[] } {
+  if (r.kind === 'video' || !r.summary_json) return {};
+  const s = JSON.parse(String(r.summary_json)) as ArticleSummary;
+  return { digest: renderArticleSummary(s), ...(s.figures?.length ? { figures: s.figures } : {}) };
 }
 
 /** Adds this run's Workers AI use to today's count. */
@@ -1121,17 +1128,25 @@ export interface ArticleToSummarise {
  * Long articles with no summary yet, newest first. With `recentDays`, only those first seen that recently or behind an
  * open storyline (what can still go on air); without, every one whose text is still kept (the backfill).
  */
-export async function loadArticlesToSummarise(store: Store, now: Date, limit: number, recentDays?: number): Promise<ArticleToSummarise[]> {
+export async function loadArticlesToSummarise(
+  store: Store,
+  now: Date,
+  limit: number,
+  recentDays?: number,
+  /** `storyline`: only articles behind that storyline's claims; `redo`: summarised ones too (issue #100, for figures). */
+  only: { storyline?: number; redo?: boolean } = {},
+): Promise<ArticleToSummarise[]> {
   const since = (days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
+  const storyline = only.storyline != null ? `AND id IN (SELECT cs.item_id FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id WHERE c.storyline_id = ?)` : '';
   const onAir = `AND (first_seen >= ? OR id IN (SELECT cs.item_id FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id
       JOIN storylines s ON s.id = c.storyline_id WHERE s.status = 'open'))`;
   const [rows] = await store.batch([
     {
       sql: `SELECT id, source, publisher, title, body FROM items
-            WHERE kind IN ('press', 'official') AND fetch_status = 'ok' AND summary_json IS NULL AND length(body) >= ? AND first_seen >= ?
-              ${recentDays != null ? onAir : ''}
+            WHERE kind IN ('press', 'official') AND fetch_status = 'ok' ${only.redo ? '' : 'AND summary_json IS NULL'} AND length(body) >= ? AND first_seen >= ?
+              ${recentDays != null ? onAir : ''} ${storyline}
             ORDER BY COALESCE(published_at, first_seen) DESC, id LIMIT ?`,
-      params: [SUMMARISE_ARTICLE_OVER, since(KEEP_TEXT_DAYS), ...(recentDays != null ? [since(recentDays)] : []), limit],
+      params: [SUMMARISE_ARTICLE_OVER, since(KEEP_TEXT_DAYS), ...(recentDays != null ? [since(recentDays)] : []), ...(only.storyline != null ? [only.storyline] : []), limit],
     },
   ]);
   return rows.map((r) => ({

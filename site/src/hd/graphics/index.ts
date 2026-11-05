@@ -15,6 +15,7 @@ import { bench } from './bench';
 import { birthdays } from './birthdays';
 import { el, type Place } from './common';
 import { fixtures } from './fixtures';
+import { finance } from './finance';
 import { form } from './form';
 import { formation } from './formation';
 import { headline } from './headline';
@@ -46,6 +47,7 @@ const NATIVE: { [T in Graphic['type']]?: Build<T> } = {
   stats,
   form,
   headtohead,
+  finance,
   predictions,
   sentiment,
   birthdays,

@@ -254,6 +254,19 @@
 .hdg .gfx.full .g-headtohead .recent { grid-column: 1; margin: 0; }
 .hdg .gfx.full .g-headtohead .kv { grid-column: 2; align-self: center; }
 
+/* finance */
+.hdg .g-finance .body { display: flex; flex-direction: column; gap: .7em; padding: .9em 1.4em; }
+.hdg .g-finance .tiles { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: .6em; align-content: center; }
+.hdg .g-finance .tiles.n3, .hdg .g-finance .tiles.n4 { grid-template-columns: 1fr 1fr; }
+.hdg .g-finance .tile { display: grid; gap: .25em; min-width: 0; padding: .6em .8em; background: var(--rule); }
+.hdg .g-finance .tile .lbl { color: var(--grey); font-size: .6em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-finance .tile .val { font-weight: normal; font-size: 1.7em; line-height: 1.1; white-space: nowrap; }
+.hdg .g-finance .tile .trend { margin-left: .3em; color: var(--gold); font-size: .5em; font-style: normal; vertical-align: middle; }
+.hdg .g-finance .tile .was { color: var(--light); font-size: .6em; }
+.hdg .g-finance .src { color: var(--grey); font-size: .55em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .gfx.full .in.g-finance { font-size: 1.05em; }
+.hdg .gfx.full .g-finance .tile .val { font-size: 2.2em; }
+
 /* predictions */
 .hdg .g-predictions .body { display: flex; flex-direction: column; gap: 1em; padding: 1em 1.4em; }
 .hdg .g-predictions .fixture { text-align: center; color: var(--light); font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

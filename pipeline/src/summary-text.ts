@@ -29,6 +29,12 @@ export function renderArticleSummary(s: ArticleSummary): string {
   if (s.news.length) out.push('What it reports:', ...s.news.map((n) => `- ${n}`));
   if (s.quotes.length) out.push('Quotes, word for word:', ...s.quotes.map((q) => `- ${q.speaker}: "${q.text}"`));
   if (s.background.length) out.push('Background (context, not news):', ...s.background.map((b) => `- ${b}`));
+  if (s.figures?.length) {
+    out.push(
+      'Figures (these will be shown on screen, quote them as given):',
+      ...s.figures.map((f) => `- ${f.label}: ${f.value}${f.previous || f.period ? ` (${[f.previous && `was ${f.previous}`, f.period].filter(Boolean).join(', ')})` : ''}`),
+    );
+  }
   return out.join('\n');
 }
 

@@ -27,7 +27,7 @@ const SPONSOR_VOICE: Presenter = {
 /** The live score comes round in the ticker after every this many headlines. */
 const SCORE_EVERY = 3;
 
-const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'headtohead', 'formation'];
+const FULLSCREEN:Graphic['type'][] = ['table', 'fixtures', 'sentiment', 'result', 'transfer', 'quote', 'predictions', 'form', 'headtohead', 'formation', 'finance'];
 
 /** The same graphic again (bulletin JSON has no shared objects): an advert by its id, anything else by content. */
 function sameGraphic(a?: Graphic, b?: Graphic): boolean {

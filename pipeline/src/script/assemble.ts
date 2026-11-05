@@ -2,6 +2,7 @@ import type { Bulletin, Graphic, IconId, Line, Presenter, Segment, Sidebar, Tabl
 import { statsCard } from '../../../shared/live.ts';
 import type { Story, StoryCategory } from '../stories.ts';
 import { truncate } from '../text.ts';
+import { displayAmount, parseAmount } from '../amounts.ts';
 import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
 import { adBreaks, loadAdverts } from './adverts.ts';
@@ -437,6 +438,40 @@ function debateSegment(f: Facts, d: Debate): Segment {
   };
 }
 
+/** A finance card needs at least this many figures that passed the check against the article (issue #100). */
+export const MIN_FIGURES = 2;
+const MAX_CARD_FIGURES = 4;
+
+/**
+ * The figures card for a club story: the figures come from the checked article summaries (onair.ts), never the script
+ * writer, so it can't show a number that isn't in the source. Undefined unless the storyline is about the club and
+ * at least MIN_FIGURES passed.
+ */
+export function financeGraphic(s: Story): Extract<Graphic, { type: 'finance' }> | undefined {
+  if (s.storyline?.kind !== 'club' || (s.figures?.length ?? 0) < MIN_FIGURES) return undefined;
+  const shown = s.figures!.slice(0, MAX_CARD_FIGURES);
+  const periods = new Map<string, number>();
+  for (const f of shown) if (f.period) periods.set(f.period, (periods.get(f.period) ?? 0) + 1);
+  const [period, count] = [...periods.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
+  return {
+    type: 'finance',
+    title: 'CLUB FINANCES',
+    source: shown[0].outlet,
+    ...(period && count > shown.length / 2 ? { period } : {}),
+    figures: shown.map((f) => {
+      const now = parseAmount(f.value);
+      const was = f.previous ? parseAmount(f.previous) : undefined;
+      const trend = now && was && now.kind === was.kind && now.n !== was.n ? (now.n > was.n ? 'up' : 'down') : undefined;
+      return {
+        label: f.label,
+        value: now ? displayAmount(now) : f.value,
+        ...(was && f.previous ? { previous: displayAmount(was) } : {}),
+        ...(trend ? { trend } : {}),
+      };
+    }),
+  };
+}
+
 /** A story covered in depth at the desk: lead anchor plus the right expert, with the quote shown full screen. */
 function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   const s = f.features.find((x) => x.id === feat.storyId);
@@ -469,8 +504,14 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
       };
     }
   }
+  // A club finances story shows its checked figures from the expert's first line (or the next, after a result).
+  const fin = financeGraphic(s);
+  if (fin) {
+    const target = experts.shift() ?? lines[1];
+    if (target) target.graphic = fin;
+  }
   if (feat.quote) {
-    const target = experts.shift() ?? (r ? undefined : lines[1]);
+    const target = experts.shift() ?? (r || fin ? undefined : lines[1]);
     if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by, face: faceFor(feat.quote.by, FACES) };
   }
   return {

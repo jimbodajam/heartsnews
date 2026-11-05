@@ -168,4 +168,15 @@ export interface ArticleSummary {
   quotes: { text: string; speaker: string }[];
   /** History, numbers and context: not news. */
   background: string[];
+  /** The club's money figures (issue #100), each number checked against the article's text. Absent on older summaries. */
+  figures?: Figure[];
+}
+
+/** One money figure from an article, its numbers copied as printed ("£33.4m"). */
+export interface Figure {
+  label: string;
+  value: string;
+  /** The figure it's compared to, when the article gives it. */
+  previous?: string;
+  period?: string;
 }

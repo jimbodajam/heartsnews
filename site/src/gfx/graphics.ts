@@ -383,6 +383,29 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'finance': {
+      const top = panel(g, x, y, w, h, gr.title);
+      const limit = Math.min(y + h - 2, CAPTION_SAFE_BOTTOM) - 9;
+      // Each figure: label left, big value right with a gold arrow, and "WAS …" beneath when the article compares it.
+      const rowH = gr.figures.some((f) => f.previous) ? 17 : 12;
+      gr.figures.forEach((f, i) => {
+        const ry = top + 1 + i * rowH;
+        if (ry + rowH > limit + 9) return;
+        drawText(g, fit(f.label.toUpperCase(), Math.floor((w - 12) / 2) - 4), x + 6, ry + 1, C.grey);
+        drawTextRight(g, f.value, x + w - 6 - (f.trend ? 8 : 0), ry, C.white, 2);
+        // A small gold triangle (the font has no arrows), always gold: up isn't always good.
+        if (f.trend) {
+          for (let k = 0; k < 3; k++) {
+            const half = f.trend === 'up' ? k : 2 - k;
+            rect(g, x + w - 11 + 2 - half, ry + 2 + k * 2, 1 + half * 2, 2, C.gold);
+          }
+        }
+        if (f.previous) drawTextRight(g, `WAS ${f.previous}`, x + w - 6, ry + 11, C.light);
+      });
+      drawText(g, fit([gr.period, gr.source].filter(Boolean).join(' - ').toUpperCase(), w - 12), x + 6, limit, C.grey);
+      break;
+    }
+
     case 'formation': {
       const top = panel(g, x, y, w, h, `${gr.label}: ${gr.team} ${gr.formation}`);
       const px = x + 4;

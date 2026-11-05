@@ -117,6 +117,16 @@ export type Graphic =
       /** The last few meetings, newest first. */
       recent: { outcome: 'W' | 'D' | 'L'; score: string; venue: 'H' | 'A' | 'N' }[];
     }
+  /** A club finance story's checked figures (issue #100): 2 to 4, picked from the article summaries, not the writer. */
+  | {
+      type: 'finance';
+      title: string;
+      /** The outlet, credited at the bottom. */
+      source: string;
+      /** The year or season most figures cover, so a one-year loss isn't read as a total. */
+      period?: string;
+      figures: { label: string; value: string; previous?: string; trend?: 'up' | 'down' }[];
+    }
   /** A starting XI on a pitch: rows from the goalkeeper forwards. `changes`: the names new to the side, picked out. */
   | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean; changes?: string[] }
   /** The substitutes on a team sheet. */
