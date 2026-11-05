@@ -320,18 +320,18 @@ export class HdRenderer implements Renderer {
     return !!this.art;
   }
 
-  private crestSet?: { w: number; h: number; crest?: { x: number; y: number; w: number; h: number; file: string } };
+  private crestSet?: { w: number; h: number; stack: number; crest?: { x: number; y: number; w: number; h: number; file: string } };
 
   /** Put the crest image in the crest layer once both the set and the layer exist (whichever comes second calls this). */
   private placeCrest(): void {
     const set = this.crestSet;
     if (!set?.crest || !this.crest) return;
-    // Positioned in percent of the 480×270 canvas, which fills the frame: the same box the desk's medallion is at.
+    // Percent of the 480×270 canvas, which fills the frame. The desk scene is drawn lifted by `stack` rows (desk.ts), so the crest is too.
     const { x, y, w, h } = set.crest;
     const img = new Image();
     img.alt = '';
     img.src = this.dir + set.crest.file;
-    img.style.cssText = `left:${(x / set.w) * 100}%;top:${(y / set.h) * 100}%;width:${(w / set.w) * 100}%;height:${(h / set.h) * 100}%`;
+    img.style.cssText = `left:${(x / set.w) * 100}%;top:${((y - set.stack) / set.h) * 100}%;width:${(w / set.w) * 100}%;height:${(h / set.h) * 100}%`;
     this.crest.replaceChildren(img);
   }
 
