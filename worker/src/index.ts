@@ -10,6 +10,7 @@
 import club from '../../clubs/hearts.json';
 import { initialData } from '../../shared/bbc.ts';
 import { admin, type AdminEnv } from './admin.ts';
+import { relayed } from './bbc-relay.ts';
 import { dispatcher, ingester, tick } from './clock.ts';
 import { liveFeed } from './feed.ts';
 import { kickback, type KickbackEnv } from './kickback.ts';
@@ -34,9 +35,12 @@ async function page(path: string) {
   return initialData(await res.text());
 }
 
-const live = liveFeed({ team: club.bbc.team, page });
+// The D1 binding, for pages relayed from home when BBC refuses the Worker (bbc-relay.ts). Set by each request and cron run.
+let relayDb: Env['DB'];
+const live = liveFeed({ team: club.bbc.team, page: relayed(page, () => relayDb) });
 
 async function clock(env: Env): Promise<void> {
+  relayDb = env.DB;
   if (!env.DB) return console.warn('clock: no D1 binding');
   const feed = await live.feed().catch((err: Error) => console.warn(`clock: live.json: ${err.message}`));
   const dispatch =
@@ -56,6 +60,7 @@ async function clock(env: Env): Promise<void> {
 
 export default {
   fetch: (request: Request, env: Env): Promise<Response> => {
+    relayDb = env.DB;
     const path = new URL(request.url).pathname;
     if (path === '/store') return store(request, env);
     if (path.startsWith('/kickback/')) return kickback(request, env);

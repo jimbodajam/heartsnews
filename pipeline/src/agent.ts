@@ -10,12 +10,14 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { relayBbc } from './bbc-relay.ts';
 import { run, runJob, said } from './jobs.ts';
 import { checkIn, type Job, type JobKind, releaseJobs, signOff, storeFromEnv } from './store.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const CHECK_IN_MS = 30_000;
 const SNAPSHOT_MS = 30 * 60_000;
+const RELAY_MS = 10_000;
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -41,6 +43,21 @@ async function main() {
   };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
+
+  // BBC refuses the Worker, so the agent fetches the live feed's pages for it (bbc-relay.ts), on its own faster loop.
+  void (async () => {
+    let failing = false;
+    while (!stopping) {
+      await relayBbc(store).then(
+        () => (failing = false),
+        (err) => {
+          if (!failing) console.warn(`[agent] BBC relay: couldn't reach the store: ${said(err)}`);
+          failing = true;
+        },
+      );
+      await sleep(RELAY_MS);
+    }
+  })();
 
   console.log(`[agent] Checking in every ${CHECK_IN_MS / 1000}s for programmes and breaking news${flag('--templates') ? ' (plain lines, no AI)' : ''}`);
   let quiet = false;

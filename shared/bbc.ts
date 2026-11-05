@@ -47,3 +47,12 @@ export function eventsIn(data: BbcData): BbcEvent[] {
   const groups = block<{ eventGroups?: { secondaryGroups: { events: BbcEvent[] }[] }[] }>(data, 'sport-data-scores-fixtures')?.eventGroups ?? [];
   return groups.flatMap((g) => g.secondaryGroups.flatMap((s) => s.events));
 }
+
+/** The data blocks the live feed reads (shared/live.ts): the team page's fixtures and the match page's header, live
+ * text, stats and line-ups. The rest of a match page (a megabyte or more) is left out when a page is relayed. */
+export const LIVE_BLOCKS = ['sport-data-scores-fixtures', 'live-header?', 'stream?', 'match-stats?', 'match-lineups?'];
+
+/** Only the blocks the live feed reads. */
+export function liveBlocks(data: BbcData): BbcData {
+  return Object.fromEntries(Object.entries(data).filter(([k]) => LIVE_BLOCKS.some((p) => k.startsWith(p))));
+}
