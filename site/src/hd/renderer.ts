@@ -71,7 +71,13 @@ const STYLE = `
 .hd-scene { display: block; width: 100%; height: 100%; image-rendering: pixelated; transform-origin: 0 0; }
 /* The desk's crest (set.json, crest): on the scene's camera transform, so it moves with the desk, but drawn as a vector. */
 .hd-crest { position: absolute; inset: 0; transform-origin: 0 0; pointer-events: none; }
-.hd-crest img { position: absolute; display: block; }
+.hd-crest img { position: absolute; display: block; animation: hd-crest-turn 12s ease-in-out infinite; }
+/* A coin turn now and then, not a constant spin. */
+@keyframes hd-crest-turn {
+  0%, 90% { transform: perspective(400px) rotateY(0deg); }
+  100% { transform: perspective(400px) rotateY(360deg); }
+}
+@media (prefers-reduced-motion: reduce) { .hd-crest img { animation: none; } }
 .hd-sd, .hd-layer { position: absolute; inset: 0; }
 /* The SD renderer sizes its canvas to the window: here it fills the frame instead, at 1.5 HD pixels to each SD one. */
 .hd-sd > canvas { display: block; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
