@@ -176,6 +176,8 @@ export class HdRenderer implements Renderer {
     this.shown = undefined;
     this.show('moment');
 
+    // The art may have loaded before this mount (the toggle's ready() runs first), and a remount gets a new layer: fill it.
+    this.placeCrest();
     this.loading ??= this.load();
   }
 
@@ -318,19 +320,27 @@ export class HdRenderer implements Renderer {
     return !!this.art;
   }
 
+  private crestSet?: { w: number; h: number; crest?: { x: number; y: number; w: number; h: number; file: string } };
+
+  /** Put the crest image in the crest layer once both the set and the layer exist (whichever comes second calls this). */
+  private placeCrest(): void {
+    const set = this.crestSet;
+    if (!set?.crest || !this.crest) return;
+    // Positioned in percent of the 480×270 canvas, which fills the frame: the same box the desk's medallion is at.
+    const { x, y, w, h } = set.crest;
+    const img = new Image();
+    img.alt = '';
+    img.src = this.dir + set.crest.file;
+    img.style.cssText = `left:${(x / set.w) * 100}%;top:${(y / set.h) * 100}%;width:${(w / set.w) * 100}%;height:${(h / set.h) * 100}%`;
+    this.crest.replaceChildren(img);
+  }
+
   private async load(): Promise<void> {
     try {
       const set = await loadSet(this.dir);
       const cast = await loadSeatedCast(set);
-      if (set.crest && this.crest) {
-        // Positioned in percent of the 480×270 canvas, which fills the frame: the same box the desk's medallion is at.
-        const { x, y, w, h } = set.crest;
-        const img = new Image();
-        img.alt = '';
-        img.src = this.dir + set.crest.file;
-        img.style.cssText = `left:${(x / set.w) * 100}%;top:${(y / set.h) * 100}%;width:${(w / set.w) * 100}%;height:${(h / set.h) * 100}%`;
-        this.crest.replaceChildren(img);
-      }
+      this.crestSet = set;
+      this.placeCrest();
       // The museum is optional: without it On This Day stays on the SD scenes.
       const museum = await loadMuseum(this.dir, set.museum, set.points).catch((err) => {
         console.error(err);
