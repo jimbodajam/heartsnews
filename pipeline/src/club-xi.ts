@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { type ClubPost, fetchPosts, type InstagramAuth } from './club-post.ts';
+import { geminiModel } from './script/llm.ts';
 
 export interface ClubXI {
   /** Names as printed, goalkeeper first, in the order the graphic reads (back to front). */
@@ -46,7 +47,7 @@ const PROMPT = `This is a football club's team-news graphic. Read the starting X
 export async function readClubXI(image: Buffer, mime = 'image/jpeg', model = 'gemini-flash-latest'): Promise<ClubXI> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY is not set');
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({

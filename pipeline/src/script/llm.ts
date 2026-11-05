@@ -39,8 +39,14 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Models whose daily quota ran out during this run: skipped straight away by every later request. */
 const exhausted = new Set<string>();
 
+/**
+ * The model actually asked. GEMINI_LITE_MODEL stands in for the Flash-Lite alias (whose daily free quota can run out
+ * on a busy matchday, as on 5 Nov 2026), so another model with quota left can take over without a code change.
+ */
+export const geminiModel = (model: string) => (model === 'gemini-flash-lite-latest' && process.env.GEMINI_LITE_MODEL) || model;
+
 async function callGemini(key: string, model: string, prompt: string, schema: object, timeoutMs: number): Promise<unknown> {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel(model)}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
