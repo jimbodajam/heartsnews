@@ -85,5 +85,3 @@
 .hdf .cap b { flex: none; color: var(--gold); font-weight: normal; }
 .hdf .cap .box { flex: 1; min-width: 0; max-height: 3.2em; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; text-transform: none; }
 .hdf .cap .box span { display: block; text-transform: uppercase; }
-/* Must come after `.hdf .cap` (same specificity) or the flex display wins and the box stays up, frozen on its last line. */
-.hdf .cap.hidden { display: none; }
