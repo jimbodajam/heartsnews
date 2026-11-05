@@ -7,6 +7,7 @@
 import type { Graphic, Presenter } from '../../../shared/bulletin';
 import type { FrameState } from '../render/state';
 import { mouth } from './desk';
+import { gesturePose, type Pools } from './gesture';
 import { loadPresenter, type PresenterArt } from './presenter';
 import { loadImage, type MuseumData, type Side } from './set';
 
@@ -59,8 +60,17 @@ const hash = (n: number) => {
 
 /** The arms follow the head by this long (ms), as in /test. */
 const STAGGER = 150;
-/** Gestures while talking; the first two point (or hold a palm out) at the graphic, and b9 (only some sheets) touches the screen. */
-const GESTURES = ['b2', 'b3', 'b4', 'b8', 'b3', 'b9'];
+/**
+ * The standing poses for each kind of beat (#97): b2 points and b9 touches the screen (only with a graphic up), b3 is an open palm
+ * for a number or a name, b4 hands together for explaining. b8 (arms open, welcoming) is for sign-offs and isn't used for talking.
+ */
+const GESTURES: Record<keyof Pools, readonly string[]> = {
+  point: ['b2', 'b9'],
+  number: ['b3'],
+  name: ['b3', 'b4'],
+  contrast: ['b3', 'b4'],
+  open: ['b4', 'b3'],
+};
 const HEADS = ['b1', 'h3', 'b1', 'h5', 'b1', 'h4', 'h6', 'h2', 'b1'];
 const FEET = ['b1', 'b1', 'f1', 'b1', 'f3', 'b1', 'f2', 'b1'];
 
@@ -140,10 +150,11 @@ export function drawStanding(
 ): void {
   const t = now / 1000;
   const talking = s.talking === id;
-  const gestures = have(GESTURES, art.poses, 'b1');
+  const pools: Pools = Object.fromEntries(Object.entries(GESTURES).map(([k, v]) => [k, v.filter((n) => art.poses.includes(n))]));
   const heads = have(HEADS, art.heads, 'b1');
   const feets = have(FEET, art.feet, 'b1');
-  const pose = talking ? gestures[Math.floor(hash(Math.floor(t / 3.1) * 2.9) * gestures.length)] : Math.floor(t / 6) % 3 === 0 && art.poses.includes('b6') ? 'b6' : 'b1';
+  // Arms at rest unless a gesture is on, which follows the speech (#97); a hand on the hip now and then while listening.
+  const pose = talking ? (gesturePose(s, now, id, pools) ?? 'b1') : Math.floor(t / 6) % 3 === 0 && art.poses.includes('b6') ? 'b6' : 'b1';
   // Turns to the graphic when glancing, the way the sheet points (h2 and gazeL turn to the picture's left, h1 and gazeR to its
   // right; a flipped figure turns the other way on screen); otherwise the head drifts, and a gesture at the graphic turns it too.
   const turn = facing.points === 'left' ? 'h2' : 'h1';

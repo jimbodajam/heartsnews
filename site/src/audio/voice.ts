@@ -1,4 +1,5 @@
 import type { Presenter } from '../../../shared/bulletin';
+import { pausesFromCues, type Timing } from '../../../shared/gesture';
 import { type MouthCues, type MouthShape, parseMouthCues, shapeAt } from '../../../shared/mouth';
 import { audioContext } from './sting';
 
@@ -13,6 +14,8 @@ export interface Speaking {
   shape(now: number): MouthShape | undefined;
   /** Fraction of the text spoken so far. */
   progress(now: number): number;
+  /** How long the line runs and where it is silent, in seconds (gestures follow it, #97). Undefined until the clip is playing and its cues are in; the pauses are empty when there are no cues. */
+  timing(): Timing | undefined;
   cancel(): void;
 }
 
@@ -172,6 +175,12 @@ export class Voices {
         if (!cues || !source || ended) return undefined;
         return shapeAt(cues, ctx.currentTime - startedCtx);
       },
+      timing: () => {
+        if (fallback) return fallback.timing();
+        if (!source) return undefined;
+        const duration = durationMs / 1000;
+        return { duration, pauses: cues ? pausesFromCues(cues, duration) : [] };
+      },
       progress: (now) => {
         if (fallback) return fallback.progress(now);
         if (ended) return 1;
@@ -243,6 +252,7 @@ export class Voices {
         return flap(now) * (recent ? 1 : 0.35);
       },
       shape: () => undefined,
+      timing: () => ({ duration: est / 1000, pauses: [] }),
       progress: (now) => (ended ? 1 : Math.max(charIndex / text.length, Math.min(0.98, (now - start) / est))),
       cancel: () => {
         synth.cancel();
@@ -268,6 +278,7 @@ export class Voices {
       done,
       level: (now) => (ended ? 0 : flap(now)),
       shape: () => undefined,
+      timing: () => ({ duration: est / 1000, pauses: [] }),
       progress: (now) => Math.min(1, (now - start) / est),
       cancel: () => finish(),
     };

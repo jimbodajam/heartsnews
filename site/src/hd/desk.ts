@@ -4,6 +4,7 @@
 import type { Presenter } from '../../../shared/bulletin';
 import { type MouthShape, withoutPress } from '../audio/voice';
 import type { FrameState } from '../render/state';
+import { gesturePose } from './gesture';
 import { loadPresenter, type PresenterArt } from './presenter';
 import type { Camera, StudioSet } from './set';
 
@@ -39,6 +40,9 @@ const hash = (n: number) => {
   const s = Math.sin(n * 127.1) * 43758.5453;
   return s - Math.floor(s);
 };
+
+/** The seated gesture pools: d4, the open hand, is the only one that reads as speaking (the rest are hands flat, clasped, or holding notes). */
+const SEATED_GESTURES = (art: PresenterArt) => (art.poses.includes('d4') ? { open: ['d4'] } : {});
 
 /** How long a seated head holds before it cuts to the next one (s). */
 const HEAD_SLOT = 1.9;
@@ -143,7 +147,8 @@ export function drawDeskScene(
     const lookTo = talker && !talking && both ? (seatX(talker) > seatX(p) ? 'h1' : 'h2') : undefined;
     const img = art.frame({
       head: seatedHead(tp, place, talking, lookTo),
-      pose: talking && Math.sin(tp * 1.7 + 0.5) > 0.35 ? 'd4' : 'b1',
+      // One open hand (d4) on a stressed phrase, otherwise hands at rest (#97).
+      pose: (talking && gesturePose(s, now, p.id, SEATED_GESTURES(art))) || 'b1',
       eye: tp % 3.4 > 3.28 ? 'blink' : 'open',
       mouth: mouth(s, art, talking, tp, now),
     });
