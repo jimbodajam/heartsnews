@@ -13,6 +13,8 @@ import type { OnThisDay } from '../collectors/londonhearts.ts';
 import { pickHistory, type HistoryPicks } from '../history.ts';
 import type { Milestone } from '../tally.ts';
 import { milestonesFor } from './milestones.ts';
+import type { Paper, PaperHeadline } from '../papers.ts';
+import { papersPicks } from './papers.ts';
 import type { InjuryList } from '../injuries.ts';
 
 /**
@@ -76,6 +78,8 @@ export interface Facts {
   milestones?: Milestone[];
   /** Who's injured, by our own record (#107): when an injury story is in the pool, and before every game. */
   injuries?: InjuryList;
+  /** This morning's Hearts headlines from the papers (script/papers.ts, #111): only between 06:00 and 10:00 UK time, and only when there are some. */
+  papers?: PaperHeadline[];
 }
 
 /** The stats for the game on now (from its minute; 45 at half-time) or just played. */
@@ -112,6 +116,7 @@ export function buildFacts(
   milestones?: Milestone[],
   announced?: Announced,
   injuries?: InjuryList,
+  papers?: Record<Paper, PaperHeadline[]>,
 ): Facts {
   const phase = detectPhase(match, now);
   const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
@@ -151,6 +156,7 @@ export function buildFacts(
     milestones: milestones && milestonesFor(phase.kind, milestones),
     announced,
     // Real numbers whenever injuries come up, and who's missing before a game.
+    papers: papersPicks(papers, now).length ? papersPicks(papers, now) : undefined,
     injuries: injuries && (phase.kind === 'preview' || stories.slice(0, 10).some((s) => s.category === 'injury')) ? injuries : undefined,
   };
 }
@@ -166,13 +172,14 @@ export interface Slot {
  * The order segments air in, like a rolling news hour: headlines → story → Match Centre → opposition → story →
  * debate → story → Transfer Centre → On This Day → stories → Fan Zone. The script prompt (for hand-overs) and the layout share it.
  */
-export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolean; match: boolean; history?: boolean }): Slot[] {
+export function runningOrder(f: Facts, opts: { features: Story[]; debate: boolean; match: boolean; history?: boolean; papers?: boolean }): Slot[] {
   const { anchors, analyst, transfers, history } = f.channel.cast;
   const pundits = f.channel.cast.debate ?? [anchors[1], transfers];
   const story = (s?: Story): Slot | undefined => s && { id: `story-${s.id}`, what: `in-depth package: "${s.title}"`, presenters: [anchors[0], expertFor(f, s)] };
   const [f1, f2, f3, f4, f5] = opts.features;
   const slots: (Slot | undefined)[] = [
     { id: 'headlines', what: 'the headlines', presenters: [...anchors] },
+    opts.papers ? { id: 'papers', what: "The Papers: what this morning's papers say about Hearts, each credited by name", presenters: [anchors[1]] } : undefined,
     story(f1),
     opts.match ? { id: 'match', what: 'Match Centre at the touchscreen: results, tables and the next match', presenters: [analyst] } : undefined,
     opts.match && f.opponent ? { id: 'opponent', what: `opposition focus on ${f.opponent.opponent}: form and line-ups`, presenters: [analyst] } : undefined,

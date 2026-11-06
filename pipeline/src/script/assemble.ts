@@ -15,6 +15,7 @@ import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Fac
 import { spokenList } from '../time.ts';
 import { changes, teamLines, shapeLine } from '../breaking/teamnews.ts';
 import { toLineup } from '../collectors/bbc.ts';
+import { papersHost, papersSegment } from './papers.ts';
 import { historyHost, historySegment } from './history.ts';
 import { deskSignature } from './quiet.ts';
 
@@ -242,10 +243,12 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   }
   const history = draft.history && historySegment(f, draft.history);
   if (history) segments.push(history);
+  const papers = draft.papers && papersSegment(f, draft.papers);
+  if (papers) segments.push(papers);
 
   // Up to five in-depth packages spread between the regular segments, like a rolling news hour (see runningOrder).
   const featured = draft.features.map((x) => f.features.find((s) => s.id === x.storyId)).filter((s): s is Story => Boolean(s));
-  const ordered = runningOrder(f, { features: featured, debate: Boolean(debate), match: hasMatch, history: Boolean(history) })
+  const ordered = runningOrder(f, { features: featured, debate: Boolean(debate), match: hasMatch, history: Boolean(history), papers: Boolean(papers) })
     .map((slot) => segments.find((s) => s.id === slot.id))
     .filter((s): s is Segment => Boolean(s));
 
@@ -318,6 +321,7 @@ function defaultComingUp(f: Facts, later: Segment[]): string | undefined {
   const bits = later.flatMap((s) => {
     if (s.kind === 'debate') return [`${names(f, s.presenters)} in The Debate`];
     if (s.kind === 'transfers') return ['the latest from the Transfer Centre'];
+    if (s.kind === 'papers') return [`${papersHost(f)} with the morning papers`];
     if (s.kind === 'history') return [`${historyHost(f)} with On This Day`];
     if (s.kind === 'fans') return ['what the supporters are saying in the Fan Zone'];
     return [];
@@ -330,6 +334,7 @@ function defaultHandover(f: Facts, seg: Segment): string | undefined {
   if (seg.kind === 'debate') return `Time for The Debate now, with ${names(f, seg.presenters)}.`;
   if (seg.kind === 'transfers') return `Let's head over to ${names(f, seg.presenters)} in the Transfer Centre.`;
   if (seg.kind === 'fans') return `Now, let's find out what the supporters are saying in the Fan Zone.`;
+  if (seg.kind === 'papers') return `Let's see what the papers are saying about ${f.club.shortName} this morning. Over to ${papersHost(f)}.`;
   if (seg.kind === 'history') return `${historyHost(f)} has been in the museum for us. Over to you, ${historyHost(f)}.`;
   return undefined;
 }

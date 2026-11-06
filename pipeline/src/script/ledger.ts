@@ -384,7 +384,7 @@ export function repeatedViews(f: Facts, bulletin: Bulletin): LedgerCheck[] {
   const checks: LedgerCheck[] = [];
   const drop = new Set<string>();
   bulletin.segments.forEach((seg, si) => {
-    if (seg.kind === 'adverts' || seg.kind === 'history') return;
+    if (seg.kind === 'adverts' || seg.kind === 'history' || seg.kind === 'papers') return;
     seg.lines.forEach((line, li) => {
       const views = made.get(line.speaker);
       if (!views?.length || line.graphic?.type === 'predictions') return;
@@ -420,7 +420,7 @@ export function checkBulletin(ledger: Ledger, bulletin: Bulletin, now: Date): Le
   const checks: LedgerCheck[] = [];
   const drop = new Set<string>();
   bulletin.segments.forEach((seg, si) => {
-    if (seg.kind === 'adverts' || seg.kind === 'history') return;
+    if (seg.kind === 'adverts' || seg.kind === 'history' || seg.kind === 'papers') return;
     seg.lines.forEach((line, li) => {
       if (line.graphic?.type === 'predictions') return;
       const id = `${si}.${li}`;

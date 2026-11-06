@@ -33,6 +33,8 @@ import { storylineStories, type OnAirDesk } from './onair.ts';
 import { addOwnText, boostStories, buildStories, fanThreads } from './stories.ts';
 import { bigGameFor, detectPhase } from './matchday.ts';
 import { collectOnThisDay } from './collectors/londonhearts.ts';
+import { loadPapersRoundup } from './papers.ts';
+import { inPapersWindow, PAPERS_HOURS } from './script/papers.ts';
 import { countGames, findMilestones, loadTotals, type Milestone } from './tally.ts';
 import { collectMeetings } from './collectors/headtohead.ts';
 import { headToHead } from './headtohead.ts';
@@ -181,6 +183,16 @@ async function main() {
     }
   }
 
+  // This morning's papers (issue #111), only needed at breakfast: headlines from the store, no pages fetched.
+  let papers: Awaited<ReturnType<typeof loadPapersRoundup>> | undefined;
+  if (store && inPapersWindow(now)) {
+    try {
+      papers = await loadPapersRoundup(store, club.keywords, now, PAPERS_HOURS);
+    } catch (err) {
+      console.warn(`Couldn't read the papers' headlines from the store: ${(err as Error).message}`);
+    }
+  }
+
   const played = (match?.last ?? []).filter((f) => f.homeScore != null);
   const stories = desk ? storylineStories(desk, { club, items, tags, played, upcoming: match?.next, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
   // No article pages are fetched: storylines carry the ingest's stored text, anything else a transcript or summary.
@@ -212,7 +224,7 @@ async function main() {
 
   const announced = await loadAnnounced(club, phase, now, workerSource(), { results: match?.last, cache: store && sheetCache(store) });
   if (announced) console.log(`Announced team: ${announced.ours.team} ${announced.ours.formation} v ${announced.opponent}${announced.theirs ? ' (both teams)' : ''}`);
-  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced, injuries);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced, injuries, papers);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);

@@ -13,4 +13,5 @@ export const SEGMENT_LABEL: Record<SegmentKind, string> = {
   adverts: 'AD BREAK',
   breaking: 'BREAKING',
   history: 'ON THIS DAY',
+  papers: 'THE PAPERS',
 };

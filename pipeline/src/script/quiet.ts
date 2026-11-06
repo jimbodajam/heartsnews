@@ -48,6 +48,8 @@ export function quietSlot(prev: Bulletin | undefined, f: Facts, opts: QuietOptio
   if (!prev) return full('no last programme to reuse');
   const was = prev.desk;
   if (!was) return full("the last programme doesn't record its running order");
+  // The papers round-up (#111) only airs at breakfast, so a slot that gains or loses it can't reuse the last programme's news.
+  if (prev.segments.some((s) => s.kind === 'papers') !== Boolean(f.papers?.length)) return full('the papers round-up has come in or gone out');
 
   const now: Omit<DeskSignature, 'aired' | 'kind'> = {
     features: f.features.map((s) => s.id),
