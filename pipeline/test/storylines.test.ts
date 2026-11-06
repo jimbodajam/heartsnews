@@ -23,7 +23,7 @@ import {
 } from '../src/storylines.ts';
 import { tagItems } from '../src/tags.ts';
 import type { ClubConfig, Fixture, Item } from '../src/types.ts';
-import { OutOfBudget, parseJson, QWEN3_30B, workersAi } from '../src/workers-ai.ts';
+import { OutOfBudget, parseJson, GEMMA4_26B, workersAi } from '../src/workers-ai.ts';
 import { memoryD1 } from './d1.ts';
 
 const club = JSON.parse(readFileSync(new URL('../../clubs/hearts.json', import.meta.url), 'utf8')) as ClubConfig;
@@ -319,7 +319,7 @@ test('Workers AI counts neurons, drops to the light model late in the day, and s
 
   const late = workersAi({ accountId: 'x', token: 'y', budget: { used: 4_500, lightAt: 4_000, stopAt: 6_000 }, fetchFn });
   await late.generateJson('p', {});
-  assert.equal(asked.at(-1), QWEN3_30B.id);
+  assert.equal(asked.at(-1), GEMMA4_26B.id);
   assert.throws(() => parseJson('no json here'));
 });
 

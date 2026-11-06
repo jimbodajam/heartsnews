@@ -20,7 +20,7 @@ export interface WorkersModel {
 }
 
 export const GPT_OSS_120B: WorkersModel = { id: '@cf/openai/gpt-oss-120b', inputRate: 31_818, outputRate: 68_182 };
-export const QWEN3_30B: WorkersModel = { id: '@cf/qwen/qwen3-30b-a3b-fp8', inputRate: 4_625, outputRate: 30_475 };
+export const GEMMA4_26B: WorkersModel = { id: '@cf/google/gemma-4-26b-a4b-it', inputRate: 9_091, outputRate: 27_273 };
 
 /** The main model until the 24 hours' use reaches `lightAt`, then the light one; nothing at all past `stopAt`. */
 export interface Budget {
@@ -59,7 +59,7 @@ export interface WorkersAiOptions {
 
 export function workersAi(o: WorkersAiOptions): MeteredModel {
   const main = o.main ?? GPT_OSS_120B;
-  const light = o.light ?? QWEN3_30B;
+  const light = o.light ?? GEMMA4_26B;
   const fetchFn = o.fetchFn ?? fetch;
   let neurons = 0;
   const used = new Set<string>();
