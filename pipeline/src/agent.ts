@@ -5,15 +5,19 @@
 // YouTube transcripts, which GitHub can't reach), for the builds on either runner. And it reads BBC's fixtures and
 // table every half hour into the store, for the ingest and the programmes to share (issue #105, shared-match.ts), so
 // BBC is read from home rather than from GitHub.
-// Usage: npm run agent [-- --templates] [--no-snapshot] [--no-fixtures]
+// Usage: npm run agent [-- --templates] [--no-snapshot] [--no-fixtures] [--follow-main]
 //   --templates     plain lines, no AI, for both programmes and breaking news
 //   --no-snapshot   don't refresh the snapshots branch
 //   --no-fixtures   don't read BBC's fixtures and table (the ingest and programmes then read them themselves)
+//   --follow-main   sign off once main has moved on and nothing is being built, so the service manager starts it again
+//                   on the new code (the Mac's run-agent.sh pulls before each start)
 
+import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { relayBbc } from './bbc-relay.ts';
 import { run, runJob, said } from './jobs.ts';
 import { refreshShared } from './shared-match.ts';
@@ -27,9 +31,30 @@ const RELAY_MS = 10_000;
 /** How often the agent looks at the shared fixtures' age; it reads BBC only once they're half an hour old. */
 const FIXTURES_CHECK_MS = 60_000;
 const FIXTURES_RETRY_MS = 10 * 60_000;
+/** How often --follow-main looks for new commits on main. */
+const FOLLOW_MS = 5 * 60_000;
+/** A tracked file every build writes (build.ts), so never counted as a local edit. */
+const BUILT = 'site/public/bulletins/latest.json';
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const git = async (...a: string[]) => (await promisify(execFile)('git', a, { cwd: ROOT })).stdout.trim();
+
+/**
+ * Main's newest commit if this checkout can fast-forward to it, otherwise null (already up to date, or the checkout
+ * has commits or edits of its own, which a pull wouldn't overwrite). Fetches into origin/main only, never FETCH_HEAD,
+ * which publish.ts reads straight after its own fetch.
+ */
+async function newerMain(): Promise<string | null> {
+  await git('fetch', '-q', '--no-tags', '--no-write-fetch-head', 'origin', '+refs/heads/main:refs/remotes/origin/main');
+  const head = await git('rev-parse', 'HEAD');
+  const main = await git('rev-parse', 'origin/main');
+  if (head === main) return null;
+  const behind = await git('merge-base', '--is-ancestor', 'HEAD', 'origin/main').then(() => true, () => false);
+  // Every build rewrites latest.json, which is tracked; run-agent.sh throws that copy away before it pulls.
+  const clean = (await git('status', '--porcelain', '--untracked-files=no', '--', '.', `:!${BUILT}`)) === '';
+  return behind && clean ? main : null;
+}
 
 async function main() {
   if (existsSync(resolve(ROOT, '.env'))) process.loadEnvFile(resolve(ROOT, '.env'));
@@ -90,9 +115,37 @@ async function main() {
     })();
   }
 
+  // New code on main (--follow-main): noted here, acted on between jobs in the loop below.
+  let pendingUpdate: string | null = null;
+  if (flag('--follow-main')) {
+    void (async () => {
+      let failing = false;
+      while (!stopping && !pendingUpdate) {
+        await sleep(FOLLOW_MS);
+        pendingUpdate = await newerMain().then(
+          (sha) => {
+            failing = false;
+            return sha;
+          },
+          (err) => {
+            if (!failing) console.warn(`[agent] Couldn't look for new commits on main: ${said(err)}`);
+            failing = true;
+            return null;
+          },
+        );
+      }
+      if (pendingUpdate) console.log(`[agent] main has moved on to ${pendingUpdate.slice(0, 7)}: restarting once nothing is being built`);
+    })();
+  }
+
   console.log(`[agent] Checking in every ${CHECK_IN_MS / 1000}s for programmes and breaking news${flag('--templates') ? ' (plain lines, no AI)' : ''}`);
   let quiet = false;
   while (!stopping) {
+    // Bow out between jobs, before claiming any more; run-agent.sh pulls and launchd starts us again on the new code.
+    if (pendingUpdate && running.size === 0 && !snapshotting) {
+      console.log('[agent] Restarting on the new code');
+      await stop();
+    }
     const free = (['breaking', 'programme'] as const).filter((k) => !running.has(k));
     try {
       const jobs = await checkIn(store, free, new Date());

@@ -100,7 +100,13 @@ home agent should relay and snapshot at a time (#102); start any other with `--n
    to `~/Library/Logs/heartsnews-agent.log`.
 5. Log rotation (sudo, once): `sudo install -m 644 -o root -g wheel ~/heartsnews/tools/mac/newsyslog-heartsnews.conf /etc/newsyslog.d/heartsnews.conf`.
 
-Update with `git pull && npm ci` in `~/heartsnews`, then `launchctl kickstart -k gui/$(id -u)/uk.heartsnews.agent`.
+The Mac keeps itself up to date: push to `main` and it is on the new code within about five minutes. `run-agent.sh`
+starts the agent with `--follow-main`, which checks `main` every five minutes and, once it has moved on and nothing is
+being built, signs off (GitHub covers the half minute or so). launchd starts it again, and `run-agent.sh` first does
+`git pull --ff-only` and, if `package-lock.json` changed, `npm ci`. The log shows `[update]` lines for each. Never edit
+files on the Mac: a checkout with its own edits or commits stays where it is (the build's `latest.json` is the one
+exception, thrown away before each pull). Changes to the plist itself still need `bash tools/mac/install-agent.sh` again,
+and `launchctl kickstart -k gui/$(id -u)/uk.heartsnews.agent` restarts it by hand.
 
 To see how quickly GitHub gets breaking news out, `npm run replay -- --queue` runs the clock against the recorded match
 from the PC, queueing test jobs (plain lines) that only GitHub takes. GitHub builds and voices each but never publishes
