@@ -5,7 +5,9 @@
 // YouTube transcripts, which GitHub can't reach), for the builds on either runner. And it reads BBC's fixtures and
 // table every half hour into the store, for the ingest and the programmes to share (issue #105, shared-match.ts), so
 // BBC is read from home rather than from GitHub.
-// Usage: npm run agent [-- --templates] [--no-snapshot] [--no-fixtures] [--follow-main]
+// Only one home agent relays BBC and refreshes snapshots at a time, by a lease in the store (home-lease.ts, issue #102).
+// Usage: npm run agent [-- --templates] [--no-snapshot] [--no-fixtures] [--follow-main] [--preferred]
+//   --preferred     take the relay and snapshots from any other home agent while up (the always-on Mac)
 //   --templates     plain lines, no AI, for both programmes and breaking news
 //   --no-snapshot   don't refresh the snapshots branch
 //   --no-fixtures   don't read BBC's fixtures and table (the ingest and programmes then read them themselves)
@@ -17,8 +19,10 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hostname } from 'node:os';
 import { promisify } from 'node:util';
 import { relayBbc } from './bbc-relay.ts';
+import { dropHomeLease, takeHomeLease } from './home-lease.ts';
 import { run, runJob, said } from './jobs.ts';
 import { refreshShared } from './shared-match.ts';
 import { checkIn, type Job, type JobKind, releaseJobs, sheetCache, signOff, storeFromEnv } from './store.ts';
@@ -72,16 +76,31 @@ async function main() {
     stopping = true;
     console.log('\n[agent] Signing off: GitHub takes over');
     await signOff(store).catch(() => undefined);
+    await dropHomeLease(store, holder).catch(() => undefined);
     await releaseJobs(store, [...running.values()].map((j) => j.id)).catch(() => undefined);
     process.exit(0);
   };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
 
+  // Only one home agent relays and snapshots (home-lease.ts, #102); renewed here every check-in.
+  const holder = `home:${hostname()}:${process.pid}`;
+  let lease = false;
+  const renewLease = async () => {
+    const had = lease;
+    lease = await takeHomeLease(store, holder, flag('--preferred'), new Date()).catch(() => false);
+    if (lease !== had) console.log(`[agent] ${lease ? 'Relaying BBC and refreshing snapshots' : 'Another home agent is relaying BBC and refreshing snapshots: only claiming jobs'}`);
+  };
+  await renewLease();
+
   // BBC refuses the Worker, so the agent fetches the live feed's pages for it (bbc-relay.ts), on its own faster loop.
   void (async () => {
     let failing = false;
     while (!stopping) {
+      if (!lease) {
+        await sleep(RELAY_MS);
+        continue;
+      }
       await relayBbc(store).then(
         () => (failing = false),
         (err) => {
@@ -99,6 +118,10 @@ async function main() {
     void (async () => {
       let failing = false;
       while (!stopping) {
+        if (!lease) {
+          await sleep(FIXTURES_CHECK_MS);
+          continue;
+        }
         await refreshShared(store, club, new Date(), undefined, sheetCache(store)).then(
           (did) => {
             if (did) console.log(`[agent] BBC fixtures and table shared: ${did}`);
@@ -147,14 +170,15 @@ async function main() {
       await stop();
     }
     const free = (['breaking', 'programme'] as const).filter((k) => !running.has(k));
+    await renewLease();
     try {
       const jobs = await checkIn(store, free, new Date());
       if (quiet) console.log('[agent] In touch with the store again');
       quiet = false;
       for (const job of jobs) {
         running.set(job.kind, job);
-        const holder = `home:${job.id}:${Date.now()}`;
-        void runJob(store, job, { runner: 'home', templates: flag('--templates'), holder })
+        const jobHolder = `home:${job.id}:${Date.now()}`;
+        void runJob(store, job, { runner: 'home', templates: flag('--templates'), holder: jobHolder })
           .catch(() => undefined)
           .finally(() => running.delete(job.kind));
       }
@@ -162,7 +186,7 @@ async function main() {
       if (!quiet) console.warn(`[agent] Couldn't check in (GitHub will take the jobs meanwhile): ${said(err)}`);
       quiet = true;
     }
-    if (!flag('--no-snapshot') && !snapshotting && Date.now() - lastSnapshot >= SNAPSHOT_MS) {
+    if (lease && !flag('--no-snapshot') && !snapshotting && Date.now() - lastSnapshot >= SNAPSHOT_MS) {
       snapshotting = true;
       lastSnapshot = Date.now();
       void run('snapshot').finally(() => (snapshotting = false));

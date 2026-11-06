@@ -31,7 +31,7 @@ main() {
   fi
 
   cd pipeline || exit 1
-  "$HOME/.local/node/bin/node" "$HOME/heartsnews/node_modules/tsx/dist/cli.mjs" src/agent.ts --follow-main "$@" \
+  "$HOME/.local/node/bin/node" "$HOME/heartsnews/node_modules/tsx/dist/cli.mjs" src/agent.ts --follow-main --preferred "$@" \
     > >(while IFS= read -r line; do printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line" >> "$LOG"; done) 2>&1 &
   pid=$!
   trap 'kill -TERM "$pid" 2>/dev/null' TERM INT

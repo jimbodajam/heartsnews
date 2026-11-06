@@ -87,7 +87,7 @@ Setting it up (owner, once):
 The agent also runs 24/7 on a Mac server (reached over Tailscale), so BBC relaying, the half-hourly snapshots and the
 queued jobs carry on with the PC off. It also reads BBC's fixtures and table every half hour into the store, for the
 ingest and the programmes to share (#105); GitHub reads BBC itself only when that copy is over 65 minutes old. Only one
-home agent should relay and snapshot at a time (#102); start any other with `--no-snapshot --no-fixtures`. The files are in
+home agent relays and snapshots at a time (#102): see "Two home machines" below. The files are in
 `tools/mac/`:
 
 1. `xcode-select --install` at the Mac (gives git). Then clone the repo to `~/heartsnews` and run `npm ci` with the
@@ -107,6 +107,15 @@ being built, signs off (GitHub covers the half minute or so). launchd starts it 
 files on the Mac: a checkout with its own edits or commits stays where it is (the build's `latest.json` is the one
 exception, thrown away before each pull). Changes to the plist itself still need `bash tools/mac/install-agent.sh` again,
 and `launchctl kickstart -k gui/$(id -u)/uk.heartsnews.agent` restarts it by hand.
+
+#### Two home machines
+
+`npm run agent` can run on the PC and the Mac together. Both claim jobs (the store hands each out once), but only one
+relays BBC, reads the fixtures and refreshes the snapshots, by a lease in the store (`pipeline/src/home-lease.ts`) that
+the holder renews every 30 seconds and that runs out after 2 minutes. The Mac starts with `--preferred`, so it takes the
+work from the PC as soon as it is up and the PC defers while it is; if the Mac goes quiet the PC takes over within
+2 minutes, and a stopped agent (Ctrl+C or SIGTERM) lets go at once. The log says which role each agent has. Two agents
+without `--preferred` share it first come, first served. `--no-snapshot` and `--no-fixtures` still switch those off.
 
 To see how quickly GitHub gets breaking news out, `npm run replay -- --queue` runs the clock against the recorded match
 from the PC, queueing test jobs (plain lines) that only GitHub takes. GitHub builds and voices each but never publishes
