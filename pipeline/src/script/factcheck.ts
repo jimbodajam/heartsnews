@@ -89,7 +89,7 @@ export async function factCheck(model: ScriptModel, f: Facts, bulletin: Bulletin
   // (adverts.json), the phone-in is made-up callers' opinions from the Kickback (issue #9), and On This Day is template-written from London Hearts' page, which isn't in the DATA: none is
   // a fact to check here.
   const lines = bulletin.segments.flatMap((s, si) =>
-    s.kind === 'adverts' || s.kind === 'history' || s.kind === 'papers' || s.kind === 'phonein'
+    s.kind === 'adverts' || s.kind === 'history' || s.kind === 'phonein'
       ? []
       : s.lines.map((l, li) => ({ id: `${si}.${li}`, speaker: l.speaker, text: l.text, prediction: l.graphic?.type === 'predictions' || isTeamSheet(l.graphic) })).filter((l) => !l.prediction),
   );

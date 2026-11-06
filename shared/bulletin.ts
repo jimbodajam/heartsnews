@@ -1,7 +1,7 @@
 // The contract between the pipeline (which writes bulletin.json) and the player (which plays it).
 
 export type SceneId = 'desk' | 'transfer' | 'touchscreen' | 'advert' | 'pitchside' | 'museum' | 'videowall';
-export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'phonein' | 'opponent' | 'adverts' | 'breaking' | 'history' | 'papers';
+export type SegmentKind = 'headlines' | 'story' | 'transfers' | 'fans' | 'match' | 'debate' | 'phonein' | 'opponent' | 'adverts' | 'breaking' | 'history';
 /** The 16×16 pixel picture on an advert card. */
 export type AdArt = 'pig' | 'fish' | 'shirt' | 'pint' | 'ticket';
 export type IconId = 'ball' | 'contract' | 'whistle' | 'trophy' | 'medical' | 'mic' | 'stadium' | 'chat' | 'phone';

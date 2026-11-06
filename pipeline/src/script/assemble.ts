@@ -15,7 +15,6 @@ import { expertFor, firstName, isUs, presenter, runningOrder, teamName, type Fac
 import { spokenList } from '../time.ts';
 import { changes, teamLines, shapeLine } from '../breaking/teamnews.ts';
 import { toLineup } from '../collectors/bbc.ts';
-import { papersHost, papersSegment } from './papers.ts';
 import { historyHost, historySegment } from './history.ts';
 import { deskSignature } from './quiet.ts';
 
@@ -27,9 +26,22 @@ const ADVERTS = loadAdverts();
 /** Going into an ad break, in turn. */
 const BREAK_LINES = ["We'll take a short break now. Stay with us.", "Time for a quick break. Don't go anywhere."];
 
-/** A story's headline card, with the portrait of whoever it's about when we have one. */
-function headlineGraphic(s: Story): Graphic {
+/** The papers that get a front-page card (#112): the outlet id and short name, matched on the name a story lists as its source. */
+const PAPER_CARDS: { id: string; paper: string; match: RegExp }[] = [
+  { id: 'daily-record', paper: 'Daily Record', match: /daily record/i },
+  { id: 'herald', paper: 'Herald', match: /\bherald\b/i },
+  { id: 'scotsman', paper: 'Scotsman', match: /scotsman/i },
+  { id: 'evening-news', paper: 'Evening News', match: /evening news/i },
+];
+
+/**
+ * A story's headline card, with the portrait of whoever it's about when we have one. When one of the four papers leads
+ * the story and there is no portrait to show, it is that paper's front page instead.
+ */
+export function headlineGraphic(s: Story): Graphic {
   const face = faceFor(s.title, FACES) ?? faceFor(s.summary, FACES);
+  const paper = face ? undefined : PAPER_CARDS.find((p) => p.match.test(s.sources[0] ?? ''));
+  if (paper) return { type: 'frontpage', outlet: paper.id, paper: paper.paper, headline: truncate(s.title.trim(), 140) };
   return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON[s.category], face };
 }
 
@@ -243,12 +255,10 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
   }
   const history = draft.history && historySegment(f, draft.history);
   if (history) segments.push(history);
-  const papers = draft.papers && papersSegment(f, draft.papers);
-  if (papers) segments.push(papers);
 
   // Up to five in-depth packages spread between the regular segments, like a rolling news hour (see runningOrder).
   const featured = draft.features.map((x) => f.features.find((s) => s.id === x.storyId)).filter((s): s is Story => Boolean(s));
-  const ordered = runningOrder(f, { features: featured, debate: Boolean(debate), match: hasMatch, history: Boolean(history), papers: Boolean(papers) })
+  const ordered = runningOrder(f, { features: featured, debate: Boolean(debate), match: hasMatch, history: Boolean(history) })
     .map((slot) => segments.find((s) => s.id === slot.id))
     .filter((s): s is Segment => Boolean(s));
 
@@ -321,7 +331,6 @@ function defaultComingUp(f: Facts, later: Segment[]): string | undefined {
   const bits = later.flatMap((s) => {
     if (s.kind === 'debate') return [`${names(f, s.presenters)} in The Debate`];
     if (s.kind === 'transfers') return ['the latest from the Transfer Centre'];
-    if (s.kind === 'papers') return [`${papersHost(f)} with the morning papers`];
     if (s.kind === 'history') return [`${historyHost(f)} with On This Day`];
     if (s.kind === 'fans') return ['what the supporters are saying in the Fan Zone'];
     return [];
@@ -334,7 +343,6 @@ function defaultHandover(f: Facts, seg: Segment): string | undefined {
   if (seg.kind === 'debate') return `Time for The Debate now, with ${names(f, seg.presenters)}.`;
   if (seg.kind === 'transfers') return `Let's head over to ${names(f, seg.presenters)} in the Transfer Centre.`;
   if (seg.kind === 'fans') return `Now, let's find out what the supporters are saying in the Fan Zone.`;
-  if (seg.kind === 'papers') return `Let's see what the papers are saying about ${f.club.shortName} this morning. Over to ${papersHost(f)}.`;
   if (seg.kind === 'history') return `${historyHost(f)} has been in the museum for us. Over to you, ${historyHost(f)}.`;
   return undefined;
 }

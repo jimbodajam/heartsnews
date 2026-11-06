@@ -528,7 +528,6 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
         }
       : base.fans,
     history: base.history,
-    papers: base.papers,
     // The writer's own words where it gave them; otherwise the template's line, so a milestone is never lost.
     milestones: pickOptional(ai.milestones, base.milestones),
     missing: pickOptional(ai.missing, base.missing),

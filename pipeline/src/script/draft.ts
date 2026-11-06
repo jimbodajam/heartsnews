@@ -7,7 +7,6 @@ import { milestoneLine } from './milestones.ts';
 import { missingLine } from '../injuries.ts';
 import { describeXI, formOf, headToHeadLine } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
-import { papersDraft, type PapersDraft } from './papers.ts';
 import { historyDraft, type HistoryDraft } from './history.ts';
 
 /** The words of a bulletin, before it is laid out into segments, speakers and graphics. */
@@ -56,8 +55,6 @@ export interface Draft {
   milestones?: string;
   /** Before a game, who's missing through injury (#107), in the Match Centre: the writer's words, or the template's line. */
   missing?: string;
-  /** The breakfast papers round-up. Template only (script/papers.ts), so every outlet and headline is as the store has it. */
-  papers?: PapersDraft;
   outro: string;
 }
 
@@ -225,7 +222,6 @@ export function templateDraft(f: Facts): Draft {
   return {
     opponent,
     history: historyDraft(f),
-    papers: papersDraft(f),
     milestones: milestoneLine(f.milestones),
     missing: f.phase.kind === 'preview' ? missingLine(f.injuries) : undefined,
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
