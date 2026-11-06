@@ -267,6 +267,23 @@
 .hdg .gfx.full .in.g-finance { font-size: 1.05em; }
 .hdg .gfx.full .g-finance .tile .val { font-size: 2.2em; }
 
+/* injury */
+.hdg .g-injury .body { display: flex; flex-direction: column; justify-content: space-between; gap: .8em; padding: 1.1em 1.4em; }
+.hdg .g-injury .head { display: flex; gap: 1.2em; align-items: center; min-height: 0; }
+.hdg .g-injury .who { display: grid; gap: .5em; min-width: 0; }
+.hdg .g-injury .name { font-weight: normal; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-injury .what { color: var(--gold); font-size: .9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-injury .chips { display: flex; gap: .7em; align-items: center; min-width: 0; font-size: .75em; }
+.hdg .g-injury .status { font-style: normal; padding: .35em .7em; color: var(--ink, #1a1620); background: var(--grey); }
+.hdg .g-injury .status.out { background: var(--red); }
+.hdg .g-injury .status.doubt { background: var(--gold); }
+.hdg .g-injury .status.back { background: var(--green); }
+.hdg .g-injury .note { color: var(--light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hdg .g-injury .facts { display: grid; gap: .7em; }
+.hdg .g-injury .fact { display: flex; justify-content: space-between; gap: 1em; font-size: .8em; border-bottom: .15em solid var(--rule); padding-bottom: .35em; }
+.hdg .g-injury .fact .lbl { color: var(--grey); flex: none; }
+.hdg .g-injury .fact .val { font-weight: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+
 /* predictions */
 .hdg .g-predictions .body { display: flex; flex-direction: column; gap: 1em; padding: 1em 1.4em; }
 .hdg .g-predictions .fixture { text-align: center; color: var(--light); font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

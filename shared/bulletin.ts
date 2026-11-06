@@ -127,6 +127,25 @@ export type Graphic =
       period?: string;
       figures: { label: string; value: string; previous?: string; trend?: 'up' | 'down' }[];
     }
+  /** A player's injury record (issue #108), put on an injury story's package: all text is ready to show, in capitals where it is a label. */
+  | {
+      type: 'injury';
+      name: string;
+      /** faces/<slug>.png */
+      face?: string;
+      /** "LEFT HAMSTRING", or "INJURY" when the part of the body isn't reported. */
+      injury: string;
+      /** A small label: MUSCLE, LIGAMENT, BONE, KNOCK, ILLNESS. Left out when unknown. */
+      kind?: string;
+      status: 'OUT' | 'DOUBT' | 'BACK' | 'UNCLEAR';
+      /** One outlet's word so far: the card says REPORTED beside the status. */
+      reported: boolean;
+      /** "Injured v Motherwell, 25 Oct" or "First reported 3 Nov". */
+      since: string;
+      /** "23 Nov to 7 Dec", "Several weeks", "Long-term", "Season over" or "No date given". */
+      back: string;
+      gamesMissed?: number;
+    }
   /** A starting XI on a pitch: rows from the goalkeeper forwards. `changes`: the names new to the side, picked out. */
   | { type: 'formation'; label: string; team: string; formation: string; rows: string[][]; ours: boolean; changes?: string[] }
   /** The substitutes on a team sheet. */

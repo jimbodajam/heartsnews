@@ -7,6 +7,7 @@ import { scorerLabels } from '../matchday.ts';
 import { predictionRecord } from '../memory.ts';
 import { adBreaks, loadAdverts } from './adverts.ts';
 import { faceFor, loadFaces } from './faces.ts';
+import { injuryGraphic } from '../injuries.ts';
 import { describeXI, formOf, headToHeadGraphic } from './opponent.ts';
 import { phoneInSegment } from '../phonein.ts';
 import type { Debate, Draft, Feature } from './draft.ts';
@@ -474,6 +475,16 @@ export function financeGraphic(s: Story): Extract<Graphic, { type: 'finance' }> 
   };
 }
 
+/**
+ * The injury card for a storyline about one player's injury (#108), from our own record: that player's row in the list
+ * (injured now, or back in the last week). Nothing for a club storyline about the injury list, or a player with no row.
+ */
+export function injuryCardFor(f: Pick<Facts, 'injuries' | 'club'>, s: Story): Extract<Graphic, { type: 'injury' }> | undefined {
+  if (s.category !== 'injury' || s.storyline?.kind !== 'person' || !s.people[0]) return undefined;
+  const row = [...(f.injuries?.current ?? []), ...(f.injuries?.back ?? [])].find((i) => i.entity === s.people[0]);
+  return row ? injuryGraphic(row, f.club.shortName, faceFor(row.name ?? '', FACES)) : undefined;
+}
+
 /** A story covered in depth at the desk: lead anchor plus the right expert, with the quote shown full screen. */
 function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   const s = f.features.find((x) => x.id === feat.storyId);
@@ -512,8 +523,14 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
     const target = experts.shift() ?? lines[1];
     if (target) target.graphic = fin;
   }
+  // An injury story about a player shows his injury record the same way.
+  const inj = injuryCardFor(f, s);
+  if (inj) {
+    const target = experts.shift() ?? lines[1];
+    if (target) target.graphic = inj;
+  }
   if (feat.quote) {
-    const target = experts.shift() ?? (r || fin ? undefined : lines[1]);
+    const target = experts.shift() ?? (r || fin || inj ? undefined : lines[1]);
     if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by, face: faceFor(feat.quote.by, FACES) };
   }
   return {

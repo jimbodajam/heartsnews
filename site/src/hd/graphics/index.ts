@@ -20,6 +20,7 @@ import { form } from './form';
 import { formation } from './formation';
 import { headline } from './headline';
 import { headtohead } from './headtohead';
+import { injury } from './injury';
 import { player } from './player';
 import { predictions } from './predictions';
 import { quote } from './quote';
@@ -48,6 +49,7 @@ const NATIVE: { [T in Graphic['type']]?: Build<T> } = {
   form,
   headtohead,
   finance,
+  injury,
   predictions,
   sentiment,
   birthdays,

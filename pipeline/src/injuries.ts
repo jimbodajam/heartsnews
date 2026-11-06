@@ -1,3 +1,4 @@
+import type { Graphic } from '../../shared/bulletin.ts';
 import type { Claim, Storyline } from './storylines.ts';
 
 // The injury table (issue #107): one record per player injury, so the presenters can give real numbers ("seven in the
@@ -336,7 +337,7 @@ export function injuryList(rows: Injury[], now: Date): InjuryList {
 }
 
 const dayLabel = (iso: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }).format(new Date(iso));
-const opponentOf = (matchId: string, club: string) => {
+export const opponentOf = (matchId: string, club: string) => {
   const [, home, away] = matchId.split('|');
   return home === club ? away : home;
 };
@@ -386,6 +387,39 @@ export function missingLine(list: InjuryList | undefined): string | undefined {
   const said = more > 0 ? `${names.join(', ')} and ${more} more` : names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
   const reported = out.some((i) => !i.confirmed);
   return `On the injury front, ${out.length === 1 ? 'one player is' : `${out.length} players are`} ${reported ? 'out or reported to be out' : 'out'}: ${said}.`;
+}
+
+const shortDay = (iso: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' }).format(new Date(iso));
+const BAND_CARD: Record<ReturnBand, string> = { short: 'Short-term', medium: 'Several weeks', long: 'Long-term', season: 'Season over' };
+
+/**
+ * The injury card for a player's row (issue #108), every line ready to show. `reported` is set until the club or two
+ * outlets confirm it, so the card never states one outlet's word as fact. A return the table holds only as words it
+ * couldn't read as a period shows "No date given".
+ */
+export function injuryGraphic(i: Injury, club: string, face?: string): Extract<Graphic, { type: 'injury' }> {
+  const what = [i.side, i.area].filter(Boolean).join(' ').toUpperCase();
+  const status = { out: 'OUT', doubt: 'DOUBT', back: 'BACK', unknown: 'UNCLEAR' } as const;
+  const back =
+    i.returnFrom && i.returnTo
+      ? i.returnFrom === i.returnTo
+        ? `Around ${shortDay(i.returnFrom)}`
+        : `${shortDay(i.returnFrom)} to ${shortDay(i.returnTo)}`
+      : i.returnBand
+        ? BAND_CARD[i.returnBand]
+        : 'No date given';
+  return {
+    type: 'injury',
+    name: i.name ?? i.entity,
+    ...(face ? { face } : {}),
+    injury: what || 'INJURY',
+    ...(i.type !== 'unknown' && i.type.toUpperCase() !== what ? { kind: i.type.toUpperCase() } : {}),
+    status: status[i.status],
+    reported: !i.confirmed,
+    since: i.dateBasis === 'match' && i.injuredMatchId ? `Injured v ${opponentOf(i.injuredMatchId, club)}, ${shortDay(i.injuredAt)}` : `First reported ${shortDay(i.firstReportedAt)}`,
+    back,
+    ...(i.gamesMissed != null ? { gamesMissed: i.gamesMissed } : {}),
+  };
 }
 
 /** The club's own outlets, by source id and name (a claim's outlet is its publisher or its source): its website and its TV channel. */

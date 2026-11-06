@@ -406,6 +406,38 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       break;
     }
 
+    case 'injury': {
+      const top = panel(g, x, y, w, h, 'INJURY');
+      const portrait = faceImage(gr.face);
+      const fw = portrait ? drawFace(g, portrait, x + 6, top, 1) : (drawIcon(g, 'medical', x + 6, top, 3), 24);
+      const tx = x + 12 + fw;
+      const tw = x + w - 6 - tx;
+      drawText(g, fit(gr.name.toUpperCase(), tw), tx, top + 1, C.white);
+      drawText(g, fit(gr.injury, tw), tx, top + 10, C.gold);
+      // The status in a coloured block, REPORTED beside it while it is one outlet's word.
+      const colour = { OUT: C.red, DOUBT: C.gold, BACK: C.green, UNCLEAR: C.grey }[gr.status];
+      const sw = measure(gr.status) + 6;
+      rect(g, tx, top + 18, sw, 8, colour);
+      drawText(g, gr.status, tx + 3, top + 20, C.ink);
+      const note = [gr.reported ? 'REPORTED' : '', gr.kind ?? ''].filter(Boolean).join(' ');
+      if (note) drawText(g, fit(note, tw - sw - 4), tx + sw + 4, top + 20, C.light);
+      // Since when, the expected return and the games missed.
+      // "Injured v Motherwell, 25 Oct" is too long for the row: its first word becomes the label.
+      const since = /^(Injured|First reported) (.*)$/.exec(gr.since);
+      const rows: [string, string][] = [
+        since ? [since[1].toUpperCase(), since[2]] : ['SINCE', gr.since],
+        ['DUE BACK', gr.back],
+        ...(gr.gamesMissed != null ? [['MISSED', `${gr.gamesMissed} ${gr.gamesMissed === 1 ? 'GAME' : 'GAMES'}`] as [string, string]] : []),
+      ];
+      rows.forEach(([label, value], i) => {
+        const ry = top + 31 + i * 9;
+        if (ry + 7 > Math.min(y + h - 2, CAPTION_SAFE_BOTTOM)) return;
+        drawText(g, label, x + 6, ry, C.grey);
+        drawTextRight(g, fit(value.toUpperCase(), w - 12 - measure(label) - 6), x + w - 6, ry, C.white);
+      });
+      break;
+    }
+
     case 'formation': {
       const top = panel(g, x, y, w, h, `${gr.label}: ${gr.team} ${gr.formation}`);
       const px = x + 4;
