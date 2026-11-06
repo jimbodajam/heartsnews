@@ -148,7 +148,7 @@ export function buildFacts(
     // While a game is on or just finished, it's the story: the history waits.
     history: history && !['live', 'reaction'].includes(phase.kind) ? pickHistory(history, club, now) : undefined,
     // A milestone isn't said as it's being reached, but straight after: the reaction is where "reached" belongs.
-    milestones: milestones && milestonesFor(phase.kind, milestones),
+    milestones: milestones && milestonesFor(phase.kind, milestones, new Set(injuries?.current.filter((i) => i.status === 'out').map((i) => i.entity))),
     announced,
     // Real numbers whenever injuries come up, and who's missing before a game.
     injuries: injuries && (phase.kind === 'preview' || stories.slice(0, 10).some((s) => s.category === 'injury')) ? injuries : undefined,

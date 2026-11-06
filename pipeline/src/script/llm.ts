@@ -291,6 +291,22 @@ function byOutlet(s: Story, one: number, each: number): string {
   return articles.map((a) => `From ${a.outlet}:\n${truncate(a.text, articles.length > 1 ? each : one)}`).join('\n');
 }
 
+/**
+ * A package on one player's storyline ("Tom Renaud injury") has the expert talk about him: with little on him, the
+ * writer filled "Tom Renaud injury" with the pitch and the rest of the injury list, naming him only in the intro. His
+ * surname is the last capitalised word of the title before the topic.
+ */
+export function aboutThePerson(story: Pick<Story, 'title' | 'storyline'>, lines: Feature['lines']): boolean {
+  if (story.storyline?.kind !== 'person') return true;
+  const surname = story.title
+    .match(/\p{Lu}[\p{L}'-]+/gu)
+    ?.filter((w) => !/^(Injury|Transfer|Contract|Discipline|Ban|Return|Fitness|Update|News)$/.test(w))
+    .pop();
+  if (!surname) return true;
+  const re = new RegExp(`(?<!\\p{L})${surname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?!\\p{L})`, 'u');
+  return lines.some((l) => l.role === 'expert' && re.test(l.text));
+}
+
 /** Spoken quotes from auto-captions stutter ("we're we're"); drop immediate word repeats for the on-screen card. */
 function tidyQuote(text: string): string {
   return text.trim().replace(/\b(\w+(?:'\w+)?)(\s+\1\b)+/gi, '$1');
@@ -430,6 +446,10 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
         .filter((l) => l && (l.role === 'lead' || l.role === 'expert') && usable(l.text))
         .map((l): Feature['lines'][number] => ({ role: l.role, text: l.text.trim() }));
       if (lines.length < 3) return undefined;
+      if (!aboutThePerson(story, lines)) {
+        console.warn(`Dropped the package on "${story.title}": the expert never names him`);
+        return undefined;
+      }
       // A quote must really be in the article: no made-up words put in anyone's mouth.
       const q = x.quote;
       const genuine =

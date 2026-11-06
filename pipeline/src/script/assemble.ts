@@ -39,6 +39,9 @@ const PAPER_CARDS: { id: string; paper: string; match: RegExp }[] = [
  * the story and there is no portrait to show, it is that paper's front page instead.
  */
 export function headlineGraphic(s: Story): Graphic {
+  // A match story is about the game, not whoever its summary names first ("Thun v Hearts" showed Laurent Mendy): a
+  // portrait only when the headline itself names the player, and the ball card rather than a paper's front page.
+  if (s.category === 'match') return { type: 'headline', title: s.title, source: s.sources[0], icon: ICON.match, face: faceFor(s.title, FACES) };
   const face = faceFor(s.title, FACES) ?? faceFor(s.summary, FACES);
   const paper = face ? undefined : PAPER_CARDS.find((p) => p.match.test(s.sources[0] ?? ''));
   if (paper) return { type: 'frontpage', outlet: paper.id, paper: paper.paper, headline: truncate(s.title.trim(), 140) };
@@ -362,6 +365,7 @@ export function sidebar(f: Facts): Sidebar {
     next: n && { date: n.date, home: name(n.home), away: name(n.away), competition: n.competition },
     last: r && { home: name(r.home), away: name(r.away), homeScore: r.homeScore ?? 0, awayScore: r.awayScore ?? 0, competition: r.competition, date: r.date },
     table: rows.length ? rowsAroundUs(f, rows, 5) : undefined,
+    tableLong: rows.length ? rowsAroundUs(f, rows, 12) : undefined,
     tableTitle: ct ? shortCompetition(ct.competition) : undefined,
   };
 }
@@ -498,6 +502,29 @@ export function injuryCardFor(f: Pick<Facts, 'injuries' | 'club'>, s: Story): Ex
   return row ? injuryGraphic(row, f.club.shortName, faceFor(row.name ?? '', FACES)) : undefined;
 }
 
+const QUOTE_COMMON = new Set(['that', 'this', 'with', 'have', 'they', 'were', 'what', 'when', 'there', 'their', 'just', 'been', 'from', 'about', 'will', 'would', 'some', 'very', 'really', 'going', 'think', 'because']);
+const quoteWords = (s: string) => new Set(s.toLowerCase().match(/[a-z']{4,}/g)?.filter((w) => !QUOTE_COMMON.has(w)) ?? []);
+
+/** Of these lines, the one sharing the most words with the quote (at least two), or none. The earliest wins a tie. */
+export function quoteLine(lines: Line[], quote: string): Line | undefined {
+  const q = quoteWords(quote);
+  let best: Line | undefined;
+  let most = 1;
+  for (const l of lines) {
+    const n = [...quoteWords(l.text)].filter((w) => q.has(w)).length;
+    if (n > most) [best, most] = [l, n];
+  }
+  return best;
+}
+
+/** The same game as an article's result card: both teams (either of our names for us) and the score. */
+function sameResult(f: Facts, x: Facts['results'][number], r: NonNullable<Feature['result']>): boolean {
+  // "Thun" in an article is "FC Thun" in the feed.
+  const team = (a: string, b: string) =>
+    isUs(f.club, a) ? isUs(f.club, b) : !isUs(f.club, b) && (a.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(a.toLowerCase()));
+  return team(x.home, r.home) && team(x.away, r.away) && x.homeScore === r.homeScore && x.awayScore === r.awayScore;
+}
+
 /** A story covered in depth at the desk: lead anchor plus the right expert, with the quote shown full screen. */
 function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   const s = f.features.find((x) => x.id === feat.storyId);
@@ -514,7 +541,12 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
   }));
   // A match report shows the result card (with scorers) from the expert's first line; the quote goes on the next one.
   const experts = lines.filter((l, i) => i > 0 && l.speaker === expert);
-  const r = feat.result;
+  // Our own record of the game, when the article's score is one we have: its competition and scorers are the checked
+  // ones (an article often names a scorer or two but not all, and then its list is dropped, leaving the card bare).
+  const own = feat.result && f.results.find((x) => sameResult(f, x, feat.result!));
+  const r = own
+    ? { ...feat.result!, competition: own.competition, homeScorers: scorerLabels(own, 'home'), awayScorers: scorerLabels(own, 'away') }
+    : feat.result;
   if (r) {
     const target = experts.shift() ?? lines[1];
     if (target) {
@@ -542,8 +574,10 @@ function featureSegment(f: Facts, feat: Feature): Segment | undefined {
     const target = experts.shift() ?? lines[1];
     if (target) target.graphic = inj;
   }
+  // The quote goes on the line that says it (or puts it in other words), not just the next free one: Vrancken's "not
+  // good enough" was shown over a line about Kingsley's hamstring. A quote no line talks about isn't shown.
   if (feat.quote) {
-    const target = experts.shift() ?? (r || fin || inj ? undefined : lines[1]);
+    const target = quoteLine(lines.slice(1).filter((l) => !l.graphic), feat.quote.text);
     if (target) target.graphic = { type: 'quote', text: feat.quote.text, author: feat.quote.by, face: faceFor(feat.quote.by, FACES) };
   }
   return {

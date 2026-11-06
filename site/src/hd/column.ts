@@ -22,12 +22,14 @@ function buildPanes(sb: Sidebar, now: number): HTMLElement[] {
     return p;
   };
 
-  if (sb.table?.length) {
+  // The column has room for the whole league (12 rows); bulletins from before it carry only the 5 around us.
+  const table = sb.tableLong?.length ? sb.tableLong : sb.table;
+  if (table?.length) {
     const p = pane(sb.tableTitle ? `${sb.tableTitle} TABLE` : 'LEAGUE TABLE');
     const head = el('div', 'row hd');
     for (const t of ['', '', 'P', 'PTS', 'GD']) head.append(el('span', '', t));
     p.append(head);
-    for (const r of sb.table) {
+    for (const r of table) {
       const row = el('div', `row${r.team === sb.highlight ? ' me' : ''}`);
       for (const t of [String(r.pos), r.team, String(r.played), String(r.pts), signed(r.gd)]) row.append(el('span', '', t));
       p.append(row);

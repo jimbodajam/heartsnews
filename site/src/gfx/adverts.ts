@@ -169,8 +169,7 @@ function finePrint(g: Ctx, ad: Advert): void {
   const { bg, fg } = ad.colours;
   rect(g, 0, H - 22, W, 22, shade(bg, -0.5));
   rect(g, 0, H - 22, W, 1, ad.colours.accent);
-  if (ad.small) drawTextCentred(g, fit(ad.small.toUpperCase(), W - 20), W / 2, H - 18, fg);
-  drawTextCentred(g, 'A FAN-MADE SPOOF ADVERT', W / 2, H - 9, shade(fg, -0.35));
+  if (ad.small) drawTextCentred(g, fit(ad.small.toUpperCase(), W - 20), W / 2, H - 14, fg);
 }
 
 /**

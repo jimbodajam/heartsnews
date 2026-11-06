@@ -21,12 +21,14 @@ const noun = (m: Milestone, n: number) => (m.kind === 'apps' ? (n === 1 ? 'appea
 /**
  * What's worth saying for this kind of bulletin. Before a game only what the game itself could bring: the appearance a
  * player is one short of, and goals within reach. Straight after one, what was reached and what's still close. A game
- * on now says none: it isn't said as it's being reached.
+ * on now says none: it isn't said as it's being reached. A milestone still to come is dropped for a player on our
+ * injury list as out (entity ids in `out`): Harry Milne "closing in on fifty" while out for the season.
  */
-export function milestonesFor(kind: string, milestones: Milestone[]): Milestone[] {
+export function milestonesFor(kind: string, milestones: Milestone[], out: ReadonlySet<string> = new Set()): Milestone[] {
   if (kind === 'live') return [];
-  if (kind === 'preview') return milestones.filter((m) => !m.reached && (m.kind === 'goals' || m.to === 1));
-  return milestones;
+  const fit = milestones.filter((m) => m.reached || !out.has(m.id));
+  if (kind === 'preview') return fit.filter((m) => !m.reached && (m.kind === 'goals' || m.to === 1));
+  return fit;
 }
 
 /** "Lawrence Shankland has now scored one hundred goals for Hearts." / "Cammy Devlin needs one more appearance to reach two hundred for Hearts." */

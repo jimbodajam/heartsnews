@@ -248,6 +248,8 @@ export interface Sidebar {
   /** `date` (ISO kick-off) lets the HD side column show it as today's result on the day; older bulletins have none. */
   last?: { home: string; away: string; homeScore: number; awayScore: number; competition: string; date?: string };
   table?: TableRow[];
+  /** The longer table the HD column has room for: the whole league, or 12 rows around us in a bigger one. Older bulletins have none. */
+  tableLong?: TableRow[];
   /** Which table it is when it isn't the league, e.g. "Conference League" on a European matchday. */
   tableTitle?: string;
 }
