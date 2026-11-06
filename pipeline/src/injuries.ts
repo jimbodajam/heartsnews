@@ -330,7 +330,8 @@ export function injuryList(rows: Injury[], now: Date): InjuryList {
   const all = [...latest.values()].filter((r) => r.name);
   return {
     current: all.filter((r) => r.status !== 'back').sort((a, b) => (a.status === b.status ? a.injuredAt.localeCompare(b.injuredAt) : a.status === 'out' ? -1 : b.status === 'out' ? 1 : 0)),
-    back: all.filter((r) => r.status === 'back' && r.returnedAt && now.getTime() - Date.parse(r.returnedAt) <= BACK_DAYS * DAY_MS),
+    // Back without a game missed by our count is a doubt that came to nothing, or an injury we've dated wrong: not news.
+    back: all.filter((r) => r.status === 'back' && r.returnedAt && (r.gamesMissed ?? 0) > 0 && now.getTime() - Date.parse(r.returnedAt) <= BACK_DAYS * DAY_MS),
   };
 }
 
