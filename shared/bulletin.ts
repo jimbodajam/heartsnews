@@ -72,6 +72,8 @@ export type Graphic =
   /** A phone-in caller on the line: shown on the headline bar as "DAVIE IN GORGIE | what the call is about". */
   | { type: 'caller'; name: string; from: string; topic: string }
   | { type: 'headline'; title: string; source?: string; icon?: IconId; /** Pixel portrait (faces/<slug>.png) of who it's about. */ face?: string }
+  /** A newspaper front page for the papers round-up (#112): the outlet id (daily-record, herald, scotsman, evening-news; anything else gets a generic masthead), its name and the headline. */
+  | { type: 'frontpage'; outlet: string; paper: string; headline: string }
   | { type: 'transfer'; player: string; from: string; to: string; status: 'rumour' | 'talks' | 'medical' | 'done'; fee?: string }
   | { type: 'sentiment'; score: number; topics: string[] } // score: -1 (raging) .. 1 (buzzing)
   | { type: 'table'; title: string; rows: TableRow[]; highlight: string }

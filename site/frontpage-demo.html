@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Hearts News 24 - front page card demo (#112)</title>
+<style>
+  body { margin: 0; background: #0e0c10; color: #f2efe6; font: 12px sans-serif; padding: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, 426px); gap: 12px; }
+  canvas { width: 426px; height: 240px; image-rendering: pixelated; display: block; background: #1b1f3a; }
+</style>
+</head>
+<body>
+<p>Side-panel size (142x80) and full size (296x84) at 3x. Add ?age=0..420 to freeze the slide-in.</p>
+<div class="grid" id="grid"></div>
+<script type="module">
+import { drawFrontPage } from '/src/gfx/frontpage.ts';
+const short = 'Hearts boss on injury boost';
+const long = 'Hearts set to challenge for the title after Tynecastle takeover plan emerges from the boardroom ahead of the derby';
+const age = Number(new URLSearchParams(location.search).get('age') ?? 99999);
+const cases = [['daily-record','Daily Record'],['herald','Herald'],['scotsman','Scotsman'],['evening-news','Evening News'],['sun','Mystery Paper']];
+for (const [id, name] of cases) for (const [text, tag] of [[short,'short'],[long,'long']]) for (const [w,h] of [[142,80],[296,84]]) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.style.width = w*3 + 'px'; c.style.height = h*3 + 'px'; c.title = `${id} ${tag} ${w}`;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.fillStyle = '#1b1f3a'; g.fillRect(0,0,w,h);
+  drawFrontPage(g, id, name, text, 0, 0, w, h, age);
+  document.getElementById('grid').append(c);
+}
+</script>
+</body>
+</html>

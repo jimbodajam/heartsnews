@@ -63,7 +63,7 @@ test('segment: Fraser at the desk, a headline card per item; running order place
   assert.equal(seg.kind, 'papers');
   assert.deepEqual(seg.presenters, ['fraser']);
   assert.equal(seg.lines.length, 2);
-  assert.deepEqual(seg.lines[1].graphic, { type: 'headline', title: 'Hearts latest', source: 'The Herald', icon: 'mic' });
+  assert.deepEqual(seg.lines[1].graphic, { type: 'frontpage', outlet: 'herald', paper: 'Herald', headline: 'Hearts latest' });
   const ids = (papers: boolean) => runningOrder(f, { features: [], debate: false, match: false, papers }).map((s) => s.id);
   assert.deepEqual(ids(true), ['headlines', 'papers', 'transfers', 'fans']);
   assert.deepEqual(ids(false), ['headlines', 'transfers', 'fans']);

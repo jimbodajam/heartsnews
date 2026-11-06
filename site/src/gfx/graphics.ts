@@ -1,5 +1,6 @@
 import type { Graphic, Sidebar } from '../../../shared/bulletin';
 import { drawText, drawTextCentred, drawTextRight, fit, LINE_H, measure, wrap } from './font';
+import { drawFrontPage } from './frontpage';
 import { drawIcon } from './icons';
 import { C } from './palette';
 import { clamp01, frame, rect, type Ctx } from './screen';
@@ -144,6 +145,10 @@ export function drawGraphic(g: Ctx, gr: Graphic, x: number, y: number, w: number
       if (gr.source) drawText(g, fit(`SOURCE: ${gr.source}`, w - 12), x + 6, y + h - 9, C.gold);
       break;
     }
+
+    case 'frontpage':
+      drawFrontPage(g, gr.outlet, gr.paper, gr.headline, x, y, w, h, age);
+      break;
 
     case 'transfer': {
       const top = panel(g, x, y, w, h, 'TRANSFER CENTRE');

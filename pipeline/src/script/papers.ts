@@ -88,7 +88,7 @@ export function papersSegment(f: Facts, d: PapersDraft): Segment | undefined {
   const lines: Line[] = [{ speaker: host, text: d.intro }];
   for (const item of d.items) {
     const h = f.papers?.find((x) => x.id === item.headlineId);
-    if (h) lines.push({ speaker: host, text: item.text, graphic: { type: 'headline', title: headlineText(h), source: cap(PAPER_NAME[h.outlet]), icon: 'mic' } });
+    if (h) lines.push({ speaker: host, text: item.text, graphic: { type: 'frontpage', outlet: h.outlet, paper: cap(PAPER_NAME[h.outlet]).replace(/^The /, ''), headline: headlineText(h) } });
   }
   if (lines.length < 2) return undefined;
   return { id: 'papers', kind: 'papers', title: 'The Papers', strap: `What the papers say about ${f.club.shortName}`, scene: 'desk', presenters: [host], lines };
