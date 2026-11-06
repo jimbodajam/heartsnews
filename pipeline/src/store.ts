@@ -1,4 +1,5 @@
 import type { Bulletin } from '../../shared/bulletin.ts';
+import type { SheetCache, Sheets } from './collectors/bbc.ts';
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
@@ -621,6 +622,32 @@ export function scheduleWrite(match: Pick<MatchData, 'next' | 'last'>, now: Date
   return {
     sql: `INSERT INTO state (key, value, updated_at) VALUES ('live_schedule', ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
     params: [JSON.stringify({ kickOffs, at: now.toISOString() }), now.toISOString()],
+  };
+}
+
+const putState = `INSERT INTO state (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`;
+
+/** The last fixtures, results and table read from BBC (issue #105, state 'bbc_match'), for every run to share. */
+export function sharedMatchWrite(match: MatchData, now: Date): Statement {
+  return { sql: putState, params: ['bbc_match', JSON.stringify(match), now.toISOString()] };
+}
+
+/** The shared fixtures and table, with when they were read from BBC. Undefined if no run has stored them yet. */
+export async function loadSharedMatch(store: Store): Promise<{ match: MatchData; at: string } | undefined> {
+  const [[row]] = await store.batch([{ sql: `SELECT value, updated_at FROM state WHERE key = 'bbc_match'` }]);
+  return row ? { match: JSON.parse(String(row.value)) as MatchData, at: String(row.updated_at) } : undefined;
+}
+
+/** Finished matches' team sheets in the store (issue #105), one state row per BBC match link. */
+export function sheetCache(store: Store, now = () => new Date()): SheetCache {
+  return {
+    async get(link) {
+      const [[row]] = await store.batch([{ sql: 'SELECT value FROM state WHERE key = ?', params: [`bbc_sheets:${link}`] }]);
+      return row ? (JSON.parse(String(row.value)) as Sheets) : undefined;
+    },
+    async set(link, sheets) {
+      await store.batch([{ sql: putState, params: [`bbc_sheets:${link}`, JSON.stringify(sheets), now().toISOString()] }]);
+    },
   };
 }
 

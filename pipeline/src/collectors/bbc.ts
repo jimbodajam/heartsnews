@@ -57,8 +57,35 @@ export function toFixture(e: BbcEvent): Fixture {
 const slugOf = (urn?: string) => urn?.split(':').pop();
 
 /** Both teams from a BBC match page, if it has them yet (confirmed about an hour before kick-off). */
-export async function matchSheets(link: string): Promise<{ home?: TeamSheet; away?: TeamSheet }> {
+export async function matchSheets(link: string): Promise<Sheets> {
   return teamSheets(initialData(await fetchText(`https://www.bbc.co.uk${link}`)));
+}
+
+export type Sheets = { home?: TeamSheet; away?: TeamSheet };
+
+/** Finished matches' team sheets, kept by match link (issue #105): a game's line-ups never change once it's over. */
+export interface SheetCache {
+  get(link: string): Promise<Sheets | undefined>;
+  set(link: string, sheets: Sheets): Promise<void>;
+}
+
+/** Kick-off plus this long: the game is over and BBC's page has settled, so its sheets can be kept for good. */
+export const SETTLED_MS = 5 * 3_600_000;
+
+/**
+ * A past match's team sheets: from the cache when the game is long over, otherwise from BBC (and then kept). A game
+ * still on, or only just finished, is always read from BBC. A cache that fails is skipped, never fatal.
+ */
+export async function finishedSheets(f: Fixture, cache?: SheetCache, now = Date.now(), read: (link: string) => Promise<Sheets> = matchSheets): Promise<Sheets> {
+  if (!f.link) return {};
+  const settled = f.status === 'done' && now - Date.parse(f.date) > SETTLED_MS;
+  if (settled && cache) {
+    const hit = await cache.get(f.link).catch(() => undefined);
+    if (hit) return hit;
+  }
+  const sheets = await read(f.link);
+  if (settled && cache) await cache.set(f.link, sheets).catch(() => undefined);
+  return sheets;
 }
 
 /** A team sheet as a plain XI, players by the name on their shirt. */
@@ -70,17 +97,24 @@ async function matchLineups(link: string): Promise<{ home?: Lineup; away?: Lineu
   return { home: home && toLineup(home), away: away && toLineup(away) };
 }
 
+export interface SheetOptions {
+  /** Finished matches' sheets kept from earlier runs. */
+  cache?: SheetCache;
+  /** Our results, if the caller has them already: saves reading our results page again. */
+  results?: Fixture[];
+  now?: number;
+}
+
 /**
  * Our team sheet from the last match before `before` (ISO) that has one, with who it was against: for the changes in
  * a new line-up. Undefined if BBC can't be read.
  */
-export async function previousSheet(team: string, before: string): Promise<{ sheet: TeamSheet; against: string } | undefined> {
-  const results = (await pageEvents(`${team}/scores-fixtures?filter=results`).catch(() => []))
-    .map(toFixture)
+export async function previousSheet(team: string, before: string, { cache, results: known, now = Date.now() }: SheetOptions = {}): Promise<{ sheet: TeamSheet; against: string } | undefined> {
+  const results = (known ?? (await pageEvents(`${team}/scores-fixtures?filter=results`).catch(() => [])).map(toFixture))
     .filter((f) => f.status === 'done' && f.date < before && f.link)
     .sort((a, b) => b.date.localeCompare(a.date));
   for (const r of results.slice(0, 2)) {
-    const sheets = await matchSheets(r.link!).catch(() => ({}) as { home?: TeamSheet; away?: TeamSheet });
+    const sheets = await finishedSheets(r, cache, now).catch(() => ({}) as Sheets);
     const sheet = r.homeSlug === team ? sheets.home : r.awaySlug === team ? sheets.away : undefined;
     if (sheet) return { sheet, against: r.homeSlug === team ? r.away : r.home };
   }
@@ -88,13 +122,13 @@ export async function previousSheet(team: string, before: string): Promise<{ she
 }
 
 /** A team's XI from the most recent match that has line-ups. */
-async function lastLineup(results: Fixture[], slug: string): Promise<Lineup | undefined> {
+async function lastLineup(results: Fixture[], slug: string, cache: SheetCache | undefined, now: number): Promise<Lineup | undefined> {
   for (const r of results.slice(0, 2)) {
     if (!r.link) continue;
     try {
-      const l = await matchLineups(r.link);
+      const l = await finishedSheets(r, cache, now);
       const ours = r.homeSlug === slug ? l.home : r.awaySlug === slug ? l.away : undefined;
-      if (ours) return ours;
+      if (ours) return toLineup(ours);
     } catch {
       // Try the match before.
     }
@@ -106,7 +140,7 @@ async function lastLineup(results: Fixture[], slug: string): Promise<Lineup | un
  * Build-up material for the next game: the opponent's recent results, and both XIs. Uses the confirmed teams
  * from the match page when they're out; otherwise each side's line-up from their last game.
  */
-async function opponentFocus(ourSlug: string, next: Fixture, ourResults: Fixture[]): Promise<OpponentFocus> {
+async function opponentFocus(ourSlug: string, next: Fixture, ourResults: Fixture[], cache: SheetCache | undefined, now: number): Promise<OpponentFocus> {
   const weAreHome = next.homeSlug === ourSlug;
   const oppSlug = weAreHome ? next.awaySlug : next.homeSlug;
   const opponent = weAreHome ? next.away : next.home;
@@ -118,12 +152,13 @@ async function opponentFocus(ourSlug: string, next: Fixture, ourResults: Fixture
         .slice(0, 5)
     : [];
 
+  // The next match is never cached: its page is where the confirmed XI appears.
   const confirmed = next.link ? await matchLineups(next.link).catch(() => ({}) as { home?: Lineup; away?: Lineup }) : {};
   const ourConfirmed = weAreHome ? confirmed.home : confirmed.away;
   const theirConfirmed = weAreHome ? confirmed.away : confirmed.home;
   if (ourConfirmed && theirConfirmed) return { fixture: next, opponent, results, ourXI: ourConfirmed, theirXI: theirConfirmed, confirmed: true };
 
-  const [ourXI, theirXI] = await Promise.all([lastLineup(ourResults, ourSlug), oppSlug ? lastLineup(results, oppSlug) : undefined]);
+  const [ourXI, theirXI] = await Promise.all([lastLineup(ourResults, ourSlug, cache, now), oppSlug ? lastLineup(results, oppSlug, cache, now) : undefined]);
   return { fixture: next, opponent, results, ourXI, theirXI, confirmed: false };
 }
 
@@ -133,7 +168,7 @@ function monthKey(now: Date, offset: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-export async function collectBbcMatchData(club: ClubConfig, now = new Date()): Promise<MatchData> {
+export async function collectBbcMatchData(club: ClubConfig, now = new Date(), cache?: SheetCache): Promise<MatchData> {
   if (!club.bbc) throw new Error('no bbc config for club');
   const { team, league } = club.bbc;
   // Upcoming (and today's), the rest of this month, this and next month's fixtures, this month's results, and
@@ -183,7 +218,7 @@ export async function collectBbcMatchData(club: ClubConfig, now = new Date()): P
   // The team stats for a game on now or finished in the last 30 hours, for the Match Centre.
   const statsFor = [...next.filter((f) => f.status === 'live'), ...last.slice(0, 1).filter((f) => now.getTime() - Date.parse(f.date) < 30 * 3_600_000)];
   const [opponent] = await Promise.all([
-    soon ? opponentFocus(team, soon, last).catch(() => undefined) : undefined,
+    soon ? opponentFocus(team, soon, last, cache, now.getTime()).catch(() => undefined) : undefined,
     ...statsFor.map(async (f) => {
       if (f.link) f.stats = await fetchText(`https://www.bbc.co.uk${f.link}`).then((html) => matchStats(initialData(html)), () => undefined);
     }),

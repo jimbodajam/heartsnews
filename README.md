@@ -85,7 +85,9 @@ Setting it up (owner, once):
 #### The always-on Mac (Intel, no Homebrew)
 
 The agent also runs 24/7 on a Mac server (reached over Tailscale), so BBC relaying, the half-hourly snapshots and the
-queued jobs carry on with the PC off. Only one home agent should relay and snapshot at a time (#102). The files are in
+queued jobs carry on with the PC off. It also reads BBC's fixtures and table every half hour into the store, for the
+ingest and the programmes to share (#105); GitHub reads BBC itself only when that copy is over 65 minutes old. Only one
+home agent should relay and snapshot at a time (#102); start any other with `--no-snapshot --no-fixtures`. The files are in
 `tools/mac/`:
 
 1. `xcode-select --install` at the Mac (gives git). Then clone the repo to `~/heartsnews` and run `npm ci` with the

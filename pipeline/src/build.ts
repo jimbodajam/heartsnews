@@ -43,7 +43,8 @@ import { loadAnnounced } from './announced.ts';
 import { workerSource } from './breaking/index.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
 import { loadRoster } from './squad.ts';
-import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, storeFromEnv, type CheckLog, type Trace } from './store.ts';
+import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, sheetCache, storeFromEnv, type CheckLog, type Trace } from './store.ts';
+import { matchFor } from './shared-match.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
 
@@ -71,8 +72,11 @@ async function main() {
     console.log(`Using cached collection: ${items.length} items`);
   } else {
     console.log(`Collecting for ${club.name}…`);
+    // Fixtures and table from the copy the Mac and the ingest share (issue #105), read fresh around our kick-offs.
+    const shared = storeFromEnv();
+    const matchSource = () => matchFor(shared, club, now, { freshNearKickOff: true, cache: shared && sheetCache(shared) });
     // In CI the workflow unpacks the `snapshots` branch here (see .github/workflows/bulletin.yml).
-    const collection = await collectAll(club, now, resolve(ROOT, 'snapshots'));
+    const collection = await collectAll(club, now, resolve(ROOT, 'snapshots'), matchSource);
     printReport(collection.report);
     ({ items, match } = collection);
     await mkdir(OUT, { recursive: true });
@@ -194,7 +198,7 @@ async function main() {
   console.log(`\nWeighted for this bulletin:`);
   for (const s of stories.slice(0, 8)) console.log(`  ${s.score.toFixed(3)}  ${s.title}`);
 
-  const announced = await loadAnnounced(club, phase, now, workerSource());
+  const announced = await loadAnnounced(club, phase, now, workerSource(), { results: match?.last, cache: store && sheetCache(store) });
   if (announced) console.log(`Announced team: ${announced.ours.team} ${announced.ours.formation} v ${announced.opponent}${announced.theirs ? ' (both teams)' : ''}`);
   const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced);
   console.log(`Matchday mode: ${facts.phase.kind}`);

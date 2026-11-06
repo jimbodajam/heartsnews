@@ -2,22 +2,31 @@
 // while this runs, it checks in every 30 seconds and claims them, voicing them on the GPU. When it's off, GitHub
 // builds them instead, on the CPU. One programme and one breaking package at a time, side by side: publishing takes
 // turns through the store (jobs.ts). It also refreshes the snapshots branch every half hour (Kickback threads and
-// YouTube transcripts, which GitHub can't reach), for the builds on either runner.
-// Usage: npm run agent [-- --templates] [--no-snapshot]
+// YouTube transcripts, which GitHub can't reach), for the builds on either runner. And it reads BBC's fixtures and
+// table every half hour into the store, for the ingest and the programmes to share (issue #105, shared-match.ts), so
+// BBC is read from home rather than from GitHub.
+// Usage: npm run agent [-- --templates] [--no-snapshot] [--no-fixtures]
 //   --templates     plain lines, no AI, for both programmes and breaking news
 //   --no-snapshot   don't refresh the snapshots branch
+//   --no-fixtures   don't read BBC's fixtures and table (the ingest and programmes then read them themselves)
 
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { relayBbc } from './bbc-relay.ts';
 import { run, runJob, said } from './jobs.ts';
-import { checkIn, type Job, type JobKind, releaseJobs, signOff, storeFromEnv } from './store.ts';
+import { refreshShared } from './shared-match.ts';
+import { checkIn, type Job, type JobKind, releaseJobs, sheetCache, signOff, storeFromEnv } from './store.ts';
+import type { ClubConfig } from './types.ts';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const CHECK_IN_MS = 30_000;
 const SNAPSHOT_MS = 30 * 60_000;
 const RELAY_MS = 10_000;
+/** How often the agent looks at the shared fixtures' age; it reads BBC only once they're half an hour old. */
+const FIXTURES_CHECK_MS = 60_000;
+const FIXTURES_RETRY_MS = 10 * 60_000;
 const args = process.argv.slice(2);
 const flag = (name: string) => args.includes(name);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -58,6 +67,28 @@ async function main() {
       await sleep(RELAY_MS);
     }
   })();
+
+  // BBC's fixtures and table for everyone (shared-match.ts), read from here once the stored copy is half an hour old.
+  if (!flag('--no-fixtures')) {
+    const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as ClubConfig;
+    void (async () => {
+      let failing = false;
+      while (!stopping) {
+        await refreshShared(store, club, new Date(), undefined, sheetCache(store)).then(
+          (did) => {
+            if (did) console.log(`[agent] BBC fixtures and table shared: ${did}`);
+            failing = false;
+          },
+          (err) => {
+            if (!failing) console.warn(`[agent] Couldn't share BBC's fixtures (the ingest reads them itself meanwhile): ${said(err)}`);
+            failing = true;
+          },
+        );
+        // After a failure, wait a good while: never retry BBC every minute.
+        await sleep(failing ? FIXTURES_RETRY_MS : FIXTURES_CHECK_MS);
+      }
+    })();
+  }
 
   console.log(`[agent] Checking in every ${CHECK_IN_MS / 1000}s for programmes and breaking news${flag('--templates') ? ' (plain lines, no AI)' : ''}`);
   let quiet = false;

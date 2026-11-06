@@ -3,7 +3,7 @@
 // break-in used), else from the BBC match page.
 
 import type { LiveMatch, TeamSheet } from '../../shared/live.ts';
-import { matchSheets, previousSheet } from './collectors/bbc.ts';
+import { matchSheets, previousSheet, type SheetOptions } from './collectors/bbc.ts';
 import type { Phase } from './matchday.ts';
 import type { ClubConfig } from './types.ts';
 
@@ -24,6 +24,8 @@ export async function loadAnnounced(
   phase: Phase,
   now: Date,
   live: () => Promise<{ match: LiveMatch | null }>,
+  /** Our results already collected, and the finished matches' sheets cache: our last team without re-reading BBC. */
+  sheets: SheetOptions = {},
 ): Promise<Announced | undefined> {
   if (phase.kind !== 'preview' || !club.bbc) return undefined;
   const fixture = phase.fixture;
@@ -43,7 +45,7 @@ export async function loadAnnounced(
       theirs = weAreHome ? sheets.away : sheets.home;
     }
     if (!ours) return undefined;
-    const previous = await previousSheet(club.bbc.team, fixture.date).catch(() => undefined);
+    const previous = await previousSheet(club.bbc.team, fixture.date, { ...sheets, now: now.getTime() }).catch(() => undefined);
     const opponent = fixture.homeSlug === club.bbc.team ? fixture.away : fixture.home;
     return { ours, theirs, opponent, previous };
   } catch (err) {

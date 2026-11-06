@@ -15,8 +15,9 @@ import { collectAll, printReport } from './collectors/index.ts';
 import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collectors/transcripts.ts';
 import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
+import { matchFor } from './shared-match.ts';
 import { squadFor } from './squad.ts';
-import { ingestItems, neuronsToday, saveFetches, scheduleWrite, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { ingestItems, neuronsToday, saveFetches, scheduleWrite, saveTextTags, sheetCache, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
 import { summariseVideos } from './summarise.ts';
 import { countGames } from './tally.ts';
 import { summariseArticles } from './article-summary.ts';
@@ -53,7 +54,10 @@ async function main() {
   const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as ClubConfig;
 
   console.log(`Collecting for ${club.name}…`);
-  const { items, match, report } = await collectAll(club, now, resolve(ROOT, 'snapshots'));
+  // Fixtures and table from the copy the Mac reads every half hour (issue #105); BBC itself only when that's stale.
+  const { items, match, report } = await collectAll(club, now, resolve(ROOT, 'snapshots'), () =>
+    matchFor(store, club, now, { cache: sheetCache(store) }),
+  );
   printReport(report);
   // Our kick-offs, so the Worker reads BBC only around them (issue #104). Without fixtures nothing is written, and the
   // Worker reads BBC as before once the last schedule is two hours old.

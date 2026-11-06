@@ -21,11 +21,12 @@ import { openFixture, replay } from '../recording.ts';
 import type { Channel } from '../script/facts.ts';
 import { geminiFromEnv, type ScriptModel } from '../script/llm.ts';
 import { dropUnusedClips, voiceLines } from '../voice.ts';
-import { previousSheet } from '../collectors/bbc.ts';
+import { previousSheet, type SheetOptions } from '../collectors/bbc.ts';
 import { loadFaces } from '../script/faces.ts';
 import { EventTracker, type ReadyClubLineup, type ReadyEvent, type ReadyLineup, type ReadyPeriod } from './detect.ts';
 import { buildPackage, buildPeriodPackage } from './script.ts';
-import { storeFromEnv } from '../store.ts';
+import { loadSharedMatch, sheetCache, type Store, storeFromEnv } from '../store.ts';
+import { MAX_AGE_MS } from '../shared-match.ts';
 import { loadPlayers, loadTotals } from '../tally.ts';
 import { instagramFrom } from '../club-post.ts';
 import { downloadPost, readClubXI } from '../club-xi.ts';
@@ -90,6 +91,14 @@ export const describe = (r: Ready) =>
 /** Whether BBC's description is missing from what a package is built from (the team news never has one). */
 export const undescribed = (r: Ready) => !('lineup' in r) && !('club' in r) && !r.text.length;
 
+/** Our results from the shared copy if it's fresh, and the sheets cache (issue #105): our last team without re-reading BBC. */
+async function sheetsFrom(store: Store | undefined): Promise<SheetOptions> {
+  if (!store) return {};
+  const shared = await loadSharedMatch(store).catch(() => undefined);
+  const fresh = shared && Date.now() - Date.parse(shared.at) < MAX_AGE_MS;
+  return { cache: sheetCache(store), results: fresh ? shared.match.last : undefined };
+}
+
 /** Writes the package (no voices yet), or nothing if there's none to put out (the club's team matches BBC's). Flash-Lite only: Flash's 20 free requests a day are for the bulletins. */
 export async function writePackage(r: Ready, model?: ScriptModel): Promise<BreakingPackage | undefined> {
   const channel = JSON.parse(await readFile(resolve(ROOT, 'channel.json'), 'utf8')) as Channel;
@@ -105,16 +114,16 @@ export async function writePackage(r: Ready, model?: ScriptModel): Promise<Break
     if (!store) throw new Error('STORE_TOKEN is not set: the club graphic is matched to the squad table in the store');
     const roster = await loadPlayers(store);
     const config = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
-    const previous = await previousSheet(config.bbc.team, r.match.kickOff).catch(() => undefined);
+    const previous = await previousSheet(config.bbc.team, r.match.kickOff, await sheetsFrom(store)).catch(() => undefined);
     const totals = await loadTotals(store).catch(() => undefined);
     return buildClubNewsPackage({ ready: r, xi, roster, channel, previous, faces: loadFaces(), totals });
   }
   if ('lineup' in r) {
     const club = JSON.parse(await readFile(resolve(ROOT, 'clubs/hearts.json'), 'utf8')) as { bbc: { team: string } };
-    const previous = await previousSheet(club.bbc.team, r.match.kickOff).catch(() => undefined);
+    const store = storeFromEnv();
+    const previous = await previousSheet(club.bbc.team, r.match.kickOff, await sheetsFrom(store)).catch(() => undefined);
     if (!previous) console.log("[breaking] Couldn't read our last team from BBC: no changes line");
     // Our own appearances and goals count, for a milestone the team could bring (issue #35). Without it there is no line.
-    const store = storeFromEnv();
     const totals = store ? await loadTotals(store).catch(() => undefined) : undefined;
     return buildTeamNewsPackage({ ...r, channel, previous, faces: loadFaces(), totals });
   }

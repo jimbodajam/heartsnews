@@ -69,7 +69,13 @@ async function fromSnapshot(src: SourceConfig, dir: string, now: Date): Promise<
  * Pull every enabled source plus fixtures/table. Failing sources are reported, never fatal.
  * Sources marked `snapshot` fall back to the home-collected copy in `snapshotDir` when the live fetch fails.
  */
-export async function collectAll(club: ClubConfig, now = new Date(), snapshotDir?: string): Promise<Collection> {
+export async function collectAll(
+  club: ClubConfig,
+  now = new Date(),
+  snapshotDir?: string,
+  /** Where fixtures and the table come from (issue #105: the shared copy, shared-match.ts). Default: BBC directly. */
+  matchSource: () => Promise<{ match: MatchData; from: string }> = async () => ({ match: await collectBbcMatchData(club, now), from: 'BBC' }),
+): Promise<Collection> {
   const sources = club.sources.filter((s) => s.enabled !== false && s.url);
   const results = await Promise.allSettled(
     sources.map(async (s): Promise<{ items: Item[]; note?: string }> => {
@@ -98,8 +104,9 @@ export async function collectAll(club: ClubConfig, now = new Date(), snapshotDir
   let match: MatchData | undefined;
   const summary = (m: MatchData) => `${m.next.length} next, ${m.last.length} results, ${m.table.length} table rows`;
   try {
-    match = await collectBbcMatchData(club, now);
-    report.push({ name: 'BBC Sport (fixtures/table)', ok: true, detail: summary(match) });
+    const got = await matchSource();
+    match = got.match;
+    report.push({ name: 'BBC Sport (fixtures/table)', ok: true, detail: `${summary(match)} (${got.from})` });
   } catch (err) {
     report.push({ name: 'BBC Sport (fixtures/table)', ok: false, detail: (err as Error).message });
     try {
