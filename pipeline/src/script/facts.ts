@@ -13,6 +13,7 @@ import type { OnThisDay } from '../collectors/londonhearts.ts';
 import { pickHistory, type HistoryPicks } from '../history.ts';
 import type { Milestone } from '../tally.ts';
 import { milestonesFor } from './milestones.ts';
+import type { InjuryList } from '../injuries.ts';
 
 /**
  * Every bulletin gets FEATURE_COUNT in-depth packages: the highest-weighted of the top FEATURE_MAX_SCAN stories that
@@ -73,6 +74,8 @@ export interface Facts {
   announced?: Announced;
   /** Players near a round number of Hearts appearances or goals, or just past one, by our own count (#35). Not while a game is on. */
   milestones?: Milestone[];
+  /** Who's injured, by our own record (#107): when an injury story is in the pool, and before every game. */
+  injuries?: InjuryList;
 }
 
 /** The stats for the game on now (from its minute; 45 at half-time) or just played. */
@@ -108,6 +111,7 @@ export function buildFacts(
   history?: OnThisDay,
   milestones?: Milestone[],
   announced?: Announced,
+  injuries?: InjuryList,
 ): Facts {
   const phase = detectPhase(match, now);
   const nextFixtures = (match?.next ?? []).filter((f) => new Date(f.date) > now && f.status !== 'postponed').slice(0, 3);
@@ -146,6 +150,8 @@ export function buildFacts(
     // A milestone isn't said as it's being reached, but straight after: the reaction is where "reached" belongs.
     milestones: milestones && milestonesFor(phase.kind, milestones),
     announced,
+    // Real numbers whenever injuries come up, and who's missing before a game.
+    injuries: injuries && (phase.kind === 'preview' || stories.slice(0, 10).some((s) => s.category === 'injury')) ? injuries : undefined,
   };
 }
 

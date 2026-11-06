@@ -21,6 +21,7 @@ import { ingestItems, neuronsToday, saveFetches, scheduleWrite, saveTextTags, sh
 import { summariseVideos } from './summarise.ts';
 import { countGames } from './tally.ts';
 import { summariseArticles } from './article-summary.ts';
+import { clubOutlets } from './injuries.ts';
 import { updateStorylines } from './storylines.ts';
 import { tagItems } from './tags.ts';
 import type { ClubConfig } from './types.ts';
@@ -157,6 +158,7 @@ async function main() {
     now: at,
     shows: new Set(fan.map((s) => s.id)),
     opinionOnly: new Set(fan.filter((s) => !s.claimSource).map((s) => s.id)),
+    clubOutlets: clubOutlets(club),
   });
   // Then long articles are summarised for the bulletins (issue #52), with whatever the reading left of the budget.
   await summariseArticles({ store, model, used, now: new Date() });

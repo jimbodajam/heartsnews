@@ -161,6 +161,8 @@ export function assemble(f: Facts, draft: Draft, generatedBy: string): Bulletin 
         },
       });
     }
+    // Who's missing through injury, before a game (#107); once the team is announced, the team says it.
+    if (draft.missing && f.phase.kind === 'preview' && !f.announced) lines.push({ speaker: analyst, text: draft.missing });
     // Once the team is announced, the Match Centre reads it out until kick-off (issue #36).
     const team = f.announced;
     if (team) lines.push(...teamLines({ speaker: analyst, sheet: team.ours, theirs: team.theirs, opponent: team.opponent, previous: team.previous, faces: loadFaces() }));

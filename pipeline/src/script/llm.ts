@@ -8,6 +8,7 @@ import { scorerLabels } from '../matchday.ts';
 import { statsBrief } from '../reading.ts';
 import { scoreFromTitle, type Debate, type Draft, type Feature, type StoryResult } from './draft.ts';
 import { milestoneFacts } from './milestones.ts';
+import { injuryFacts } from '../injuries.ts';
 import { formOf, headToHeadText, xiText } from './opponent.ts';
 import { expertFor, firstName, ourResult, packageLines, presenter, teamName, type Facts } from './facts.ts';
 
@@ -195,8 +196,8 @@ ${f.club.shortName} ${kind}: ${o.ourXI ? xiText(o.ourXI) : '(unknown)'}`;
 }
 
 /** The blocks of source material. Each script piece gets only the ones it needs; the fact-checker gets them all. */
-export type DataPart = 'stories' | 'match' | 'window' | 'fans' | 'videos' | 'openings' | 'articles' | 'opponent' | 'next';
-export const ALL_PARTS: DataPart[] = ['stories', 'match', 'window', 'fans', 'videos', 'openings', 'articles', 'opponent'];
+export type DataPart = 'stories' | 'match' | 'window' | 'fans' | 'videos' | 'openings' | 'articles' | 'opponent' | 'injuries' | 'next';
+export const ALL_PARTS: DataPart[] = ['stories', 'match', 'window', 'fans', 'videos', 'openings', 'articles', 'opponent', 'injuries'];
 
 /** What a piece narrows its DATA to; the fact-checker passes none. */
 export interface DataScope {
@@ -279,8 +280,9 @@ ${ct ? `${ct.competition} table (${ct.rows.length} teams): ${tableRows(ct.rows)}
     openings: `More on the other top stories ([id] title, then for a storyline our newsroom brief and claims, then the start of each outlet's article):\n${headlineText || '(none)'}`,
     articles: `In-depth packages ([id] title (expert), then for a storyline our newsroom brief and claims, then each outlet's article text or a video transcript, labelled by outlet):\n${articles || '(none)'}`,
     opponent: opponentData(f),
+    injuries: injuryFacts(f.injuries, club.shortName),
   };
-  return `DATA\n${[...ALL_PARTS, 'next' as const].filter((p) => parts.includes(p)).map((p) => blocks[p]).join('\n\n')}\nEND DATA`;
+  return `DATA\n${[...ALL_PARTS, 'next' as const].filter((p) => parts.includes(p)).map((p) => blocks[p]).filter(Boolean).join('\n\n')}\nEND DATA`;
 }
 
 /** A story's text, one block per outlet ("From BBC Sport: …"): `one` characters for a lone article, `each` for several. */
@@ -528,6 +530,7 @@ export function mergeDraft(base: Draft, ai: Partial<Draft>, f: Facts): Draft {
     history: base.history,
     // The writer's own words where it gave them; otherwise the template's line, so a milestone is never lost.
     milestones: pickOptional(ai.milestones, base.milestones),
+    missing: pickOptional(ai.missing, base.missing),
     outro: pick(ai.outro, base.outro),
   };
 }

@@ -278,7 +278,7 @@ function pieces(f: Facts): Piece[] {
     const { quote, result, ...properties } = FEATURE_SCHEMA.properties;
     list.push({
       id: `story-${s.id}`,
-      parts: ['articles', 'next'],
+      parts: ['articles', 'next', ...(s.category === 'injury' ? (['injuries'] as DataPart[]) : [])],
       scope: { articleIds: [s.id] },
       cast: [a.id, expertId],
       rules: rulesFor([s]),
@@ -339,7 +339,7 @@ opinions: 0 or 1 view ${expert} (speaker "${expertId}") voiced here that they sh
 
   list.push({
     id: 'headlines',
-    parts: ['stories', 'openings', 'articles', f.phase.kind === 'normal' ? 'next' : 'match'],
+    parts: ['stories', 'openings', 'articles', f.phase.kind === 'normal' ? 'next' : 'match', 'injuries'],
     scope: { articleChars: [800, 500] },
     cast: [a.id],
     rules: rulesFor(f.pool, 'standard'),
@@ -359,19 +359,21 @@ opinions: 0 or 1 view ${expert} (speaker "${expertId}") voiced here that they sh
   each. Otherwise mention the outlet once. Don't repeat the same story twice.`,
   });
 
+  const missing = f.phase.kind === 'preview' && !f.announced && Boolean(f.injuries?.current.some((i) => i.status === 'out'));
   if (f.lastResult || f.table.length || next || f.phase.kind === 'live') {
     list.push({
       id: 'match',
-      parts: ['match', ...(f.opponent ? (['opponent'] as DataPart[]) : [])],
+      parts: ['match', ...(f.opponent ? (['opponent'] as DataPart[]) : []), ...(missing ? (['injuries'] as DataPart[]) : [])],
       cast: [analyst.id],
       schema: {
         type: 'OBJECT',
-        properties: { result: STR, stats: STR, milestones: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
+        properties: { result: STR, stats: STR, milestones: STR, missing: STR, table: STR, competitionTable: STR, next: STR, opponent: { type: 'OBJECT', properties: { form: STR, theirXI: STR, ourXI: STR } } },
         // Asking for every field that has data stops a lighter model running them all together in one.
         required: [
           ...(f.lastResult || f.phase.kind === 'live' ? ['result'] : []),
           ...(f.matchStats ? ['stats'] : []),
           ...(f.milestones?.length ? ['milestones'] : []),
+          ...(missing ? ['missing'] : []),
           ...(f.table.length && f.phase.kind !== 'live' ? ['table'] : []),
           ...(ct ? ['competitionTable'] : []),
           ...(next ? ['next'] : []),
@@ -400,6 +402,12 @@ Each field is its own line of one or two sentences (at most about 45 words): nev
       ? `${f.phase.kind === 'preview' ? 'this is a build-up, so say who could reach a round number of Hearts appearances or goals in this game (one more appearance, or goals within reach): "could", never "will".' : 'say who has just reached a round number of Hearts appearances or goals, and who is close to one.'}
   Use only the milestones in the data, with their names and numbers exactly as given, in one or two sentences. Keep it about the player, not the stats.`
       : 'leave it out (no milestones).'
+  }
+- missing: ${
+    missing
+      ? `straight after "next": who ${club.shortName} will be without through injury, from the injury list in the data, with its
+  count exactly as given. Name the confirmed absentees; say "reported" for anyone not confirmed. One or two sentences.`
+      : 'leave it out.'
   }
 - competitionTable: ${
     ct

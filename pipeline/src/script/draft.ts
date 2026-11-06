@@ -4,6 +4,7 @@ import { truncate } from '../text.ts';
 import { scorerLabels } from '../matchday.ts';
 import { howItsGone } from '../reading.ts';
 import { milestoneLine } from './milestones.ts';
+import { missingLine } from '../injuries.ts';
 import { describeXI, formOf, headToHeadLine } from './opponent.ts';
 import { firstName, isUs, presenter, teamName, type Facts, type Story } from './facts.ts';
 import { historyDraft, type HistoryDraft } from './history.ts';
@@ -52,6 +53,8 @@ export interface Draft {
   history?: HistoryDraft;
   /** Squad milestones from our own count (script/milestones.ts), said in the Match Centre: the writer's words, or the template's line. */
   milestones?: string;
+  /** Before a game, who's missing through injury (#107), in the Match Centre: the writer's words, or the template's line. */
+  missing?: string;
   outro: string;
 }
 
@@ -220,6 +223,7 @@ export function templateDraft(f: Facts): Draft {
     opponent,
     history: historyDraft(f),
     milestones: milestoneLine(f.milestones),
+    missing: f.phase.kind === 'preview' ? missingLine(f.injuries) : undefined,
     welcome: `Good ${partOfDay(now)}, and welcome to ${channel.spokenName}.${opener} Here are the latest headlines.`,
     headlines: f.pool.slice(0, 4).map((s) => ({ storyId: s.id, text: `${headlineRead(s)} ${attribution(s.sources)}` })),
     matchHandoff: `Let's go over to ${firstName(analyst)} in the Match Centre.`,

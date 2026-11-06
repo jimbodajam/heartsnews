@@ -43,7 +43,8 @@ import { loadAnnounced } from './announced.ts';
 import { workerSource } from './breaking/index.ts';
 import { buildLedger, checkBulletin, playedMatches, repeatedViews, type Ledger, type LedgerMatch } from './script/ledger.ts';
 import { loadRoster } from './squad.ts';
-import { loadMatches, loadMemory, loadOnAir, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, sheetCache, storeFromEnv, type CheckLog, type Trace } from './store.ts';
+import { injuryList, type InjuryList } from './injuries.ts';
+import { loadMatches, loadMemory, loadOnAir, loadOpenInjuries, loadVideoSummaries, saveBuild, saveLedger, saveTrace, scriptOf, sheetCache, storeFromEnv, type CheckLog, type Trace } from './store.ts';
 import { matchFor } from './shared-match.ts';
 import type { ClubConfig, Item, MatchData } from './types.ts';
 import { renderVoices } from './voice.ts';
@@ -169,6 +170,17 @@ async function main() {
     }
   }
 
+  // Who's injured, by our own record (issue #107), with the dates worked out from the line-ups just counted.
+  let injuries: InjuryList | undefined;
+  if (store) {
+    try {
+      injuries = injuryList(await loadOpenInjuries(store, now), now);
+      if (injuries.current.length) console.log(`Injury list: ${injuries.current.map((i) => `${i.name} (${i.area ?? '?'}, ${i.status}${i.confirmed ? '' : ', reported'})`).join('; ')}`);
+    } catch (err) {
+      console.warn(`Couldn't read the injury list from the store: ${(err as Error).message}`);
+    }
+  }
+
   const played = (match?.last ?? []).filter((f) => f.homeScore != null);
   const stories = desk ? storylineStories(desk, { club, items, tags, played, upcoming: match?.next, now, ignoreAirings: fresh }) : buildStories(items, club, now, tags);
   // No article pages are fetched: storylines carry the ingest's stored text, anything else a transcript or summary.
@@ -200,7 +212,7 @@ async function main() {
 
   const announced = await loadAnnounced(club, phase, now, workerSource(), { results: match?.last, cache: store && sheetCache(store) });
   if (announced) console.log(`Announced team: ${announced.ours.team} ${announced.ours.formation} v ${announced.opponent}${announced.theirs ? ' (both teams)' : ''}`);
-  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced);
+  const facts = buildFacts(club, channel, stories, items, match, now, memory, history, milestones, announced, injuries);
   console.log(`Matchday mode: ${facts.phase.kind}`);
   console.log(`\nIn depth: ${facts.features.map((s) => `${s.title.slice(0, 40)}… (${s.body?.length} chars)`).join('; ') || 'none'}`);
   let draft = templateDraft(facts);

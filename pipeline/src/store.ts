@@ -2,6 +2,7 @@ import type { Bulletin } from '../../shared/bulletin.ts';
 import type { SheetCache, Sheets } from './collectors/bbc.ts';
 import type { D1Database, D1Statement } from '../../worker/src/store.ts';
 import type { Entity } from './entities.ts';
+import { settle, type Injury, type InjuryStatus, type InjuryType, type LineUps, type ReturnBand } from './injuries.ts';
 import type { Memory, PresenterPrediction } from './memory.ts';
 import type { OnAirDesk } from './onair.ts';
 import type { CallRecord } from './script/llm.ts';
@@ -918,14 +919,15 @@ export async function closeStorylines(store: Store, closing: { id: number; reaso
   if (closing.length) await store.batch(closeWrites(closing, now));
 }
 
-/** New briefs (and titles), and the Workers AI they took. */
-export async function saveBriefs(store: Store, briefs: { id: number; title: string; brief: Brief }[], neurons: number, now: Date): Promise<void> {
+/** New briefs (and titles), the injury rows read with them (issue #107), and the Workers AI they took. */
+export async function saveBriefs(store: Store, briefs: { id: number; title: string; brief: Brief }[], neurons: number, now: Date, injuries: Injury[] = []): Promise<void> {
   const statements = [
     ...each(
       `UPDATE storylines SET title = j.value ->> 'title', brief = j.value ->> 'brief', brief_at = ? FROM json_each(?) AS j WHERE storylines.id = j.value ->> 'id'`,
       briefs.map((b) => ({ id: b.id, title: b.title, brief: JSON.stringify(b.brief) })),
       [now.toISOString()],
     ),
+    ...injuryWrites(injuries, now),
     ...neuronWrites(neurons, now),
   ];
   if (statements.length) await store.batch(statements);
@@ -1201,4 +1203,165 @@ export async function loadArticlesToSummarise(
     title: String(r.title),
     body: String(r.body),
   }));
+}
+
+// ---- Injuries (issue #107) ----
+
+/** The counted Hearts games and who played in each, from our line-ups count (tally_runs, tally_games). */
+export async function loadLineUps(store: Store): Promise<LineUps> {
+  const [games, played, since] = await store.batch([
+    { sql: 'SELECT match_id, date FROM tally_runs ORDER BY date' },
+    { sql: 'SELECT match_id, entity_id FROM tally_games' },
+    { sql: `SELECT value FROM state WHERE key = 'tally_since'` },
+  ]);
+  const byEntity = new Map<string, Set<string>>();
+  for (const r of played) byEntity.set(String(r.entity_id), (byEntity.get(String(r.entity_id)) ?? new Set<string>()).add(String(r.match_id)));
+  return {
+    games: games.map((r) => ({ id: String(r.match_id), date: String(r.date) })),
+    played: byEntity,
+    ...(since[0] ? { since: JSON.parse(String(since[0].value)) as string } : {}),
+  };
+}
+
+const INJURY_COLUMNS = `i.storyline_id, i.n, i.entity_id, e.name, i.area, i.type, i.side, i.claims, i.in_training, i.first_reported_at, i.injured_match_id, i.injured_at,
+  i.date_basis, i.return_estimate, i.return_from, i.return_to, i.return_band, i.claimed_status, i.status, i.confirmed, i.returned_match_id,
+  i.returned_at, i.days_out, i.games_missed, i.locked`;
+
+const opt = <K extends string>(key: K, v: unknown): Partial<Record<K, string>> => (v == null ? {} : ({ [key]: String(v) } as Record<K, string>));
+
+function toInjury(r: Row): Injury {
+  return {
+    storylineId: Number(r.storyline_id),
+    n: Number(r.n),
+    entity: String(r.entity_id),
+    ...opt('name', r.name),
+    ...opt('area', r.area),
+    type: r.type as InjuryType,
+    ...(r.side ? { side: r.side as 'left' | 'right' } : {}),
+    claims: JSON.parse(String(r.claims ?? '[]')) as number[],
+    inTraining: Number(r.in_training) === 1,
+    firstReportedAt: String(r.first_reported_at),
+    ...opt('injuredMatchId', r.injured_match_id),
+    injuredAt: String(r.injured_at),
+    dateBasis: r.date_basis as Injury['dateBasis'],
+    ...opt('returnEstimate', r.return_estimate),
+    ...opt('returnFrom', r.return_from),
+    ...opt('returnTo', r.return_to),
+    ...(r.return_band ? { returnBand: r.return_band as ReturnBand } : {}),
+    claimedStatus: r.claimed_status as InjuryStatus,
+    status: r.status as InjuryStatus,
+    confirmed: Number(r.confirmed) === 1,
+    ...opt('returnedMatchId', r.returned_match_id),
+    ...opt('returnedAt', r.returned_at),
+    ...(r.days_out != null ? { daysOut: Number(r.days_out) } : {}),
+    ...(r.games_missed != null ? { gamesMissed: Number(r.games_missed) } : {}),
+    locked: Number(r.locked) === 1,
+  };
+}
+
+/** Injury rows as written: new ones go in, existing ones are updated unless an admin has locked them. */
+export function injuryWrites(rows: Injury[], now: Date): Statement[] {
+  return each(
+    `INSERT INTO injuries (storyline_id, n, entity_id, area, type, side, claims, first_reported_at, injured_match_id, injured_at, date_basis,
+        return_estimate, return_from, return_to, return_band, claimed_status, status, confirmed, returned_match_id, returned_at, days_out,
+        games_missed, in_training, updated_at)
+      SELECT value ->> 'storylineId', value ->> 'n', value ->> 'entity', value ->> 'area', value ->> 'type', value ->> 'side', value ->> 'claims',
+        value ->> 'firstReportedAt', value ->> 'injuredMatchId', value ->> 'injuredAt', value ->> 'dateBasis', value ->> 'returnEstimate',
+        value ->> 'returnFrom', value ->> 'returnTo', value ->> 'returnBand', value ->> 'claimedStatus', value ->> 'status', value ->> 'confirmed',
+        value ->> 'returnedMatchId', value ->> 'returnedAt', value ->> 'daysOut', value ->> 'gamesMissed', value ->> 'inTraining', ? FROM json_each(?) WHERE true
+      ON CONFLICT (storyline_id, n) DO UPDATE SET area = excluded.area, type = excluded.type, side = excluded.side, claims = excluded.claims,
+        first_reported_at = excluded.first_reported_at, injured_match_id = excluded.injured_match_id, injured_at = excluded.injured_at,
+        date_basis = excluded.date_basis, return_estimate = excluded.return_estimate, return_from = excluded.return_from,
+        return_to = excluded.return_to, return_band = excluded.return_band, claimed_status = excluded.claimed_status, status = excluded.status,
+        confirmed = excluded.confirmed, returned_match_id = excluded.returned_match_id, returned_at = excluded.returned_at,
+        days_out = excluded.days_out, games_missed = excluded.games_missed, in_training = excluded.in_training, updated_at = excluded.updated_at
+      WHERE injuries.locked = 0`,
+    rows
+      .filter((r) => !r.locked)
+      .map((r) => ({
+        storylineId: r.storylineId,
+        n: r.n,
+        entity: r.entity,
+        area: r.area ?? null,
+        type: r.type,
+        side: r.side ?? null,
+        claims: JSON.stringify(r.claims),
+        firstReportedAt: r.firstReportedAt,
+        injuredMatchId: r.injuredMatchId ?? null,
+        injuredAt: r.injuredAt,
+        dateBasis: r.dateBasis,
+        returnEstimate: r.returnEstimate ?? null,
+        returnFrom: r.returnFrom ?? null,
+        returnTo: r.returnTo ?? null,
+        returnBand: r.returnBand ?? null,
+        claimedStatus: r.claimedStatus,
+        status: r.status,
+        confirmed: r.confirmed ? 1 : 0,
+        returnedMatchId: r.returnedMatchId ?? null,
+        returnedAt: r.returnedAt ?? null,
+        daysOut: r.daysOut ?? null,
+        gamesMissed: r.gamesMissed ?? null,
+        inTraining: r.inTraining ? 1 : 0,
+      })),
+    [now.toISOString()],
+  );
+}
+
+/** The injury rows already held for these storylines, by storyline, in order. */
+export async function loadInjuriesOf(store: Store, storylineIds: number[]): Promise<Map<number, Injury[]>> {
+  const out = new Map<number, Injury[]>();
+  if (!storylineIds.length) return out;
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT ${INJURY_COLUMNS} FROM injuries i JOIN entities e ON e.id = i.entity_id
+            WHERE i.storyline_id IN (SELECT value FROM json_each(?)) ORDER BY i.storyline_id, i.n`,
+      params: [JSON.stringify(storylineIds)],
+    },
+  ]);
+  for (const r of rows.map(toInjury)) out.set(r.storylineId, [...(out.get(r.storylineId) ?? []), r]);
+  return out;
+}
+
+/**
+ * Injuries he hasn't come back from yet (and any back in the last fortnight) of players still at the club, with the
+ * dates worked out again from today's line-ups, for a bulletin.
+ */
+export async function loadOpenInjuries(store: Store, now: Date, lineUps?: LineUps): Promise<Injury[]> {
+  const ups = lineUps ?? (await loadLineUps(store));
+  const recent = new Date(now.getTime() - 14 * DAY_MS).toISOString();
+  const [rows] = await store.batch([
+    {
+      sql: `SELECT ${INJURY_COLUMNS} FROM injuries i JOIN entities e ON e.id = i.entity_id
+            WHERE e.active = 1 AND (i.returned_match_id IS NULL OR i.returned_at >= ?) ORDER BY i.injured_at`,
+      params: [recent],
+    },
+  ]);
+  return rows.map(toInjury).map((i) => (i.locked ? i : settle(i, ups, now)));
+}
+
+/**
+ * Brings the stored dates up to date with the line-ups (he played again: back; games missed so far), with no model.
+ * Part of each ingest run. Returns the rows that changed.
+ */
+export async function settleInjuries(store: Store, now: Date): Promise<Injury[]> {
+  const [rows] = await store.batch([
+    { sql: `SELECT ${INJURY_COLUMNS} FROM injuries i JOIN entities e ON e.id = i.entity_id WHERE i.locked = 0 AND i.returned_match_id IS NULL` },
+  ]);
+  if (!rows.length) return [];
+  const lineUps = await loadLineUps(store);
+  const key = (i: Injury) => [i.injuredAt, i.injuredMatchId, i.status, i.returnedMatchId, i.daysOut, i.gamesMissed].join('|');
+  const changed = rows.map(toInjury).flatMap((i) => {
+    const s = settle(i, lineUps, now);
+    return key(s) === key(i) ? [] : [s];
+  });
+  if (changed.length) await store.batch(injuryWrites(changed, now));
+  return changed;
+}
+
+
+/** Every injury storyline about one player, open or closed, with its claims: for the one-off backfill of the injury rows. */
+export async function loadInjuryStorylines(store: Store): Promise<Storyline[]> {
+  const where = `category = 'injury' AND kind = 'person' AND entity_id IS NOT NULL`;
+  const [storylines, claims] = await store.batch([{ sql: `SELECT ${STORYLINE_COLUMNS} FROM storylines WHERE ${where} ORDER BY id` }, { sql: CLAIMS_OF(where) }]);
+  return toStorylines(storylines, claims);
 }

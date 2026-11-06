@@ -1,6 +1,7 @@
 import type { Entity } from './entities.ts';
+import { fromReading, INJURY_INSTRUCTIONS, INJURY_SCHEMA, injuryNotes, parseInjuries, settle, type Injury, type InjuryReading, type LineUps, type ReadingContext } from './injuries.ts';
 import type { ScriptModel } from './script/llm.ts';
-import { closeStorylines, loadOpenStorylines, loadStoryDesk, saveBriefs, saveNeurons, saveSift, storylinesDueBriefs, type Store } from './store.ts';
+import { closeStorylines, loadInjuriesOf, loadLineUps, loadOpenStorylines, loadStoryDesk, saveBriefs, saveNeurons, saveSift, settleInjuries, storylinesDueBriefs, type Store } from './store.ts';
 import { categorise } from './tags.ts';
 import { slug, truncate } from './text.ts';
 import type { Fixture, SourceKind } from './types.ts';
@@ -551,7 +552,7 @@ export const BRIEF_SCHEMA = {
       type: 'array',
       items: {
         type: 'object',
-        properties: { storyline: S, title: S, known: S, disputed: S, latest: S },
+        properties: { storyline: S, title: S, known: S, disputed: S, latest: S, injuries: INJURY_SCHEMA },
         required: ['storyline', 'title', 'known', 'disputed', 'latest'],
       },
     },
@@ -559,7 +560,10 @@ export const BRIEF_SCHEMA = {
   required: ['briefs'],
 };
 
-export function briefPrompt(storylines: Storyline[], names: OutletNames, people: Entity[], now: Date): string {
+/** An injury storyline about one player: its brief request also reads the injury rows (issue #107). */
+export const isInjuryStoryline = (s: Storyline) => s.category === 'injury' && s.kind === 'person' && Boolean(s.entity);
+
+export function briefPrompt(storylines: Storyline[], names: OutletNames, people: Entity[], now: Date, injuries?: Map<number, string>): string {
   const blocks = storylines.map((s) => {
     const phase = s.kind === 'match' && s.kickOff ? `; match ${matchPhase(s.kickOff, now)}` : '';
     const head = `s${s.id} [${[s.kind, s.category].filter(Boolean).join(', ')}${phase}; ${s.status}] ${s.title}`;
@@ -570,7 +574,7 @@ export function briefPrompt(storylines: Storyline[], names: OutletNames, people:
       const replaced = c.replacedBy ? `, replaced by c${c.replacedBy}` : '';
       return `  c${c.id} ${dayLabel(c.firstSeen)} (${c.status}${disputes}${replaced}${isNew ? ', NEW' : ''}; ${sourceLabels(c, names)}) ${c.text}`;
     });
-    return [head, old, 'Claims, oldest first:', ...claims].join('\n');
+    return [head, old, 'Claims, oldest first:', ...claims, injuries?.get(s.id) ?? ''].filter(Boolean).join('\n');
   });
   return `Write the newsroom brief for each storyline below: what a Hearts News 24 presenter needs to pick it up and tell it. Use only the claims; no opinion.
 - known: two or three sentences giving the picture as it stands, as one story rather than a list of reports, the latest position first, without dates or who reported what (that goes in disputed). A replaced claim is history ("first reported as six weeks, now months"). For a match: in the preview, what's at stake and the team news; on the day of the result, the result and how it came about; in the fallout, what has followed it.
@@ -578,18 +582,18 @@ export function briefPrompt(storylines: Storyline[], names: OutletNames, people:
 - latest: one sentence giving the news in the claims marked NEW, as you'd say it on air ("Milne's injury is now said to be an ACL tear, ruling him out for the season"). Never mention claims, reports, dates or "NEW". If there's no brief yet, the newest development.
 - title: the storyline's short title (a few words, like "Milne injury"); keep it unless it's become wrong.
 - storyline: its ref as given below, like "s12".
-Name people as the people list does; don't guess a first name.
+${storylines.some((s) => injuries?.has(s.id)) ? `${INJURY_INSTRUCTIONS}\n` : ''}Name people as the people list does; don't guess a first name.
 
 People: ${people.map((e) => e.name).join(', ')}
 
 ${blocks.join('\n\n')}`;
 }
 
-export function parseBriefs(reply: { briefs?: { storyline?: string; title?: string; known?: string; disputed?: string; latest?: string }[] }, storylines: Storyline[]) {
+export function parseBriefs(reply: { briefs?: { storyline?: string; title?: string; known?: string; disputed?: string; latest?: string; injuries?: unknown }[] }, storylines: Storyline[]) {
   const byRef = new Map(storylines.map((s) => [`s${s.id}`, s]));
   const byTitle = new Map(storylines.map((s) => [s.title.toLowerCase(), s]));
   const briefs = reply.briefs ?? [];
-  const out: { id: number; title: string; brief: Brief }[] = [];
+  const out: { id: number; title: string; brief: Brief; injuries?: InjuryReading[] }[] = [];
   for (const [i, b] of briefs.entries()) {
     // By its ref; the model sometimes gives the title instead, or nothing usable, in which case by its place.
     const s =
@@ -599,10 +603,41 @@ export function parseBriefs(reply: { briefs?: { storyline?: string; title?: stri
     if (!s || !b.known?.trim() || out.some((o) => o.id === s.id)) continue;
     // A match keeps its fixture's name; a brief's title for one is often a headline ("Vrancken warning").
     const title = s.kind === 'match' ? s.title : truncate((b.title || s.title).trim(), 80);
-    out.push({ id: s.id, title, brief: { known: b.known.trim(), disputed: (b.disputed ?? '').trim(), latest: (b.latest ?? '').trim() } });
+    const injuries = isInjuryStoryline(s) ? parseInjuries(b.injuries, s) : [];
+    out.push({ id: s.id, title, brief: { known: b.known.trim(), disputed: (b.disputed ?? '').trim(), latest: (b.latest ?? '').trim() }, ...(injuries.length ? { injuries } : {}) });
   }
   return out;
 }
+
+// ---- Injury rows (issue #107) ----
+
+/** For the briefs due: the rows already held for the injury storylines among them, the line-ups, and the notes the request is given. */
+export async function loadInjuryDesk(
+  store: Store,
+  storylines: Storyline[],
+): Promise<{ existing: Map<number, Injury[]>; lineUps: LineUps; notes: Map<number, string> } | undefined> {
+  const injury = storylines.filter(isInjuryStoryline);
+  if (!injury.length) return undefined;
+  const [existing, lineUps] = await Promise.all([loadInjuriesOf(store, injury.map((s) => s.id)), loadLineUps(store)]);
+  return { existing, lineUps, notes: new Map(injury.map((s) => [s.id, injuryNotes(existing.get(s.id) ?? [], lineUps, s.entity!)])) };
+}
+
+/**
+ * The rows for one injury storyline from what its brief request read, in the order given (the existing ones first),
+ * with the dates from the line-ups. A row an admin has locked is left as it is; one the reply leaves out is kept.
+ */
+export function injuryRows(s: Storyline, readings: InjuryReading[], existing: Injury[], lineUps: LineUps, ctx: ReadingContext, now: Date): Injury[] {
+  if (!isInjuryStoryline(s)) return [];
+  return readings.flatMap((r, i) => {
+    const n = i + 1;
+    if (existing.find((e) => e.n === n)?.locked) return [];
+    const row = fromReading(r, n, s, ctx);
+    return row ? [settle(row, lineUps, now)] : [];
+  });
+}
+
+export const injuryLog = (i: Injury) =>
+  `Injury: ${i.entity} #${i.n}: ${i.area ?? 'area unknown'}, ${i.status}${i.confirmed ? ' (confirmed)' : ''}, since ${i.injuredAt.slice(0, 10)} (${i.dateBasis})${i.returnEstimate ? `, "${i.returnEstimate}"` : ''}, ${i.gamesMissed} games missed`;
 
 // ---- A run ----
 
@@ -620,6 +655,8 @@ export interface StorylineRun {
   shows?: ReadonlySet<string>;
   /** Fan channels with no claims to file: their videos are marked read without being sifted. */
   opinionOnly?: ReadonlySet<string>;
+  /** The club's own outlets (its website, its TV channel): what they say about an injury is confirmed. */
+  clubOutlets?: ReadonlySet<string>;
   log?: (line: string) => void;
 }
 
@@ -642,6 +679,15 @@ export async function updateStorylines(r: StorylineRun): Promise<void> {
     desk.open.push({ ...opening, status: 'open', updatedAt: opening.openedAt, claims: [] });
     desk.nextIds.storyline++;
     log(`Opened the storyline for ${opening.title}.`);
+  }
+
+  // He played again: back. Worked out from the line-ups, so it needs no model (issue #107).
+  try {
+    for (const i of await settleInjuries(store, now)) {
+      log(`Injury: ${i.entity} ${i.status === 'back' ? `back (${i.returnedMatchId}) after ${i.gamesMissed} games` : `${i.gamesMissed} games missed so far`}.`);
+    }
+  } catch (err) {
+    log(`Couldn't bring the injury rows up to date: ${(err as Error).message}`);
   }
 
   const model = r.model;
@@ -713,13 +759,19 @@ export async function updateStorylines(r: StorylineRun): Promise<void> {
     }
 
     const stale = await storylinesDueBriefs(store, now, BRIEFS_PER_RUN);
+    const injuryDesk = await loadInjuryDesk(store, stale);
+    const ctx: ReadingContext = { clubOutlets: r.clubOutlets ?? new Set(), shows: r.shows ?? new Set() };
     for (const batch of chunks(stale, BRIEFS_PER_REQUEST)) {
       try {
-        const reply = (await model.generateJson(briefPrompt(batch, r.names, people, now), BRIEF_SCHEMA)) as object;
+        const reply = (await model.generateJson(briefPrompt(batch, r.names, people, now, injuryDesk?.notes), BRIEF_SCHEMA)) as object;
         const briefs = parseBriefs(reply, batch);
         if (briefs.length < batch.length) log(`  Only ${briefs.length} of ${batch.length} briefs came back usable: ${JSON.stringify(reply).slice(0, 400)}`);
-        await saveBriefs(store, briefs, spent(), now);
+        const injuries = injuryDesk
+          ? briefs.flatMap((b) => injuryRows(batch.find((s) => s.id === b.id)!, b.injuries ?? [], injuryDesk.existing.get(b.id) ?? [], injuryDesk.lineUps, ctx, now))
+          : [];
+        await saveBriefs(store, briefs, spent(), now, injuries);
         for (const b of briefs) log(`  Brief: ${b.title}: ${b.brief.known}`);
+        for (const i of injuries) log(`  ${injuryLog(i)}`);
       } catch (err) {
         if (err instanceof OutOfBudget) throw err;
         log(`  Couldn't write briefs for ${batch.map((s) => s.title).join(', ')} (left for the next run): ${(err as Error).message}`);
