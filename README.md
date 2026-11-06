@@ -16,7 +16,7 @@ A rolling 24-hour pixel-art sports news channel for Heart of Midlothian. See [PL
 | `site/` | Vite + Canvas player. Plays `site/public/bulletins/latest.json` |
 | `worker/` | Cloudflare Worker serving `live.json` during a match: score, clock, goals, red cards, BBC live text, both teams. Also `/store`, the channel's memory in D1 |
 
-## Commands (run inside WSL)
+## Commands (run inside WSL, or directly on the Mac server)
 
 ```bash
 npm install
@@ -81,6 +81,24 @@ Setting it up (owner, once):
 2. A fine-grained GitHub token for this repo only, with **Actions: read and write**, then
    `npx wrangler secret put GITHUB_DISPATCH_TOKEN` and `npm run worker:deploy` (which adds the cron trigger).
 3. On the home PC, run `npm run agent` instead of `npm run live` whenever it's on.
+
+#### The always-on Mac (Intel, no Homebrew)
+
+The agent also runs 24/7 on a Mac server (reached over Tailscale), so BBC relaying, the half-hourly snapshots and the
+queued jobs carry on with the PC off. Only one home agent should relay and snapshot at a time (#102). The files are in
+`tools/mac/`:
+
+1. `xcode-select --install` at the Mac (gives git). Then clone the repo to `~/heartsnews` and run `npm ci` with the
+   Node below on `PATH`.
+2. `bash tools/mac/setup.sh` installs Node 22, the GitHub CLI, ffmpeg and Rhubarb under `~/.local` (no sudo, each
+   download checked against a pinned SHA-256). Then `gh auth login` (`publish.ts` and `snapshot.ts` use `gh auth token`).
+3. `scp .env` across from the PC (never paste secrets into an issue or chat).
+4. `bash tools/mac/install-agent.sh` installs the LaunchAgent `uk.heartsnews.agent` (`RunAtLoad`, `KeepAlive`). It runs
+   `run-agent.sh`, which calls Node directly so `launchctl bootout` delivers SIGTERM and the agent signs off, and logs
+   to `~/Library/Logs/heartsnews-agent.log`.
+5. Log rotation (sudo, once): `sudo install -m 644 -o root -g wheel ~/heartsnews/tools/mac/newsyslog-heartsnews.conf /etc/newsyslog.d/heartsnews.conf`.
+
+Update with `git pull && npm ci` in `~/heartsnews`, then `launchctl kickstart -k gui/$(id -u)/uk.heartsnews.agent`.
 
 To see how quickly GitHub gets breaking news out, `npm run replay -- --queue` runs the clock against the recorded match
 from the PC, queueing test jobs (plain lines) that only GitHub takes. GitHub builds and voices each but never publishes

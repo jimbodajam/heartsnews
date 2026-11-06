@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The home agent as a LaunchAgent (issue #101). install-agent.sh fills in __HOME__ and loads it. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>uk.heartsnews.agent</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__HOME__/heartsnews/tools/mac/run-agent.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>__HOME__/.local/node/bin:__HOME__/.local/bin:__HOME__/.local/rhubarb:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>RHUBARB</key><string>__HOME__/.local/rhubarb/rhubarb</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ExitTimeOut</key><integer>25</integer>
+</dict>
+</plist>
