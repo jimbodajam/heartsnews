@@ -1,8 +1,8 @@
 // BBC pages for the Worker, fetched from home (5 Nov 2026). BBC Sport answers the Worker with HTTP 403 but serves a home
 // connection, so when the Worker can't read a page it asks for it in the store (worker/src/bbc-relay.ts), and the agent
 // fetches it here and stores the blocks the live feed reads. It fetches a page only when the Worker has asked for it
-// since the last copy was stored, so it runs at the Worker's own pace (every 20s in a match, every few minutes on a
-// quiet day) and does nothing at all while BBC lets the Worker in.
+// since the last copy was stored, so it runs at the Worker's own pace (every 20s in a match, nothing outside a match
+// window, issue #104) and does nothing at all while BBC lets the Worker in.
 
 import { initialData, liveBlocks } from '../../shared/bbc.ts';
 import type { Store } from './store.ts';

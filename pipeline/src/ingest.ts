@@ -16,7 +16,7 @@ import { attachTranscripts, loadTranscripts, TRANSCRIPT_CACHE } from './collecto
 import { seedEntities } from './entities.ts';
 import { loadFaces } from './script/faces.ts';
 import { squadFor } from './squad.ts';
-import { ingestItems, neuronsToday, saveFetches, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
+import { ingestItems, neuronsToday, saveFetches, scheduleWrite, saveTextTags, storeFromEnv, untaggedArticles, type ArticleToFetch, type Fetched } from './store.ts';
 import { summariseVideos } from './summarise.ts';
 import { countGames } from './tally.ts';
 import { summariseArticles } from './article-summary.ts';
@@ -55,6 +55,13 @@ async function main() {
   console.log(`Collecting for ${club.name}…`);
   const { items, match, report } = await collectAll(club, now, resolve(ROOT, 'snapshots'));
   printReport(report);
+  // Our kick-offs, so the Worker reads BBC only around them (issue #104). Without fixtures nothing is written, and the
+  // Worker reads BBC as before once the last schedule is two hours old.
+  if (match)
+    await store.batch([scheduleWrite(match, now)]).then(
+      () => console.log(`Live schedule: ${match.next.length} games ahead`),
+      (err: Error) => console.warn(`Couldn't save the live schedule: ${err.message}`),
+    );
   const transcripts = await loadTranscripts(resolve(ROOT, 'snapshots/transcripts.json'), TRANSCRIPT_CACHE);
   console.log(`Video transcripts: ${attachTranscripts(items, transcripts)} attached`);
 

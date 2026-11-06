@@ -53,11 +53,11 @@ test('served over HTTP as live.json, with CORS and a short cache', async () => {
   assert.equal((await w.respond(new Request('http://localhost/other'))).status, 404);
 });
 
-test('keeps each read for its TTL: a minute before kick-off nears, 20s from then', async () => {
+test('keeps each read for its TTL: five minutes before kick-off nears, 20s from then', async () => {
   const w = worker();
-  await w.feed(); // 16:30: kick-off 15 minutes off, so kept for a minute
+  await w.feed(); // 16:30: kick-off 15 minutes off, so kept for five minutes
   assert.equal(w.clock.reads, 2); // team page and match page
-  w.clock.t += 59_000;
+  w.clock.t += 299_000;
   await w.feed();
   assert.equal(w.clock.reads, 2);
   w.clock.t += 1_000;

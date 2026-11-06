@@ -12,7 +12,7 @@ import { initialData } from '../../shared/bbc.ts';
 import { admin, type AdminEnv } from './admin.ts';
 import { relayed } from './bbc-relay.ts';
 import { dispatcher, ingester, tick } from './clock.ts';
-import { liveFeed } from './feed.ts';
+import { type Kept, liveFeed, type Schedule } from './feed.ts';
 import { kickback, type KickbackEnv } from './kickback.ts';
 import { store, type StoreEnv } from './store.ts';
 import { fetchClubPosts, instagramFrom } from '../../pipeline/src/club-post.ts';
@@ -37,7 +37,33 @@ async function page(path: string) {
 
 // The D1 binding, for pages relayed from home when BBC refuses the Worker (bbc-relay.ts). Set by each request and cron run.
 let relayDb: Env['DB'];
-const live = liveFeed({ team: club.bbc.team, page: relayed(page, () => relayDb) });
+
+/** A JSON value in the state table, by key. */
+async function stateValue<T>(key: string): Promise<T | undefined> {
+  if (!relayDb) return undefined;
+  const [r] = await relayDb.batch([relayDb.prepare('SELECT value FROM state WHERE key = ?').bind(key)]);
+  const row = (r?.results ?? [])[0] as { value?: string } | undefined;
+  return row?.value ? (JSON.parse(row.value) as T) : undefined;
+}
+
+const live = liveFeed({
+  team: club.bbc.team,
+  page: relayed(page, () => relayDb),
+  // The kick-offs the ingest saw (issue #104): BBC is read only around them.
+  schedule: () => stateValue<Schedule>('live_schedule'),
+  // The last read, for the next cron run, which may not have it in memory.
+  memory: {
+    get: () => stateValue<Kept>('live_feed'),
+    set: async (kept) => {
+      if (!relayDb) return;
+      await relayDb.batch([
+        relayDb
+          .prepare('INSERT INTO state (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at')
+          .bind('live_feed', JSON.stringify(kept), new Date().toISOString()),
+      ]);
+    },
+  },
+});
 
 async function clock(env: Env): Promise<void> {
   relayDb = env.DB;

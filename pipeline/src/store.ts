@@ -9,7 +9,7 @@ import type { Remembered } from './script/remember.ts';
 import type { Brief, ClaimSource, ClaimStatus, CloseReason, SiftItem, SiftPlan, StoryDesk, Storyline, StorylineKind } from './storylines.ts';
 import { TAGGER_VERSION, type Tags } from './tags.ts';
 import { renderArticleSummary, renderSummary } from './summary-text.ts';
-import type { ArticleSummary, Figure, Item, SourceKind, VideoSummary } from './types.ts';
+import type { ArticleSummary, Figure, Item, MatchData, SourceKind, VideoSummary } from './types.ts';
 
 // The channel's memory in Cloudflare D1, reached through the live Worker's /store endpoint (worker/src/store.ts).
 // Every query the pipeline makes is here, so nothing else talks SQL. The schema is in worker/migrations/.
@@ -605,6 +605,24 @@ function itemText(r: Row, use: 'claims' | 'full'): string {
 }
 
 const neuronsKey = (now: Date) => `workers_ai:${now.toISOString().slice(0, 10)}`;
+
+/** Games that finished this long ago still count in the schedule, so a run after full time leaves its window open. */
+const SCHEDULE_BACK_MS = 6 * 3_600_000;
+
+/**
+ * Our kick-offs for the live feed (issue #104, state 'live_schedule'): the Worker reads BBC only around them. Written
+ * by every ingest (each half hour), so a postponement or a new game is picked up within the half hour. Postponed
+ * games aren't in `next`, so they drop out.
+ */
+export function scheduleWrite(match: Pick<MatchData, 'next' | 'last'>, now: Date): Statement {
+  const kickOffs = [...new Set([...match.next, ...match.last].map((f) => f.date))]
+    .filter((d) => Date.parse(d) > now.getTime() - SCHEDULE_BACK_MS)
+    .sort();
+  return {
+    sql: `INSERT INTO state (key, value, updated_at) VALUES ('live_schedule', ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    params: [JSON.stringify({ kickOffs, at: now.toISOString() }), now.toISOString()],
+  };
+}
 
 /** Workers AI neurons used so far today (UTC), by every run. */
 export async function neuronsToday(store: Store, now: Date): Promise<number> {
