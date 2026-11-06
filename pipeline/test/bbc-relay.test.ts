@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BbcData } from '../../shared/bbc.ts';
-import { relayed } from '../../worker/src/bbc-relay.ts';
+import { REFUSED_FOR_MS, relayed } from '../../worker/src/bbc-relay.ts';
 import { relayPage, wanted } from '../src/bbc-relay.ts';
 import type { Store } from '../src/store.ts';
 import { memoryD1 } from './d1.ts';
@@ -61,4 +61,47 @@ test('a page BBC serves the Worker never touches the store', async () => {
   const page = relayed(async () => data as BbcData, () => d1);
   assert.equal(await page(PATH), data);
   assert.equal(d1.db.prepare("SELECT count(*) AS n FROM state WHERE key LIKE 'bbc_%'").get()?.n, 0);
+});
+
+test('after a refusal the Worker leaves BBC alone for half an hour, served from home, then tries once more', async () => {
+  const { d1, store, clock, bbc } = setup();
+  let tries = 0;
+  let refusing = true;
+  const read = async (): Promise<BbcData> => {
+    tries++;
+    if (refusing) throw new Error(`BBC ${PATH}: HTTP 403`);
+    return data as BbcData;
+  };
+  const page = relayed(read, () => d1, clock.now);
+  await assert.rejects(page(PATH), /HTTP 403/);
+  await relayPage(store, PATH, () => new Date(clock.now()), bbc);
+
+  clock.tick(20_000);
+  await page(PATH);
+  clock.tick(20_000);
+  await page(PATH);
+  assert.equal(tries, 1, 'no more tries of its own while refused');
+  assert.deepEqual(await wanted(store, new Date(clock.now())), [PATH], 'still asks home for fresh copies');
+
+  // Another instance, starting cold, learns of the refusal from the store.
+  const other = relayed(read, () => d1, clock.now);
+  await other(PATH);
+  assert.equal(tries, 1);
+
+  clock.tick(REFUSED_FOR_MS);
+  refusing = false;
+  assert.equal(await page(PATH), data, 'BBC let the Worker back in');
+  assert.equal(tries, 2);
+});
+
+test('a timeout or a bad minute at BBC is not a refusal: the Worker keeps trying itself', async () => {
+  const d1 = memoryD1();
+  let tries = 0;
+  const page = relayed(async () => {
+    tries++;
+    throw new Error(`BBC ${PATH}: HTTP 503`);
+  }, () => d1);
+  await assert.rejects(page(PATH), /HTTP 503/);
+  await assert.rejects(page(PATH), /HTTP 503/);
+  assert.equal(tries, 2);
 });
