@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { HttpError } from '../http.ts';
 import { normaliseTitle } from '../text.ts';
 import type { ClubConfig, Item, MatchData, SourceConfig, SourceKind } from '../types.ts';
 import { collectBbcMatchData } from './bbc.ts';
@@ -40,10 +41,26 @@ function redditQueue<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/**
+ * Logged-out Reddit allows roughly one feed request per ~15-20 s window from an IP (x-ratelimit-remaining
+ * hits 0 after one call), so the second subreddit in a run gets a 429. Wait out the window it names and
+ * try once more; a missing or silly reset falls back to 20 s, capped at a minute.
+ */
+async function withRateLimitRetry<T>(task: () => Promise<T>): Promise<T> {
+  try {
+    return await task();
+  } catch (err) {
+    if (!(err instanceof HttpError) || err.status !== 429) throw err;
+    const wait = Math.min((err.retryAfter ?? 20) + 1, 60);
+    await new Promise((r) => setTimeout(r, wait * 1000));
+    return task();
+  }
+}
+
 export function collectOne(src: SourceConfig, club: ClubConfig, now: Date): Promise<Item[]> {
   if (src.type === 'ips-forum') return collectIpsForum(src, now);
   // Reddit rate-limits bursts from one IP, so its feeds go one at a time.
-  if (src.type === 'reddit') return redditQueue(() => collectSource(src, club, now));
+  if (src.type === 'reddit') return redditQueue(() => withRateLimitRetry(() => collectSource(src, club, now)));
   return collectSource(src, club, now);
 }
 
