@@ -1,0 +1,671 @@
+{
+  "version": 1,
+  "updated": "2026-11-01T16:59:51.881Z",
+  "packages": [
+    {
+      "id": "2026-11-01T15:00:00.000Z|goal:home:Cláudio Braga:1",
+      "kind": "goal",
+      "publishedAt": "2026-11-01T15:06:51.698Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:home:Cláudio Braga:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - Cláudio Braga 4'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Hibernian. Let's go straight to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/1b01ffe3f2d9.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:home:Cláudio Braga:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - Cláudio Braga 4'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Calvin Miller wins the corner with a lovely bit of skill, takes it himself, and Cláudio Braga thumps in the header from just yards out past brutal defending! It's Hearts 0, Hibernian 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "League Cup",
+                "status": "LIVE 4'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/f75bf83aaded.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-01T15:00:00.000Z|goal:away:M. Boyle:1",
+      "kind": "goal",
+      "publishedAt": "2026-11-01T15:24:52.375Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:away:M. Boyle:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - M. Boyle 19'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Hibernian. Let's go straight to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/1b01ffe3f2d9.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:away:M. Boyle:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - M. Boyle 19'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Oh, he's caught that sweetly! Owen Elding lifts a lovely ball over the Hearts defence, M. Boyle runs through to convert, and Beau Reus gets a touch as it bobbles in off the post! Hearts 0, Hibernian 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "League Cup",
+                "status": "LIVE 19'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/99f4cffc0788.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-01T15:00:00.000Z|goal:away:J. McGrath:1",
+      "kind": "goal",
+      "publishedAt": "2026-11-01T15:46:56.705Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:away:J. McGrath:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - J. McGrath 42'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Hibernian. Let's go straight to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/1b01ffe3f2d9.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:away:J. McGrath:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Hibernian - J. McGrath 42'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Oh, he's caught that sweetly! A corner is cleared to Joe Newell for a shot towards the far corner, cleared off the line before Jamie McGrath cushions it in side-footed on the rebound! Hearts 0, Hibernian 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "League Cup",
+                "status": "LIVE 42'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/f63f2b044f5e.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-01T15:00:00.000Z|period:ht",
+      "kind": "ht",
+      "publishedAt": "2026-11-01T15:55:50.050Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "HALF TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 1-2 Hibernian",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's half-time in Hearts against Hibernian. Let's go to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/d5c8bed91815.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 1-2 Hibernian",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It is dry and bright, 10 degrees, and a right tasty pie at half-time here with Hearts 1, Hibernian 2. Hibernian have had 68 per cent of the ball. On shots it's Hearts 3, Hibernian 8, and 1 to 3 on target. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 1,
+                "awayScore": 2,
+                "competition": "League Cup",
+                "status": "HALF TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 32,
+                    "away": 68,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 3,
+                    "away": 8
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 1,
+                    "away": 3
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 2,
+                    "away": 2
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 1,
+                    "away": 0
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 4,
+                    "away": 7
+                  }
+                ]
+              },
+              "audio": "audio/437ec3e0199b.mp3"
+            }
+          ]
+        }
+      ],
+      "weather": {
+        "sky": "clear",
+        "windy": false,
+        "tempC": 10.4,
+        "place": "Tynecastle Park",
+        "at": "2026-11-01T15:55:49.509Z",
+        "phrase": "dry and bright, 10 degrees",
+        "numbers": [
+          10
+        ]
+      }
+    },
+    {
+      "id": "2026-11-01T15:00:00.000Z|period:ko2",
+      "kind": "ko2",
+      "publishedAt": "2026-11-01T16:12:52.483Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "SECOND HALF",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 1-2 Hibernian",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "The second half is under way in Hearts against Hibernian. Let's go to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/321ec7935980.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 1-2 Hibernian",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "We are underway for the second half here at Barclays Hampden where it is currently Hearts 1, Hibernian 2. We go again, perhaps not for the final time this evening. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 1,
+                "awayScore": 2,
+                "competition": "League Cup",
+                "status": "SECOND HALF",
+                "homeScorers": [
+                  "Braga 4'"
+                ],
+                "awayScorers": [
+                  "Boyle 19'",
+                  "McGrath 42'"
+                ]
+              },
+              "audio": "audio/9a823b473dea.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-01T15:00:00.000Z|period:ft",
+      "kind": "ft",
+      "publishedAt": "2026-11-01T16:59:51.881Z",
+      "kickOff": "2026-11-01T15:00:00.000Z",
+      "flash": "FULL TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 1-2 Hibernian",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's full time in Hearts against Hibernian. Let's go to Gregor Moffat at Barclays Hampden.",
+              "audio": "audio/c4c9cfb1dcf9.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 1-2 Hibernian",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It's full time here at Hampden and it's finished Hearts 1, Hibernian 2. It has been dry and bright, 10 degrees, and the fans have enjoyed a fine pie at the interval. Hearts have had 60 per cent of the ball. On shots it's Hearts 10, Hibernian 14, and 3 to 6 on target. The Hearts goalkeeper has been kept busy, with 4 saves. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Hibernian",
+                "homeScore": 1,
+                "awayScore": 2,
+                "competition": "League Cup",
+                "status": "FULL TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 60,
+                    "away": 40,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 10,
+                    "away": 14
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 3,
+                    "away": 6
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 9,
+                    "away": 5
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 4,
+                    "away": 2
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 11,
+                    "away": 16
+                  }
+                ]
+              },
+              "audio": "audio/f63d1adc72b0.mp3"
+            }
+          ]
+        }
+      ],
+      "weather": {
+        "sky": "clear",
+        "windy": false,
+        "tempC": 10.1,
+        "place": "Tynecastle Park",
+        "at": "2026-11-01T16:59:51.354Z",
+        "phrase": "dry and bright, 10 degrees",
+        "numbers": [
+          10
+        ]
+      }
+    }
+  ]
+}

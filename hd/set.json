@@ -1,0 +1,276 @@
+{
+ "w": 480,
+ "h": 270,
+ "backdrop": {
+  "file": "backdrop.png",
+  "x": 0,
+  "y": 0
+ },
+ "desk": {
+  "file": "desk.png",
+  "x": 71,
+  "y": 162,
+  "w": 337,
+  "h": 122,
+  "lip": 8,
+  "top": 170,
+  "note": "drawn over the seated figures; rows above `top` are transparent (the back lip is left out)"
+ },
+ "crest": {
+  "file": "crest.svg",
+  "x": 222,
+  "y": 227,
+  "w": 36,
+  "h": 36,
+  "note": "the club crest (SVG) drawn over the desk medallion, on the same camera transform as the desk"
+ },
+ "props": {
+  "file": "props.png",
+  "base": 189,
+  "slotSide": 14,
+  "tightScale": 1.4285714285714286,
+  "laptopTight": 1.15,
+  "laptopLift": 2,
+  "default": {
+   "isla": "none",
+   "fraser": "none",
+   "ross": "none",
+   "kirsty": "none"
+  },
+  "items": {
+   "laptop": {
+    "sheet": [
+     0,
+     0,
+     88,
+     55
+    ],
+    "s": 0.5,
+    "side": 0
+   },
+   "mug": {
+    "sheet": [
+     173,
+     0,
+     31,
+     30
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "notebook": {
+    "sheet": [
+     0,
+     55,
+     40,
+     26
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "papers": {
+    "sheet": [
+     125,
+     0,
+     48,
+     35
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "glass": {
+    "sheet": [
+     105,
+     0,
+     20,
+     37
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "bottle": {
+    "sheet": [
+     88,
+     0,
+     17,
+     41
+    ],
+    "s": 0.7,
+    "side": 1
+   },
+   "headphones": {
+    "sheet": [
+     204,
+     0,
+     45,
+     30
+    ],
+    "s": 0.6,
+    "side": 1
+   }
+  },
+  "note": "drawn at sheet size * s, bottom on `base`, centred on the seat x moved `side * slotSide` towards the middle; smoothed scaling"
+ },
+ "seated": {
+  "hcut": 112,
+  "propx": 0,
+  "note": "figure origin: x = seat x - 120, y = desk.top - hcut (the sprite row hcut meets the desk back edge); sprites are 1:1",
+  "seats": {
+   "wide": {
+    "isla": 168,
+    "fraser": 312
+   },
+   "tight": {
+    "isla": 222,
+    "fraser": 258
+   },
+   "alone": 240
+  },
+  "presenters": {
+   "isla": "presenters/isla-seated",
+   "fraser": "presenters/fraser-seated",
+   "ross": "presenters/ross-seated",
+   "kirsty": "presenters/kirsty-seated"
+  }
+ },
+ "stack": 48,
+ "museum": {
+  "front": "museum-front.png",
+  "inside": "museum.png",
+  "note": "On This Day (#88): the front for the first line, the gallery for the rest; standing presenters at 1:1, feet at `feet` (the art row of the last sheet row), centred on `x`",
+  "outside": {
+   "x": 62,
+   "feet": 262
+  },
+  "gallery": {
+   "x": 415,
+   "feet": 270
+  },
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
+  }
+ },
+ "points": {
+  "kirsty": "left",
+  "fraser": "left",
+  "ross": "right",
+  "isla": "right",
+  "gregor": "right"
+ },
+ "touchscreen": {
+  "file": "touchscreen.png",
+  "screen": {
+   "x": 39,
+   "y": 54,
+   "w": 208,
+   "h": 113
+  },
+  "note": "Match Centre (#92): the screen box is a dark panel the line's graphic goes over; the standing presenter is centred on `x` with the sheet's last row on `feet`",
+  "stand": {
+   "x": 325,
+   "feet": 262
+  },
+  "screenSide": "left",
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
+  }
+ },
+ "transfer": {
+  "file": "transfer.png",
+  "screen": {
+   "x": 266,
+   "y": 54,
+   "w": 189,
+   "h": 114
+  },
+  "clock": {
+   "x": 192,
+   "y": 79,
+   "r": 27
+  },
+  "note": "Transfer Centre (#92): as touchscreen, plus the wall clock (hands drawn live) and the podium sprite drawn over the presenter, its last row on `feet`, centred on `x`; `label` is the panel (podium pixels) the title is drawn on",
+  "stand": {
+   "x": 142,
+   "feet": 262
+  },
+  "screenSide": "right",
+  "podium": {
+   "file": "transfer-podium.png",
+   "x": 142,
+   "feet": 226,
+   "w": 107,
+   "h": 76,
+   "label": {
+    "cx": 54,
+    "cy": 36
+   }
+  },
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
+  }
+ },
+ "videowall": {
+  "file": "videowall.png",
+  "screen": {
+   "x": 39,
+   "y": 45,
+   "w": 217,
+   "h": 168
+  },
+  "note": "Team news (#92): the wall on the left, a standing presenter on the right (flipped if their sheet points the other way); the card is the line card, else the last card of the segment (as SD)",
+  "stand": {
+   "x": 360,
+   "feet": 262
+  },
+  "screenSide": "left",
+  "glance": {
+   "every": 5,
+   "for": 1.6
+  },
+  "presenters": {
+   "isla": "presenters/isla",
+   "fraser": "presenters/fraser",
+   "ross": "presenters/ross",
+   "kirsty": "presenters/kirsty",
+   "gregor": "presenters/gregor"
+  }
+ },
+ "camera": {
+  "wide": {
+   "z": 1,
+   "x": 240,
+   "y": 135,
+   "sy": 135
+  },
+  "tight": {
+   "z": 1.8,
+   "x": "seat",
+   "y": 55,
+   "sy": 78
+  }
+ }
+}
