@@ -1,0 +1,1733 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-21T14:30:40.762Z",
+  "generatedBy": "Gemini (gemini-flash-lite-latest), checked by Gemini (gemini-flash-lite-latest)",
+  "channel": {
+    "name": "HEARTS NEWS 24",
+    "club": "Heart of Midlothian",
+    "colours": {
+      "primary": "#6d1a2a",
+      "secondary": "#f2efe6",
+      "accent": "#e0b13a"
+    }
+  },
+  "presenters": [
+    {
+      "id": "isla",
+      "name": "Isla Brodie",
+      "role": "Presenter",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_emma"
+      },
+      "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+      "look": {
+        "build": "female",
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "fraser",
+      "name": "Fraser Lennox",
+      "role": "Presenter",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_george"
+      },
+      "persona": "Co-anchor and resident old-timer, 61. Came through the Hearts youth ranks in the 1980s but never made the first team, and has watched from the Wheatfield Stand ever since. Old school: hates VAR with a passion, distrusts xG and 'laptop football', rates grit, wingers who beat their man, and centre-halves who head it. Nostalgic about the Jim Jefferies era and the 1998 Scottish Cup. Gruff but warm, prone to 'in my day'. Reads the news straight; his opinions come out in discussion.",
+      "leanings": [
+        "always backs the academy players and anyone who came through the ranks",
+        "sceptical of the manager's in-game changes and late substitutions",
+        "rates a centre-half who heads it over one who plays it out from the back",
+        "VAR is ruining the game"
+      ],
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#b9b4ad",
+        "hairStyle": "bald",
+        "glasses": true,
+        "suit": "#26262e",
+        "shirt": "#f2efe6",
+        "tie": "#6d1a2a"
+      }
+    },
+    {
+      "id": "ross",
+      "formerIds": [
+        "ally"
+      ],
+      "name": "Ross Dunbar",
+      "role": "Transfer Centre",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_lewis"
+      },
+      "persona": "Transfer Centre reporter, 26. Tactics nerd: talks about pressing triggers, inverted full-backs, xG and progressive carries. Obsessed with Fantasy Premier League and the SPFL fantasy game, always picking 'differentials'. Loves a rumour, gets excited quickly, winds Fraser up on purpose. Supports VAR.",
+      "leanings": [
+        "trusts the numbers over reputation, when there are numbers to go on",
+        "gets excited by every new signing and is quick to call a rumour a done deal",
+        "backs the manager's tactical ideas, especially the press and the inverted full-backs"
+      ],
+      "look": {
+        "skin": "#c98e6a",
+        "hair": "#1a1416",
+        "hairStyle": "quiff",
+        "suit": "#3a3d4a",
+        "shirt": "#c9d6ea",
+        "tie": "#e0b13a"
+      }
+    },
+    {
+      "id": "kirsty",
+      "name": "Kirsty Reid",
+      "role": "Match Analyst",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_isabella"
+      },
+      "persona": "Match analyst, 34, former Hearts Women midfielder. Straight-talking and evidence-led, explains the game clearly without jargon. Champions the women's team, and is the voice of reason between Fraser and Ross.",
+      "leanings": [
+        "evidence first: won't judge a player on one game",
+        "cautious about rushing players back from injury",
+        "always makes the case for Hearts Women getting more attention"
+      ],
+      "look": {
+        "build": "female",
+        "skin": "#8d5a3b",
+        "hair": "#2a1a14",
+        "hairStyle": "long",
+        "glasses": true,
+        "suit": "#6d1a2a",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "gregor",
+      "name": "Gregor Moffat",
+      "role": "At the ground",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel",
+        "speed": 1.1
+      },
+      "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+      "look": {
+        "skin": "#e6ad8c",
+        "hair": "#a39d94",
+        "hairStyle": "short",
+        "suit": "#3c5068",
+        "shirt": "#c9d6ea",
+        "tie": "#26262e",
+        "coat": true,
+        "scarf": "#6d1a2a",
+        "headset": true
+      }
+    },
+    {
+      "id": "vo-lily",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_lily"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#8a4b2a",
+        "hairStyle": "long",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-alice",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "female",
+      "tts": {
+        "voice": "bf_alice"
+      },
+      "look": {
+        "skin": "#e8b796",
+        "hair": "#2a1a14",
+        "hairStyle": "bob",
+        "suit": "#2b3160",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-daniel",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_daniel"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    },
+    {
+      "id": "vo-fable",
+      "name": "Voiceover",
+      "role": "Advert",
+      "voice": "male",
+      "tts": {
+        "voice": "bm_fable"
+      },
+      "look": {
+        "skin": "#f0c4a0",
+        "hair": "#3a2a20",
+        "hairStyle": "short",
+        "suit": "#26262e",
+        "shirt": "#f2efe6"
+      }
+    }
+  ],
+  "ticker": [
+    "Dundee v Hearts - heartsfc.co.uk",
+    "Dundee v Hearts LIVE: Could Wouter Vrancken change shape due to injuries? - Hearts Standard",
+    "Calvin Miller injury - Daily Record",
+    "Hearts manager pressure - Daily Record",
+    "Malachi Fagan‑Walcott injury - heartsfc.co.uk",
+    "Borchgrevink injury - Edinburgh Evening News",
+    "Mato injury - Daily Record",
+    "Callum Sandilands contract - Hearts Standard",
+    "Next: Dundee v Hearts - Saturday"
+  ],
+  "segments": [
+    {
+      "id": "headlines",
+      "kind": "headlines",
+      "title": "The Headlines",
+      "strap": "Dundee v Hearts",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Good afternoon and welcome to Hearts News 24 as we build up to today's crucial Scottish Premiership action. Let us take you through the main stories ahead of this evening's match.",
+          "link": "welcome",
+          "audio": "audio/1bad7ff85787.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Wouter Vrancken is feeling optimistic about welcoming back several players from injury as Hearts prepare to face Dundee later today at Dens Park. Meanwhile, defender Harry Milne has received recognition after being named in Marca's top one hundred players in the world for the twenty-twenty-five to twenty-twenty-six season.",
+          "graphic": {
+            "type": "headline",
+            "title": "Dundee v Hearts",
+            "source": "heartsfc.co.uk",
+            "icon": "ball"
+          },
+          "audio": "audio/b530653455b2.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Ahead of this evening's fixture, pressure is mounting on Hearts manager Wouter Vrancken following a difficult run of form. The Daily Record reports that the club has managed only one victory in their last eight matches, making a strong result at Dens Park essential for their campaign.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts manager pressure",
+            "source": "Daily Record",
+            "icon": "mic",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/535de39d455a.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "The Hearts Standard highlights a mounting injury crisis for the squad, including questions over potential tactical shifts and a lack of natural left-back options. Wouter Vrancken's side will need to dig deep as they travel to face Dundee with kick-off fast approaching this evening.",
+          "graphic": {
+            "type": "headline",
+            "title": "Dundee v Hearts LIVE: Could Wouter Vrancken change shape due to injuries?",
+            "source": "Hearts Standard",
+            "icon": "medical",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/4049e382a5d0.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Rogers Mato has spoken about his ambitions with the club, stating a strong desire to win titles with Hearts while eventually aiming for a move to the Premier League. The twenty-three-year-old remains fully focused on helping the side push forward despite their recent rocky start to the domestic season.",
+          "graphic": {
+            "type": "headline",
+            "title": "Rogers Mato transfer",
+            "source": "Daily Record",
+            "icon": "contract",
+            "face": "faces/rogers-mato.png"
+          },
+          "audio": "audio/e8672269b97b.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Later, Fraser and Ross go head to head with their predictions for tonight, and we will hear what the fans are saying in the Fan Zone.",
+          "link": "comingUp",
+          "audio": "audio/ad94a8bc6821.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Let us take a closer look at the team news ahead of kick-off, as Ross joins me at the desk.",
+          "link": "handover",
+          "audio": "audio/d8eb8f91b1b2.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l63",
+      "kind": "story",
+      "title": "Dundee v Hearts",
+      "strap": "Dundee v Hearts",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Back to our top story, Ross, and with kick-off at Dens Park coming up this evening, what are the latest updates from the camp?",
+          "graphic": {
+            "type": "headline",
+            "title": "Dundee v Hearts",
+            "source": "heartsfc.co.uk",
+            "icon": "ball"
+          },
+          "audio": "audio/a46744b8ded9.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Wouter Vrancken is feeling optimistic about returning players and energy levels, while Sabah Kerjota says the squad is ready to bounce back after a tough spell.",
+          "audio": "audio/3e1045c565f6.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And how are things looking on the injury front for this evening?",
+          "audio": "audio/46eaebacb0f0.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Blair Spittal and Malachi Fagan-Walcott remain unavailable, but Laurent Mendy could potentially step into the defence.",
+          "audio": "audio/500221ef80d8.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "There was also quite a piece of individual recognition for Harry Milne this week, wasn't there?",
+          "audio": "audio/ce63cb13d587.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Marca named him in their top one hundred players in the world for 2025/26, highlighting his defensive work on the left flank before his unfortunate ACL injury.",
+          "audio": "audio/0960aba43e0a.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "What are the Hearts Standard team predicting for the line-up and shape against Dundee?",
+          "audio": "audio/6b565723eed1.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "They reckon a back four is much more probable than a back three, even though Mendy is available to provide defensive cover.",
+          "audio": "audio/95a12b22b85d.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Thanks, Isla. Let us cross to Kirsty in the Match Centre for a look at the latest results and the league table.",
+          "link": "handover",
+          "audio": "audio/929a37d1861c.mp3"
+        }
+      ]
+    },
+    {
+      "id": "match",
+      "kind": "match",
+      "title": "Match Centre",
+      "strap": "Dundee v Hearts - Saturday",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Hearts lost five-two at home to Falkirk in the Scottish Premiership thirteen days ago. That followed a three-one defeat away to Thun in the UEFA Conference League.",
+          "graphic": {
+            "type": "result",
+            "home": "Hearts",
+            "away": "Falkirk",
+            "homeScore": 2,
+            "awayScore": 5,
+            "competition": "Scottish Premiership",
+            "status": "FULL TIME",
+            "homeScorers": [
+              "Guendouz 50'",
+              "Cláudio Braga 75'"
+            ],
+            "awayScorers": [
+              "Barbrook 4'",
+              "Eames 17'",
+              "Murrell 33' 47'",
+              "Henderson 45'+2"
+            ]
+          },
+          "audio": "audio/af991ab55121.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Elton Kabangu is one goal away from ten for Hearts. Blair Spittal and Calvin Miller are each two goals short of that same milestone.",
+          "audio": "audio/2d743e02c856.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts sit fourth in the Scottish Premiership with twenty points from twelve games. They are one point behind Falkirk and three points ahead of Dundee.",
+          "graphic": {
+            "type": "table",
+            "title": "League Table",
+            "highlight": "Hearts",
+            "rows": [
+              {
+                "pos": 1,
+                "team": "Celtic",
+                "played": 13,
+                "gd": 18,
+                "pts": 31
+              },
+              {
+                "pos": 2,
+                "team": "Rangers",
+                "played": 12,
+                "gd": 12,
+                "pts": 27
+              },
+              {
+                "pos": 3,
+                "team": "Falkirk",
+                "played": 13,
+                "gd": 6,
+                "pts": 21
+              },
+              {
+                "pos": 4,
+                "team": "Hearts",
+                "played": 12,
+                "gd": 4,
+                "pts": 20
+              },
+              {
+                "pos": 5,
+                "team": "Dundee",
+                "played": 12,
+                "gd": 3,
+                "pts": 17
+              },
+              {
+                "pos": 6,
+                "team": "Dundee Utd",
+                "played": 12,
+                "gd": 0,
+                "pts": 17
+              },
+              {
+                "pos": 7,
+                "team": "St. Johnstone",
+                "played": 13,
+                "gd": -3,
+                "pts": 17
+              },
+              {
+                "pos": 8,
+                "team": "St. Mirren",
+                "played": 13,
+                "gd": -10,
+                "pts": 14
+              },
+              {
+                "pos": 9,
+                "team": "Motherwell",
+                "played": 13,
+                "gd": -6,
+                "pts": 13
+              },
+              {
+                "pos": 10,
+                "team": "Hibernian",
+                "played": 12,
+                "gd": -2,
+                "pts": 11
+              },
+              {
+                "pos": 11,
+                "team": "Aberdeen",
+                "played": 12,
+                "gd": -6,
+                "pts": 11
+              },
+              {
+                "pos": 12,
+                "team": "Kilmarnock",
+                "played": 13,
+                "gd": -16,
+                "pts": 9
+              }
+            ]
+          },
+          "audio": "audio/52350ae572de.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Dundee against Hearts in the Scottish Premiership kicks off today at five-forty-five PM.",
+          "graphic": {
+            "type": "fixtures",
+            "title": "Next Match",
+            "fixtures": [
+              {
+                "date": "2026-11-21T17:45:00.000Z",
+                "home": "Dundee",
+                "away": "Hearts",
+                "competition": "Scottish Premiership"
+              }
+            ]
+          },
+          "audio": "audio/bc558e35bc4b.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts will be without seven players through injury, with four confirmed and three reported. The confirmed absentees are Harry Milne, Craig Halkett, Stephen Kingsley, and Tom Renaud.",
+          "audio": "audio/d353c64635fe.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Now, let us turn our attention to our opponents today with a closer look at Dundee.",
+          "link": "handover",
+          "audio": "audio/5a85908a3122.mp3"
+        }
+      ]
+    },
+    {
+      "id": "opponent",
+      "kind": "opponent",
+      "title": "Focus on Dundee",
+      "strap": "Dundee v Hearts: the opposition",
+      "scene": "touchscreen",
+      "presenters": [
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "kirsty",
+          "text": "Dundee come into this match looking to bounce back from a two-one away defeat to St Johnstone.",
+          "graphic": {
+            "type": "form",
+            "team": "Dundee",
+            "results": [
+              {
+                "against": "St. Johnstone",
+                "score": "1-2",
+                "outcome": "L",
+                "venue": "A"
+              }
+            ]
+          },
+          "audio": "audio/563e6776550e.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Head to head, in 280 league and cup meetings Hearts have won 134, drawn 61 and lost 85. Away from home it's 47 wins, 32 draws and 60 defeats. The last time Hearts beat Dundee was in September twenty twenty-six, two-one at home. The last win away was in February twenty twenty-five, one-nil. The biggest win was six-nil, in February twenty twenty-five.",
+          "graphic": {
+            "type": "headtohead",
+            "team": "Dundee",
+            "venue": "A",
+            "all": {
+              "played": 280,
+              "won": 134,
+              "drawn": 61,
+              "lost": 85
+            },
+            "atVenue": {
+              "played": 139,
+              "won": 47,
+              "drawn": 32,
+              "lost": 60
+            },
+            "lastWin": {
+              "date": "SEP 2026",
+              "score": "2-1",
+              "venue": "H"
+            },
+            "biggestWin": {
+              "date": "FEB 2025",
+              "score": "6-0",
+              "venue": "A"
+            },
+            "recent": [
+              {
+                "outcome": "W",
+                "score": "2-1",
+                "venue": "H"
+              },
+              {
+                "outcome": "W",
+                "score": "1-0",
+                "venue": "H"
+              },
+              {
+                "outcome": "W",
+                "score": "1-0",
+                "venue": "A"
+              },
+              {
+                "outcome": "W",
+                "score": "4-0",
+                "venue": "H"
+              },
+              {
+                "outcome": "L",
+                "score": "0-1",
+                "venue": "H"
+              }
+            ]
+          },
+          "audio": "audio/78033b97540f.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Dundee used a four-four-two shape in their previous game, with Goodman in goal and the forward pairing of Hay and Fink.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Dundee",
+            "formation": "4-4-2",
+            "rows": [
+              [
+                "Goodman"
+              ],
+              [
+                "Wright",
+                "Astley",
+                "Owen Bevan",
+                "Samuels"
+              ],
+              [
+                "Joe Bevan",
+                "Jones",
+                "Hamilton",
+                "Forrest"
+              ],
+              [
+                "Hay",
+                "Fink"
+              ]
+            ],
+            "ours": false
+          },
+          "audio": "audio/b35cad4c6c31.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Hearts lined up in a four-two-three-one formation in their last match, featuring Reus in goal and Kaboré up front.",
+          "graphic": {
+            "type": "formation",
+            "label": "LAST XI",
+            "team": "Hearts",
+            "formation": "4-2-3-1",
+            "rows": [
+              [
+                "Reus"
+              ],
+              [
+                "Altena",
+                "Fagan-Walcott",
+                "Findlay",
+                "McCart"
+              ],
+              [
+                "Mendy",
+                "Dhanda"
+              ],
+              [
+                "Kerjota",
+                "Cláudio Braga",
+                "McPake"
+              ],
+              [
+                "Kaboré"
+              ]
+            ],
+            "ours": true
+          },
+          "audio": "audio/ae6241b433aa.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "We will have more on the squad situation shortly, but first let us look at the latest on Calvin Miller.",
+          "link": "handover",
+          "audio": "audio/8e9f8c94466a.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l37",
+      "kind": "story",
+      "title": "Calvin Miller injury",
+      "strap": "Calvin Miller injury",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "More now on the situation surrounding Calvin Miller, Kirsty, as conflicting reports emerge from the training ground and the manager's press conference.",
+          "graphic": {
+            "type": "headline",
+            "title": "Calvin Miller injury",
+            "source": "Daily Record",
+            "icon": "medical",
+            "face": "faces/calvin-miller.png"
+          },
+          "audio": "audio/4ba2f94c7017.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "We have two very different accounts here. The Daily Record reported that Wouter Vrancken confirmed the winger faces around two months out after suffering a meniscus injury against Hibernian.",
+          "graphic": {
+            "type": "quote",
+            "text": "It will be two months, let's say, depending on what the surgery says because it's a meniscus injury.",
+            "author": "Wouter Vrancken",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/9af36c97b2a9.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And yet the latest claims from the Hearts Standard coverage suggest a different picture entirely.",
+          "audio": "audio/599069f7f118.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "That is right. The show reported that Miller will actually not require surgery and has already returned to individual training, which would be a massive boost if confirmed.",
+          "audio": "audio/8fe83215702c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Given your stance on managing player returns carefully, how concerning is this mixed messaging for the squad depth?",
+          "audio": "audio/5b01eec81096.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "It highlights the fragility we are dealing with right now. With so many players sidelined, rushing anyone back before they are truly ready would be a severe mistake.",
+          "audio": "audio/b60b26e0f783.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Vrancken did mention that a meniscus injury is always tricky, noting it is a pity, but it is what it is.",
+          "audio": "audio/8fbd87c6f2a8.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Precisely. Whether he is back on the grass soon or facing a longer layoff, the mounting injury list means we simply must cope through this busy fixture period without taking unnecessary risks.",
+          "audio": "audio/bef7c9fa0754.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Still to come in the next half hour, Fraser and Ross are standing by with their predictions for tonight.",
+          "link": "handover",
+          "audio": "audio/13ff742444f4.mp3"
+        }
+      ]
+    },
+    {
+      "id": "debate",
+      "kind": "debate",
+      "title": "Tactics for Dundee match",
+      "strap": "Tactics for Dundee match",
+      "scene": "desk",
+      "presenters": [
+        "fraser",
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "fraser",
+          "text": "Sticking rigidly to a high line with returning unfit defenders is absolute madness against Dundee today.",
+          "graphic": {
+            "type": "headline",
+            "title": "Tactics for Dundee match",
+            "icon": "mic"
+          },
+          "audio": "audio/a7422eb1edd2.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "The high press and progressive metrics will successfully dismantle Dundee despite the defensive injuries, Fraser.",
+          "audio": "audio/ba47fdf4b142.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Metrics do not head crosses away when you have no natural full-backs on the pitch.",
+          "audio": "audio/399dbb6e753b.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "Trusting numerical data and pressing structures completely overrides outdated traditional coaching views, and my prediction record proves I see the bigger picture.",
+          "audio": "audio/bdb71747f313.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Your record is two right from six, Ross. I am going for a two-one defeat for Dundee.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Dundee v Hearts",
+            "picks": [
+              {
+                "name": "Fraser",
+                "pick": "2-1",
+                "record": "1 right from 6"
+              },
+              {
+                "name": "Ross",
+                "pick": "1-2",
+                "record": "2 right (1 exact) from 6"
+              }
+            ]
+          },
+          "audio": "audio/eaa2a31952be.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "I am backing us to win one-two at Dens Park.",
+          "graphic": {
+            "type": "predictions",
+            "fixture": "Dundee v Hearts",
+            "picks": [
+              {
+                "name": "Fraser",
+                "pick": "2-1",
+                "record": "1 right from 6"
+              },
+              {
+                "name": "Ross",
+                "pick": "1-2",
+                "record": "2 right (1 exact) from 6"
+              }
+            ]
+          },
+          "audio": "audio/f4784363b3a8.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "We'll take a short break now. Stay with us.",
+          "audio": "audio/fb7b5591f16b.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-1",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-lily",
+          "text": "Fancy a day out in Gorgie that doesn't involve a forty-minute queue for a pie?",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/d9cbb1c00301.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Come and meet the pigs, the goats and the rest of the gang at Gorgie Farm, a proper community farm right here in the city.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-1.png"
+          },
+          "audio": "audio/60081b798db6.mp3"
+        },
+        {
+          "speaker": "vo-lily",
+          "text": "Gorgie Farm. The only kids in Gorgie who are happy on a Monday.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-farm",
+            "brand": "Gorgie Farm",
+            "tagline": "A proper community farm in the middle of the city",
+            "small": "Gorgie Road, Edinburgh",
+            "art": "pig",
+            "colours": {
+              "bg": "#2f6b2f",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-farm-0.png"
+          },
+          "audio": "audio/6e0a309a65e2.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Ninety minutes of shouting at the referee builds up an appetite.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/4a6f35de793d.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Whether it's a fish supper after the final whistle or a chippy on a cold Tuesday night, Gorgie Fish Bar has got you covered.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/dbd330f5a1cf.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Salt and sauce? Of course. This is Edinburgh.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-1.png"
+          },
+          "audio": "audio/97bba4694c68.mp3"
+        },
+        {
+          "speaker": "vo-fable",
+          "text": "Gorgie Fish Bar. Battered, never beaten.",
+          "graphic": {
+            "type": "advert",
+            "id": "gorgie-fish-bar",
+            "brand": "Gorgie Fish Bar",
+            "tagline": "Battered, never beaten",
+            "small": "Gorgie, Edinburgh",
+            "art": "fish",
+            "colours": {
+              "bg": "#1f4e79",
+              "fg": "#f2efe6",
+              "accent": "#f5d76e"
+            },
+            "photo": "breaks/gorgie-fish-bar-0.png"
+          },
+          "audio": "audio/89f1ec84edc6.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l70",
+      "kind": "story",
+      "title": "Hearts manager pressure",
+      "strap": "Hearts manager pressure",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let us return to the mounting pressure on Hearts manager Wouter Vrancken, Fraser, as we build up to this evening at Dens Park.",
+          "graphic": {
+            "type": "headline",
+            "title": "Hearts manager pressure",
+            "source": "Daily Record",
+            "icon": "mic",
+            "face": "faces/wouter-vrancken.png"
+          },
+          "audio": "audio/00538442be29.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "As I said earlier today, Vrancken needs an immediate result at Dens Park to stay in the race, and quite frankly, winning only one of the last eight matches is nowhere near good enough for this club.",
+          "audio": "audio/b15c895060ef.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "The Daily Record points out that the squad has been hampered by injuries and some underperforming signings from Jamestown.",
+          "audio": "audio/5fe60b267175.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Well, we have seen players brought in who simply are not carrying their weight, and when you look at how far we have fallen behind Falkirk into fourth place, the heat is really on.",
+          "audio": "audio/129496e7b76b.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "That is the build-up for now. Let us hand over to Ross in the Transfer Centre for the latest news.",
+          "link": "handover",
+          "audio": "audio/e85ab5f8ff84.mp3"
+        }
+      ]
+    },
+    {
+      "id": "transfers",
+      "kind": "transfers",
+      "title": "Transfer Centre",
+      "strap": "Transfer window opens in 41 days",
+      "scene": "transfer",
+      "presenters": [
+        "ross"
+      ],
+      "lines": [
+        {
+          "speaker": "ross",
+          "text": "Welcome back to the Transfer Centre. The January transfer window remains closed and reopens in forty-one days, but we are still keeping a close eye on the latest developments and player futures at Tynecastle.",
+          "graphic": {
+            "type": "headline",
+            "title": "Transfer window opens in 41 days",
+            "icon": "contract"
+          },
+          "audio": "audio/35b6fdfc5b08.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "As we have been reporting, Rogers Mato has expressed his desire to win titles with Hearts this season and has his sights set on a future move to the Premier League.",
+          "graphic": {
+            "type": "transfer",
+            "player": "Rogers Mato",
+            "from": "FK",
+            "to": "Hearts",
+            "status": "done"
+          },
+          "audio": "audio/b7e140600d63.mp3"
+        },
+        {
+          "speaker": "ross",
+          "text": "That is the Transfer Centre for now; back to Isla at the desk for a look back through the history books.",
+          "link": "handover",
+          "audio": "audio/ce6152459125.mp3"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "kind": "history",
+      "title": "21st November",
+      "strap": "On this day in Hearts history - stats from London Hearts",
+      "scene": "museum",
+      "presenters": [
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "fraser",
+          "text": "Time for On This Day, our look back through the Hearts history books, and it's the 21st of November.",
+          "audio": "audio/408bb2b65d73.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "A familiar face was born on this day in nineteen ninety-five: Frankie Kent. He played for Hearts from twenty twenty-three to twenty twenty-six, making 95 appearances and scoring 4 goals.",
+          "graphic": {
+            "type": "birthdays",
+            "title": "Born on this day",
+            "rows": [
+              {
+                "name": "Frankie Kent",
+                "years": "2023-26",
+                "apps": 95,
+                "goals": 4,
+                "star": true
+              },
+              {
+                "name": "Islam Chesnokov",
+                "years": "2026",
+                "apps": 11,
+                "goals": 1,
+                "star": false
+              },
+              {
+                "name": "George P Miller",
+                "years": "1915-30",
+                "apps": 239,
+                "goals": 46,
+                "star": false
+              },
+              {
+                "name": "Davie Duncan",
+                "years": "1940",
+                "apps": 3,
+                "goals": 0,
+                "star": false
+              }
+            ]
+          },
+          "audio": "audio/f5ae467f5c70.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Also born on this day: Islam Chesnokov, George P Miller and Davie Duncan.",
+          "graphic": {
+            "type": "birthdays",
+            "title": "Born on this day",
+            "rows": [
+              {
+                "name": "Frankie Kent",
+                "years": "2023-26",
+                "apps": 95,
+                "goals": 4,
+                "star": true
+              },
+              {
+                "name": "Islam Chesnokov",
+                "years": "2026",
+                "apps": 11,
+                "goals": 1,
+                "star": false
+              },
+              {
+                "name": "George P Miller",
+                "years": "1915-30",
+                "apps": 239,
+                "goals": 46,
+                "star": false
+              },
+              {
+                "name": "Davie Duncan",
+                "years": "1940",
+                "apps": 3,
+                "goals": 0,
+                "star": false
+              }
+            ]
+          },
+          "audio": "audio/80e4de102dc5.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And on this day in nineteen thirty-one, Hearts beat Celtic two-one in the league, at Tynecastle in front of 31,244. The goals came from Barney Battles Jnr and Archie Gardiner.",
+          "graphic": {
+            "type": "result",
+            "home": "Hearts",
+            "away": "Celtic",
+            "homeScore": 2,
+            "awayScore": 1,
+            "competition": "Division A",
+            "status": "21 NOV 1931",
+            "homeScorers": [
+              "Jnr 12'",
+              "Gardiner 78'"
+            ],
+            "awayScorers": [
+              "McGrory 7'"
+            ]
+          },
+          "audio": "audio/bccfc7052843.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "On this date in eighteen ninety-one, Hearts beat Rangers one-nil.",
+          "graphic": {
+            "type": "result",
+            "home": "Rangers",
+            "away": "Hearts",
+            "homeScore": 0,
+            "awayScore": 1,
+            "competition": "Division 1",
+            "status": "21 NOV 1891",
+            "homeScorers": [],
+            "awayScorers": [
+              "Scott 20'"
+            ]
+          },
+          "audio": "audio/5e52c0521646.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "And in nineteen fifty-three, Hearts beat Hamilton Academical five-one.",
+          "graphic": {
+            "type": "result",
+            "home": "Hamilton Academical",
+            "away": "Hearts",
+            "homeScore": 1,
+            "awayScore": 5,
+            "competition": "Division A",
+            "status": "21 NOV 1953",
+            "homeScorers": [
+              "Jackson 15'"
+            ],
+            "awayScorers": [
+              "Conn 8'",
+              "Wardhaugh 17' 60'",
+              "Armstrong 57'",
+              "Bauld 79'"
+            ]
+          },
+          "audio": "audio/c162de31df7c.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Staying with the build-up to today's match, let us look further into the defensive situation.",
+          "link": "handover",
+          "audio": "audio/0b976461541e.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l41",
+      "kind": "story",
+      "title": "Malachi Fagan‑Walcott injury",
+      "strap": "Malachi Fagan‑Walcott injury",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Staying with the build-up to today's five forty-five kickoff against Dundee, let's look further into the defensive situation.",
+          "graphic": {
+            "type": "headline",
+            "title": "Malachi Fagan‑Walcott injury",
+            "source": "heartsfc.co.uk",
+            "icon": "medical"
+          },
+          "audio": "audio/4e0fddef2254.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "As we have been discussing, losing Malachi Fagan-Walcott to a groin issue seriously hurts our defensive depth for Dundee.",
+          "graphic": {
+            "type": "injury",
+            "name": "Malachi Fagan-Walcott",
+            "face": "faces/malachi-fagan-walcott.png",
+            "injury": "GROIN",
+            "status": "OUT",
+            "reported": true,
+            "since": "First reported 18 Nov",
+            "back": "No date given",
+            "gamesMissed": 0
+          },
+          "audio": "audio/ffbd045202b9.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Kirsty, how does this affect the squad given all the other injuries?",
+          "audio": "audio/bd88bd132fba.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Well, it highlights our ongoing squad depth concerns with seven players out, but we have to focus on the pitch.",
+          "graphic": {
+            "type": "quote",
+            "text": "It's tough to keep losing players to injury and stuff like that but as one of the boys that are fit, we can't let that affect us on the pitch.",
+            "author": "Malachi Fagan-Walcott",
+            "face": "faces/malachi-fagan-walcott.png"
+          },
+          "audio": "audio/6f01859bca92.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Let us take a closer look at one of today's other main stories regarding squad fitness.",
+          "link": "handover",
+          "audio": "audio/4a7d39bf896b.mp3"
+        }
+      ]
+    },
+    {
+      "id": "story-l15",
+      "kind": "story",
+      "title": "Borchgrevink injury",
+      "strap": "Borchgrevink injury",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "kirsty"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Let's take a closer look at one of today's main stories. Borchgrevink injury.",
+          "graphic": {
+            "type": "headline",
+            "title": "Borchgrevink injury",
+            "source": "Edinburgh Evening News",
+            "icon": "medical",
+            "face": "faces/christian-borchgrevink.png"
+          },
+          "audio": "audio/24c7d80a8145.mp3"
+        },
+        {
+          "speaker": "kirsty",
+          "text": "Christian Borchgrevink is expected back in training this week after a hamstring injury that forced him off at half‑time and kept him out for several weeks. That's being reported by Edinburgh Evening News and Daily Record.",
+          "audio": "audio/8c339ed6986e.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Time for a quick break. Don't go anywhere.",
+          "audio": "audio/c7bef062bb81.mp3"
+        }
+      ]
+    },
+    {
+      "id": "adverts-2",
+      "kind": "adverts",
+      "title": "Back after the break",
+      "strap": "",
+      "scene": "advert",
+      "presenters": [],
+      "lines": [
+        {
+          "speaker": "vo-alice",
+          "text": "From the Wheatfield to the Roseburn, look the part on matchday.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/5794e725d5ef.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "Shirts, scarves, hats and gifts for every Jambo, young and old. Find them at the Hearts Club Store at Tynecastle Park, or online any time.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/a16a662cd46b.mp3"
+        },
+        {
+          "speaker": "vo-alice",
+          "text": "The Hearts Club Store. Wear your heart on your sleeve.",
+          "graphic": {
+            "type": "advert",
+            "id": "club-store",
+            "brand": "Hearts Club Store",
+            "tagline": "Wear your heart on your sleeve",
+            "small": "Tynecastle Park and online",
+            "art": "shirt",
+            "colours": {
+              "bg": "#6d1a2a",
+              "fg": "#f2efe6",
+              "accent": "#e0b13a"
+            }
+          },
+          "audio": "audio/40edbf8660ce.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "Between two cemeteries on Angle Park Terrace, there's a pub that's been pouring pints since Victorian times.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/877e22afb2f9.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The sign says the Athletic Arms. But nobody in Gorgie calls it that. It's the Diggers, after the gravediggers who used to stop in for one after a shift.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-0.png"
+          },
+          "audio": "audio/2d0d8bc78c3e.mp3"
+        },
+        {
+          "speaker": "vo-daniel",
+          "text": "The Diggers. Dead good pints.",
+          "graphic": {
+            "type": "advert",
+            "id": "the-diggers",
+            "brand": "The Diggers",
+            "tagline": "Dead good pints",
+            "small": "The Athletic Arms, Angle Park Terrace",
+            "art": "pint",
+            "colours": {
+              "bg": "#2a1d14",
+              "fg": "#f2e6c9",
+              "accent": "#d9a441"
+            },
+            "photo": "breaks/the-diggers-1.png"
+          },
+          "audio": "audio/f3aba3cd2cd6.mp3"
+        }
+      ]
+    },
+    {
+      "id": "fans",
+      "kind": "fans",
+      "title": "Fan Zone",
+      "strap": "What the supporters are saying",
+      "scene": "desk",
+      "presenters": [
+        "isla",
+        "fraser"
+      ],
+      "lines": [
+        {
+          "speaker": "isla",
+          "text": "Welcome back to Hearts News 24.",
+          "audio": "audio/4d3404cb226c.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "The fans are holding their breath today, torn between matchday nerves and a desperate need for a spark at Dens Park.",
+          "graphic": {
+            "type": "sentiment",
+            "score": -0.2,
+            "topics": [
+              "Dens Park match build-up",
+              "Injury return frustration",
+              "Predictor confidence",
+              "Stadium expansion costs"
+            ]
+          },
+          "audio": "audio/8a8401ab7d56.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Let us check the pulse in the fan zone ahead of kick-off, Fraser. What are the supporters saying on the boards?",
+          "graphic": {
+            "type": "headline",
+            "title": "*** Other Scottish football match thread, for anyone who gives a ****",
+            "source": "Jambos Kickback: 132700 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/fc4376873263.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "They are talking of nothing else but getting into Dens Park and finally seeing some old-fashioned grit, Isla. Though half of them are still arguing about away form and the predictor threads.",
+          "graphic": {
+            "type": "headline",
+            "title": "The Jambos Kickback Autumn 2026 SPFL Predictor competition",
+            "source": "Jambos Kickback: 1500 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/e9a33b78066b.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "The predictor threads show plenty backing a two-one win for Hearts, though I suspect wishful thinking is doing the heavy lifting there.",
+          "graphic": {
+            "type": "headline",
+            "title": "The Jambos Kickback Autumn 2026 SPFL Predictor competition",
+            "source": "Jambos Kickback: 1500 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/e39125e36d45.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Wishful thinking or not, the injury update thread has everyone tearing their hair out over who is actually fit to start in defence.",
+          "graphic": {
+            "type": "headline",
+            "title": "Injuries/ Ready to play (update thread)",
+            "source": "Jambos Kickback: 4000 replies",
+            "icon": "chat"
+          },
+          "audio": "audio/4cc816478ad5.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "And over on the Hearts Standard show, the lads were debating whether a back three with Laurent Mendy is just asking for trouble.",
+          "graphic": {
+            "type": "headline",
+            "title": "PREVIEW | Could Laurent Mendy start in defence? | Dundee v Hearts",
+            "source": "Hearts Standard",
+            "icon": "mic"
+          },
+          "audio": "audio/07083b12875a.mp3"
+        },
+        {
+          "speaker": "fraser",
+          "text": "Putting a midfielder in the backline is a gamble we simply should not have to take. In my day, you picked centre-halves who head it and left it at that.",
+          "graphic": {
+            "type": "headline",
+            "title": "PREVIEW | Could Laurent Mendy start in defence? | Dundee v Hearts",
+            "source": "Hearts Standard",
+            "icon": "mic"
+          },
+          "audio": "audio/7b27c8d5580f.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Well, thankfully you are safely behind the desk today and not trying to sort out Wouter Vrancken's defensive headache.",
+          "audio": "audio/c920886a2cb9.mp3"
+        },
+        {
+          "speaker": "isla",
+          "text": "Our rolling coverage of Hearts News 24 continues right here.",
+          "link": "outro",
+          "audio": "audio/eb7c42c6db51.mp3"
+        }
+      ]
+    }
+  ],
+  "sidebar": {
+    "highlight": "Hearts",
+    "next": {
+      "date": "2026-11-21T17:45:00.000Z",
+      "home": "Dundee",
+      "away": "Hearts",
+      "competition": "Scottish Premiership"
+    },
+    "last": {
+      "home": "Hearts",
+      "away": "Falkirk",
+      "homeScore": 2,
+      "awayScore": 5,
+      "competition": "Scottish Premiership",
+      "date": "2026-11-08T15:00:00.000Z"
+    },
+    "table": [
+      {
+        "pos": 2,
+        "team": "Rangers",
+        "played": 12,
+        "gd": 12,
+        "pts": 27
+      },
+      {
+        "pos": 3,
+        "team": "Falkirk",
+        "played": 13,
+        "gd": 6,
+        "pts": 21
+      },
+      {
+        "pos": 4,
+        "team": "Hearts",
+        "played": 12,
+        "gd": 4,
+        "pts": 20
+      },
+      {
+        "pos": 5,
+        "team": "Dundee",
+        "played": 12,
+        "gd": 3,
+        "pts": 17
+      },
+      {
+        "pos": 6,
+        "team": "Dundee Utd",
+        "played": 12,
+        "gd": 0,
+        "pts": 17
+      }
+    ],
+    "tableLong": [
+      {
+        "pos": 1,
+        "team": "Celtic",
+        "played": 13,
+        "gd": 18,
+        "pts": 31
+      },
+      {
+        "pos": 2,
+        "team": "Rangers",
+        "played": 12,
+        "gd": 12,
+        "pts": 27
+      },
+      {
+        "pos": 3,
+        "team": "Falkirk",
+        "played": 13,
+        "gd": 6,
+        "pts": 21
+      },
+      {
+        "pos": 4,
+        "team": "Hearts",
+        "played": 12,
+        "gd": 4,
+        "pts": 20
+      },
+      {
+        "pos": 5,
+        "team": "Dundee",
+        "played": 12,
+        "gd": 3,
+        "pts": 17
+      },
+      {
+        "pos": 6,
+        "team": "Dundee Utd",
+        "played": 12,
+        "gd": 0,
+        "pts": 17
+      },
+      {
+        "pos": 7,
+        "team": "St. Johnstone",
+        "played": 13,
+        "gd": -3,
+        "pts": 17
+      },
+      {
+        "pos": 8,
+        "team": "St. Mirren",
+        "played": 13,
+        "gd": -10,
+        "pts": 14
+      },
+      {
+        "pos": 9,
+        "team": "Motherwell",
+        "played": 13,
+        "gd": -6,
+        "pts": 13
+      },
+      {
+        "pos": 10,
+        "team": "Hibernian",
+        "played": 12,
+        "gd": -2,
+        "pts": 11
+      },
+      {
+        "pos": 11,
+        "team": "Aberdeen",
+        "played": 12,
+        "gd": -6,
+        "pts": 11
+      },
+      {
+        "pos": 12,
+        "team": "Kilmarnock",
+        "played": 13,
+        "gd": -16,
+        "pts": 9
+      }
+    ]
+  },
+  "desk": {
+    "features": [
+      "l63",
+      "l37",
+      "l70",
+      "l41",
+      "l15"
+    ],
+    "top": [
+      "l63",
+      "s31f18b",
+      "l37",
+      "l70"
+    ],
+    "lead": "l63",
+    "transfers": [
+      "l68",
+      "l62"
+    ],
+    "aired": [
+      "l63",
+      "l70",
+      "s31f18b",
+      "l68",
+      "l37",
+      "l41",
+      "l15",
+      "l62"
+    ],
+    "phase": "preview 2026-11-21T17:45:00.000Z Dundee v Hearts",
+    "day": "2026-11-21",
+    "kind": "full"
+  }
+}
