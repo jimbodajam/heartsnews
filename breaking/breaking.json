@@ -1,0 +1,672 @@
+{
+  "version": 1,
+  "updated": "2026-11-26T19:52:09.542Z",
+  "packages": [
+    {
+      "id": "2026-11-26T17:45:00.000Z|goal:away:E. Diop:1",
+      "kind": "goal",
+      "publishedAt": "2026-11-26T18:35:48.687Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:away:E. Diop:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - E. Diop 41'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Monaco. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/2f0f38518f2d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:away:E. Diop:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - E. Diop 41'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Monaco press high, nick the ball deep in the home half, and E. Diop rolls in a close-range finish. Hearts 0, Monaco 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "UEFA Conference League",
+                "status": "LIVE 41'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/bd9252501421.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-26T17:45:00.000Z|goal:home:S. Kerjota:1",
+      "kind": "goal",
+      "publishedAt": "2026-11-26T18:37:46.543Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:home:S. Kerjota:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - S. Kerjota 44'",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Monaco. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/2f0f38518f2d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:home:S. Kerjota:1",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - S. Kerjota 44'",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Oh, he's caught that sweetly! Sabah Kerjota bends a perfect curling finish from the right of the box into the top-left corner, that's outrageous and so aesthetically pleasing to watch! The score is Hearts 0, Monaco 0. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "UEFA Conference League",
+                "status": "LIVE 44'",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/afd3c755c079.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-26T17:45:00.000Z|period:ht",
+      "kind": "ht",
+      "publishedAt": "2026-11-26T18:43:50.051Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "HALF TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 2-2 Monaco",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's half-time in Hearts against Monaco. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/84033b2b0420.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ht",
+          "kind": "breaking",
+          "title": "HALF TIME",
+          "strap": "HALF TIME: Hearts 2-2 Monaco",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It's half-time here, and it's Hearts 2, Monaco 2. Monaco have had 58 per cent of the ball. On shots it's Hearts eight, Monaco six, and five to two on target. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 2,
+                "awayScore": 2,
+                "competition": "UEFA Conference League",
+                "status": "HALF TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 42,
+                    "away": 58,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 8,
+                    "away": 6
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 5,
+                    "away": 2
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 1,
+                    "away": 2
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 0,
+                    "away": 3
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 4,
+                    "away": 7
+                  }
+                ]
+              },
+              "audio": "audio/bdb642c5ac00.mp3"
+            }
+          ]
+        }
+      ],
+      "weather": {
+        "sky": "overcast",
+        "windy": false,
+        "tempC": 4.1,
+        "place": "Tynecastle Park",
+        "at": "2026-11-26T18:43:49.906Z",
+        "phrase": "grey and overcast, 4 degrees",
+        "numbers": [
+          4
+        ]
+      }
+    },
+    {
+      "id": "2026-11-26T17:45:00.000Z|period:ko2",
+      "kind": "ko2",
+      "publishedAt": "2026-11-26T18:58:52.205Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "SECOND HALF",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 2-2 Monaco",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "The second half is under way in Hearts against Monaco. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/3c18d01aeb07.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ko2",
+          "kind": "breaking",
+          "title": "SECOND HALF",
+          "strap": "SECOND HALF: Hearts 2-2 Monaco",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "We are back underway here for the second half at Tynecastle Park with Hearts 2, Monaco 2. More of the same would be lovely, thanks. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 2,
+                "awayScore": 2,
+                "competition": "UEFA Conference League",
+                "status": "SECOND HALF",
+                "homeScorers": [
+                  "Altena 15'",
+                  "Kerjota 44'"
+                ],
+                "awayScorers": [
+                  "Balogun 25' pen",
+                  "Diop 41'"
+                ]
+              },
+              "audio": "audio/84fa71b22c57.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-26T17:45:00.000Z|goal:away:F. Balogun:2",
+      "kind": "goal",
+      "publishedAt": "2026-11-26T19:50:28.962Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "GOAL",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-goal:away:F. Balogun:2",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - F. Balogun 90'+4",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "We're getting news of a goal in Hearts against Monaco. Let's go straight to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/2f0f38518f2d.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-goal:away:F. Balogun:2",
+          "kind": "breaking",
+          "title": "GOAL",
+          "strap": "GOAL: Hearts 0-0 Monaco - F. Balogun 90'+4",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "Oh, he has caught that sweetly! Mamadou Coulibaly rolls his marker in midfield and has too much space to drive into, slipping F. Balogun into the box to make no mistake with a sweet strike in the 4th minute of added time. Hearts 0, Monaco 0. The Monaco goalkeeper has been kept busy, with 4 saves. Back to you in the studio.",
+              "graphic": {
+                "type": "result",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 0,
+                "awayScore": 0,
+                "competition": "UEFA Conference League",
+                "status": "LIVE 90'+4",
+                "homeScorers": [],
+                "awayScorers": []
+              },
+              "audio": "audio/f8cbc7bd22fb.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2026-11-26T17:45:00.000Z|period:ft",
+      "kind": "ft",
+      "publishedAt": "2026-11-26T19:52:09.542Z",
+      "kickOff": "2026-11-26T17:45:00.000Z",
+      "flash": "FULL TIME",
+      "presenters": [
+        {
+          "id": "isla",
+          "name": "Isla Brodie",
+          "role": "Presenter",
+          "voice": "female",
+          "tts": {
+            "voice": "bf_emma"
+          },
+          "persona": "Lead anchor, early 40s, from Edinburgh. Calm, precise, quietly funny. Keeps the show moving and reins in the pundits with a dry one-liner when they get carried away. Never gives her own opinion on football.",
+          "look": {
+            "build": "female",
+            "skin": "#e8b796",
+            "hair": "#8a4b2a",
+            "hairStyle": "bob",
+            "suit": "#2b3160",
+            "shirt": "#f2efe6"
+          }
+        },
+        {
+          "id": "gregor",
+          "name": "Gregor Moffat",
+          "role": "At the ground",
+          "voice": "male",
+          "tts": {
+            "voice": "bm_daniel",
+            "speed": 1.1
+          },
+          "persona": "Pitchside reporter, late 50s, from Kirkcaldy. Forty years on the road and has been to every ground in Scotland. Only appears live from the ground on matchdays, from the press seats among the home support. Breathless when the ball hits the net ('oh, he's caught that sweetly!'), always finds a word for the weather and the pies, and always hands back with 'back to you in the studio'.",
+          "look": {
+            "skin": "#e6ad8c",
+            "hair": "#a39d94",
+            "hairStyle": "short",
+            "suit": "#3c5068",
+            "shirt": "#c9d6ea",
+            "tie": "#26262e",
+            "coat": true,
+            "scarf": "#6d1a2a",
+            "headset": true
+          }
+        }
+      ],
+      "segments": [
+        {
+          "id": "breaking-desk-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 2-3 Monaco",
+          "scene": "desk",
+          "presenters": [
+            "isla"
+          ],
+          "lines": [
+            {
+              "speaker": "isla",
+              "text": "It's full time in Hearts against Monaco. Let's go to Gregor Moffat at Tynecastle Park.",
+              "audio": "audio/1973a66fc0af.mp3"
+            }
+          ]
+        },
+        {
+          "id": "breaking-ground-period:ft",
+          "kind": "breaking",
+          "title": "FULL TIME",
+          "strap": "FULL TIME: Hearts 2-3 Monaco",
+          "scene": "pitchside",
+          "presenters": [
+            "gregor"
+          ],
+          "lines": [
+            {
+              "speaker": "gregor",
+              "text": "It finishes here, Hearts 2, Monaco 3 on a grey and overcast, 4 degrees afternoon. Beau Reus went forward but the leveller eluded them before the visitors broke away. Monaco have had 54 per cent of the ball. On shots it's Hearts 15, Monaco 16, and 7 to 6 on target. The Monaco goalkeeper has been kept busy, with 4 saves. Back to you in the studio.",
+              "graphic": {
+                "type": "stats",
+                "home": "Hearts",
+                "away": "Monaco",
+                "homeScore": 2,
+                "awayScore": 3,
+                "competition": "UEFA Conference League",
+                "status": "FULL TIME",
+                "rows": [
+                  {
+                    "label": "POSSESSION",
+                    "home": 46,
+                    "away": 54,
+                    "percent": true
+                  },
+                  {
+                    "label": "SHOTS",
+                    "home": 15,
+                    "away": 16
+                  },
+                  {
+                    "label": "ON TARGET",
+                    "home": 7,
+                    "away": 6
+                  },
+                  {
+                    "label": "CORNERS",
+                    "home": 4,
+                    "away": 7
+                  },
+                  {
+                    "label": "SAVES",
+                    "home": 2,
+                    "away": 4
+                  },
+                  {
+                    "label": "FOULS",
+                    "home": 7,
+                    "away": 13
+                  }
+                ]
+              },
+              "audio": "audio/17e4c644cf20.mp3"
+            }
+          ]
+        }
+      ],
+      "weather": {
+        "sky": "overcast",
+        "windy": false,
+        "tempC": 4.2,
+        "place": "Tynecastle Park",
+        "at": "2026-11-26T19:52:09.387Z",
+        "phrase": "grey and overcast, 4 degrees",
+        "numbers": [
+          4
+        ]
+      }
+    }
+  ]
+}
